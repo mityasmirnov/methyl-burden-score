@@ -54,6 +54,8 @@ sha256sum /data/path/to/source-file
 
 CpGCorpus is typically organized by GSE and GPL with beta and metadata Arrow files. Inspect every combination independently.
 
+For the Stage 0 labeling cohort and which GSEs exist on the public requester-pays bucket, see [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.md). Prefer `scripts/download_cpgcorpus_gse.sh` over a full-corpus sync unless the entire corpus is required.
+
 Minimal Python inspection:
 
 ```python

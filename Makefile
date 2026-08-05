@@ -8,7 +8,7 @@ SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
 CACHE_ROOT ?= $(PROJECT_ROOT)/cache
 ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
-.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-build agent-context references download-cpgcorpus download-ewas-atlas download-ewas-datahub download-manifests
+.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-build agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-manifests
 
 help:
 	@printf '%s\n' \
@@ -24,7 +24,8 @@ help:
 	  'catalog-build  Build the DuckDB catalog from SQL and Parquet inputs' \
 	  'agent-context  Print a concise context summary for coding agents' \
 	  'references     Add pinned reference repositories as submodules' \
-	  'download-cpgcorpus     Sync CpGCorpus into data/raw/cpgcorpus' \
+	  'download-cpgcorpus     Sync full CpGCorpus into data/raw/cpgcorpus' \
+	  'download-cpgcorpus-gse Sync Stage 0 GSE list from CpGCorpus' \
 	  'download-ewas-atlas    Download EWAS Atlas batch TSVs' \
 	  'download-ewas-datahub  Download EWAS DataHub methylation packs' \
 	  'download-manifests     Download EPICv2 Zenodo reannotated manifest' \
@@ -74,6 +75,9 @@ references:
 
 download-cpgcorpus:
 	bash scripts/download_cpgcorpus.sh
+
+download-cpgcorpus-gse:
+	bash scripts/download_cpgcorpus_gse.sh
 
 download-ewas-atlas:
 	bash scripts/download_ewas_atlas.sh

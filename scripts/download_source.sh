@@ -21,6 +21,9 @@ case "$SOURCE" in
   cpgcorpus)
     exec bash "$REPO_ROOT/scripts/download_cpgcorpus.sh"
     ;;
+  cpgcorpus_gse|cpgcorpus-gse)
+    exec bash "$REPO_ROOT/scripts/download_cpgcorpus_gse.sh"
+    ;;
   ewas_datahub)
     exec bash "$REPO_ROOT/scripts/download_ewas_datahub.sh"
     ;;
@@ -32,6 +35,7 @@ case "$SOURCE" in
     ;;
   *)
     printf 'ERROR: unknown source %s\n' "$SOURCE" >&2
+    printf 'Usage: %s <cpgcorpus|cpgcorpus_gse|ewas_datahub|ewas_atlas|manifests>\n' "$(basename "$0")" >&2
     exit 1
     ;;
 esac
