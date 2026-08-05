@@ -36,12 +36,21 @@ HTTP base used by the script: `https://download.cncb.ac.cn/ewas/`
 
 Script: `scripts/download_ewas_datahub.sh` / `make download-ewas-datahub`
 
+Inspection snapshot (hosts, layouts, local examples):
+[`reports/inspection/raw_data_snapshot/summary.md`](../reports/inspection/raw_data_snapshot/summary.md).
+
 ### All Data
 
-NGDC recommends a dedicated FTP client:
+NGDC advertises FTP (FileZilla recommended):
 
 ```text
 ftp://download.big.ac.cn/ewas/datahub/EWAS_db/
+```
+
+On `power-horse`, FTP connect often stalls. Use the HTTP mirror instead:
+
+```text
+https://download.cncb.ac.cn/ewas/datahub/EWAS_db/
 ```
 
 Local mirror target:
@@ -50,19 +59,23 @@ Local mirror target:
 $MBS_DATA_ROOT/raw/ewas_datahub/EWAS_db/
 ```
 
-The downloader mirrors this tree with `wget --continue --recursive` when FTP
-is reachable. If FTP is blocked or stalls, use FileZilla against the same host
-and path, writing into that directory.
+Remote layout (~1989 study directories): `{STUDY}/GSM*.txt` with two columns
+`probe_id<TAB>beta` (no header). **All 18 Stage 0 labeling GSEs are present**
+here, including studies absent from public CpGCorpus S3.
 
 ### Baseline Data
 
-NGDC FTP host (alternate to HTTP):
+NGDC FTP:
 
 ```text
 ftp://download.big.ac.cn/ewas/datahub/download/
 ```
 
-HTTP mirrors used by the script (`*_v1.zip` names on `download.cncb.ac.cn`):
+HTTP mirror used by the script:
+
+```text
+https://download.cncb.ac.cn/ewas/datahub/download/
+```
 
 | Description | Archive | Approx. size |
 |-------------|---------|--------------|

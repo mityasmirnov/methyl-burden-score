@@ -53,7 +53,12 @@ under `$MBS_ARTIFACT_ROOT/logs/downloads/`.
 | GSE99863 | ENID trial Gambian children | **no** |
 | GSE35069 | Purified blood cell types (FlowSorted-style) | yes (`GPL13534`) |
 
-Availability was checked against `s3://cpgpt-lucascamillo-public/data/cpgcorpus/raw/` (requester-pays, `us-east-1`). Studies marked **no** are not present under that prefix and must be obtained from GEO/other archives if needed for Stage 0.
+Availability was checked against `s3://cpgpt-lucascamillo-public/data/cpgcorpus/raw/` (requester-pays, `us-east-1`). Studies marked **no** are not present under that prefix.
+
+**Alternate source:** all 18 GSEs above **are** present in EWAS DataHub All Data
+(`https://download.cncb.ac.cn/ewas/datahub/EWAS_db/{GSE}/` as per-sample
+`GSM*.txt` beta files). See [`EWAS_DATA.md`](EWAS_DATA.md) and
+[`reports/inspection/raw_data_snapshot/summary.md`](../reports/inspection/raw_data_snapshot/summary.md).
 
 ## Layout (per GSE)
 
