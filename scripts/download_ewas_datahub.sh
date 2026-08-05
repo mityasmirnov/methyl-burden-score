@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# Download ALL EWAS DataHub public data into $MBS_DATA_ROOT/raw/ewas_datahub:
-#   1) Baseline Data packs (HTTP *_v1.zip)
-#   2) All Data tree (FTP EWAS_db/)
-# Sources: https://ngdc.cncb.ac.cn/ewas/datahub/download
+# Mirror all public EWAS DataHub trees from
+#   https://download.cncb.ac.cn/ewas/datahub/
+# into $MBS_DATA_ROOT/raw/ewas_datahub/{EWAS_db,add_ewas_db,download}/
+#
+# Remote index children: EWAS_db/  add_ewas_db/  download/
+#
+# Note: nginx listings are HTML+JS. Plain recursive wget often fails to pull
+# GSM*.txt under EWAS_db; use the HTML-index parser below instead.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -11,15 +15,10 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$REPO_ROOT/scripts/activate_data_environment.sh"
 
 TARGET="$MBS_DATA_ROOT/raw/ewas_datahub"
-BASELINE_DIR="$TARGET/baseline"
-ALLDATA_DIR="$TARGET/EWAS_db"
-mkdir -p "$BASELINE_DIR" "$ALLDATA_DIR" \
-  "$MBS_ARTIFACT_ROOT/logs/downloads" "$MBS_SCRATCH_ROOT/downloads"
+LOGDIR="$MBS_ARTIFACT_ROOT/logs/downloads"
+mkdir -p "$TARGET" "$LOGDIR" "$MBS_SCRATCH_ROOT/downloads"
 
-HTTP_BASE="https://download.cncb.ac.cn/ewas/datahub/download"
-FTP_ALL="ftp://download.big.ac.cn/ewas/datahub/EWAS_db/"
-HTTP_ALL="https://download.cncb.ac.cn/ewas/datahub/EWAS_db/"
-FTP_BASELINE="ftp://download.big.ac.cn/ewas/datahub/download/"
+HTTP_ROOT="https://download.cncb.ac.cn/ewas/datahub"
 
 BASELINE_FILES=(
   tissue_methylation_v1.zip
@@ -40,53 +39,96 @@ BASELINE_FILES=(
   sample_cancer_methylation_v1.zip
   disease_methylation_v1.zip
   sample_disease_methylation_v1.zip
+  GMQN.zip
 )
 
 cat > "$TARGET/SOURCE.txt" <<EOF
 source: EWAS DataHub @ EWAS Open Platform
-portal: https://ngdc.cncb.ac.cn/ewas/datahub/download
-policy: all public data (All Data FTP + Baseline packs)
-all_data_ftp: ${FTP_ALL}
-all_data_http: ${HTTP_ALL}
-baseline_ftp: ${FTP_BASELINE}
-baseline_http: ${HTTP_BASE}
+http_root: ${HTTP_ROOT}/
+trees: EWAS_db add_ewas_db download
+policy: mirror all public DataHub trees via HTTP
+ftp_note: ftp://download.big.ac.cn/ewas/datahub/ often stalls on this host; prefer HTTP
 gmqn_pmid: 35069703
 downloaded: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
 
-printf '=== EWAS DataHub: Baseline Data (HTTP) -> %s ===\n' "$BASELINE_DIR"
-for name in "${BASELINE_FILES[@]}"; do
-  printf '  %s\n' "$name"
-  # Keep legacy flat path if a previous run already wrote there.
-  if [[ -f "$TARGET/$name" && ! -f "$BASELINE_DIR/$name" ]]; then
-    mv "$TARGET/$name" "$BASELINE_DIR/$name"
-  fi
-  wget -c -O "$BASELINE_DIR/$name" "$HTTP_BASE/$name"
-done
+list_hrefs() {
+  local url="$1"
+  curl -fsSL --max-time 120 "$url" \
+    | grep -oE 'href="[^"]+"' \
+    | sed 's/^href="//;s/"$//' \
+    | grep -Ev '^\.\./|^/|^javascript:|^#|^https?:'
+}
 
-printf '=== EWAS DataHub: All Data (HTTP mirror) -> %s ===\n' "$ALLDATA_DIR"
-printf 'Primary: %s\n' "$HTTP_ALL"
-printf 'FTP fallback (often stalls here): %s\n' "$FTP_ALL"
-# Prefer HTTP; FTP from this host frequently hangs on connect.
-set +e
-wget --continue --recursive --no-parent --no-host-directories \
-  --cut-dirs=3 \
-  --reject 'index.html*' \
-  --directory-prefix="$ALLDATA_DIR" \
-  "$HTTP_ALL"
-http_status=$?
-if [[ "$http_status" -ne 0 ]]; then
-  printf 'WARN: HTTP All Data mirror exited %s; trying FTP...\n' "$http_status" >&2
-  wget --continue --recursive --no-parent --no-host-directories \
-    --cut-dirs=3 \
-    --directory-prefix="$ALLDATA_DIR" \
-    "$FTP_ALL"
-  ftp_status=$?
-  if [[ "$ftp_status" -ne 0 ]]; then
-    printf 'WARN: All Data FTP mirror exited %s. Baseline packs are still usable.\n' "$ftp_status" >&2
-    printf 'Manual fallback: FileZilla -> %s -> %s\n' "$FTP_ALL" "$ALLDATA_DIR" >&2
-  fi
-fi
-set -e
+mirror_download_zips() {
+  mkdir -p "$TARGET/download"
+  printf '=== Baseline/download packs -> %s/download ===\n' "$TARGET"
+  for name in "${BASELINE_FILES[@]}"; do
+    printf '  %s\n' "$name"
+    if [[ -f "$TARGET/$name" && ! -f "$TARGET/download/$name" ]]; then
+      mv "$TARGET/$name" "$TARGET/download/$name"
+    fi
+    wget -c -O "$TARGET/download/$name" "${HTTP_ROOT}/download/${name}"
+  done
+}
+
+mirror_ewas_db() {
+  local root_url="${HTTP_ROOT}/EWAS_db/"
+  local dest="$TARGET/EWAS_db"
+  mkdir -p "$dest"
+  printf '=== All Data EWAS_db -> %s ===\n' "$dest"
+  printf 'Listing studies from %s\n' "$root_url"
+  mapfile -t studies < <(list_hrefs "$root_url" | grep -E '/$' | sed 's|/$||' | grep -Ev '^(index\.html)?$')
+  printf 'Found %s study directories\n' "${#studies[@]}"
+  local i=0
+  for study in "${studies[@]}"; do
+    i=$((i + 1))
+    mkdir -p "$dest/$study"
+    printf '[%s/%s] %s\n' "$i" "${#studies[@]}" "$study"
+    mapfile -t files < <(list_hrefs "${root_url}${study}/" | grep -Ev '/$')
+    for f in "${files[@]}"; do
+      wget -c -q -O "$dest/$study/$f" "${root_url}${study}/${f}" || {
+        printf 'WARN: failed %s/%s\n' "$study" "$f" >&2
+      }
+    done
+  done
+}
+
+mirror_add_ewas_db() {
+  local root_url="${HTTP_ROOT}/add_ewas_db/"
+  local dest="$TARGET/add_ewas_db"
+  mkdir -p "$dest"
+  printf '=== add_ewas_db -> %s ===\n' "$dest"
+  mapfile -t entries < <(list_hrefs "$root_url")
+  for entry in "${entries[@]}"; do
+    if [[ "$entry" == */ ]]; then
+      local sub="${entry%/}"
+      mkdir -p "$dest/$sub"
+      mapfile -t files < <(list_hrefs "${root_url}${sub}/" | grep -Ev '/$')
+      printf '  %s (%s files)\n' "$sub" "${#files[@]}"
+      for f in "${files[@]}"; do
+        wget -c -q -O "$dest/$sub/$f" "${root_url}${sub}/${f}" || true
+      done
+    else
+      wget -c -q -O "$dest/$entry" "${root_url}${entry}" || true
+    fi
+  done
+}
+
+MODE="${1:-all}"
+case "$MODE" in
+  EWAS_db) mirror_ewas_db ;;
+  add_ewas_db) mirror_add_ewas_db ;;
+  download|baseline) mirror_download_zips ;;
+  all)
+    mirror_download_zips
+    mirror_add_ewas_db
+    mirror_ewas_db
+    ;;
+  *)
+    printf 'Usage: %s [all|EWAS_db|add_ewas_db|download|baseline]\n' "$(basename "$0")" >&2
+    exit 1
+    ;;
+esac
 
 printf 'EWAS DataHub download finished: %s\n' "$TARGET"

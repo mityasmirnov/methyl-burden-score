@@ -106,3 +106,7 @@ is not yet zip-readable.
 2. Stage 0 GSEs missing from CpGCorpus S3 can be pulled from **EWAS_db** as
    per-sample beta text files (different format than CpGCorpus Arrow).
 3. Keep Atlas (associations) and DataHub (matrices) as separate raw trees.
+
+## Download method update (2026-08-05)
+
+HTTP root https://download.cncb.ac.cn/ewas/datahub/ is mirrored with an HTML-index parser (`scripts/download_ewas_datahub.sh`) because recursive wget drops `GSM*.txt` under JS-enhanced listings. Trees: `EWAS_db/`, `add_ewas_db/`, `download/`.

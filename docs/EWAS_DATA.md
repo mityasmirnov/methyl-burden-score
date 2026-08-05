@@ -36,46 +36,47 @@ HTTP base used by the script: `https://download.cncb.ac.cn/ewas/`
 
 Script: `scripts/download_ewas_datahub.sh` / `make download-ewas-datahub`
 
-Inspection snapshot (hosts, layouts, local examples):
+HTTP root (preferred on this host):
+[https://download.cncb.ac.cn/ewas/datahub/](https://download.cncb.ac.cn/ewas/datahub/)
+
+Remote index children:
+
+```text
+EWAS_db/        # All Data — per-study GSM*.txt beta files (~1989 studies)
+add_ewas_db/    # supplemental (add_txt_450 / add_txt_850 / add_txt_935; may be empty)
+download/       # Baseline packs (*_methylation_v1.zip, sample_*.zip, GMQN.zip)
+```
+
+Downloader: `scripts/download_ewas_datahub.sh` parses nginx HTML indexes and
+`wget -c` each file (recursive wget alone is unreliable here because of
+JS-enhanced listings / robots.txt). Use `--execute robots=off` is not enough
+for `EWAS_db`; the script lists `href`s explicitly.
+
+Inspection snapshot:
 [`reports/inspection/raw_data_snapshot/summary.md`](../reports/inspection/raw_data_snapshot/summary.md).
 
-### All Data
-
-NGDC advertises FTP (FileZilla recommended):
+Local layout after mirror:
 
 ```text
-ftp://download.big.ac.cn/ewas/datahub/EWAS_db/
+data/raw/ewas_datahub/
+  EWAS_db/
+  add_ewas_db/
+  download/
+  SOURCE.txt
 ```
 
-On `power-horse`, FTP connect often stalls. Use the HTTP mirror instead:
+### All Data (`EWAS_db/`)
 
-```text
-https://download.cncb.ac.cn/ewas/datahub/EWAS_db/
-```
+NGDC also advertises FTP (FileZilla): `ftp://download.big.ac.cn/ewas/datahub/EWAS_db/`  
+Prefer HTTP: `https://download.cncb.ac.cn/ewas/datahub/EWAS_db/`
 
-Local mirror target:
+Per-study layout: `{STUDY}/GSM*.txt` with `probe_id<TAB>beta` (no header).
+**All 18 Stage 0 labeling GSEs are present** here.
 
-```text
-$MBS_DATA_ROOT/raw/ewas_datahub/EWAS_db/
-```
+### Baseline Data (`download/`)
 
-Remote layout (~1989 study directories): `{STUDY}/GSM*.txt` with two columns
-`probe_id<TAB>beta` (no header). **All 18 Stage 0 labeling GSEs are present**
-here, including studies absent from public CpGCorpus S3.
-
-### Baseline Data
-
-NGDC FTP:
-
-```text
-ftp://download.big.ac.cn/ewas/datahub/download/
-```
-
-HTTP mirror used by the script:
-
-```text
-https://download.cncb.ac.cn/ewas/datahub/download/
-```
+HTTP: `https://download.cncb.ac.cn/ewas/datahub/download/`  
+FTP: `ftp://download.big.ac.cn/ewas/datahub/download/`
 
 | Description | Archive | Approx. size |
 |-------------|---------|--------------|
@@ -97,16 +98,12 @@ https://download.cncb.ac.cn/ewas/datahub/download/
 | Sample information (cancer) | `sample_cancer_methylation_v1.zip` | 117 KB |
 | Profiles of 28 diseases | `disease_methylation_v1.zip` | 20.11 GB |
 | Sample information (disease) | `sample_disease_methylation_v1.zip` | 154 KB |
+| GMQN reference materials | `GMQN.zip` | (see remote) |
 
-Local layout:
+### Supplemental (`add_ewas_db/`)
 
-```text
-data/raw/ewas_datahub/
-  EWAS_db/                 # All Data FTP mirror
-  *_methylation_v1.zip     # Baseline packs
-  sample_*_v1.zip
-  SOURCE.txt
-```
+HTTP: `https://download.cncb.ac.cn/ewas/datahub/add_ewas_db/`  
+Contains `add_txt_450/`, `add_txt_850/`, `add_txt_935/` additions to the All Data corpus.
 
 ## GMQN (DataHub normalization)
 
@@ -128,9 +125,14 @@ source scripts/activate_data_environment.sh
 nohup bash scripts/download_ewas_atlas.sh \
   > "$MBS_ARTIFACT_ROOT/logs/downloads/ewas_atlas.log" 2>&1 &
 
-# DataHub: baseline packs + All Data FTP mirror
-nohup bash scripts/download_ewas_datahub.sh \
+# DataHub HTTP trees (EWAS_db + add_ewas_db + download)
+nohup bash scripts/download_ewas_datahub.sh all \
   > "$MBS_ARTIFACT_ROOT/logs/downloads/ewas_datahub.log" 2>&1 &
+
+# Or one tree at a time:
+# bash scripts/download_ewas_datahub.sh EWAS_db
+# bash scripts/download_ewas_datahub.sh download
+# bash scripts/download_ewas_datahub.sh add_ewas_db
 ```
 
 Inspect with DuckDB / sanitized reports only; do not recursively index raw
