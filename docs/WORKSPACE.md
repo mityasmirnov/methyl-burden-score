@@ -12,38 +12,60 @@ Open this exact folder in Cursor or another coding agent. Do not open `/data`, b
 
 ## Directory layout
 
+Defaults are **project-local** under the Git working tree. Any absolute path under `/data` still passes the path-policy check, but overrides are optional — bootstrap does not require shared `/data/datasets` ownership.
+
 ```text
-/data/
-├── projects/
-│   └── methyl-burden-score/          # Git repository and .venv
-├── datasets/
-│   └── methyl-burden-score/
-│       ├── raw/                       # immutable source downloads
-│       ├── staging/                   # disposable conversions
-│       └── canonical/
-│           ├── catalog/
-│           ├── matrices/
-│           ├── annotations/
-│           ├── graphs/
-│           └── static_features/
-├── scratch/
-│   └── methyl-burden-score/           # temporary jobs and TMPDIR
-├── cache/
-│   ├── methyl-burden-score/
+/data/projects/methyl-burden-score/          # $MBS_ROOT
+├── data/                                    # $MBS_DATA_ROOT
+│   ├── raw/                                 # immutable source downloads
+│   │   ├── cpgcorpus/
+│   │   ├── ewas_atlas/
+│   │   ├── ewas_datahub/
+│   │   └── manifests/
+│   ├── staging/                             # disposable conversions
+│   └── canonical/
+│       ├── catalog/
+│       │   ├── catalog.duckdb
+│       │   └── tables/                      # Parquet metadata tables
+│       ├── matrices/
+│       ├── annotations/
+│       ├── graphs/
+│       └── static_features/
+├── scratch/                                 # $MBS_SCRATCH_ROOT (TMPDIR)
+│   ├── tmp/
+│   └── downloads/
+├── cache/                                   # $MBS_CACHE_ROOT
 │   ├── huggingface/
 │   ├── uv/
 │   ├── pip/
-│   └── torch/
-├── artifacts/
-│   └── methyl-burden-score/
-│       ├── runs/
-│       ├── checkpoints/
-│       ├── scores/
-│       └── reports/
-├── tools/
-│   └── uv/
-└── docker/                            # Docker daemon data root
+│   ├── torch/
+│   └── …
+├── artifacts/                               # $MBS_ARTIFACT_ROOT
+│   ├── runs/
+│   ├── checkpoints/
+│   ├── scores/
+│   ├── reports/
+│   ├── logs/downloads/
+│   └── wandb/
+├── docker/                                  # $MBS_DOCKER_ROOT (local bind/mount helper)
+├── .tools/uv/                               # project-local uv install
+└── .venv/
 ```
+
+Environment variables (see `.env.example`):
+
+```text
+MBS_ROOT            /data/projects/methyl-burden-score
+MBS_DATA_ROOT       $MBS_ROOT/data
+MBS_SCRATCH_ROOT    $MBS_ROOT/scratch
+MBS_CACHE_ROOT      $MBS_ROOT/cache
+MBS_ARTIFACT_ROOT   $MBS_ROOT/artifacts
+MBS_DOCKER_ROOT     $MBS_ROOT/docker
+```
+
+`MBS_PROJECT_ROOT` remains a compatibility alias for `MBS_ROOT`.
+
+The host Docker **daemon** data root is separate and typically `/data/docker` (see below). That is an administrator concern, not the project-local `$MBS_DOCKER_ROOT` helper directory.
 
 ## Initial server setup
 
@@ -58,7 +80,7 @@ source scripts/activate_data_environment.sh
 bash scripts/bootstrap_server.sh
 ```
 
-The bootstrap script installs `uv` under `/data/tools/uv`, creates `.venv` inside the project, and places all caches under `/data`.
+The bootstrap script installs `uv` under `$MBS_ROOT/.tools/uv/bin`, creates `.venv` inside the project, and places all tool caches under `$MBS_CACHE_ROOT`.
 
 ## Shell startup
 
@@ -81,7 +103,7 @@ Open:
 Agent-visible material:
 
 - `src/`, `tests/`, `configs/`, `schemas/`, and `sql/`;
-- project documentation;
+- project documentation and ADRs under `docs/adr/`;
 - sanitized reports in `reports/inspection/`;
 - targeted files in read-only reference submodules.
 
@@ -90,7 +112,8 @@ Agent-excluded material:
 - raw and canonical sample matrices;
 - caches, checkpoints, and model weights;
 - Zarr, HDF5, BAM, IDAT, SQLite, and DuckDB binaries;
-- private sample metadata.
+- private sample metadata;
+- bulk vendor submodule trees (use targeted reads only).
 
 Run this before handing a task to an agent:
 
@@ -125,7 +148,7 @@ Do not delete `/var/lib/docker` until all containers, images, volumes, and build
 
 ### Raw
 
-`raw/` is immutable. Every source file receives:
+`$MBS_DATA_ROOT/raw/` is immutable. Every source file receives:
 
 - retrieval timestamp;
 - source URL or accession;
@@ -135,7 +158,7 @@ Do not delete `/var/lib/docker` until all containers, images, volumes, and build
 
 ### Staging
 
-`staging/` is disposable. Any artifact here must be reproducible from raw files and committed code.
+`$MBS_DATA_ROOT/staging/` is disposable. Any artifact here must be reproducible from raw files and committed code.
 
 ### Canonical
 
@@ -143,7 +166,7 @@ A canonical release is immutable after it is used for a reported run. Each relea
 
 ### Artifacts
 
-Every run directory contains a resolved configuration, Git commit, environment summary, split manifest, model checkpoints, metrics, and output checksums.
+Every run directory under `$MBS_ARTIFACT_ROOT/runs/` contains a resolved configuration, Git commit, environment summary, split manifest, model checkpoints, metrics, and output checksums.
 
 ## Permissions
 
@@ -151,8 +174,8 @@ Do not make research data world-readable. A typical shared-project policy is:
 
 ```bash
 umask 007
-find /data/datasets/methyl-burden-score -type d -exec chmod 2770 {} +
-find /data/datasets/methyl-burden-score -type f -exec chmod 0660 {} +
+find "$MBS_DATA_ROOT" -type d -exec chmod 2770 {} +
+find "$MBS_DATA_ROOT" -type f -exec chmod 0660 {} +
 ```
 
 Choose the correct institutional Unix group before applying recursive permission changes.
@@ -162,8 +185,7 @@ Choose the correct institutional Unix group before applying recursive permission
 ```bash
 df -h /data
 du -sh /data/projects/methyl-burden-score
-du -sh /data/datasets/methyl-burden-score
-du -sh /data/cache/* 2>/dev/null | sort -h
+du -sh "$MBS_DATA_ROOT" "$MBS_CACHE_ROOT" "$MBS_ARTIFACT_ROOT" 2>/dev/null
 docker system df
 ```
 

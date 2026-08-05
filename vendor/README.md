@@ -20,13 +20,16 @@ vendor/epicv2_manifest
 
 ## Policy
 
-- Reference repositories are never copied into this project as ordinary source directories.
+- Reference repositories are recorded only as Git submodule **gitlinks** (index mode `160000`) plus `.gitmodules` URLs and the pins in `SOURCES.lock.yaml`.
+- After `git submodule update --init`, full working trees appear on disk under `vendor/<name>/`. That checkout is expected. Do **not** copy upstream trees into the repo as ordinary tracked directories (`cp -r`, vendored tarballs, or un-submoduled clones).
+- Agents must not commit files inside submodule working trees from this repository; patches belong in the upstream fork and are pinned here by commit SHA.
 - Submodule commits are pinned and reviewed before every reported experiment.
 - Project code must not import from `vendor/` at runtime.
 - Foundation-model export tools use separate environments and consume a pinned submodule plus a pinned checkpoint.
 - Changes to a reference project belong in its own fork, not inside this repository.
 - Dataset and checkpoint licenses are reviewed separately from source-code licenses.
 - Downloaded research data and Zenodo artifacts belong under `$MBS_DATA_ROOT/raw/...`, never under `vendor/`.
+- Cursor indexing of bulky submodule paths is limited via `.cursorignore`; prefer targeted reads over recursive vendor scans.
 
 ## Canonical upstreams
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Sync full CpGCorpus into $MBS_DATA_ROOT/raw/cpgcorpus.
+# Does nothing until explicitly invoked. Logs to $MBS_ARTIFACT_ROOT/logs/downloads.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,11 +17,17 @@ TARGET="$MBS_DATA_ROOT/raw/cpgcorpus"
 LOGDIR="$MBS_ARTIFACT_ROOT/logs/downloads"
 mkdir -p "$TARGET" "$LOGDIR" "$MBS_SCRATCH_ROOT/downloads"
 
-printf 'Syncing CpGCorpus into %s\n' "$TARGET"
-printf 'Requester-pays S3; AWS credentials must be configured.\n'
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+LOGFILE="$LOGDIR/cpgcorpus_full_${STAMP}.log"
 
 export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
 export AWS_REGION="${AWS_REGION:-$AWS_DEFAULT_REGION}"
+
+exec > >(tee -a "$LOGFILE") 2>&1
+
+printf 'Log file: %s\n' "$LOGFILE"
+printf 'Syncing CpGCorpus into %s\n' "$TARGET"
+printf 'Requester-pays S3; AWS credentials must be configured.\n'
 
 aws s3 sync \
   s3://cpgpt-lucascamillo-public/data/cpgcorpus/raw \

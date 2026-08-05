@@ -106,10 +106,7 @@ class DataPaths:
 
     def as_dict(self) -> dict[str, str]:
         """Return a JSON-serializable representation."""
-        return {
-            field.name: str(getattr(self, field.name))
-            for field in fields(self)
-        }
+        return {field.name: str(getattr(self, field.name)) for field in fields(self)}
 
 
 # Module-level convenience aliases (resolved at import from the current env).

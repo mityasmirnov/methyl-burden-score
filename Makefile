@@ -8,7 +8,7 @@ SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
 CACHE_ROOT ?= $(PROJECT_ROOT)/cache
 ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
-.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-build agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-manifests
+.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-manifests
 
 help:
 	@printf '%s\n' \
@@ -21,6 +21,7 @@ help:
 	  'test-fast      Run unit tests' \
 	  'test           Run unit and non-slow integration tests' \
 	  'test-cov       Run tests with coverage' \
+	  'catalog-init   Create dirs and apply sql/*.sql to the default DuckDB catalog' \
 	  'catalog-build  Build the DuckDB catalog from SQL and Parquet inputs' \
 	  'agent-context  Print a concise context summary for coding agents' \
 	  'references     Add pinned reference repositories as submodules' \
@@ -60,6 +61,9 @@ test:
 
 test-cov:
 	uv run pytest --cov=mbs --cov-report=term-missing tests/unit tests/integration -m 'not slow'
+
+catalog-init:
+	uv run mbs catalog init
 
 catalog-build:
 	uv run mbs catalog build \

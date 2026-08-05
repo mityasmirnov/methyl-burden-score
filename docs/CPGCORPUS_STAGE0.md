@@ -1,6 +1,12 @@
 # CpGCorpus Stage 0 GSE selection
 
-Selective downloads go to `$MBS_DATA_ROOT/raw/cpgcorpus/{GSE}/…` via:
+Nothing in this repository auto-downloads CpGCorpus. Downloads run only when a
+script below is invoked explicitly. All files land under
+`$MBS_DATA_ROOT/raw/cpgcorpus`; logs under `$MBS_ARTIFACT_ROOT/logs/downloads`.
+
+## Foreground downloads
+
+Selective Stage 0 GSE sync:
 
 ```bash
 source scripts/activate_data_environment.sh
@@ -11,6 +17,18 @@ bash scripts/download_cpgcorpus_gse.sh
 ```
 
 Full-corpus sync remains `scripts/download_cpgcorpus.sh` (large; use only when needed).
+
+## Background downloads (nohup)
+
+```bash
+source scripts/activate_data_environment.sh
+bash scripts/download_cpgcorpus_background.sh gse
+# or: bash scripts/download_cpgcorpus_background.sh gse GSE116992
+# or: bash scripts/download_cpgcorpus_background.sh full
+```
+
+The wrapper prints a PID and log path. Monitor with `tail -f` on the nohup log
+under `$MBS_ARTIFACT_ROOT/logs/downloads/`.
 
 ## Requested labeling cohort
 
@@ -49,4 +67,5 @@ data/raw/cpgcorpus/{GSE}/{GPL}/
 
 - Bucket: `s3://cpgpt-lucascamillo-public/data/cpgcorpus/raw`
 - GSE list: `configs/data/stage0_cpgcorpus_gse_list.txt`
-- Downloader: `scripts/download_cpgcorpus_gse.sh`
+- Downloaders: `scripts/download_cpgcorpus_gse.sh`, `scripts/download_cpgcorpus.sh`
+- Background wrapper: `scripts/download_cpgcorpus_background.sh`

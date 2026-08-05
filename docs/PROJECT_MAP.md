@@ -5,6 +5,7 @@
 ```text
 README.md                    project scope and quick start
 AGENTS.md                    authoritative coding-agent rules
+docs/TODO_PIPELINE.md        Stage 0 scientific milestone checklist (agents update)
 docs/WORKSPACE.md            server and /data layout
 docs/adr/                    architecture decision records
 docs/ARCHITECTURE.md         model contracts

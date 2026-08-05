@@ -4,7 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from mbs.paths import DataPaths, PathPolicyError, _default_repo_root
+from mbs.paths import DataPaths, PathPolicyError
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
 
 
 def test_default_paths_are_project_local(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -20,15 +24,17 @@ def test_default_paths_are_project_local(monkeypatch: pytest.MonkeyPatch) -> Non
         monkeypatch.delenv(name, raising=False)
 
     paths = DataPaths.from_environment()
-    root = _default_repo_root()
+    root = _repo_root()
 
     assert paths.project_root == root
     assert paths.data_root == root / "data"
     assert paths.scratch_root == root / "scratch"
     assert paths.cache_root == root / "cache"
     assert paths.artifact_root == root / "artifacts"
+    assert paths.docker_root == root / "docker"
     for value in paths.as_dict().values():
         assert Path(value).is_relative_to(Path("/data"))
+        assert Path(value).is_relative_to(root) or Path(value) == root
 
 
 def test_home_path_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -39,7 +45,7 @@ def test_home_path_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_relative_path_is_rejected() -> None:
-    root = _default_repo_root()
+    root = _repo_root()
     paths = DataPaths(
         project_root=Path("relative/project"),
         data_root=root / "data",
@@ -51,3 +57,10 @@ def test_relative_path_is_rejected() -> None:
 
     with pytest.raises(PathPolicyError, match="not absolute"):
         paths.validate()
+
+
+def test_tmp_home_cache_aliases_are_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MBS_CACHE_ROOT", "/tmp/mbs-cache")
+
+    with pytest.raises(PathPolicyError, match="outside /data"):
+        DataPaths.from_environment()

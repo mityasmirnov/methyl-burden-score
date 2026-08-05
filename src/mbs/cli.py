@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import platform
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -15,13 +16,25 @@ from rich.console import Console
 from rich.table import Table
 
 from mbs import __version__
-from mbs.catalog import build_catalog
+from mbs.catalog import build_catalog, init_catalog
+from mbs.inspect_source import inventory_source, write_inspection_report
 from mbs.paths import DataPaths, PathPolicyError
 
 app = typer.Typer(no_args_is_help=True, help="Methylation Burden Score tooling")
 catalog_app = typer.Typer(no_args_is_help=True, help="DuckDB catalog operations")
+inspect_app = typer.Typer(no_args_is_help=True, help="Source inspection reports")
 app.add_typer(catalog_app, name="catalog")
+app.add_typer(inspect_app, name="inspect")
 console = Console()
+
+_SOURCE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
+
+
+def _require_under_data(path: Path, label: str) -> Path:
+    absolute = path.absolute()
+    if not absolute.is_relative_to(Path("/data")):
+        raise typer.BadParameter(f"{label} must be under /data: {absolute}")
+    return absolute
 
 
 @app.command()
@@ -65,6 +78,47 @@ def doctor(create_directories: bool = False) -> None:
         console.print("[yellow]Project root is missing; run scripts/bootstrap_server.sh.[/yellow]")
 
 
+@catalog_app.command("init")
+def catalog_init(
+    database: Annotated[
+        Path | None,
+        typer.Option(
+            help="Output DuckDB path (default: $MBS_DATA_ROOT/canonical/catalog/catalog.duckdb)"
+        ),
+    ] = None,
+    sql_dir: Annotated[
+        Path | None,
+        typer.Option(help="Directory containing numbered SQL files (default: $MBS_ROOT/sql)"),
+    ] = None,
+    parquet_root: Annotated[
+        Path | None,
+        typer.Option(help="Parquet table directory (default: .../canonical/catalog/tables)"),
+    ] = None,
+) -> None:
+    """Create Stage 0 directories and apply the catalog SQL schema."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    for label, path in (
+        ("database", database),
+        ("sql_dir", sql_dir),
+        ("parquet_root", parquet_root),
+    ):
+        if path is not None:
+            _require_under_data(path, label)
+
+    result = init_catalog(
+        paths=paths,
+        sql_dir=sql_dir,
+        database=database,
+        parquet_root=parquet_root,
+    )
+    console.print_json(json.dumps(result))
+
+
 @catalog_app.command("build")
 def catalog_build(
     database: Annotated[Path, typer.Option(help="Output DuckDB path")],
@@ -80,8 +134,7 @@ def catalog_build(
     paths.validate()
 
     for path in (database, sql_dir, parquet_root):
-        if not path.absolute().is_relative_to(Path("/data")):
-            raise typer.BadParameter(f"path must be under /data: {path}")
+        _require_under_data(path, "path")
 
     result = build_catalog(
         database=database,
@@ -90,6 +143,63 @@ def catalog_build(
         read_only=read_only,
     )
     console.print_json(json.dumps(result))
+
+
+@inspect_app.command("source")
+def inspect_source_cmd(
+    source_id: Annotated[str, typer.Option(help="Source identifier, e.g. cpgcorpus")],
+    raw_root: Annotated[
+        Path | None,
+        typer.Option(help="Raw source directory (default: $MBS_DATA_ROOT/raw/{source_id})"),
+    ] = None,
+    report_dir: Annotated[
+        Path | None,
+        typer.Option(help="Report directory (default: reports/inspection/{source_id})"),
+    ] = None,
+    max_entries: Annotated[int, typer.Option(help="Maximum file entries to inventory")] = 10_000,
+) -> None:
+    """Write a shallow inventory report for one raw source directory."""
+    if not _SOURCE_ID_RE.fullmatch(source_id):
+        raise typer.BadParameter(
+            "source_id must be 1-128 chars: letters, digits, underscore, dot, or hyphen"
+        )
+    if max_entries < 1:
+        raise typer.BadParameter("max_entries must be >= 1")
+
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    resolved_raw = _require_under_data(
+        raw_root or (paths.data_root / "raw" / source_id),
+        "raw_root",
+    )
+    resolved_report = report_dir or (paths.project_root / "reports" / "inspection" / source_id)
+    if not resolved_report.absolute().is_relative_to(paths.project_root.absolute()):
+        resolved_report = _require_under_data(resolved_report, "report_dir")
+    else:
+        resolved_report = resolved_report.absolute()
+
+    inventory = inventory_source(
+        resolved_raw,
+        source_id=source_id,
+        max_entries=max_entries,
+    )
+    written = write_inspection_report(inventory, resolved_report)
+    console.print_json(
+        json.dumps(
+            {
+                "source_id": source_id,
+                "raw_root": str(resolved_raw),
+                "report_dir": str(written),
+                "file_count": inventory["file_count"],
+                "total_bytes": inventory["total_bytes"],
+                "truncated": inventory["truncated"],
+            }
+        )
+    )
 
 
 if __name__ == "__main__":

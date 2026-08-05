@@ -83,7 +83,7 @@ class FlatDeepSet(nn.Module):
         super().__init__()
         if phi_layers < 1 or rho_layers < 1:
             raise ValueError("phi_layers and rho_layers must be at least one")
-        self.pool = pool
+        self.pool: PoolName = pool
         self.neutral_score = neutral_score
         self.phi = SharedMLP(
             input_dim,
@@ -149,8 +149,8 @@ class HierarchicalDeepSet(nn.Module):
         super().__init__()
         if n_region_types <= 0:
             raise ValueError("n_region_types must be positive")
-        self.cpg_pool = cpg_pool
-        self.region_pool = region_pool
+        self.cpg_pool: PoolName = cpg_pool
+        self.region_pool: PoolName = region_pool
         self.neutral_score = neutral_score
 
         self.cpg_encoder = SharedMLP(
@@ -264,9 +264,7 @@ class SeedMaskedLinearHead(nn.Module):
         self.gene_weight = nn.Parameter(torch.zeros(n_outputs, n_genes))
         self.bias = nn.Parameter(torch.zeros(n_outputs))
         self.covariate_head = (
-            nn.Linear(n_covariates, n_outputs, bias=False)
-            if n_covariates > 0
-            else None
+            nn.Linear(n_covariates, n_outputs, bias=False) if n_covariates > 0 else None
         )
 
     def forward(
@@ -285,9 +283,10 @@ class SeedMaskedLinearHead(nn.Module):
             mbs - self.neutral_score,
             torch.zeros_like(mbs),
         )
+        seed_mask = self.get_buffer("seed_mask")
         output = F.linear(
             centered,
-            self.gene_weight * self.seed_mask,
+            self.gene_weight * seed_mask,
             self.bias,
         )
 
@@ -295,9 +294,7 @@ class SeedMaskedLinearHead(nn.Module):
             if covariates is None:
                 raise ValueError("covariates are required for this head")
             if covariates.ndim != 2 or covariates.shape[1] != self.n_covariates:
-                raise ValueError(
-                    f"covariates must have shape [batch, {self.n_covariates}]"
-                )
+                raise ValueError(f"covariates must have shape [batch, {self.n_covariates}]")
             output = output + self.covariate_head(covariates)
         elif covariates is not None:
             raise ValueError("covariates were supplied to a head configured without them")

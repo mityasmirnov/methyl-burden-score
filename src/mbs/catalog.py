@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 import duckdb
+
+if TYPE_CHECKING:
+    from mbs.paths import DataPaths
 
 
 class CatalogBuildResult(TypedDict):
@@ -84,3 +87,28 @@ def build_catalog(
         "tables": counts.get("BASE TABLE", 0),
         "views": counts.get("VIEW", 0),
     }
+
+
+def init_catalog(
+    *,
+    paths: DataPaths,
+    sql_dir: Path | None = None,
+    database: Path | None = None,
+    parquet_root: Path | None = None,
+) -> CatalogBuildResult:
+    """Ensure Stage 0 directories exist and apply numbered SQL under defaults."""
+    paths.ensure_directories()
+    resolved_sql_dir = (sql_dir or (paths.project_root / "sql")).absolute()
+    resolved_database = (
+        database or (paths.data_root / "canonical" / "catalog" / "catalog.duckdb")
+    ).absolute()
+    resolved_parquet_root = (
+        parquet_root or (paths.data_root / "canonical" / "catalog" / "tables")
+    ).absolute()
+    resolved_parquet_root.mkdir(parents=True, exist_ok=True)
+    return build_catalog(
+        database=resolved_database,
+        sql_dir=resolved_sql_dir,
+        parquet_root=resolved_parquet_root,
+        read_only=False,
+    )

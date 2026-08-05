@@ -88,7 +88,16 @@ make lint
 make typecheck
 make test-fast
 make test
+make catalog-init
 make catalog-build
+```
+
+Useful first-pass commands after bootstrap:
+
+```bash
+uv run mbs doctor --create-directories
+uv run mbs catalog init
+uv run mbs inspect source --source-id cpgcorpus
 ```
 
 Machine-specific paths belong in `.env` or `configs/local/`; neither is committed.

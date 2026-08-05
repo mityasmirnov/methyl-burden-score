@@ -1,0 +1,39 @@
+---
+description: Keep the Stage 0 scientific pipeline TODO accurate and drive work from it
+alwaysApply: true
+---
+
+# Pipeline TODO discipline
+
+## Source of truth
+
+Read and update [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md) for Stage 0
+scientific milestones. Session TodoWrite items must mirror that file when the
+task is pipeline work.
+
+## At session start (and before new pipeline work)
+
+1. Open `docs/TODO_PIPELINE.md`.
+2. Identify the first milestone that is `in_progress` or the first `pending`
+   after the last `done`.
+3. Work that milestone; do not jump to optional / deferred layers early.
+
+## When marking complete
+
+Only set status to `done` when the milestone's **Done when** acceptance criteria
+are truly met (reports, artifacts, tests, or round-trip checks exist). Scaffolding,
+CLI stubs, download scripts, or model class definitions alone are not enough.
+
+Update `docs/TODO_PIPELINE.md` in the same change set that finishes the milestone.
+Keep Cursor session todos in sync (complete / cancel / start next).
+
+## Ordering (do not reorder without an ADR)
+
+1. Inspect one small real source
+2. Canonical annotation graph (simple regions)
+3. Static locus features (CpGPT default)
+4. One pilot canonical matrix
+5. Flat DeepRVAT-style baseline
+6. Hierarchical region model
+7. Study-grouped cross-fitting
+8. Optional layers only after 1–7

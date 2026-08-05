@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Sync selected GSE prefixes from CpGCorpus (requester-pays S3).
+# Does nothing until explicitly invoked. Logs to $MBS_ARTIFACT_ROOT/logs/downloads.
 # Usage:
 #   scripts/download_cpgcorpus_gse.sh
 #   scripts/download_cpgcorpus_gse.sh GSE42861 GSE87571
@@ -22,6 +23,9 @@ export AWS_REGION="${AWS_REGION:-$AWS_DEFAULT_REGION}"
 TARGET="$MBS_DATA_ROOT/raw/cpgcorpus"
 LOGDIR="$MBS_ARTIFACT_ROOT/logs/downloads"
 mkdir -p "$TARGET" "$LOGDIR" "$MBS_SCRATCH_ROOT/downloads"
+
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+LOGFILE="$LOGDIR/cpgcorpus_gse_${STAMP}.log"
 
 BUCKET="s3://cpgpt-lucascamillo-public/data/cpgcorpus/raw"
 DEFAULT_LIST="$REPO_ROOT/configs/data/stage0_cpgcorpus_gse_list.txt"
@@ -47,6 +51,9 @@ if [[ "${#GSES[@]}" -eq 0 ]]; then
   exit 1
 fi
 
+exec > >(tee -a "$LOGFILE") 2>&1
+
+printf 'Log file: %s\n' "$LOGFILE"
 printf 'Selective CpGCorpus sync into %s (region=%s)\n' "$TARGET" "$AWS_DEFAULT_REGION"
 
 available=0
