@@ -1,0 +1,59 @@
+# Never index raw or generated data
+external_data/**
+data/**
+cache/**
+scratch/**
+artifacts/**
+runs/**
+checkpoints/**
+outputs/**
+
+# Never index binary scientific formats
+**/*.idat
+**/*.IDAT
+**/*.bam
+**/*.bai
+**/*.cram
+**/*.crai
+**/*.vcf
+**/*.vcf.gz
+**/*.bcf
+**/*.arrow
+**/*.feather
+**/*.parquet
+**/*.zarr/**
+**/*.h5
+**/*.hdf5
+**/*.mmap
+**/*.sqlite
+**/*.sqlite3
+**/*.duckdb
+**/*.db
+**/*.npz
+**/*.npy
+**/*.pt
+**/*.pth
+**/*.ckpt
+**/*.safetensors
+**/*.pkl
+**/*.pickle
+
+# Reference repositories are available for targeted inspection only
+vendor/**/.git/**
+vendor/**/data/**
+vendor/**/dependencies/**
+vendor/**/pretrained_models/**
+vendor/**/results/**
+
+# Generated and private reports
+reports/generated/**
+reports/inspection/private/**
+
+# Python and editor caches
+.venv/**
+**/__pycache__/**
+.pytest_cache/**
+.ruff_cache/**
+.ipynb_checkpoints/**
+
+# Keep source, tests, configs, schemas, SQL, docs, and sanitized fixtures indexed
