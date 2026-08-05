@@ -232,19 +232,21 @@ A missing or incompatible checkpoint key is an error; partial loading is not acc
 
 Keep DataHub external validation releases separate from CpGCorpus training releases until study overlap and normalization provenance are resolved.
 
+**Policy: download all public DataHub data** (All Data `EWAS_db` FTP tree plus Baseline packs). See [`EWAS_DATA.md`](EWAS_DATA.md).
+
 Inspect:
 
 - study and GSE identifiers;
 - trait bundle definitions;
 - sample information file;
-- matrix processing and batch-correction description;
+- matrix processing and batch-correction description (GMQN);
 - platform and genome build;
 - overlap with CpGCorpus studies;
 - phenotype coding.
 
 ## EWAS Atlas
 
-Atlas is an association evidence source, not a sample matrix. Freeze and checksum association, study, cohort, and annotation exports. Map CpGs through the project graph rather than relying only on supplied nearest-gene fields.
+Atlas is an association evidence source, not a sample matrix. Freeze and checksum association, study, cohort, and annotation exports. Map CpGs through the project graph rather than relying only on supplied nearest-gene fields. Full batch exports are documented in [`EWAS_DATA.md`](EWAS_DATA.md).
 
 ## Long-read and methylartist inputs
 

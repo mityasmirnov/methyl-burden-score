@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Download EWAS DataHub reference methylation packs into $MBS_DATA_ROOT/raw/ewas_datahub
+# Download ALL EWAS DataHub public data into $MBS_DATA_ROOT/raw/ewas_datahub:
+#   1) Baseline Data packs (HTTP *_v1.zip)
+#   2) All Data tree (FTP EWAS_db/)
 # Sources: https://ngdc.cncb.ac.cn/ewas/datahub/download
 set -euo pipefail
 
@@ -9,10 +11,16 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$REPO_ROOT/scripts/activate_data_environment.sh"
 
 TARGET="$MBS_DATA_ROOT/raw/ewas_datahub"
-mkdir -p "$TARGET" "$MBS_ARTIFACT_ROOT/logs/downloads" "$MBS_SCRATCH_ROOT/downloads"
+BASELINE_DIR="$TARGET/baseline"
+ALLDATA_DIR="$TARGET/EWAS_db"
+mkdir -p "$BASELINE_DIR" "$ALLDATA_DIR" \
+  "$MBS_ARTIFACT_ROOT/logs/downloads" "$MBS_SCRATCH_ROOT/downloads"
 
-BASE="https://download.cncb.ac.cn/ewas/datahub/download"
-FILES=(
+HTTP_BASE="https://download.cncb.ac.cn/ewas/datahub/download"
+FTP_ALL="ftp://download.big.ac.cn/ewas/datahub/EWAS_db/"
+FTP_BASELINE="ftp://download.big.ac.cn/ewas/datahub/download/"
+
+BASELINE_FILES=(
   tissue_methylation_v1.zip
   sample_tissue_methylation_v1.zip
   brain_methylation_v1.zip
@@ -33,11 +41,41 @@ FILES=(
   sample_disease_methylation_v1.zip
 )
 
-printf 'Downloading EWAS DataHub packs into %s\n' "$TARGET"
-printf 'These archives are large (tens of GB); resume is enabled via wget -c.\n'
-for name in "${FILES[@]}"; do
+cat > "$TARGET/SOURCE.txt" <<EOF
+source: EWAS DataHub @ EWAS Open Platform
+portal: https://ngdc.cncb.ac.cn/ewas/datahub/download
+policy: all public data (All Data FTP + Baseline packs)
+all_data_ftp: ${FTP_ALL}
+baseline_ftp: ${FTP_BASELINE}
+baseline_http: ${HTTP_BASE}
+gmqn_pmid: 35069703
+downloaded: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+EOF
+
+printf '=== EWAS DataHub: Baseline Data (HTTP) -> %s ===\n' "$BASELINE_DIR"
+for name in "${BASELINE_FILES[@]}"; do
   printf '  %s\n' "$name"
-  wget -c -O "$TARGET/$name" "$BASE/$name"
+  # Keep legacy flat path if a previous run already wrote there.
+  if [[ -f "$TARGET/$name" && ! -f "$BASELINE_DIR/$name" ]]; then
+    mv "$TARGET/$name" "$BASELINE_DIR/$name"
+  fi
+  wget -c -O "$BASELINE_DIR/$name" "$HTTP_BASE/$name"
 done
+
+printf '=== EWAS DataHub: All Data (FTP mirror) -> %s ===\n' "$ALLDATA_DIR"
+printf 'Host: %s\n' "$FTP_ALL"
+printf 'If this stalls, use FileZilla and write into %s\n' "$ALLDATA_DIR"
+# Continue-capable recursive mirror; do not ascend above EWAS_db.
+set +e
+wget --continue --recursive --no-parent --no-host-directories \
+  --cut-dirs=3 \
+  --directory-prefix="$ALLDATA_DIR" \
+  "$FTP_ALL"
+ftp_status=$?
+set -e
+if [[ "$ftp_status" -ne 0 ]]; then
+  printf 'WARN: All Data FTP mirror exited %s. Baseline packs are still usable.\n' "$ftp_status" >&2
+  printf 'Manual fallback: FileZilla -> %s -> %s\n' "$FTP_ALL" "$ALLDATA_DIR" >&2
+fi
 
 printf 'EWAS DataHub download finished: %s\n' "$TARGET"

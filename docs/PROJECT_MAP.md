@@ -6,6 +6,7 @@
 README.md                    project scope and quick start
 AGENTS.md                    authoritative coding-agent rules
 docs/WORKSPACE.md            server and /data layout
+docs/adr/                    architecture decision records
 docs/ARCHITECTURE.md         model contracts
 docs/DATA_CONTRACT.md        canonical data contracts
 docs/ANNOTATION_GRAPH.md     biological topology
@@ -20,7 +21,8 @@ docs/DATA_INSPECTION.md      source acceptance workflow
 src/mbs/__init__.py      package version
 src/mbs/cli.py           `mbs` command-line application
 src/mbs/paths.py         /data-only filesystem policy
-src/mbs/catalog.py       DuckDB catalog builder
+src/mbs/catalog.py       DuckDB catalog builder / init
+src/mbs/inspect_source.py shallow source inventory reports
 src/mbs/batch.py         ragged batch contract
 src/mbs/segment_ops.py   permutation-invariant segment reductions
 src/mbs/models.py        flat/hierarchical scorers and linear heads
@@ -53,10 +55,12 @@ A training run copies its fully resolved configuration into the run artifact dir
 ## Tests
 
 ```text
-tests/unit/test_paths.py         filesystem policy
-tests/unit/test_segment_ops.py   reductions and permutation invariance
-tests/unit/test_models.py        model and missing-gene invariants
-tests/integration/test_smoke.py  catalog plus model smoke test
+tests/unit/test_paths.py           filesystem policy
+tests/unit/test_catalog_schema.py  real SQL schema init
+tests/unit/test_cli.py             doctor / catalog / inspect CLI
+tests/unit/test_segment_ops.py     reductions and permutation invariance
+tests/unit/test_models.py          model and missing-gene invariants
+tests/integration/test_smoke.py    catalog plus model smoke test
 ```
 
 Tiny synthetic fixtures belong under `tests/fixtures/`. Never depend on private or large data in CI.
@@ -68,6 +72,8 @@ vendor/SOURCES.lock.yaml  reviewed repositories and commits
 vendor/README.md          submodule policy
 vendor/epicv2_manifest    EPICv2 reannotation code (Zenodo tables -> data/raw/manifests)
 vendor/*                  read-only submodule pointers after installation
+docs/EWAS_DATA.md         EWAS Atlas + DataHub download inventory (all DataHub data)
+docs/CPGCORPUS_STAGE0.md  selective CpGCorpus GSE cohort
 ```
 
 Reference code must not become a runtime import path. Downloaded manifests and corpora belong under `$MBS_DATA_ROOT/raw/`.
@@ -75,11 +81,14 @@ Reference code must not become a runtime import path. Downloaded manifests and c
 ## Server scripts
 
 ```text
-scripts/bootstrap_server.sh          create /data workspace and uv environment
-scripts/activate_data_environment.sh export /data-only paths and caches
-scripts/check_no_home_paths.sh       detect policy violations
-scripts/add_reference_submodules.sh  install and commit reference submodules
-scripts/agent_context.sh             concise agent context report
+scripts/bootstrap_server.sh              create /data workspace and uv environment
+scripts/activate_data_environment.sh     export /data-only paths and caches
+scripts/check_no_home_paths.sh           detect policy violations
+scripts/add_reference_submodules.sh      install and commit reference submodules
+scripts/agent_context.sh                 concise agent context report
+scripts/download_cpgcorpus.sh            full CpGCorpus sync (explicit invoke)
+scripts/download_cpgcorpus_gse.sh        Stage 0 GSE sync (explicit invoke)
+scripts/download_cpgcorpus_background.sh nohup wrapper for CpGCorpus syncs
 ```
 
 ## Containers
@@ -93,12 +102,20 @@ compose.yaml                     bind-mounted development service
 
 The host Docker daemon must already use `/data/docker` before building large images.
 
+## Stage 0 CLI surface
+
+```text
+mbs doctor                 validate /data paths and environment
+mbs catalog init           create dirs + apply sql/*.sql schema
+mbs catalog build          rebuild catalog with explicit paths
+mbs inspect source         shallow raw-source inventory report
+```
+
 ## Planned next modules
 
 Recommended implementation order:
 
 ```text
-src/mbs/inspect/
 src/mbs/ingest/
 src/mbs/annotations/
 src/mbs/stores/
@@ -109,7 +126,7 @@ tools/cpgpt_export/
 tools/methylgpt_export/
 ```
 
-Do not create all modules as empty placeholders. Add one when its contract and tests are ready.
+Do not create all modules as empty placeholders. Add one when its contract and tests are ready. Deeper inspection helpers may grow beside `inspect_source.py` when needed.
 
 ## Coding-agent task boundary
 
@@ -128,4 +145,4 @@ make typecheck
 make test
 ```
 
-When a task requires raw data, provide a catalog query or sanitized inspection report instead of asking an agent to recursively inspect `/data/datasets`.
+When a task requires raw data, provide a catalog query or sanitized inspection report instead of asking an agent to recursively inspect `$MBS_DATA_ROOT`.
