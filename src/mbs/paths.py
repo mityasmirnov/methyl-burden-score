@@ -77,8 +77,13 @@ class DataPaths:
         """Return directories required by the Stage 0 workspace."""
         return (
             self.project_root,
-            self.data_root / "raw",
+            self.data_root / "raw" / "cpgcorpus",
+            self.data_root / "raw" / "ewas_datahub",
+            self.data_root / "raw" / "ewas_atlas",
+            self.data_root / "raw" / "manifests",
             self.data_root / "staging",
+            self.scratch_root / "downloads",
+            self.artifact_root / "logs" / "downloads",
             self.data_root / "canonical" / "catalog" / "tables",
             self.data_root / "canonical" / "matrices",
             self.data_root / "canonical" / "annotations",

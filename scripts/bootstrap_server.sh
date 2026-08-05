@@ -18,7 +18,10 @@ export MBS_ARTIFACT_ROOT="${MBS_ARTIFACT_ROOT:-$MBS_ROOT/artifacts}"
 export MBS_DOCKER_ROOT="${MBS_DOCKER_ROOT:-$MBS_ROOT/docker}"
 
 mkdir -p \
-  "$MBS_DATA_ROOT/raw" \
+  "$MBS_DATA_ROOT/raw/cpgcorpus" \
+  "$MBS_DATA_ROOT/raw/ewas_datahub" \
+  "$MBS_DATA_ROOT/raw/ewas_atlas" \
+  "$MBS_DATA_ROOT/raw/manifests" \
   "$MBS_DATA_ROOT/staging" \
   "$MBS_DATA_ROOT/canonical/catalog/tables" \
   "$MBS_DATA_ROOT/canonical/matrices" \
@@ -26,6 +29,7 @@ mkdir -p \
   "$MBS_DATA_ROOT/canonical/graphs" \
   "$MBS_DATA_ROOT/canonical/static_features" \
   "$MBS_SCRATCH_ROOT/tmp" \
+  "$MBS_SCRATCH_ROOT/downloads" \
   "$MBS_CACHE_ROOT/xdg" \
   "$MBS_CACHE_ROOT/huggingface" \
   "$MBS_CACHE_ROOT/torch" \
@@ -38,6 +42,7 @@ mkdir -p \
   "$MBS_ARTIFACT_ROOT/scores" \
   "$MBS_ARTIFACT_ROOT/reports" \
   "$MBS_ARTIFACT_ROOT/wandb" \
+  "$MBS_ARTIFACT_ROOT/logs/downloads" \
   "$MBS_DOCKER_ROOT" \
   "$MBS_ROOT/.tools/uv/bin"
 
