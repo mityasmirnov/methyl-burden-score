@@ -1,0 +1,23 @@
+# Stage 0 CpGCorpus GSE selection (one GSE per line).
+# Used by scripts/download_cpgcorpus_gse.sh
+# Label notes are documentation only; the script syncs whatever platforms
+# exist under each GSE prefix on S3.
+
+GSE116992
+GSE66552
+GSE74432
+GSE97362
+GSE116300
+GSE95040
+GSE104451
+GSE125367
+GSE55491
+GSE108423
+GSE89353
+GSE52588
+GSE42861
+GSE85210
+GSE87571
+GSE87648
+GSE99863
+GSE35069

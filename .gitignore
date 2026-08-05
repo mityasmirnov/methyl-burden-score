@@ -81,17 +81,17 @@ secrets*
 *.pkl
 *.pickle
 
-# Generated project areas
+# Generated project areas (repo-root only; do not ignore configs/data etc.)
 external_data/
-data/
-cache/
-scratch/
-artifacts/
-docker/
-.tools/
-runs/
-checkpoints/
-outputs/
+/data/
+/cache/
+/scratch/
+/artifacts/
+/docker/
+/.tools/
+/runs/
+/checkpoints/
+/outputs/
 reports/generated/
 reports/inspection/private/
 
