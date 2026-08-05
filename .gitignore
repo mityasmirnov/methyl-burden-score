@@ -1,0 +1,114 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.pyright/
+.coverage
+htmlcov/
+
+# Environments and local configuration
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+configs/local/*
+!configs/local/.gitkeep
+
+# IDE and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Logs and experiment trackers
+*.log
+logs/
+wandb/
+mlruns/
+lightning_logs/
+
+# Credentials
+*.pem
+*.key
+*.p12
+.aws/
+.netrc
+credentials*
+secrets*
+
+# Research data and large binary artifacts
+*.idat
+*.IDAT
+*.bam
+*.bai
+*.cram
+*.crai
+*.vcf
+*.vcf.gz
+*.bcf
+*.bed.gz
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+*.arrow
+*.feather
+*.parquet
+*.zarr/
+*.h5
+*.hdf5
+*.mmap
+*.sqlite
+*.sqlite3
+*.duckdb
+*.db
+*.npz
+*.npy
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.pkl
+*.pickle
+
+# Generated project areas
+external_data/
+data/
+cache/
+scratch/
+artifacts/
+runs/
+checkpoints/
+outputs/
+reports/generated/
+reports/inspection/private/
+
+# External source repositories are Git submodules when installed
+vendor/deeprvat/
+vendor/cpgpt/
+vendor/methylgpt/
+vendor/methylcapsnet/
+vendor/methylartist/
+
+# Keep explicit tiny text fixtures and manifests
+!tests/fixtures/**
+!tests/fixtures/**/*.csv
+!tests/fixtures/**/*.tsv
+!tests/fixtures/**/*.json
+!tests/fixtures/**/*.yaml
+!tests/fixtures/**/*.yml
+!reports/inspection/.gitkeep
+
+# Local container overrides
+compose.override.yaml
+containers/.env
