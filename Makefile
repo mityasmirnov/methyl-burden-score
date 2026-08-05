@@ -8,7 +8,7 @@ SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
 CACHE_ROOT ?= $(PROJECT_ROOT)/cache
 ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
-.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-build agent-context references download-cpgcorpus
+.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-build agent-context references download-cpgcorpus download-ewas-atlas download-ewas-datahub download-manifests
 
 help:
 	@printf '%s\n' \
@@ -24,7 +24,10 @@ help:
 	  'catalog-build  Build the DuckDB catalog from SQL and Parquet inputs' \
 	  'agent-context  Print a concise context summary for coding agents' \
 	  'references     Add pinned reference repositories as submodules' \
-	  'download-cpgcorpus  Sync CpGCorpus into data/raw/cpgcorpus (requester-pays S3)' \
+	  'download-cpgcorpus     Sync CpGCorpus into data/raw/cpgcorpus' \
+	  'download-ewas-atlas    Download EWAS Atlas batch TSVs' \
+	  'download-ewas-datahub  Download EWAS DataHub methylation packs' \
+	  'download-manifests     Download EPICv2 Zenodo reannotated manifest' \
 	  'clean          Remove generated local Python caches only'
 
 bootstrap:
@@ -71,6 +74,15 @@ references:
 
 download-cpgcorpus:
 	bash scripts/download_cpgcorpus.sh
+
+download-ewas-atlas:
+	bash scripts/download_ewas_atlas.sh
+
+download-ewas-datahub:
+	bash scripts/download_ewas_datahub.sh
+
+download-manifests:
+	bash scripts/download_manifests.sh
 
 clean:
 	find src tests -type d -name __pycache__ -prune -exec rm -rf {} +

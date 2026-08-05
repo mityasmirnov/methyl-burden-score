@@ -21,10 +21,14 @@ case "$SOURCE" in
   cpgcorpus)
     exec bash "$REPO_ROOT/scripts/download_cpgcorpus.sh"
     ;;
-  ewas_datahub|ewas_atlas|manifests)
-    printf 'ERROR: download recipe for %s is not wired yet.\n' "$SOURCE" >&2
-    printf 'Target directory when ready: %s/raw/%s\n' "$MBS_DATA_ROOT" "$SOURCE" >&2
-    exit 2
+  ewas_datahub)
+    exec bash "$REPO_ROOT/scripts/download_ewas_datahub.sh"
+    ;;
+  ewas_atlas)
+    exec bash "$REPO_ROOT/scripts/download_ewas_atlas.sh"
+    ;;
+  manifests)
+    exec bash "$REPO_ROOT/scripts/download_manifests.sh"
     ;;
   *)
     printf 'ERROR: unknown source %s\n' "$SOURCE" >&2

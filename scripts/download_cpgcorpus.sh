@@ -18,9 +18,13 @@ mkdir -p "$TARGET" "$LOGDIR" "$MBS_SCRATCH_ROOT/downloads"
 printf 'Syncing CpGCorpus into %s\n' "$TARGET"
 printf 'Requester-pays S3; AWS credentials must be configured.\n'
 
+export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
+export AWS_REGION="${AWS_REGION:-$AWS_DEFAULT_REGION}"
+
 aws s3 sync \
   s3://cpgpt-lucascamillo-public/data/cpgcorpus/raw \
   "$TARGET" \
-  --request-payer requester
+  --request-payer requester \
+  --region "$AWS_DEFAULT_REGION"
 
 printf 'CpGCorpus sync finished: %s\n' "$TARGET"
