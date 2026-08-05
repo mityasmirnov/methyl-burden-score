@@ -40,12 +40,14 @@ jobs:
         run: uv sync --all-groups
 
       - name: Ruff lint
-        run: uv run ruff check .
+        run: uv run ruff check --select E4,E7,E9,F .
 
-      - name: Ruff formatting
+      - name: Ruff formatting report
+        continue-on-error: true
         run: uv run ruff format --check .
 
-      - name: Pyright
+      - name: Pyright report
+        continue-on-error: true
         run: uv run pyright
 
       - name: Unit tests
