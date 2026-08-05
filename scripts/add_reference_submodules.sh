@@ -31,13 +31,11 @@ add_submodule https://github.com/lucascamillomd/CpGPT.git vendor/cpgpt
 add_submodule https://github.com/albert-ying/MethylGPT.git vendor/methylgpt
 add_submodule https://github.com/Christensen-Lab-Dartmouth/MethylCapsNet.git vendor/methylcapsnet
 add_submodule https://github.com/adamewing/methylartist.git vendor/methylartist
+add_submodule https://github.com/bethan-mallabar-rimmer/EPICv2_manifest.git vendor/epicv2_manifest
 
 git submodule update --init --recursive
 
-git add .gitmodules vendor
-
-git commit -m "Add pinned reference implementations as submodules"
-
-printf '\nReference repositories added. Review exact SHAs with:\n'
+git add .gitmodules vendor/SOURCES.lock.yaml vendor/README.md
 git submodule status
-printf '\nThen push with:\n  git push origin main\n'
+
+printf '\nReview exact SHAs above, then commit and push if needed.\n'

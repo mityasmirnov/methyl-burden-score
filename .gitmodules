@@ -13,3 +13,6 @@
 [submodule "vendor/methylartist"]
 	path = vendor/methylartist
 	url = https://github.com/adamewing/methylartist.git
+[submodule "vendor/epicv2_manifest"]
+	path = vendor/epicv2_manifest
+	url = https://github.com/bethan-mallabar-rimmer/EPICv2_manifest.git

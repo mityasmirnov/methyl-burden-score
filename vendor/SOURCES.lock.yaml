@@ -36,6 +36,14 @@ sources:
     role: long-read inspection and region-level validation reference
     runtime_dependency: false
 
+  epicv2_manifest:
+    repository: https://github.com/bethan-mallabar-rimmer/EPICv2_manifest.git
+    commit: 6a0547655a7fc9acf30913d9ecab737aadb33d33
+    role: EPICv2 reannotation code (GENCODEv49); Zenodo manifest artifacts stay under data/raw/manifests
+    runtime_dependency: false
+    zenodo: https://doi.org/10.5281/zenodo.14933468
+    zenodo_records: https://zenodo.org/records/15181885
+
 policy:
   update_requires:
     - source diff review

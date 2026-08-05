@@ -26,6 +26,8 @@ Initial sources should be pinned by checksum and version:
 
 - GENCODE release 38 protein-coding genes and transcripts;
 - Illumina 450K, EPIC, and EPICv2 manifests remapped to GRCh38;
+  - reannotation code: `vendor/epicv2_manifest` ([EPICv2_manifest](https://github.com/bethan-mallabar-rimmer/EPICv2_manifest));
+  - published tables: Zenodo ([doi:10.5281/zenodo.14933468](https://doi.org/10.5281/zenodo.14933468)), stored under `$MBS_DATA_ROOT/raw/manifests/`;
 - UCSC CpG-island intervals;
 - a frozen consensus cCRE or ChromHMM annotation release;
 - probe-quality and cross-reactivity annotations where licensing permits redistribution.

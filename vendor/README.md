@@ -15,6 +15,7 @@ vendor/cpgpt
 vendor/methylgpt
 vendor/methylcapsnet
 vendor/methylartist
+vendor/epicv2_manifest
 ```
 
 ## Policy
@@ -25,16 +26,20 @@ vendor/methylartist
 - Foundation-model export tools use separate environments and consume a pinned submodule plus a pinned checkpoint.
 - Changes to a reference project belong in its own fork, not inside this repository.
 - Dataset and checkpoint licenses are reviewed separately from source-code licenses.
+- Downloaded research data and Zenodo artifacts belong under `$MBS_DATA_ROOT/raw/...`, never under `vendor/`.
 
 ## Canonical upstreams
 
 ```text
-DeepRVAT       https://github.com/PMBio/deeprvat
-CpGPT          https://github.com/lucascamillomd/CpGPT
-MethylGPT      https://github.com/albert-ying/MethylGPT
-MethylCapsNet  https://github.com/Christensen-Lab-Dartmouth/MethylCapsNet
-methylartist   https://github.com/adamewing/methylartist
+DeepRVAT         https://github.com/PMBio/deeprvat
+CpGPT            https://github.com/lucascamillomd/CpGPT
+MethylGPT        https://github.com/albert-ying/MethylGPT
+MethylCapsNet    https://github.com/Christensen-Lab-Dartmouth/MethylCapsNet
+methylartist     https://github.com/adamewing/methylartist
+EPICv2_manifest  https://github.com/bethan-mallabar-rimmer/EPICv2_manifest
 ```
+
+Reannotated EPICv2 manifest tables are published on Zenodo ([doi:10.5281/zenodo.14933468](https://doi.org/10.5281/zenodo.14933468)); store those files under `data/raw/manifests/`. The Git submodule is the reannotation code only.
 
 The user-owned forks remain useful for experimental patches and historical work, but they should replace an upstream submodule only through an explicit architecture decision and a pinned commit.
 

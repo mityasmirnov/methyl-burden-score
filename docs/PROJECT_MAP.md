@@ -66,10 +66,11 @@ Tiny synthetic fixtures belong under `tests/fixtures/`. Never depend on private 
 ```text
 vendor/SOURCES.lock.yaml  reviewed repositories and commits
 vendor/README.md          submodule policy
-vendor/*                  read-only submodules after local installation
+vendor/epicv2_manifest    EPICv2 reannotation code (Zenodo tables -> data/raw/manifests)
+vendor/*                  read-only submodule pointers after installation
 ```
 
-Reference code must not become a runtime import path.
+Reference code must not become a runtime import path. Downloaded manifests and corpora belong under `$MBS_DATA_ROOT/raw/`.
 
 ## Server scripts
 
