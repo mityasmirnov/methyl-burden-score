@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mityasmirnov/methyl-burden-score/schemas/graph_manifest.schema.json",
+  "title": "MBS annotation graph manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_version",
+    "graph_id",
+    "genome_build",
+    "builder_commit",
+    "source_files",
+    "region_policy",
+    "genes_path",
+    "regions_path",
+    "locus_region_edges_path",
+    "regions_bed_path",
+    "created_at"
+  ],
+  "properties": {
+    "artifact_version": {"type": "string"},
+    "graph_id": {"type": "string", "minLength": 1},
+    "genome_build": {"const": "GRCh38"},
+    "builder_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "version", "sha256"],
+        "properties": {
+          "name": {"type": "string"},
+          "version": {"type": "string"},
+          "uri": {"type": ["string", "null"]},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "license_note": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "region_policy": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["region_types", "role_precedence"],
+      "properties": {
+        "region_types": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "role_precedence": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "coordinate_convention": {"type": "string"},
+        "intergenic_policy": {"type": "string"}
+      }
+    },
+    "n_loci": {"type": "integer", "minimum": 0},
+    "n_genes": {"type": "integer", "minimum": 0},
+    "n_regions": {"type": "integer", "minimum": 0},
+    "n_locus_region_edges": {"type": "integer", "minimum": 0},
+    "genes_path": {"type": "string", "pattern": "^/data/"},
+    "regions_path": {"type": "string", "pattern": "^/data/"},
+    "locus_region_edges_path": {"type": "string", "pattern": "^/data/"},
+    "region_gene_edges_path": {"type": ["string", "null"], "pattern": "^/data/"},
+    "regions_bed_path": {"type": "string", "pattern": "^/data/"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "notes": {"type": "string"}
+  }
+}

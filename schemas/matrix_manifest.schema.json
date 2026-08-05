@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mityasmirnov/methyl-burden-score/schemas/matrix_manifest.schema.json",
+  "title": "MBS canonical methylation matrix manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_version",
+    "matrix_id",
+    "study_id",
+    "platform_id",
+    "processing_level",
+    "genome_build",
+    "shape",
+    "dtype",
+    "missing_value_encoding",
+    "matrix_path",
+    "sample_index_path",
+    "locus_index_path",
+    "source_files",
+    "conversion_commit",
+    "created_at"
+  ],
+  "properties": {
+    "artifact_version": {"type": "string"},
+    "matrix_id": {"type": "string", "minLength": 1},
+    "study_id": {"type": "string", "minLength": 1},
+    "platform_id": {"type": "string", "minLength": 1},
+    "processing_level": {"type": "string", "minLength": 1},
+    "genome_build": {"const": "GRCh38"},
+    "shape": {
+      "type": "array",
+      "prefixItems": [
+        {"type": "integer", "minimum": 0},
+        {"type": "integer", "minimum": 0}
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "dtype": {"enum": ["float16", "float32", "float64"]},
+    "chunks": {
+      "type": ["array", "null"],
+      "prefixItems": [
+        {"type": "integer", "minimum": 1},
+        {"type": "integer", "minimum": 1}
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "compression": {"type": ["string", "null"]},
+    "missing_value_encoding": {"type": "string"},
+    "matrix_orientation": {"const": "samples_by_loci"},
+    "matrix_path": {"type": "string", "pattern": "^/data/"},
+    "sample_index_path": {"type": "string", "pattern": "^/data/"},
+    "locus_index_path": {"type": "string", "pattern": "^/data/"},
+    "sample_index_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "locus_index_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {"type": "string", "pattern": "^/data/"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "byte_size": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "conversion_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "notes": {"type": "string"}
+  }
+}

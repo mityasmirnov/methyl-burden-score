@@ -1,0 +1,49 @@
+# Reviewed reference commits. Submodules must be checked out to these SHAs or
+# deliberately updated in a separate, reviewed commit.
+
+sources:
+  deeprvat:
+    repository: https://github.com/PMBio/deeprvat.git
+    commit: aaca3383582a31692ff05973a9085a6fe27e83e6
+    role: architecture and training reference
+    runtime_dependency: false
+
+  cpgpt:
+    repository: https://github.com/lucascamillomd/CpGPT.git
+    commit: a1d4f10d72cc30bdd6428b92ee6aa05e91adae21
+    role: offline CpGPT2M sequence-adapter feature export
+    runtime_dependency: false
+    checkpoint_sha256: null
+    configuration_sha256: null
+
+  methylgpt:
+    repository: https://github.com/albert-ying/MethylGPT.git
+    commit: 2970dda66c01ef15d1947a0621e20d4ffaf96849
+    role: offline CpG-token prior export and ablation
+    runtime_dependency: false
+    checkpoint_sha256: null
+    vocabulary_sha256: null
+
+  methylcapsnet:
+    repository: https://github.com/Christensen-Lab-Dartmouth/MethylCapsNet.git
+    commit: 17b6b19809c5e1984de804eb34cc7494210f91a6
+    role: regulatory capsule taxonomy and weighted-group reference
+    runtime_dependency: false
+
+  methylartist:
+    repository: https://github.com/adamewing/methylartist.git
+    commit: 427e98c1f1397c9a1bb2efacee08ca80950546ff
+    role: long-read inspection and region-level validation reference
+    runtime_dependency: false
+
+policy:
+  update_requires:
+    - source diff review
+    - license review
+    - test run
+    - architecture decision when behavior changes
+  never_commit:
+    - pretrained model weights
+    - foundation-model dependency caches
+    - source datasets
+    - generated embeddings

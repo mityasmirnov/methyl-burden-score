@@ -1,0 +1,88 @@
+experiment:
+  name: stage0_hierarchical_cpgpt_max
+  stage: 0
+  seed: 42
+
+paths:
+  data_release: /data/datasets/methyl-burden-score/canonical/release=stage0-v1
+  graph_release: /data/datasets/methyl-burden-score/canonical/release=stage0-v1/graphs/graph-grch38-gencode38-five-role-v1
+  artifact_root: /data/artifacts/methyl-burden-score
+  scratch_root: /data/scratch/methyl-burden-score
+
+features:
+  methylation:
+    beta: true
+    m_value: true
+    robust_deviation: false
+    epsilon: 0.001
+  static_feature_set: cpgpt2m_adapter_128_v1
+  structured_annotations: true
+  methylgpt_token_prior: false
+  feature_source_dropout: 0.0
+
+model:
+  type: hierarchical_deepset
+  region_types:
+    - promoter_core
+    - promoter_proximal
+    - five_prime
+    - gene_body
+    - three_prime
+  cpg_hidden_dimension: 64
+  region_hidden_dimension: 32
+  region_type_dimension: 8
+  cpg_pooling: max
+  region_pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  dropout: 0.1
+  normalization: layer_norm
+
+heads:
+  age:
+    enabled: true
+    loss: mse
+    target_standardization: train_fold
+  tissue:
+    enabled: true
+    loss: cross_entropy
+    class_weighting: train_fold_balanced
+
+training:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_token_budget: 500000
+  gradient_clip_norm: 2.0
+  max_epochs: 100
+  early_stopping_patience: 10
+  precision: bf16-mixed
+  num_workers: 8
+  manifest_dropout:
+    enabled: true
+    minimum_retained_fraction: 0.4
+    maximum_retained_fraction: 1.0
+
+crossfit:
+  grouping_columns:
+    - donor_id
+    - replicate_group
+    - study_id
+  outer_folds: 3
+  restarts_per_fold: 2
+  final_outer_folds: 5
+  final_restarts_per_fold: 6
+
+controls:
+  static_only: true
+  coverage_only: true
+  label_permutation: true
+  shuffled_graph: true
+  manifest_downsampling: true
+
+logging:
+  tensorboard: true
+  wandb: false
+  save_resolved_config: true
+  save_environment: true
+  save_checksums: true
