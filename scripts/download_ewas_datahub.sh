@@ -57,7 +57,7 @@ list_hrefs() {
   curl -fsSL --max-time 120 "$url" \
     | grep -oE 'href="[^"]+"' \
     | sed 's/^href="//;s/"$//' \
-    | grep -Ev '^\.\./|^/|^javascript:|^#|^https?:'
+    | grep -Ev '^\.\./|^/|^javascript:|^#|^https?:|[()]'
 }
 
 mirror_download_zips() {
