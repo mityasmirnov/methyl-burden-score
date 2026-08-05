@@ -14,6 +14,52 @@ True next milestone after bootstrap:
 
 ---
 
+## Ops notes (plumbing)
+
+### Done
+
+- Project-local `/data` roots (`MBS_*`), DuckDB schema via `mbs catalog init`,
+  shallow `mbs inspect source`, CpGCorpus download scripts with log tee +
+  `scripts/download_cpgcorpus_background.sh` (nohup; no auto-download).
+- Path / catalog / CLI / no-home tests green; vendor kept as gitlink submodules.
+- ADR: `docs/adr/0001-project-local-workspace.md`.
+
+### Blocked / caveats (do not treat as scientific blockers)
+
+- **uv location:** Bootstrap installs/copies `uv` under `$MBS_ROOT/.tools/uv/bin`.
+  Older runs may still have a copy in `$HOME/.local/bin`. Caches remain under
+  `$MBS_CACHE_ROOT` (correct). Prefer
+  `source scripts/activate_data_environment.sh` (puts `.tools` on `PATH` first).
+- **CUDA:** Host driver may be older than the torch wheel; CPU path is fine for
+  Stage 0 until training needs GPU.
+- **Intentional non-goals until later milestones:** Parquet population / ingest
+  into catalog tables; full annotation graph; foundation-model export/training;
+  committing the shallow whole-corpus inventory under
+  `reports/inspection/cpgcorpus/` (GSE/GPL report for milestone 1 is enough).
+
+### Useful commands (already safe to re-run)
+
+```bash
+cd /data/projects/methyl-burden-score
+source scripts/activate_data_environment.sh
+uv run mbs doctor --create-directories
+uv run mbs catalog init
+uv run mbs inspect source --source-id cpgcorpus
+uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
+```
+
+### Downloads later (manual; requester-pays / large)
+
+```bash
+bash scripts/download_cpgcorpus_gse.sh
+# or: bash scripts/download_cpgcorpus_background.sh gse
+make download-ewas-atlas
+make download-ewas-datahub
+make download-manifests
+```
+
+---
+
 ## 0. Bootstrap / scaffold
 
 - **Status:** `done`
@@ -42,7 +88,7 @@ True next milestone after bootstrap:
 
 ## 2. Build the canonical annotation graph
 
-- **Status:** `pending`
+- **Status:** `pending`  ← **do this next**
 - **Done when:** Stable locus registry and first
   `probe → locus → region → gene` mapping exist. Keep simple: promoter, body,
   UTR, and a few annotation flags. Do **not** expand to full MethylGPT /
