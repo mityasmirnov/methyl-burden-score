@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_ROOT="${MBS_PROJECT_ROOT:-/data/projects/methyl-burden-score}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="${MBS_ROOT:-${MBS_PROJECT_ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}}"
 cd "$PROJECT_ROOT"
 
 printf '=== methyl-burden-score agent context ===\n'

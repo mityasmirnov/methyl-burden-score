@@ -28,17 +28,14 @@ Stage 0 deliberately excludes dynamic foundation-model token extraction, LoRA, i
 
 ## Server layout
 
-All durable and transient files must remain under `/data`:
+All durable and transient files must remain under `/data`. Defaults are project-local so bootstrap does not need shared `/data/datasets` ownership:
 
 ```text
-/data/projects/methyl-burden-score     Git working tree
-/data/datasets/methyl-burden-score     immutable and canonical data
-/data/scratch/methyl-burden-score      temporary computation
-/data/cache/methyl-burden-score        project caches
-/data/cache/huggingface                 Hugging Face cache
-/data/cache/uv                          uv cache
-/data/artifacts/methyl-burden-score    runs, checkpoints, and scores
-/data/docker                            Docker data and configuration
+$MBS_ROOT                 Git working tree
+$MBS_DATA_ROOT            data/ (canonical + staging)
+$MBS_SCRATCH_ROOT         scratch/ (temporary computation)
+$MBS_CACHE_ROOT           cache/ (project + tool caches)
+$MBS_ARTIFACT_ROOT        artifacts/ (runs, checkpoints, scores)
 ```
 
 Do not place datasets, environments, checkpoints, model weights, or caches under `$HOME`.

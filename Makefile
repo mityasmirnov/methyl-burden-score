@@ -2,17 +2,17 @@ SHELL := /usr/bin/env bash
 .ONESHELL:
 .SHELLFLAGS := -euo pipefail -c
 
-PROJECT_ROOT ?= /data/projects/methyl-burden-score
-DATA_ROOT ?= /data/datasets/methyl-burden-score
-SCRATCH_ROOT ?= /data/scratch/methyl-burden-score
-CACHE_ROOT ?= /data/cache/methyl-burden-score
-ARTIFACT_ROOT ?= /data/artifacts/methyl-burden-score
+PROJECT_ROOT ?= $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+DATA_ROOT ?= $(PROJECT_ROOT)/data
+SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
+CACHE_ROOT ?= $(PROJECT_ROOT)/cache
+ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
 .PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-build agent-context references
 
 help:
 	@printf '%s\n' \
-	  'bootstrap      Create /data directories and install uv environment' \
+	  'bootstrap      Create project-local data dirs and install uv environment' \
 	  'doctor         Validate environment, paths, imports, and disk space' \
 	  'sync           Synchronize Python dependencies with uv' \
 	  'lint           Run Ruff lint checks' \

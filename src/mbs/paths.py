@@ -11,14 +11,18 @@ class PathPolicyError(ValueError):
     """Raised when a configured project path is outside ``/data``."""
 
 
-def _from_environment(name: str, default: str) -> Path:
-    return Path(os.environ.get(name, default)).expanduser().absolute()
+def get_env_path(name: str, default: str) -> Path:
+    return Path(os.environ.get(name, default)).expanduser().resolve()
+
+
+def _default_repo_root() -> Path:
+    # src/mbs/paths.py -> repo root
+    return Path(__file__).resolve().parents[2]
 
 
 def _is_under_data(path: Path) -> bool:
-    data_root = Path("/data")
     try:
-        path.relative_to(data_root)
+        path.relative_to(Path("/data"))
     except ValueError:
         return False
     return True
@@ -26,7 +30,7 @@ def _is_under_data(path: Path) -> bool:
 
 @dataclass(frozen=True, slots=True)
 class DataPaths:
-    """Canonical project paths, all constrained to the server's ``/data`` volume."""
+    """Canonical project paths, constrained to the server's ``/data`` volume."""
 
     project_root: Path
     data_root: Path
@@ -38,28 +42,17 @@ class DataPaths:
     @classmethod
     def from_environment(cls) -> DataPaths:
         """Construct paths from environment variables and validate them."""
+        root = get_env_path(
+            "MBS_ROOT",
+            os.environ.get("MBS_PROJECT_ROOT", str(_default_repo_root())),
+        )
         paths = cls(
-            project_root=_from_environment(
-                "MBS_PROJECT_ROOT",
-                "/data/projects/methyl-burden-score",
-            ),
-            data_root=_from_environment(
-                "MBS_DATA_ROOT",
-                "/data/datasets/methyl-burden-score",
-            ),
-            scratch_root=_from_environment(
-                "MBS_SCRATCH_ROOT",
-                "/data/scratch/methyl-burden-score",
-            ),
-            cache_root=_from_environment(
-                "MBS_CACHE_ROOT",
-                "/data/cache/methyl-burden-score",
-            ),
-            artifact_root=_from_environment(
-                "MBS_ARTIFACT_ROOT",
-                "/data/artifacts/methyl-burden-score",
-            ),
-            docker_root=_from_environment("MBS_DOCKER_ROOT", "/data/docker"),
+            project_root=root,
+            data_root=get_env_path("MBS_DATA_ROOT", str(root / "data")),
+            scratch_root=get_env_path("MBS_SCRATCH_ROOT", str(root / "scratch")),
+            cache_root=get_env_path("MBS_CACHE_ROOT", str(root / "cache")),
+            artifact_root=get_env_path("MBS_ARTIFACT_ROOT", str(root / "artifacts")),
+            docker_root=get_env_path("MBS_DOCKER_ROOT", str(root / "docker")),
         )
         paths.validate()
         return paths
@@ -112,3 +105,14 @@ class DataPaths:
             field.name: str(getattr(self, field.name))
             for field in fields(self)
         }
+
+
+# Module-level convenience aliases (resolved at import from the current env).
+MBS_ROOT = get_env_path(
+    "MBS_ROOT",
+    os.environ.get("MBS_PROJECT_ROOT", str(_default_repo_root())),
+)
+MBS_DATA_ROOT = get_env_path("MBS_DATA_ROOT", str(MBS_ROOT / "data"))
+MBS_SCRATCH_ROOT = get_env_path("MBS_SCRATCH_ROOT", str(MBS_ROOT / "scratch"))
+MBS_CACHE_ROOT = get_env_path("MBS_CACHE_ROOT", str(MBS_ROOT / "cache"))
+MBS_ARTIFACT_ROOT = get_env_path("MBS_ARTIFACT_ROOT", str(MBS_ROOT / "artifacts"))

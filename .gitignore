@@ -87,18 +87,16 @@ data/
 cache/
 scratch/
 artifacts/
+docker/
+.tools/
 runs/
 checkpoints/
 outputs/
 reports/generated/
 reports/inspection/private/
 
-# External source repositories are Git submodules when installed
-vendor/deeprvat/
-vendor/cpgpt/
-vendor/methylgpt/
-vendor/methylcapsnet/
-vendor/methylartist/
+# vendor/* checkouts are Git submodules (mode 160000 pointers in the index).
+# Only vendor/README.md and vendor/SOURCES.lock.yaml are ordinary tracked files.
 
 # Keep explicit tiny text fixtures and manifests
 !tests/fixtures/**

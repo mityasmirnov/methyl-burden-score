@@ -10,19 +10,14 @@ Implement Stage 0 of the Methylation Burden Score project: a reproducible, study
 
 All project files, datasets, environments, caches, temporary files, Docker data, checkpoints, and model artifacts must reside under `/data`.
 
-Canonical locations:
+Canonical locations (project-local defaults; override via `.env`):
 
 ```text
-/data/projects/methyl-burden-score
-/data/datasets/methyl-burden-score
-/data/scratch/methyl-burden-score
-/data/cache/methyl-burden-score
-/data/cache/huggingface
-/data/cache/uv
-/data/cache/pip
-/data/cache/torch
-/data/artifacts/methyl-burden-score
-/data/docker
+$MBS_ROOT                 Git working tree (/data/projects/methyl-burden-score)
+$MBS_DATA_ROOT            data/ under the project
+$MBS_SCRATCH_ROOT         scratch/ under the project
+$MBS_CACHE_ROOT           cache/ under the project (incl. huggingface, uv, pip, torch)
+$MBS_ARTIFACT_ROOT        artifacts/ under the project
 ```
 
 Never create project artifacts in `$HOME`, `~/.cache`, `/tmp`, or `/var/lib/docker` unless an administrator has explicitly configured those paths as symlinks or mounts under `/data`.
@@ -56,10 +51,10 @@ Do not modify vendored repositories from this project. Changes to a reference pr
 Do not recursively read, index, or summarize:
 
 ```text
-/data/datasets/
-/data/cache/
-/data/scratch/
-/data/artifacts/
+$MBS_DATA_ROOT/
+$MBS_CACHE_ROOT/
+$MBS_SCRATCH_ROOT/
+$MBS_ARTIFACT_ROOT/
 *.zarr/
 *.h5
 *.hdf5

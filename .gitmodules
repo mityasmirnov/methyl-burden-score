@@ -1,0 +1,15 @@
+[submodule "vendor/deeprvat"]
+	path = vendor/deeprvat
+	url = https://github.com/PMBio/deeprvat.git
+[submodule "vendor/cpgpt"]
+	path = vendor/cpgpt
+	url = https://github.com/lucascamillomd/CpGPT.git
+[submodule "vendor/methylgpt"]
+	path = vendor/methylgpt
+	url = https://github.com/albert-ying/MethylGPT.git
+[submodule "vendor/methylcapsnet"]
+	path = vendor/methylcapsnet
+	url = https://github.com/Christensen-Lab-Dartmouth/MethylCapsNet.git
+[submodule "vendor/methylartist"]
+	path = vendor/methylartist
+	url = https://github.com/adamewing/methylartist.git

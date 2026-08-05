@@ -4,11 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from mbs.paths import DataPaths, PathPolicyError
+from mbs.paths import DataPaths, PathPolicyError, _default_repo_root
 
 
-def test_default_paths_are_under_data(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_default_paths_are_project_local(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in (
+        "MBS_ROOT",
         "MBS_PROJECT_ROOT",
         "MBS_DATA_ROOT",
         "MBS_SCRATCH_ROOT",
@@ -19,7 +20,13 @@ def test_default_paths_are_under_data(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(name, raising=False)
 
     paths = DataPaths.from_environment()
+    root = _default_repo_root()
 
+    assert paths.project_root == root
+    assert paths.data_root == root / "data"
+    assert paths.scratch_root == root / "scratch"
+    assert paths.cache_root == root / "cache"
+    assert paths.artifact_root == root / "artifacts"
     for value in paths.as_dict().values():
         assert Path(value).is_relative_to(Path("/data"))
 
@@ -32,13 +39,14 @@ def test_home_path_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_relative_path_is_rejected() -> None:
+    root = _default_repo_root()
     paths = DataPaths(
         project_root=Path("relative/project"),
-        data_root=Path("/data/datasets/methyl-burden-score"),
-        scratch_root=Path("/data/scratch/methyl-burden-score"),
-        cache_root=Path("/data/cache/methyl-burden-score"),
-        artifact_root=Path("/data/artifacts/methyl-burden-score"),
-        docker_root=Path("/data/docker"),
+        data_root=root / "data",
+        scratch_root=root / "scratch",
+        cache_root=root / "cache",
+        artifact_root=root / "artifacts",
+        docker_root=root / "docker",
     )
 
     with pytest.raises(PathPolicyError, match="not absolute"):

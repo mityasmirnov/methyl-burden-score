@@ -5,18 +5,19 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    MBS_ROOT=/data/projects/methyl-burden-score \
     MBS_PROJECT_ROOT=/data/projects/methyl-burden-score \
-    MBS_DATA_ROOT=/data/datasets/methyl-burden-score \
-    MBS_SCRATCH_ROOT=/data/scratch/methyl-burden-score \
-    MBS_CACHE_ROOT=/data/cache/methyl-burden-score \
-    MBS_ARTIFACT_ROOT=/data/artifacts/methyl-burden-score \
-    MBS_DOCKER_ROOT=/data/docker \
-    UV_CACHE_DIR=/data/cache/uv \
-    PIP_CACHE_DIR=/data/cache/pip \
-    HF_HOME=/data/cache/huggingface \
-    TORCH_HOME=/data/cache/torch \
-    XDG_CACHE_HOME=/data/cache/xdg \
-    TMPDIR=/data/scratch/methyl-burden-score/tmp
+    MBS_DATA_ROOT=/data/projects/methyl-burden-score/data \
+    MBS_SCRATCH_ROOT=/data/projects/methyl-burden-score/scratch \
+    MBS_CACHE_ROOT=/data/projects/methyl-burden-score/cache \
+    MBS_ARTIFACT_ROOT=/data/projects/methyl-burden-score/artifacts \
+    MBS_DOCKER_ROOT=/data/projects/methyl-burden-score/docker \
+    UV_CACHE_DIR=/data/projects/methyl-burden-score/cache/uv \
+    PIP_CACHE_DIR=/data/projects/methyl-burden-score/cache/pip \
+    HF_HOME=/data/projects/methyl-burden-score/cache/huggingface \
+    TORCH_HOME=/data/projects/methyl-burden-score/cache/torch \
+    XDG_CACHE_HOME=/data/projects/methyl-burden-score/cache/xdg \
+    TMPDIR=/data/projects/methyl-burden-score/scratch/tmp
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \
@@ -37,15 +38,14 @@ COPY schemas ./schemas
 COPY sql ./sql
 
 RUN mkdir -p \
-        /data/datasets/methyl-burden-score \
-        /data/scratch/methyl-burden-score/tmp \
-        /data/cache/methyl-burden-score \
-        /data/cache/uv \
-        /data/cache/pip \
-        /data/cache/huggingface \
-        /data/cache/torch \
-        /data/cache/xdg \
-        /data/artifacts/methyl-burden-score \
+        "$MBS_DATA_ROOT" \
+        "$MBS_SCRATCH_ROOT/tmp" \
+        "$MBS_CACHE_ROOT/uv" \
+        "$MBS_CACHE_ROOT/pip" \
+        "$MBS_CACHE_ROOT/huggingface" \
+        "$MBS_CACHE_ROOT/torch" \
+        "$MBS_CACHE_ROOT/xdg" \
+        "$MBS_ARTIFACT_ROOT" \
     && uv sync --all-groups --all-extras
 
 ENV PATH="/data/projects/methyl-burden-score/.venv/bin:${PATH}"

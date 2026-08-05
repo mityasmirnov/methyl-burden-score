@@ -3,11 +3,20 @@ experiment:
   stage: 0
   seed: 42
 
+stage0:
+  use_cpgpt_static_features: true
+  use_methylgpt_prior: false
+  use_methylcapsnet_annotations: false
+  use_epicv2_manifest: true
+  use_longread: false
+  use_attention_pooling: false
+
 paths:
-  data_release: /data/datasets/methyl-burden-score/canonical/release=stage0-v1
-  graph_release: /data/datasets/methyl-burden-score/canonical/release=stage0-v1/graphs/graph-grch38-gencode38-five-role-v1
-  artifact_root: /data/artifacts/methyl-burden-score
-  scratch_root: /data/scratch/methyl-burden-score
+  # Resolved relative to MBS_DATA_ROOT / MBS_ARTIFACT_ROOT / MBS_SCRATCH_ROOT
+  data_release: canonical/release=stage0-v1
+  graph_release: canonical/release=stage0-v1/graphs/graph-grch38-gencode38-five-role-v1
+  artifact_root: .
+  scratch_root: .
 
 features:
   methylation:
