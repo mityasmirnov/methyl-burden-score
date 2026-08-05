@@ -26,16 +26,17 @@ True next milestone after bootstrap:
 
 ## 1. Download and inspect one small source
 
-- **Status:** `in_progress`
+- **Status:** `done`
 - **Done when:** One tiny CpGCorpus subset or single GSE/GPL is on disk under
   `$MBS_DATA_ROOT/raw`, and a sanitized report under `reports/inspection/`
   validates file layout, sample alignment, beta ranges, missingness, and platform
   metadata. Catalog + inspector proven on real data (not only fixtures).
-- **Notes:** Download scripts and shallow `mbs inspect source` inventory exist.
-  Stage 0 GSEs such as `GSE116992` / `GSE125367` are present under
-  `data/raw/cpgcorpus/`. Full scientific QC report still required.
-- **Next action:** Run deep inspection on one small GSE/GPL (prefer a Stage 0
-  labeling cohort accession) and write `reports/inspection/{source_id}/`.
+- **Evidence:** `GSE125367` / `GPL21145` inspected via
+  `mbs inspect cpgcorpus-gpl`; report at
+  `reports/inspection/GSE125367_GPL21145/` (44 samples, 865919 probes, perfect
+  GSM_ID alignment, betas in `[0,1]`, platform `GPL21145`). Unit coverage in
+  `tests/unit/test_inspect_cpgcorpus.py`.
+- **Next action:** Milestone 2 — build the canonical annotation graph.
 
 ---
 

@@ -17,6 +17,7 @@ from rich.table import Table
 
 from mbs import __version__
 from mbs.catalog import build_catalog, init_catalog
+from mbs.inspect_cpgcorpus import inspect_cpgcorpus_gpl, write_cpgcorpus_report
 from mbs.inspect_source import inventory_source, write_inspection_report
 from mbs.paths import DataPaths, PathPolicyError
 
@@ -197,6 +198,56 @@ def inspect_source_cmd(
                 "file_count": inventory["file_count"],
                 "total_bytes": inventory["total_bytes"],
                 "truncated": inventory["truncated"],
+            }
+        )
+    )
+
+
+@inspect_app.command("cpgcorpus-gpl")
+def inspect_cpgcorpus_gpl_cmd(
+    gse: Annotated[str, typer.Option(help="GSE accession, e.g. GSE125367")],
+    gpl: Annotated[str, typer.Option(help="GPL platform, e.g. GPL21145")],
+    raw_root: Annotated[
+        Path | None,
+        typer.Option(help="GSE/GPL directory (default: raw/cpgcorpus/{gse}/{gpl})"),
+    ] = None,
+    report_dir: Annotated[
+        Path | None,
+        typer.Option(help="Report directory (default: reports/inspection/{gse}_{gpl})"),
+    ] = None,
+) -> None:
+    """Inspect one CpGCorpus GSE/GPL for layout, alignment, betas, and metadata."""
+    if not _SOURCE_ID_RE.fullmatch(gse) or not _SOURCE_ID_RE.fullmatch(gpl):
+        raise typer.BadParameter("gse and gpl must be safe accession-like identifiers")
+
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    resolved_raw = _require_under_data(
+        raw_root or (paths.data_root / "raw" / "cpgcorpus" / gse / gpl),
+        "raw_root",
+    )
+    source_id = f"{gse}_{gpl}"
+    resolved_report = report_dir or (paths.project_root / "reports" / "inspection" / source_id)
+    if not resolved_report.absolute().is_relative_to(paths.project_root.absolute()):
+        resolved_report = _require_under_data(resolved_report, "report_dir")
+    else:
+        resolved_report = resolved_report.absolute()
+
+    report = inspect_cpgcorpus_gpl(resolved_raw, gse=gse, gpl=gpl)
+    written = write_cpgcorpus_report(report, resolved_report)
+    console.print_json(
+        json.dumps(
+            {
+                "source_id": report["source_id"],
+                "report_dir": str(written),
+                "perfect_alignment": report["sample_alignment"].get("perfect_alignment"),
+                "n_samples": report["value_qc"].get("n_samples"),
+                "n_probes": report["value_qc"].get("n_probes"),
+                "warnings": report["warnings"],
             }
         )
     )

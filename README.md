@@ -98,8 +98,8 @@ Useful first-pass commands after bootstrap:
 uv run mbs doctor --create-directories
 uv run mbs catalog init
 uv run mbs inspect source --source-id cpgcorpus
+uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
 ```
-
 Machine-specific paths belong in `.env` or `configs/local/`; neither is committed.
 
 ## Repository policy

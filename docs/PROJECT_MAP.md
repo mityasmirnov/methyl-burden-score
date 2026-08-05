@@ -24,6 +24,7 @@ src/mbs/cli.py           `mbs` command-line application
 src/mbs/paths.py         /data-only filesystem policy
 src/mbs/catalog.py       DuckDB catalog builder / init
 src/mbs/inspect_source.py shallow source inventory reports
+src/mbs/inspect_cpgcorpus.py CpGCorpus GSE/GPL scientific inspection
 src/mbs/batch.py         ragged batch contract
 src/mbs/segment_ops.py   permutation-invariant segment reductions
 src/mbs/models.py        flat/hierarchical scorers and linear heads
@@ -110,6 +111,7 @@ mbs doctor                 validate /data paths and environment
 mbs catalog init           create dirs + apply sql/*.sql schema
 mbs catalog build          rebuild catalog with explicit paths
 mbs inspect source         shallow raw-source inventory report
+mbs inspect cpgcorpus-gpl  GSE/GPL layout, alignment, beta QC, metadata
 ```
 
 ## Planned next modules
