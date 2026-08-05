@@ -1,0 +1,67 @@
+# Version-control and editor metadata
+.git
+.gitmodules
+.github
+.cursor
+.claude
+.vscode
+.idea
+
+# Local environments and caches
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+.pyright
+.ipynb_checkpoints
+
+# Data and generated artifacts
+data
+external_data
+cache
+scratch
+artifacts
+runs
+outputs
+checkpoints
+reports/generated
+
+# Reference repositories are mounted or cloned separately when needed
+vendor/deeprvat
+vendor/cpgpt
+vendor/methylgpt
+vendor/methylcapsnet
+vendor/methylartist
+
+# Scientific binary formats
+**/*.idat
+**/*.IDAT
+**/*.bam
+**/*.bai
+**/*.cram
+**/*.crai
+**/*.vcf
+**/*.vcf.gz
+**/*.arrow
+**/*.feather
+**/*.parquet
+**/*.zarr
+**/*.h5
+**/*.hdf5
+**/*.mmap
+**/*.sqlite
+**/*.sqlite3
+**/*.duckdb
+**/*.npy
+**/*.npz
+**/*.pt
+**/*.pth
+**/*.ckpt
+**/*.safetensors
+
+# Secrets and machine-specific files
+.env
+.env.*
+!.env.example
+configs/local
+compose.override.yaml

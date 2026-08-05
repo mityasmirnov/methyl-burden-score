@@ -1,0 +1,29 @@
+services:
+  mbs-dev:
+    build:
+      context: .
+      dockerfile: containers/Dockerfile
+    image: methyl-burden-score:stage0-dev
+    working_dir: /data/projects/methyl-burden-score
+    command: ["uv", "run", "mbs", "doctor"]
+    environment:
+      MBS_PROJECT_ROOT: /data/projects/methyl-burden-score
+      MBS_DATA_ROOT: /data/datasets/methyl-burden-score
+      MBS_SCRATCH_ROOT: /data/scratch/methyl-burden-score
+      MBS_CACHE_ROOT: /data/cache/methyl-burden-score
+      MBS_ARTIFACT_ROOT: /data/artifacts/methyl-burden-score
+      MBS_DOCKER_ROOT: /data/docker
+      UV_CACHE_DIR: /data/cache/uv
+      PIP_CACHE_DIR: /data/cache/pip
+      HF_HOME: /data/cache/huggingface
+      TORCH_HOME: /data/cache/torch
+      XDG_CACHE_HOME: /data/cache/xdg
+      TMPDIR: /data/scratch/methyl-burden-score/tmp
+    volumes:
+      - /data/projects/methyl-burden-score:/data/projects/methyl-burden-score
+      - /data/datasets/methyl-burden-score:/data/datasets/methyl-burden-score
+      - /data/scratch/methyl-burden-score:/data/scratch/methyl-burden-score
+      - /data/cache:/data/cache
+      - /data/artifacts/methyl-burden-score:/data/artifacts/methyl-burden-score
+    shm_size: 16gb
+    init: true

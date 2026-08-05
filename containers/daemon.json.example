@@ -1,0 +1,11 @@
+{
+  "data-root": "/data/docker",
+  "features": {
+    "buildkit": true
+  },
+  "log-driver": "local",
+  "log-opts": {
+    "max-size": "50m",
+    "max-file": "5"
+  }
+}

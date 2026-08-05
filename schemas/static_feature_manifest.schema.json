@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mityasmirnov/methyl-burden-score/schemas/static_feature_manifest.schema.json",
+  "title": "MBS static locus feature manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_version",
+    "feature_set_id",
+    "source_model",
+    "source_repository",
+    "source_commit",
+    "checkpoint_sha256",
+    "genome_build",
+    "output_dimension",
+    "storage_dtype",
+    "locus_table_sha256",
+    "embedding_path",
+    "locus_index_path",
+    "export_command",
+    "created_at"
+  ],
+  "properties": {
+    "artifact_version": {"type": "string"},
+    "feature_set_id": {"type": "string", "minLength": 1},
+    "source_model": {"type": "string", "minLength": 1},
+    "source_repository": {"type": "string", "format": "uri"},
+    "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "checkpoint_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "configuration_sha256": {
+      "oneOf": [
+        {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        {"type": "null"}
+      ]
+    },
+    "vocabulary_sha256": {
+      "oneOf": [
+        {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        {"type": "null"}
+      ]
+    },
+    "context_length": {"type": ["integer", "null"], "minimum": 1},
+    "genome_build": {"const": "GRCh38"},
+    "input_dimension": {"type": ["integer", "null"], "minimum": 1},
+    "output_dimension": {"type": "integer", "minimum": 1},
+    "storage_dtype": {
+      "enum": ["float16", "bfloat16", "float32"]
+    },
+    "normalization": {"type": ["string", "null"]},
+    "n_loci": {"type": "integer", "minimum": 0},
+    "locus_table_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "embedding_path": {"type": "string", "pattern": "^/data/"},
+    "locus_index_path": {"type": "string", "pattern": "^/data/"},
+    "export_command": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "notes": {"type": "string"}
+  }
+}
