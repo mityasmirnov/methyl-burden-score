@@ -78,6 +78,48 @@ The adapter output is static, sequence-derived, and available for arbitrary sequ
 
 Export the raw NTv2 vector as a 1024-dimensional baseline. This tests whether CpGPT's methylation pretraining improves the locus representation beyond DNA sequence alone.
 
+## MethylGPT install and weight download (ops)
+
+MethylGPT **cannot** share the main `.venv`. It needs `torchtext`, which only
+ships ABI-matched wheels through torch ~2.1–2.4, while the MBS / CpGPT line uses
+a newer torch. Use a dedicated project env and keep checkpoints under
+`$MBS_DATA_ROOT/raw/methylgpt` (never under `vendor/` or `$HOME`).
+
+```bash
+cd /data/projects/methyl-burden-score
+source scripts/activate_data_environment.sh
+make setup-methylgpt          # creates .venv-methylgpt; pins torch 2.1 + torchtext
+make download-methylgpt       # medium checkpoint + type3 probe IDs
+```
+
+Equivalent scripts: `scripts/setup_methylgpt_env.sh`,
+`scripts/download_methylgpt_weights.sh` (`--medium` default; also `--base`,
+`--large`, `--all`).
+
+Layout after download:
+
+```text
+$MBS_DATA_ROOT/raw/methylgpt/
+├── SOURCE.txt
+├── SHA256SUMS                  # local provenance; not required in git
+├── pretrained_models/
+│   └── methylgpt-medium/       # args.json, *.pt, vocab.json
+└── vocab/
+    └── probe_ids_type3.csv
+```
+
+Import / load smoke check (use the dedicated interpreter):
+
+```bash
+.venv-methylgpt/bin/python -c "from methylgpt import MethylGPTModel; print('ok')"
+```
+
+The Google Drive medium folder currently ships
+`small-best_model_epoch6.pt`; `args.json` confirms `layer_size=128` (medium).
+Do not commit weights or `.venv-methylgpt`. Optional: `flash-attn` for
+`fast_transformer=True` inference; token-prior export only needs the embedding
+table and works with `fast_transformer=False`.
+
 ## Ablation: MethylGPT token prior
 
 MethylGPT learns an embedding table indexed by probe vocabulary. This is a population-derived locus identity and co-methylation prior, not a sequence embedding.
@@ -89,6 +131,8 @@ methylgpt_token_prior_medium_128_v1
 ```
 
 The exporter reads the encoder embedding table, removes special-token rows, maps probe IDs to the canonical GRCh38 locus registry, and records missing or ambiguous mappings.
+Load checkpoints from `$MBS_DATA_ROOT/raw/methylgpt/pretrained_models/methylgpt-medium/`
+via `.venv-methylgpt` (see ops section above).
 
 Limitations:
 

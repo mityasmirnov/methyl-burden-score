@@ -21,7 +21,8 @@ Defaults are **project-local** under the Git working tree. Any absolute path und
 │   │   ├── cpgcorpus/
 │   │   ├── ewas_atlas/
 │   │   ├── ewas_datahub/
-│   │   └── manifests/
+│   │   ├── manifests/
+│   │   └── methylgpt/           # pretrained checkpoints + probe vocab
 │   ├── staging/                             # disposable conversions
 │   └── canonical/
 │       ├── catalog/
@@ -49,7 +50,8 @@ Defaults are **project-local** under the Git working tree. Any absolute path und
 │   └── wandb/
 ├── docker/                                  # $MBS_DOCKER_ROOT (local bind/mount helper)
 ├── .tools/uv/                               # project-local uv install
-└── .venv/
+├── .venv/                                   # main MBS / optional CpGPT env
+└── .venv-methylgpt/                         # MethylGPT-only (torchtext-compatible)
 ```
 
 Environment variables (see `.env.example`):
@@ -82,8 +84,9 @@ bash scripts/bootstrap_server.sh
 
 The bootstrap script installs `uv` under `$MBS_ROOT/.tools/uv/bin`, creates `.venv` inside the project, and places all tool caches under `$MBS_CACHE_ROOT`.
 
-Optional foundation-model export tooling (CpGPT) is **not** in the default sync.
-After bootstrap:
+Optional foundation-model export tooling is **not** in the default sync.
+
+**CpGPT** (optional extra on the main `.venv`):
 
 ```bash
 uv sync --all-groups --extra cpgpt
@@ -91,6 +94,16 @@ uv sync --all-groups --extra cpgpt
 
 Weights and human dependencies go under `$MBS_CACHE_ROOT/huggingface` via
 `download_cpgpt` (see `docs/STATIC_FEATURES.md`). Never under `$HOME/.cache`.
+
+**MethylGPT** needs a separate env (torchtext ABI vs main torch). After bootstrap:
+
+```bash
+make setup-methylgpt
+make download-methylgpt
+```
+
+Checkpoints land under `$MBS_DATA_ROOT/raw/methylgpt/` (see
+`docs/STATIC_FEATURES.md`). Do not install MethylGPT into `.venv`.
 
 ## Shell startup
 

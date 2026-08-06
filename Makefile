@@ -8,7 +8,7 @@ SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
 CACHE_ROOT ?= $(PROJECT_ROOT)/cache
 ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
-.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-manifests
+.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-manifests setup-methylgpt download-methylgpt
 
 help:
 	@printf '%s\n' \
@@ -30,6 +30,8 @@ help:
 	  'download-ewas-atlas    Download EWAS Atlas batch TSVs' \
 	  'download-ewas-datahub  Download EWAS DataHub methylation packs' \
 	  'download-manifests     Download EPICv2 Zenodo reannotated manifest' \
+	  'setup-methylgpt        Create .venv-methylgpt and install MethylGPT deps' \
+	  'download-methylgpt     Download MethylGPT medium weights + probe IDs' \
 	  'clean          Remove generated local Python caches only'
 
 bootstrap:
@@ -91,6 +93,12 @@ download-ewas-datahub:
 
 download-manifests:
 	bash scripts/download_manifests.sh
+
+setup-methylgpt:
+	bash scripts/setup_methylgpt_env.sh
+
+download-methylgpt:
+	bash scripts/download_methylgpt_weights.sh --medium
 
 clean:
 	find src tests -type d -name __pycache__ -prune -exec rm -rf {} +

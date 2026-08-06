@@ -52,6 +52,11 @@ historical CpGCorpus inspection and is not re-opened.
   cache_dir=$HF_HOME)` materializes weights under
   `$MBS_CACHE_ROOT/huggingface` (see `docs/STATIC_FEATURES.md`). Not a CI /
   default sync dep.
+- **MethylGPT (dedicated env):** cannot share main `.venv` (torchtext requires
+  torch ~2.1–2.4). Use `make setup-methylgpt` → `.venv-methylgpt` and
+  `make download-methylgpt` → `$MBS_DATA_ROOT/raw/methylgpt/` (medium
+  checkpoint + type3 probe IDs). See `docs/STATIC_FEATURES.md`. Ablation-only
+  for Stage 0 static features.
 - **Intentional non-goals until later milestones:** Parquet population / ingest
   into catalog tables; full annotation graph; foundation-model export/training;
   committing the shallow whole-corpus inventory under
@@ -68,6 +73,7 @@ uv run mbs inspect source --source-id cpgcorpus
 uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
 # optional foundation-model tooling:
 # uv sync --all-groups --extra cpgpt
+# make setup-methylgpt && make download-methylgpt
 ```
 
 ### Primary downloads (EWAS Open Platform)
