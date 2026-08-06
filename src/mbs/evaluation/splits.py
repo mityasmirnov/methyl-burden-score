@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from random import Random
 from typing import Any
 
 
@@ -111,3 +112,71 @@ def assert_no_study_leakage(split: dict[str, Any]) -> None:
         if prev is not None and prev != role:
             raise ValueError(f"study {study_id} appears in both {prev} and {role}")
         role_by_study[study_id] = role
+
+
+def partition_studies_by_sample_count(
+    samples: Sequence[dict[str, Any]],
+    *,
+    seed: int = 42,
+    train_fraction: float = 0.7,
+    val_fraction: float = 0.15,
+    split_id: str = "study-grouped-auto-v1",
+) -> dict[str, Any]:
+    """Seeded study-grouped split targeting sample-count fractions.
+
+    Studies are sorted by descending sample count (then study_id), shuffled with
+    a seeded RNG after a stable sort key, then greedily assigned to train → val
+    → test until target sample budgets are met. Every study appears in exactly
+    one role.
+    """
+    if train_fraction <= 0 or val_fraction < 0 or train_fraction + val_fraction >= 1.0:
+        raise ValueError("need train_fraction > 0, val_fraction >= 0, sum < 1")
+    counts: dict[str, int] = {}
+    for sample in samples:
+        study_id = str(sample["study_id"])
+        counts[study_id] = counts.get(study_id, 0) + 1
+    if not counts:
+        raise ValueError("no samples to partition")
+    total = sum(counts.values())
+    train_budget = int(total * train_fraction)
+    val_budget = int(total * val_fraction)
+    # Ensure non-empty roles when enough studies exist.
+    studies = sorted(counts.keys(), key=lambda s: (-counts[s], s))
+    rng = Random(seed)
+    rng.shuffle(studies)
+
+    train: list[str] = []
+    val: list[str] = []
+    test: list[str] = []
+    train_n = val_n = 0
+    for study in studies:
+        n = counts[study]
+        if train_n < train_budget or not train:
+            train.append(study)
+            train_n += n
+        elif val_n < val_budget or not val:
+            val.append(study)
+            val_n += n
+        else:
+            test.append(study)
+    if not test and len(train) > 1:
+        moved = train.pop()
+        test.append(moved)
+        train_n -= counts[moved]
+    if not val and len(train) > 1:
+        moved = train.pop()
+        val.append(moved)
+        train_n -= counts[moved]
+    if not train or not val or not test:
+        raise ValueError(
+            f"auto split produced empty role(s): "
+            f"train={len(train)} val={len(val)} test={len(test)} "
+            f"(n_studies={len(counts)})"
+        )
+    return build_study_grouped_split(
+        samples,
+        train_studies=train,
+        validation_studies=val,
+        external_test_studies=test,
+        split_id=split_id,
+    )

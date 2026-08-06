@@ -21,6 +21,8 @@ class SamplePhenotype:
     platform: str | None = None
     age_mask: bool = False
     tissue_mask: bool = False
+    sex_mask: bool = False
+    sex_class_index: int = 0
 
 
 def load_multitask_phenotypes(
@@ -29,11 +31,11 @@ def load_multitask_phenotypes(
     sample_ids: list[str] | None = None,
     class_names: list[str] | None = None,
 ) -> tuple[list[SamplePhenotype], list[str]]:
-    """Load partial age/tissue labels from ``sample_phenotype_table.parquet``.
+    """Load partial age/tissue/sex labels from ``sample_phenotype_table.parquet``.
 
-    Samples may have only ``age_mask`` or only ``tissue_mask`` set. Tissue class
-    names are taken from ``class_names`` when provided (ontology order); otherwise
-    from distinct non-null ``tissue_label`` values among masked rows.
+    Samples may have any non-empty subset of task masks. Tissue class names are
+    taken from ``class_names`` when provided (ontology order); otherwise from
+    distinct non-null ``tissue_label`` values among masked rows.
     """
     path = parquet_path.resolve()
     if not path.is_file():
@@ -70,8 +72,9 @@ def load_multitask_phenotypes(
         names = sorted(set(labels))
     else:
         names = list(class_names)
+    # Sex-only cohorts may have no tissue classes; keep a placeholder name.
     if not names:
-        raise ValueError("no tissue classes found in phenotype table")
+        names = ["_none"]
     class_to_idx = {name: i for i, name in enumerate(names)}
 
     phenotypes: list[SamplePhenotype] = []
@@ -81,7 +84,8 @@ def load_multitask_phenotypes(
         row = by_id[sid]
         age_mask = bool(row.get("age_mask"))
         tissue_mask = bool(row.get("tissue_mask"))
-        if not age_mask and not tissue_mask:
+        sex_mask = bool(row.get("sex_mask", False))
+        if not age_mask and not tissue_mask and not sex_mask:
             raise ValueError(f"sample {sid} has no task masks")
         age_f: float | None = None
         if age_mask:
@@ -108,11 +112,20 @@ def load_multitask_phenotypes(
                 and not (isinstance(cid, float) and pd.isna(cid))
                 and int(cid) != class_index  # type: ignore[arg-type]
             ):
-                # Prefer ontology order from class_names; class_id must agree.
                 raise ValueError(
                     f"tissue_class_id={cid} disagrees with ontology index "
                     f"{class_index} for label {cell!r}"
                 )
+        sex_class_index = 0
+        if sex_mask:
+            raw_sex_cid = row.get("sex_class_id")
+            if raw_sex_cid is None or (isinstance(raw_sex_cid, float) and pd.isna(raw_sex_cid)):
+                raise KeyError(f"sex_mask set but sex_class_id missing for {sid}")
+            sex_class_index = int(raw_sex_cid)  # type: ignore[arg-type]
+            if sex_class_index not in (0, 1):
+                raise ValueError(f"sex_class_id must be 0 or 1 for {sid}, got {sex_class_index}")
+            if not tissue_mask:
+                cell = str(row.get("sex_label") or f"sex={sex_class_index}")
         study = row.get("study_id")
         platform = row.get("platform_id") or row.get("platform")
         phenotypes.append(
@@ -120,13 +133,15 @@ def load_multitask_phenotypes(
                 sample_id=sid,
                 cell_type=cell,
                 donor_id=str(study or sid),
-                title=cell if tissue_mask else f"age={age_f}",
+                title=cell if tissue_mask or sex_mask else f"age={age_f}",
                 class_index=class_index,
                 study_id=None if study is None else str(study),
                 age=age_f,
                 platform=None if platform is None else str(platform),
                 age_mask=age_mask,
                 tissue_mask=tissue_mask,
+                sex_mask=sex_mask,
+                sex_class_index=sex_class_index,
             )
         )
     return phenotypes, names

@@ -6,7 +6,7 @@ The public model name is **deepMAT** (deep Methylation Aggregation Transformer /
 Deep Set family). The Python package remains `methyl-burden-score` with the
 `mbs` CLI entry point; do not treat a package rename as required for Stage 0.
 
-Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks). The model path is flat DeepRVAT-style **deepMAT** baseline → phenotype registry / multi-pack eval → real Hub pack matrices → multitask shared encoder (**5c done**) → **hierarchical (6)** → study-grouped cross-fitting. Authoritative progress: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). See also [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), and [`docs/adr/0003-milestone-5b-phenotype-registry.md`](docs/adr/0003-milestone-5b-phenotype-registry.md).
+Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks). The model path is flat DeepRVAT-style **deepMAT** baseline → phenotype registry / multi-pack eval → real Hub pack matrices → multitask shared encoder (**5c done**) → **max-N flat age/tissue/sex (5d — in progress)** → hierarchical (6) → study-grouped cross-fitting. Authoritative progress: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). See also [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), and [`docs/adr/0003-milestone-5b-phenotype-registry.md`](docs/adr/0003-milestone-5b-phenotype-registry.md).
 
 The Stage 0 implementation follows four design principles:
 
@@ -186,9 +186,18 @@ Stage 0 is past bootstrap. Milestones **1–5b″** are done (see
 | Real Hub packs (5b″) | `mbs matrix convert-pack`; age/tissue/blood/brain study-holdout matrices + reports under `reports/inspection/stage0_hub_real_benchmark/` |
 | Multitask deepMAT (5c) | Merged age+tissue matrix; masked dual heads; run `stage0-flat-multitask-age-tissue-v1` |
 
-**Current gate — Milestone 6:** hierarchical CpG→region→gene model on the same
-multitask / pilot folds as the flat baseline. Disease/cancer aux heads remain
-optional 5c follow-ons.
+**Current gate — Milestone 5d:** max-N flat DeepRVAT-style baseline on full Hub
+age/tissue/sex packs (shared MBS + masked phenotype modules). Scale-up bridge:
+`matrix-hub-*-studyholdout-v2` (`max_per_study=100`) →
+`matrix-hub-age-tissue-multitask-v2` (852 samples) with packed `batch_size=4`
+(`stage0-flat-multitask-age-tissue-v2`). Plan:
+[`docs/plans/milestone-5d-max-n-flat-baseline.md`](docs/plans/milestone-5d-max-n-flat-baseline.md).
+Disease/cancer aux heads remain optional 5c follow-ons; hierarchical is Milestone 6.
+
+**Matrix convert** means streaming Hub profile ZIPs (or a single EWAS_db study)
+into a canonical sample×locus Zarr store + Parquet indices under
+`$MBS_DATA_ROOT/canonical/matrices/` — not training. Commands:
+`mbs matrix convert` (GSE35069-style) and `mbs matrix convert-pack` (Hub packs).
 
 Public model name remains **deepMAT**; package/CLI stay `mbs` /
 `methyl-burden-score`.

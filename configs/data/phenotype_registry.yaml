@@ -288,6 +288,85 @@ entries:
       test=[GSE78874,GSE75248]. Phenotype table:
       canonical/phenotypes/sample_phenotype_table.parquet.
 
+  - entry_id: hub-age-tissue-multitask-v2
+    source_system: ewas_datahub
+    phenotype_family: age
+    study_id: null
+    study_ids:
+      [GSE51032, GSE56105, GSE55763, GSE78874, GSE58885, GSE52401, GSE97628, GSE75248]
+    platform: HM450
+    sample_count: 852
+    label_type: multiclass
+    split_role: benchmark
+    download_path: raw/ewas_datahub/download/age_methylation_v1.zip
+    matrix_path: canonical/matrices/matrix-hub-age-tissue-multitask-v2
+    checksum: null
+    notes: >
+      Scale-up of 5c merge (max_per_study=100 source matrices). Same study
+      split as v1. Packed batch_size>1 in stage0_flat_multitask.yaml.
+
+  - entry_id: hub-age-full-v1
+    source_system: ewas_datahub
+    phenotype_family: age
+    study_id: null
+    study_ids: null
+    platform: HM450
+    sample_count: 8374
+    label_type: regression
+    split_role: training
+    download_path: raw/ewas_datahub/download/age_methylation_v1.zip
+    matrix_path: canonical/matrices/matrix-hub-age-full-v1
+    checksum: null
+    notes: >
+      Milestone 5d full Hub age pack (all studies; no max_per_study).
+
+  - entry_id: hub-tissue-full-v1
+    source_system: ewas_datahub
+    phenotype_family: tissue
+    study_id: null
+    study_ids: null
+    platform: HM450
+    sample_count: 5323
+    label_type: multiclass
+    split_role: training
+    download_path: raw/ewas_datahub/download/tissue_methylation_v1.zip
+    matrix_path: canonical/matrices/matrix-hub-tissue-full-v1
+    checksum: null
+    notes: >
+      Milestone 5d full Hub tissue pack (all studies; no max_per_study).
+
+  - entry_id: hub-sex-full-v1
+    source_system: ewas_datahub
+    phenotype_family: sex
+    study_id: null
+    study_ids: null
+    platform: HM450
+    sample_count: 2978
+    label_type: multiclass
+    split_role: training
+    download_path: raw/ewas_datahub/download/sex_methylation_v1.zip
+    matrix_path: canonical/matrices/matrix-hub-sex-full-v1
+    checksum: null
+    notes: >
+      Milestone 5d full Hub sex pack (all studies; no max_per_study).
+
+  - entry_id: hub-age-tissue-sex-full-v1
+    source_system: ewas_datahub
+    phenotype_family: age
+    study_id: null
+    study_ids: null
+    platform: HM450
+    sample_count: null
+    label_type: multiclass
+    split_role: training
+    download_path: raw/ewas_datahub/download/age_methylation_v1.zip
+    matrix_path: canonical/matrices/matrix-hub-age-tissue-sex-full-v1
+    checksum: null
+    notes: >
+      Milestone 5d GSM-union merge of age/tissue/sex full packs. Phenotype
+      table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet.
+      DeepRVAT-style masked phenotype modules (stage0_flat_deeprvat_full.yaml).
+
   - entry_id: hub-blood-matrix-studyholdout-v1
     source_system: ewas_datahub
     phenotype_family: blood

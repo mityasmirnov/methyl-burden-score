@@ -26,11 +26,17 @@ run_one() {
     --platform-id HM450
 }
 
-# Age regression holdout (4 studies)
-run_one age "GSE51032,GSE56105,GSE55763,GSE78874" "matrix-hub-age-studyholdout-v1" 35
+# Age / tissue holdouts for multitask scale-up (max_per_study=100)
+run_one age "GSE51032,GSE56105,GSE55763,GSE78874" "matrix-hub-age-studyholdout-v2" 100
+run_one tissue "GSE58885,GSE52401,GSE97628,GSE78874,GSE75248" "matrix-hub-tissue-studyholdout-v2" 100
 
-# Tissue multiclass (single-tissue studies)
-run_one tissue "GSE58885,GSE52401,GSE97628,GSE78874,GSE75248" "matrix-hub-tissue-studyholdout-v1" 35
+# Keep v1 packs for single-task benchmarks unless already present
+if [[ ! -d data/canonical/matrices/matrix-hub-age-studyholdout-v1 ]]; then
+  run_one age "GSE51032,GSE56105,GSE55763,GSE78874" "matrix-hub-age-studyholdout-v1" 35
+fi
+if [[ ! -d data/canonical/matrices/matrix-hub-tissue-studyholdout-v1 ]]; then
+  run_one tissue "GSE58885,GSE52401,GSE97628,GSE78874,GSE75248" "matrix-hub-tissue-studyholdout-v1" 35
+fi
 
 # Blood pack; train uses tissue column (not cell-fraction phenotype_value)
 run_one blood "GSE56105,GSE56046,GSE51032,GSE56581,GSE97628" "matrix-hub-blood-studyholdout-v1" 35
@@ -65,4 +71,4 @@ print(side["phenotype_value"].fillna("<empty>").astype(str).value_counts().head(
 PY
 
 echo "=== Hub pack subset converts finished ==="
-ls -la data/canonical/matrices/matrix-hub-*-v1/
+ls -la data/canonical/matrices/matrix-hub-*-v*/

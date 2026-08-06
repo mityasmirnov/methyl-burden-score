@@ -34,8 +34,16 @@ class FlatBatch:
     tissue_mask: Tensor
     age_target: Tensor | None
     age_mask: Tensor
+    sex_target: Tensor | None = None
+    sex_mask: Tensor | None = None
 
     def to(self, device: torch.device | str, *, non_blocking: bool = False) -> FlatBatch:
+        sex_mask = self.sex_mask
+        if sex_mask is None:
+            sex_mask = torch.zeros(len(self.sample_ids), dtype=torch.bool)
+        sex_target = self.sex_target
+        if sex_target is None:
+            sex_target = torch.zeros(len(self.sample_ids), dtype=torch.long)
         return FlatBatch(
             sample_ids=list(self.sample_ids),
             cpg_features=self.cpg_features.to(device, non_blocking=non_blocking),
@@ -49,6 +57,8 @@ class FlatBatch:
                 else self.age_target.to(device, non_blocking=non_blocking)
             ),
             age_mask=self.age_mask.to(device, non_blocking=non_blocking),
+            sex_target=sex_target.to(device, non_blocking=non_blocking),
+            sex_mask=sex_mask.to(device, non_blocking=non_blocking),
         )
 
 
@@ -85,10 +95,18 @@ def record_to_batch(
     age_value: float | None = None,
     age_enabled: bool = False,
     tissue_enabled: bool = True,
+    sex_enabled: bool = False,
+    sex_class_index: int = 0,
 ) -> FlatBatch:
     feats = record.features
     tissue_on = bool(tissue_enabled)
     age_on = bool(age_enabled and age_value is not None)
+    sex_on = bool(sex_enabled)
+    age_target: Tensor | None = None
+    if age_on:
+        if age_value is None:
+            raise RuntimeError("age_enabled set but age_value is None")
+        age_target = torch.tensor([float(age_value)], dtype=torch.float32)
     return FlatBatch(
         sample_ids=[record.sample_id],
         cpg_features=torch.from_numpy(feats.cpg_features),
@@ -96,8 +114,74 @@ def record_to_batch(
         n_genes=n_genes,
         tissue_target=torch.tensor([record.class_index], dtype=torch.long),
         tissue_mask=torch.tensor([tissue_on]),
-        age_target=(torch.tensor([float(age_value)], dtype=torch.float32) if age_on else None),
+        age_target=age_target,
         age_mask=torch.tensor([age_on]),
+        sex_target=torch.tensor([int(sex_class_index)], dtype=torch.long),
+        sex_mask=torch.tensor([sex_on]),
+    )
+
+
+def pack_records_to_batch(
+    records: list[FlatSampleRecord],
+    *,
+    n_genes: int,
+    age_values: list[float | None],
+    age_enabled: list[bool],
+    tissue_enabled: list[bool],
+    sex_enabled: list[bool] | None = None,
+    sex_class_indices: list[int] | None = None,
+) -> FlatBatch:
+    """Pack ragged samples into one FlatDeepSet forward via gene-index offsets.
+
+    Gene ids for sample ``i`` become ``gene + i * n_genes`` so a single
+    ``segment_pool`` over ``B * n_genes`` segments yields ``[B, n_genes]`` MBS.
+    """
+    if not records:
+        raise ValueError("pack_records_to_batch requires at least one record")
+    if not (len(records) == len(age_values) == len(age_enabled) == len(tissue_enabled)):
+        raise ValueError("records and label lists must have equal length")
+    sex_flags = sex_enabled if sex_enabled is not None else [False] * len(records)
+    sex_idxs = sex_class_indices if sex_class_indices is not None else [0] * len(records)
+    if len(sex_flags) != len(records) or len(sex_idxs) != len(records):
+        raise ValueError("sex label lists must match records length")
+
+    feat_parts: list[Tensor] = []
+    gene_parts: list[Tensor] = []
+    tissue_targets: list[int] = []
+    tissue_masks: list[bool] = []
+    age_targets: list[float] = []
+    age_masks: list[bool] = []
+    sex_targets: list[int] = []
+    sex_masks: list[bool] = []
+    sample_ids: list[str] = []
+
+    for i, record in enumerate(records):
+        feats = record.features
+        feat_parts.append(torch.from_numpy(feats.cpg_features))
+        gene_parts.append(torch.from_numpy(feats.cpg_to_gene).to(torch.long) + i * int(n_genes))
+        tissue_on = bool(tissue_enabled[i])
+        age_val = age_values[i]
+        age_on = bool(age_enabled[i] and age_val is not None)
+        sex_on = bool(sex_flags[i])
+        tissue_targets.append(int(record.class_index))
+        tissue_masks.append(tissue_on)
+        age_masks.append(age_on)
+        age_targets.append(0.0 if age_val is None else float(age_val))
+        sex_masks.append(sex_on)
+        sex_targets.append(int(sex_idxs[i]))
+        sample_ids.append(record.sample_id)
+
+    return FlatBatch(
+        sample_ids=sample_ids,
+        cpg_features=torch.cat(feat_parts, dim=0),
+        cpg_to_gene=torch.cat(gene_parts, dim=0),
+        n_genes=n_genes,
+        tissue_target=torch.tensor(tissue_targets, dtype=torch.long),
+        tissue_mask=torch.tensor(tissue_masks, dtype=torch.bool),
+        age_target=torch.tensor(age_targets, dtype=torch.float32),
+        age_mask=torch.tensor(age_masks, dtype=torch.bool),
+        sex_target=torch.tensor(sex_targets, dtype=torch.long),
+        sex_mask=torch.tensor(sex_masks, dtype=torch.bool),
     )
 
 

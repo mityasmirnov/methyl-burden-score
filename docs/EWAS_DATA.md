@@ -128,6 +128,36 @@ after extract). Prefer the unpacked `.txt` for export; see
 All nine sample-info families above are unpacked and covered by
 `mbs inspect ewas-metadata` (as of 2026-08-06).
 
+## Matrix convert (what it means)
+
+**Convert** turns downloaded Hub **profile packs** (large ZIP of per-sample
+betas) into a **canonical matrix store** the trainer can stream:
+
+| Step | Input | Output |
+|------|--------|--------|
+| Select samples | `*_sample_info.parquet` + study filter / `--all-studies` / `max_per_study` | Sample list |
+| Stream betas | Hub profile ZIP (or EWAS_db study folder) | `betas.zarr` (samples × loci) |
+| Sidecars | Probe map + phenotypes | `locus_index.parquet`, `sample_index.parquet`, `sample_phenotypes.parquet`, `matrix_manifest.json` |
+
+CLI:
+
+```bash
+# Single EWAS_db study (pilot)
+uv run mbs matrix convert --study-id GSE35069 --platform-id HM450 --verify
+
+# Hub phenotype pack → study-subset or full matrix
+uv run mbs matrix convert-pack \
+  --phenotype-family age \
+  --study-ids GSE51032,GSE56105 \
+  --matrix-id matrix-hub-age-studyholdout-v2 \
+  --max-per-study 100 \
+  --platform-id HM450
+```
+
+Convert is **I/O + rewrite**, not model training. Caps (`max_per_study`) exist
+only to keep Stage 0 holdouts small; Milestone 5d drops caps (`--all-studies`).
+Scripts: `scripts/convert_hub_pack_subsets.sh`, `scripts/convert_hub_full_packs.sh`.
+
 ### Supplemental (`add_ewas_db/`)
 
 HTTP: `https://download.cncb.ac.cn/ewas/datahub/add_ewas_db/`  

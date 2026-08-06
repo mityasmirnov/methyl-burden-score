@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from typing import Annotated, Any
 
+import pandas as pd
 import torch
 import typer
 from rich.console import Console
@@ -23,7 +24,7 @@ from mbs.inspect_cpgcorpus import inspect_cpgcorpus_gpl, write_cpgcorpus_report
 from mbs.inspect_ewas_metadata import inspect_ewas_metadata, write_ewas_metadata_report
 from mbs.inspect_source import inventory_source, write_inspection_report
 from mbs.matrix.convert import DEFAULT_MATRIX_ID, convert_ewas_db_study
-from mbs.matrix.hub_pack import convert_hub_pack_subset
+from mbs.matrix.hub_pack import convert_hub_pack_subset, study_ids_from_sample_info
 from mbs.matrix.multitask_merge import merge_age_tissue_matrices
 from mbs.paths import DataPaths, PathPolicyError
 from mbs.static_features.export_cpgpt import DEFAULT_FEATURE_SET_ID, export_cpgpt_adapter
@@ -498,16 +499,23 @@ def matrix_convert_cmd(  # noqa: PLR0917
 def matrix_convert_pack_cmd(  # noqa: PLR0917
     phenotype_family: Annotated[
         str,
-        typer.Option(help="Hub pack family: age|tissue|disease|cancer|blood|brain"),
-    ],
-    study_ids: Annotated[
-        str,
-        typer.Option(help="Comma-separated study accessions to include"),
+        typer.Option(help="Hub pack family: age|tissue|disease|cancer|blood|brain|sex"),
     ],
     matrix_id: Annotated[
         str,
         typer.Option(help="Immutable matrix release id"),
     ],
+    study_ids: Annotated[
+        str | None,
+        typer.Option(help="Comma-separated study accessions (omit with --all-studies)"),
+    ] = None,
+    all_studies: Annotated[
+        bool,
+        typer.Option(
+            "--all-studies",
+            help="Include every study in the family's sample-info parquet",
+        ),
+    ] = False,
     annotations_dir: Annotated[
         Path | None,
         typer.Option(help="Canonical annotations dir (loci + probe_locus_edges)"),
@@ -541,9 +549,10 @@ def matrix_convert_pack_cmd(  # noqa: PLR0917
         raise typer.Exit(code=2) from error
 
     paths.ensure_directories()
-    studies = [s.strip() for s in study_ids.split(",") if s.strip()]
-    if not studies:
-        raise typer.BadParameter("study_ids must list at least one accession")
+    if all_studies and study_ids:
+        raise typer.BadParameter("pass either --study-ids or --all-studies, not both")
+    if not all_studies and not study_ids:
+        raise typer.BadParameter("provide --study-ids or --all-studies")
     if max_per_study is not None and max_per_study < 1:
         raise typer.BadParameter("max_per_study must be >= 1")
 
@@ -563,6 +572,24 @@ def matrix_convert_pack_cmd(  # noqa: PLR0917
             f"annotations_dir missing probe_locus_edges.parquet: {resolved_annotations}"
         )
 
+    info_path = (
+        sample_info.resolve()
+        if sample_info is not None
+        else (
+            paths.data_root / "canonical" / "phenotypes" / f"{phenotype_family}_sample_info.parquet"
+        )
+    )
+    if all_studies:
+        if not info_path.is_file():
+            raise typer.BadParameter(f"sample-info parquet required for --all-studies: {info_path}")
+        studies = study_ids_from_sample_info(pd.read_parquet(info_path))
+    else:
+        if study_ids is None:
+            raise typer.BadParameter("pass --study-ids or --all-studies")
+        studies = [s.strip() for s in study_ids.split(",") if s.strip()]
+        if not studies:
+            raise typer.BadParameter("study_ids must list at least one accession")
+
     result = convert_hub_pack_subset(
         project_root=paths.project_root,
         data_root=paths.data_root,
@@ -574,7 +601,7 @@ def matrix_convert_pack_cmd(  # noqa: PLR0917
         platform_id=platform_id,
         processing_level=processing_level,
         max_per_study=max_per_study,
-        sample_info_path=sample_info.resolve() if sample_info is not None else None,
+        sample_info_path=info_path if sample_info is not None or all_studies else None,
     )
     console.print_json(
         json.dumps(
@@ -690,25 +717,41 @@ def features_export_cpgpt_cmd(  # noqa: PLR0917
 
 
 @phenotypes_app.command("build-multitask-table")
-def phenotypes_build_multitask_table_cmd(
+def phenotypes_build_multitask_table_cmd(  # noqa: PLR0917
     matrix_id: Annotated[
         str,
         typer.Option(help="Output multitask matrix id"),
-    ] = "matrix-hub-age-tissue-multitask-v1",
+    ] = "matrix-hub-age-tissue-multitask-v2",
     age_matrix_id: Annotated[
         str,
-        typer.Option(help="Source age studyholdout matrix id"),
-    ] = "matrix-hub-age-studyholdout-v1",
+        typer.Option(help="Source age matrix id"),
+    ] = "matrix-hub-age-studyholdout-v2",
     tissue_matrix_id: Annotated[
         str,
-        typer.Option(help="Source tissue studyholdout matrix id"),
-    ] = "matrix-hub-tissue-studyholdout-v1",
+        typer.Option(help="Source tissue matrix id"),
+    ] = "matrix-hub-tissue-studyholdout-v2",
+    sex_matrix_id: Annotated[
+        str | None,
+        typer.Option(help="Optional source sex matrix id (Milestone 5d)"),
+    ] = None,
+    phenotype_table: Annotated[
+        Path | None,
+        typer.Option(help="Output sample phenotype parquet path"),
+    ] = None,
+    tissue_ontology: Annotated[
+        Path | None,
+        typer.Option(help="Output tissue ontology YAML path"),
+    ] = None,
+    sex_ontology: Annotated[
+        Path | None,
+        typer.Option(help="Output sex ontology YAML path"),
+    ] = None,
     min_tissue_n: Annotated[
         int,
         typer.Option(help="Minimum samples per tissue class"),
     ] = 10,
 ) -> None:
-    """Merge age+tissue Hub matrices and write sample_phenotype_table + tissue ontology."""
+    """Merge Hub matrices and write sample_phenotype_table + ontologies."""
     try:
         paths = DataPaths.from_environment()
     except PathPolicyError as error:
@@ -722,7 +765,11 @@ def phenotypes_build_multitask_table_cmd(
             data_root=paths.data_root,
             age_matrix_id=age_matrix_id,
             tissue_matrix_id=tissue_matrix_id,
+            sex_matrix_id=sex_matrix_id,
             output_matrix_id=matrix_id,
+            phenotype_table_path=phenotype_table.resolve() if phenotype_table else None,
+            tissue_ontology_path=tissue_ontology.resolve() if tissue_ontology else None,
+            sex_ontology_path=sex_ontology.resolve() if sex_ontology else None,
             min_tissue_n=min_tissue_n,
         )
     except (FileNotFoundError, ValueError) as error:
@@ -739,6 +786,9 @@ def phenotypes_build_multitask_table_cmd(
                 "n_deduped": result.n_deduped,
                 "phenotype_table": str(result.phenotype_table_path),
                 "tissue_ontology": str(result.tissue_ontology_path),
+                "sex_ontology": (
+                    None if result.sex_ontology_path is None else str(result.sex_ontology_path)
+                ),
                 "stats": result.stats,
             },
             default=str,

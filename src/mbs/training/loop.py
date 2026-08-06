@@ -14,7 +14,7 @@ import torch.nn.functional as F
 import yaml
 from torch import nn
 
-from mbs.evaluation.splits import build_study_grouped_split
+from mbs.evaluation.splits import build_study_grouped_split, partition_studies_by_sample_count
 from mbs.matrix.store import (
     matrix_store_paths,
     open_betas_zarr,
@@ -34,6 +34,7 @@ from mbs.training.dataset import (
     build_flat_sample,
     make_synthetic_overfit_bundle,
     make_synthetic_study_holdout_bundle,
+    pack_records_to_batch,
     record_to_batch,
 )
 from mbs.training.features import build_static_column_table
@@ -121,6 +122,16 @@ def _class_weights(labels: list[int], n_classes: int) -> torch.Tensor:
     return torch.tensor(weights, dtype=torch.float32)
 
 
+def _packed_mbs(model: FlatDeepSet, batch: FlatBatch) -> tuple[torch.Tensor, torch.Tensor]:
+    """Run FlatDeepSet on a (possibly multi-sample) packed batch → ``[B, G]``."""
+    batch_size = len(batch.sample_ids)
+    n_instances = batch_size * int(batch.n_genes)
+    output = model(batch.cpg_features, batch.cpg_to_gene, n_instances)
+    mbs = output["mbs"].view(batch_size, batch.n_genes)
+    present = output["present"].view(batch_size, batch.n_genes)
+    return mbs, present
+
+
 def _forward_tissue_loss(
     *,
     model: FlatDeepSet,
@@ -128,20 +139,21 @@ def _forward_tissue_loss(
     batch: FlatBatch,
     class_weights: torch.Tensor | None,
 ) -> tuple[torch.Tensor, dict[str, float]]:
-    output = model(batch.cpg_features, batch.cpg_to_gene, batch.n_genes)
-    mbs = output["mbs"].unsqueeze(0)
-    present = output["present"].unsqueeze(0)
+    mbs, present = _packed_mbs(model, batch)
     logits = head(mbs, present)
+    targets = batch.tissue_target.reshape(-1)
     tissue_loss = F.cross_entropy(
         logits,
-        batch.tissue_target,
+        targets,
         weight=class_weights.to(logits.device) if class_weights is not None else None,
     )
-    pred = int(logits.argmax(dim=-1).item())
+    pred = logits.argmax(dim=-1)
     metrics = {
         "loss": float(tissue_loss.detach().item()),
-        "tissue_correct": float(pred == int(batch.tissue_target.item())),
+        "tissue_correct": float((pred == targets).sum().item()),
+        "tissue_n": float(targets.numel()),
         "mae": 0.0,
+        "age_n": 0.0,
     }
     return tissue_loss, metrics
 
@@ -154,13 +166,18 @@ def _forward_age_loss(
 ) -> tuple[torch.Tensor, dict[str, float]]:
     if batch.age_target is None:
         raise RuntimeError("age_target required for regression task")
-    output = model(batch.cpg_features, batch.cpg_to_gene, batch.n_genes)
-    mbs = output["mbs"] * output["present"]
-    pred = head(mbs).squeeze(-1)
+    mbs, present = _packed_mbs(model, batch)
+    pred = head(mbs * present.to(dtype=mbs.dtype)).squeeze(-1)
     target = batch.age_target.reshape(pred.shape)
     loss = F.mse_loss(pred, target)
     mae = float((pred.detach() - target.detach()).abs().mean().item())
-    return loss, {"loss": float(loss.detach().item()), "tissue_correct": 0.0, "mae": mae}
+    return loss, {
+        "loss": float(loss.detach().item()),
+        "tissue_correct": 0.0,
+        "tissue_n": 0.0,
+        "mae": mae,
+        "age_n": float(pred.numel()),
+    }
 
 
 def _materialize_record(
@@ -177,6 +194,33 @@ def _materialize_record(
         locus_gene=store.locus_gene,
         epsilon=store.epsilon,
     )
+
+
+def _label_flags_for_record(
+    *,
+    record: FlatSampleRecord,
+    ph: SamplePhenotype | None,
+    task: str,
+    age_mean: float,
+    age_std: float,
+) -> tuple[float | None, bool, bool, bool, int]:
+    """Return age value, age/tissue/sex enabled flags, and sex class index."""
+    if task == "multitask":
+        age_enabled = bool(ph.age_mask) if ph is not None else False
+        tissue_enabled = bool(ph.tissue_mask) if ph is not None else False
+        sex_enabled = bool(ph.sex_mask) if ph is not None else False
+        sex_cls = int(ph.sex_class_index) if ph is not None else 0
+        age_value = None
+        if age_enabled:
+            if ph is None or ph.age is None:
+                raise RuntimeError(f"missing age for sample {record.sample_id}")
+            age_value = (float(ph.age) - age_mean) / age_std
+        return age_value, age_enabled, tissue_enabled, sex_enabled, sex_cls
+    if task == "regression":
+        if ph is None or ph.age is None:
+            raise RuntimeError(f"missing age for sample {record.sample_id}")
+        return (float(ph.age) - age_mean) / age_std, True, False, False, 0
+    return None, False, True, False, 0
 
 
 def _run_epoch(
@@ -198,8 +242,10 @@ def _run_epoch(
     age_std: float = 1.0,
     lambda_age: float = 1.0,
     lambda_tissue: float = 1.0,
+    lambda_sex: float = 1.0,
     huber_delta: float = 1.0,
     age_loss_name: str = "huber",
+    batch_size: int = 1,
 ) -> dict[str, float]:
     if train:
         model.train()
@@ -210,64 +256,92 @@ def _run_epoch(
 
     total_loss = 0.0
     total_correct = 0.0
-    total_mae = 0.0
+    total_mae_sum = 0.0
     age_n = 0.0
     tissue_n = 0.0
+    sex_n = 0.0
+    sex_correct = 0.0
     n = 0
     amp_dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
     context = torch.enable_grad() if train else torch.no_grad()
-
-    def _iter_records() -> list[FlatSampleRecord]:
-        if records is not None:
-            return records
-        if phenotypes is None or pilot_store is None:
-            raise RuntimeError("pilot phenotypes and store are required when records is None")
-        return [_materialize_record(ph, pilot_store) for ph in phenotypes]
+    step = max(1, int(batch_size))
 
     ph_by_id = {p.sample_id: p for p in (phenotypes or [])}
+    if records is not None:
+        all_records: list[FlatSampleRecord] | None = records
+        all_phenotypes: list[SamplePhenotype] | None = None
+    else:
+        all_records = None
+        if phenotypes is None or pilot_store is None:
+            raise RuntimeError("pilot phenotypes and store are required when records is None")
+        all_phenotypes = phenotypes
+    n_items = len(all_records) if all_records is not None else len(all_phenotypes or [])
 
     with context:
-        for record in _iter_records():
-            ph = ph_by_id.get(record.sample_id)
-            if task == "multitask":
-                age_enabled = bool(ph.age_mask) if ph is not None else False
-                tissue_enabled = bool(ph.tissue_mask) if ph is not None else False
-                age_value = None
-                if age_enabled:
-                    if ph is None or ph.age is None:
-                        raise RuntimeError(f"missing age for sample {record.sample_id}")
-                    age_value = (float(ph.age) - age_mean) / age_std
-            elif task == "regression":
-                age_enabled = True
-                tissue_enabled = False
-                if ph is None or ph.age is None:
-                    raise RuntimeError(f"missing age for sample {record.sample_id}")
-                age_value = (float(ph.age) - age_mean) / age_std
+        for start in range(0, n_items, step):
+            if all_records is not None:
+                chunk = all_records[start : start + step]
             else:
-                age_enabled = False
-                tissue_enabled = True
-                age_value = None
-            batch = record_to_batch(
-                record,
-                n_genes=n_genes,
-                age_value=age_value,
-                age_enabled=age_enabled,
-                tissue_enabled=tissue_enabled,
-            ).to(device)
+                if all_phenotypes is None or pilot_store is None:
+                    raise RuntimeError("missing phenotypes/store for on-the-fly materialization")
+                chunk = [
+                    _materialize_record(ph, pilot_store)
+                    for ph in all_phenotypes[start : start + step]
+                ]
+            age_values: list[float | None] = []
+            age_flags: list[bool] = []
+            tissue_flags: list[bool] = []
+            sex_flags: list[bool] = []
+            sex_idxs: list[int] = []
+            for record in chunk:
+                ph = ph_by_id.get(record.sample_id)
+                age_value, age_on, tissue_on, sex_on, sex_cls = _label_flags_for_record(
+                    record=record,
+                    ph=ph,
+                    task=task,
+                    age_mean=age_mean,
+                    age_std=age_std,
+                )
+                age_values.append(age_value)
+                age_flags.append(age_on)
+                tissue_flags.append(tissue_on)
+                sex_flags.append(sex_on)
+                sex_idxs.append(sex_cls)
+            if step == 1:
+                batch = record_to_batch(
+                    chunk[0],
+                    n_genes=n_genes,
+                    age_value=age_values[0],
+                    age_enabled=age_flags[0],
+                    tissue_enabled=tissue_flags[0],
+                    sex_enabled=sex_flags[0],
+                    sex_class_index=sex_idxs[0],
+                ).to(device)
+            else:
+                batch = pack_records_to_batch(
+                    chunk,
+                    n_genes=n_genes,
+                    age_values=age_values,
+                    age_enabled=age_flags,
+                    tissue_enabled=tissue_flags,
+                    sex_enabled=sex_flags,
+                    sex_class_indices=sex_idxs,
+                ).to(device)
             if train and optimizer is not None:
                 optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device_type=device.type, dtype=amp_dtype, enabled=use_amp):
                 if task == "multitask":
                     if not isinstance(head, MultitaskHeads):
                         raise TypeError("multitask task requires MultitaskHeads")
-                    output = model(batch.cpg_features, batch.cpg_to_gene, batch.n_genes)
+                    mbs, present = _packed_mbs(model, batch)
                     result = masked_multitask_loss(
-                        mbs=output["mbs"],
-                        present=output["present"],
+                        mbs=mbs,
+                        present=present,
                         heads=head,
                         batch=batch,
                         lambda_age=lambda_age,
                         lambda_tissue=lambda_tissue,
+                        lambda_sex=lambda_sex,
                         huber_delta=huber_delta,
                         age_loss=age_loss_name,
                         class_weights=class_weights,
@@ -291,20 +365,27 @@ def _run_epoch(
                         grad_clip,
                     )
                 optimizer.step()
-            total_loss += metrics["loss"]
+            batch_n = float(len(chunk))
+            total_loss += metrics["loss"] * batch_n
+            step_age_n = float(metrics.get("age_n", 1.0 if task == "regression" else 0.0))
+            step_tissue_n = float(metrics.get("tissue_n", 0.0 if task == "regression" else batch_n))
             total_correct += metrics["tissue_correct"]
-            total_mae += metrics["mae"]
-            age_n += float(metrics.get("age_n", 1.0 if task == "regression" else 0.0))
-            tissue_n += float(metrics.get("tissue_n", 0.0 if task == "regression" else 1.0))
-            n += 1
+            total_mae_sum += metrics["mae"] * step_age_n
+            age_n += step_age_n
+            tissue_n += step_tissue_n
+            sex_n += float(metrics.get("sex_n", 0.0))
+            sex_correct += float(metrics.get("sex_correct", 0.0))
+            n += int(batch_n)
 
     return {
         "loss": total_loss / max(n, 1),
         "accuracy": total_correct / max(tissue_n, 1.0),
-        "mae": total_mae / max(age_n, 1.0),
+        "sex_accuracy": sex_correct / max(sex_n, 1.0),
+        "mae": total_mae_sum / max(age_n, 1.0),
         "n_samples": float(n),
         "age_n": age_n,
         "tissue_n": tissue_n,
+        "sex_n": sex_n,
     }
 
 
@@ -366,6 +447,7 @@ def train_flat_baseline(
     lr = float(train_cfg.get("learning_rate", 1e-3))
     weight_decay = float(train_cfg.get("weight_decay", 1e-4))
     grad_clip = float(train_cfg.get("gradient_clip_norm", 2.0))
+    batch_size = max(1, int(train_cfg.get("batch_size", 1)))
     model_cfg = config.get("model", {})
 
     fixture_records: list[FlatSampleRecord] | None = None
@@ -444,7 +526,7 @@ def train_flat_baseline(
         age_mean = 0.0
         age_std = 1.0
 
-        if mode == "multitask_hub":
+        if mode in {"multitask_hub", "deeprvat_hub"}:
             task_kind = "multitask"
             data_cfg = config.get("data", {})
             table_rel = Path(
@@ -459,7 +541,7 @@ def train_flat_baseline(
             table_path = table_rel if table_rel.is_absolute() else data_root / table_rel
             if not table_path.is_file():
                 raise FileNotFoundError(
-                    f"multitask_hub requires sample_phenotype_table: {table_path}"
+                    f"deeprvat/multitask hub requires sample_phenotype_table: {table_path}"
                 )
             ont_rel = Path(
                 str(
@@ -472,7 +554,9 @@ def train_flat_baseline(
             )
             ont_path = ont_rel if ont_rel.is_absolute() else data_root / ont_rel
             if not ont_path.is_file():
-                raise FileNotFoundError(f"multitask_hub requires tissue_ontology: {ont_path}")
+                raise FileNotFoundError(
+                    f"deeprvat/multitask hub requires tissue_ontology: {ont_path}"
+                )
             ontology = load_tissue_ontology(ont_path)
             phenotypes, class_names = load_multitask_phenotypes(
                 table_path,
@@ -487,13 +571,24 @@ def train_flat_baseline(
                 }
                 for p in phenotypes
             ]
-            split = build_study_grouped_split(
-                sample_rows,
-                train_studies=[str(x) for x in pilot["train_studies"]],
-                validation_studies=[str(x) for x in pilot["validation_studies"]],
-                external_test_studies=[str(x) for x in pilot.get("external_test_studies", [])],
-                split_id=str(pilot.get("split_id", f"{matrix_id}-multitask-v1")),
-            )
+            auto_split = bool(pilot.get("auto_split", False))
+            train_studies = [str(x) for x in pilot.get("train_studies", [])]
+            if auto_split or not train_studies:
+                split = partition_studies_by_sample_count(
+                    sample_rows,
+                    seed=seed,
+                    train_fraction=float(config.get("splits", {}).get("train_fraction", 0.7)),
+                    val_fraction=float(config.get("splits", {}).get("val_fraction", 0.15)),
+                    split_id=str(pilot.get("split_id", f"{matrix_id}-auto-v1")),
+                )
+            else:
+                split = build_study_grouped_split(
+                    sample_rows,
+                    train_studies=train_studies,
+                    validation_studies=[str(x) for x in pilot["validation_studies"]],
+                    external_test_studies=[str(x) for x in pilot.get("external_test_studies", [])],
+                    split_id=str(pilot.get("split_id", f"{matrix_id}-multitask-v1")),
+                )
             train_ids = set(split["train_sample_ids"])
             val_ids = set(split["validation_sample_ids"])
             test_ids = set(split.get("external_test_sample_ids") or [])
@@ -501,11 +596,13 @@ def train_flat_baseline(
             val_phenotypes = [p for p in phenotypes if p.sample_id in val_ids]
             test_phenotypes = [p for p in phenotypes if p.sample_id in test_ids]
             ages = [float(p.age) for p in train_phenotypes if p.age_mask and p.age is not None]
-            if not ages:
-                raise ValueError("no train ages for multitask standardization")
-            age_mean = float(np.mean(ages))
-            age_std = float(np.std(ages))
-            if age_std < 1e-6:
+            if ages:
+                age_mean = float(np.mean(ages))
+                age_std = float(np.std(ages))
+                if age_std < 1e-6:
+                    age_std = 1.0
+            else:
+                age_mean = 0.0
                 age_std = 1.0
         elif mode == "hub_pack":
             pheno_path = matrix_paths.root / "sample_phenotypes.parquet"
@@ -598,7 +695,7 @@ def train_flat_baseline(
             )
         }
         # Prefer phenotype-table row_index when multitask (must match matrix).
-        if mode == "multitask_hub":
+        if mode in {"multitask_hub", "deeprvat_hub"}:
             table_rows = {str(p.sample_id): sample_row_by_id[str(p.sample_id)] for p in phenotypes}
             sample_row_by_id = table_rows
         pilot_store = _PilotStore(
@@ -657,7 +754,10 @@ def train_flat_baseline(
             head.weight.normal_(0.0, 0.05)
             head.bias.zero_()
     elif task_kind == "multitask":
-        head = MultitaskHeads(n_genes, n_classes).to(device)
+        _heads = config.get("heads", {})
+        sex_cfg = _heads.get("sex", {}) if isinstance(_heads, dict) else {}
+        sex_on = bool(sex_cfg.get("enabled", False))
+        head = MultitaskHeads(n_genes, n_classes, sex_enabled=sex_on).to(device)
     else:
         seed_mask = torch.ones(n_classes, n_genes, dtype=torch.float32, device=device)
         head = SeedMaskedLinearHead(n_genes, n_classes, seed_mask).to(device)
@@ -668,6 +768,7 @@ def train_flat_baseline(
     loss_cfg = config.get("loss", {})
     lambda_age = float(loss_cfg.get("lambda_age", 1.0))
     lambda_tissue = float(loss_cfg.get("lambda_tissue", 1.0))
+    lambda_sex = float(loss_cfg.get("lambda_sex", 1.0))
     heads_cfg = config.get("heads", {})
     age_head_cfg = heads_cfg.get("age", {}) if isinstance(heads_cfg, dict) else {}
     huber_delta = float(age_head_cfg.get("huber_delta", 1.0))
@@ -749,8 +850,10 @@ def train_flat_baseline(
             age_std=age_std,
             lambda_age=lambda_age,
             lambda_tissue=lambda_tissue,
+            lambda_sex=lambda_sex,
             huber_delta=huber_delta,
             age_loss_name=age_loss_name,
+            batch_size=batch_size,
         )
         val_metrics = _run_epoch(
             records=val_records,
@@ -770,17 +873,21 @@ def train_flat_baseline(
             age_std=age_std,
             lambda_age=lambda_age,
             lambda_tissue=lambda_tissue,
+            lambda_sex=lambda_sex,
             huber_delta=huber_delta,
             age_loss_name=age_loss_name,
+            batch_size=batch_size,
         )
         row = {
             "epoch": epoch,
             "train_loss": train_metrics["loss"],
             "train_accuracy": train_metrics["accuracy"],
             "train_mae": train_metrics["mae"],
+            "train_sex_accuracy": train_metrics.get("sex_accuracy", 0.0),
             "val_loss": val_metrics["loss"],
             "val_accuracy": val_metrics["accuracy"],
             "val_mae": val_metrics["mae"],
+            "val_sex_accuracy": val_metrics.get("sex_accuracy", 0.0),
             "learning_rate": lr,
             "task": task_kind,
         }
@@ -796,6 +903,9 @@ def train_flat_baseline(
             if task_kind in {"multiclass", "multitask"}:
                 tb_writer.add_scalar("accuracy/train", row["train_accuracy"], epoch)
                 tb_writer.add_scalar("accuracy/val", row["val_accuracy"], epoch)
+            if task_kind == "multitask":
+                tb_writer.add_scalar("sex_accuracy/train", row["train_sex_accuracy"], epoch)
+                tb_writer.add_scalar("sex_accuracy/val", row["val_sex_accuracy"], epoch)
             tb_writer.add_scalar("lr", lr, epoch)
         checkpoint_hashes["last.pt"] = save_checkpoint(
             ckpt_root / "last.pt",
@@ -866,8 +976,10 @@ def train_flat_baseline(
             age_std=age_std,
             lambda_age=lambda_age,
             lambda_tissue=lambda_tissue,
+            lambda_sex=lambda_sex,
             huber_delta=huber_delta,
             age_loss_name=age_loss_name,
+            batch_size=batch_size,
         )
         test_mae = test_metrics["mae"]
         if task_kind in {"regression", "multitask"}:
@@ -882,6 +994,8 @@ def train_flat_baseline(
             ),
             "age_n": test_metrics.get("age_n"),
             "tissue_n": test_metrics.get("tissue_n"),
+            "sex_n": test_metrics.get("sex_n"),
+            "sex_accuracy": test_metrics.get("sex_accuracy"),
         }
 
     age_std_meta = None

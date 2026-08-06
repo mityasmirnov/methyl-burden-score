@@ -51,6 +51,7 @@ _PACK_TXT_NAME = {
     "cancer": "cancer_methylation_v1.txt",
     "blood": "blood_methylation_v1.txt",
     "brain": "brain_methylation_v1.txt",
+    "sex": "sex_methylation_v1.txt",
 }
 
 _PACK_ZIP_NAME = {
@@ -60,6 +61,7 @@ _PACK_ZIP_NAME = {
     "cancer": "cancer_methylation_v1.zip",
     "blood": "blood_methylation_v1.zip",
     "brain": "brain_methylation_v1.zip",
+    "sex": "sex_methylation_v1.zip",
 }
 
 
@@ -79,6 +81,21 @@ def pack_zip_path(data_root: Path, family: str) -> Path:
     return data_root / "raw" / "ewas_datahub" / "download" / _PACK_ZIP_NAME[family]
 
 
+def study_ids_from_sample_info(sample_info: pd.DataFrame) -> list[str]:
+    """Sorted unique study accessions from sample-info (``study_id`` or ``project_id``)."""
+    frame = sample_info
+    if "study_id" in frame.columns:
+        col = "study_id"
+    elif "project_id" in frame.columns:
+        col = "project_id"
+    else:
+        raise ValueError("sample-info requires study_id or project_id")
+    values = sorted({str(x) for x in frame[col].tolist() if str(x).strip() and str(x) != "nan"})
+    if not values:
+        raise ValueError("sample-info has no study accessions")
+    return values
+
+
 def select_samples_for_studies(
     sample_info: pd.DataFrame,
     study_ids: Sequence[str],
@@ -88,6 +105,9 @@ def select_samples_for_studies(
     """Return sample-info rows for the requested studies (stable study then sample order)."""
     wanted = [str(s) for s in study_ids]
     frame = sample_info.copy()
+    if "study_id" not in frame.columns and "project_id" in frame.columns:
+        frame = frame.copy()
+        frame["study_id"] = frame["project_id"]
     frame["study_id"] = frame["study_id"].astype(str)
     frame["sample_id"] = frame["sample_id"].astype(str)
     subset = frame[frame["study_id"].isin(wanted)]

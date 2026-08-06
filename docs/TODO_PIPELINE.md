@@ -12,11 +12,12 @@ True next milestone after bootstrap:
 > one source ingested cleanly → one graph built → one canonical matrix written →
 > one baseline trained → phenotype registry + multi-pack eval → Hub metadata
 > contracts → real Hub pack matrices + study-grouped eval → multitask shared
-> encoder (5c — **done**) → **hierarchical (6 — start now)** → one cross-fitted
-> score matrix.
+> encoder (5c — **done**) → **max-N flat age/tissue/sex (5d — in progress)** →
+> hierarchical (6) → one cross-fitted score matrix.
 
-**Current gate:** Milestone **6**. Prerequisites through 5c are `done`.
-Disease/cancer aux heads remain optional 5c follow-ons (incomplete profile zips).
+**Current gate:** Milestone **5d**. Prerequisites through 5c are `done`.
+Do not start Milestone 6 until 5d acceptance. Disease/cancer aux heads remain
+optional 5c follow-ons (incomplete profile zips).
 
 Primary open data source going forward: **EWAS Data Hub**
 ([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
@@ -367,7 +368,28 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Optional follow-ons:** masked disease/cancer aux heads; blood/brain as
   **domain aux** after ontology; shared-class tissue holdouts.
 - **Depends on:** (5b), (5b′), (5b″) — all `done`.
-- **Next action:** Milestone 6 — hierarchical region model.
+- **Next action:** Finish Milestone 5d, then Milestone 6.
+
+---
+
+## 5d. Max-N flat DeepRVAT baseline (age / tissue / sex)
+
+- **Status:** `in_progress`
+- **Done when:** Full Hub age/tissue/sex packs convert without study/sample
+  caps; GSM-union cohort; **shared** flat deepMAT + **decoupled phenotype
+  modules** (age/tissue/sex) with **masked per-trait loss** (DeepRVAT pattern —
+  not dynamic head-switching); study-grouped auto split + checkpoints +
+  inspection under `reports/inspection/stage0_5d_max_n/`.
+- **Evidence:** (in progress) Packed multi-sample FlatDeepSet batches
+  (`training.batch_size`, gene-index offsets) and studyholdout **v2** matrices
+  (`max_per_study=100`) → `matrix-hub-age-tissue-multitask-v2` (852 samples);
+  run `stage0-flat-multitask-age-tissue-v2` started. Full uncapped
+  `matrix-hub-{age,tissue,sex}-full-v1` converts via
+  `scripts/convert_hub_full_packs.sh` (5d target).
+- **Depends on:** (5c).
+- **Plan:** [`plans/milestone-5d-max-n-flat-baseline.md`](plans/milestone-5d-max-n-flat-baseline.md).
+- **Next action:** Finish uncapped full-pack convert + phenotype-module train
+  path → report under `reports/inspection/stage0_5d_max_n/`.
 
 ---
 
@@ -377,7 +399,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Done when:** Region layer is trained after the flat baseline is stable;
   promoter/body (and related roles) can be compared to the flat model on the
   same multitask / pilot folds.
-- **Depends on:** (5c) preferred; (5b) at minimum if 5c deferred by ADR.
+- **Depends on:** (5d) preferred; (5c) at minimum if 5d deferred by ADR.
 
 ---
 
