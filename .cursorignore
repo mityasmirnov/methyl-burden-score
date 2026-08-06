@@ -44,6 +44,10 @@ vendor/**/data/**
 vendor/**/dependencies/**
 vendor/**/pretrained_models/**
 vendor/**/results/**
+vendor/infinium_annotation/**/*.cm
+vendor/infinium_annotation/**/*.cm.idx
+vendor/infinium_annotation/**/KYCG/**
+vendor/infinium_annotation/**/*.tsv.gz
 
 # Generated and private reports
 reports/generated/**

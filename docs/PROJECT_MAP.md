@@ -70,12 +70,14 @@ Tiny synthetic fixtures belong under `tests/fixtures/`. Never depend on private 
 ## Reference sources
 
 ```text
-vendor/SOURCES.lock.yaml  reviewed repositories and commits
-vendor/README.md          submodule policy
-vendor/epicv2_manifest    EPICv2 reannotation code (Zenodo tables -> data/raw/manifests)
-vendor/*                  read-only submodule pointers after installation
-docs/EWAS_DATA.md         EWAS Atlas + DataHub download inventory (all DataHub data)
-docs/CPGCORPUS_STAGE0.md  selective CpGCorpus GSE cohort
+vendor/SOURCES.lock.yaml     reviewed repositories and commits
+vendor/README.md             submodule policy
+vendor/epicv2_manifest       EPICv2 reannotation code (Zenodo -> data/raw/manifests)
+vendor/infinium_annotation   Zhou-lab Infinium probe coords/masks (Milestone 2)
+vendor/methylcapsnet         capsule/region taxonomy reference (Milestone 2)
+vendor/*                     read-only submodule pointers after installation
+docs/EWAS_DATA.md            EWAS Atlas + DataHub download inventory
+docs/CPGCORPUS_STAGE0.md     selective CpGCorpus GSE cohort
 ```
 
 Reference code must not become a runtime import path. Downloaded manifests and corpora belong under `$MBS_DATA_ROOT/raw/`.
