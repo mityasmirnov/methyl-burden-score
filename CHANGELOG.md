@@ -8,6 +8,9 @@ The project follows semantic versioning once the first public API is released.
 
 ### Added
 
+- Optional `cpgpt` extra (`uv sync --extra cpgpt`) installing the vendored
+  CpGPT pin with a torch override so MBS can keep torch ≥2.3; install/download
+  ops documented in `docs/STATIC_FEATURES.md` and `docs/TODO_PIPELINE.md`.
 - Stage 0 project scope and architecture documentation.
 - `/data`-only workspace policy for server development.
 - Python package, CLI, SQL catalog, configuration, and testing scaffolds.

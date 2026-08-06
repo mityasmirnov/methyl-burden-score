@@ -50,6 +50,12 @@ analysis = [
   "scipy>=1.13",
   "statsmodels>=0.14"
 ]
+# Offline CpGPT export tooling (not an MBS training runtime dep).
+# Install: uv sync --extra cpgpt
+# CpGPT pins torch<=2.6; project override keeps the MBS torch line.
+cpgpt = [
+  "cpgpt",
+]
 
 [project.scripts]
 mbs = "mbs.cli:app"
@@ -62,6 +68,16 @@ dev = [
   "pytest-cov>=5.0",
   "ruff>=0.5"
 ]
+
+[tool.uv]
+# CpGPT declares torch<=2.6; Stage 0 MBS uses a newer torch. Override so the
+# optional cpgpt extra can coexist without downgrading the project encoder stack.
+override-dependencies = [
+  "torch>=2.3",
+]
+
+[tool.uv.sources]
+cpgpt = { path = "vendor/cpgpt", editable = true }
 
 [build-system]
 requires = ["hatchling>=1.25"]

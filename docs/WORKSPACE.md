@@ -82,6 +82,16 @@ bash scripts/bootstrap_server.sh
 
 The bootstrap script installs `uv` under `$MBS_ROOT/.tools/uv/bin`, creates `.venv` inside the project, and places all tool caches under `$MBS_CACHE_ROOT`.
 
+Optional foundation-model export tooling (CpGPT) is **not** in the default sync.
+After bootstrap:
+
+```bash
+uv sync --all-groups --extra cpgpt
+```
+
+Weights and human dependencies go under `$MBS_CACHE_ROOT/huggingface` via
+`download_cpgpt` (see `docs/STATIC_FEATURES.md`). Never under `$HOME/.cache`.
+
 ## Shell startup
 
 Do not add large environment initializations to `$HOME`. A small shell line that sources a script under `/data` is acceptable when desired:

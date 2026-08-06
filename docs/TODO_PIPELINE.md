@@ -32,8 +32,18 @@ True next milestone after bootstrap:
   Older runs may still have a copy in `$HOME/.local/bin`. Caches remain under
   `$MBS_CACHE_ROOT` (correct). Prefer
   `source scripts/activate_data_environment.sh` (puts `.tools` on `PATH` first).
-- **CUDA:** Host driver may be older than the torch wheel; CPU path is fine for
-  Stage 0 until training needs GPU.
+- **CUDA:** Host reports driver 570.x / CUDA 12.8 (`nvidia-smi`), while the
+  current project torch wheel is `2.13.0+cu130`. Torch therefore refuses GPU
+  init (`cuda.is_available() == False`). **No driver action required for Stage
+  0** — CPU is enough through inspection / catalog / graph / matrix work. When
+  GPU training or foundation-model export is needed, either install a
+  CUDA-12.8-compatible torch wheel (`cu128`) or upgrade the NVIDIA driver to
+  one that supports CUDA 13.0 for the current wheel.
+- **CpGPT (optional extra):** `uv sync --all-groups --extra cpgpt` installs the
+  vendored pin; `download_cpgpt(model="small", species="human",
+  cache_dir=$HF_HOME)` materializes weights under
+  `$MBS_CACHE_ROOT/huggingface` (see `docs/STATIC_FEATURES.md`). Not a CI /
+  default sync dep.
 - **Intentional non-goals until later milestones:** Parquet population / ingest
   into catalog tables; full annotation graph; foundation-model export/training;
   committing the shallow whole-corpus inventory under
@@ -48,6 +58,8 @@ uv run mbs doctor --create-directories
 uv run mbs catalog init
 uv run mbs inspect source --source-id cpgcorpus
 uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
+# optional foundation-model tooling:
+# uv sync --all-groups --extra cpgpt
 ```
 
 ### Downloads later (manual; requester-pays / large)

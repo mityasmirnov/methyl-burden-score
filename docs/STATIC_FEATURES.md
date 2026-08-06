@@ -11,6 +11,42 @@ This separates:
 - GPU feature generation;
 - reproducible MBS training.
 
+## CpGPT install and weight download (ops)
+
+CpGPT is an **optional** project extra (not part of default `uv sync --all-groups` / CI). It installs the vendored pin under `vendor/cpgpt` editable.
+
+```bash
+cd /data/projects/methyl-burden-score
+source scripts/activate_data_environment.sh
+uv sync --all-groups --extra cpgpt
+```
+
+CpGPT declares `torch<=2.6`. The project keeps a newer MBS torch line via
+`[tool.uv] override-dependencies = ["torch>=2.3"]` in `pyproject.toml`.
+
+Download **small** / **human** resources into the project Hugging Face cache
+(`$HF_HOME` → `$MBS_CACHE_ROOT/huggingface`; never `$HOME/.cache`):
+
+```bash
+uv run --extra cpgpt python - <<'PY'
+import os
+from cpgpt import download_cpgpt
+
+resources = download_cpgpt(
+    model="small",
+    species="human",
+    cache_dir=os.environ["HF_HOME"],
+)
+print(resources.checkpoint_path)
+print(resources.config_path)
+print(resources.dependencies_path)
+PY
+```
+
+Repeated calls reuse the HF hub cache (~30MB checkpoint + ~5.8G human
+dependencies once materialized). Optional: set `HF_TOKEN` for higher Hub rate
+limits. Do not commit weights or dependency blobs.
+
 ## Default: CpGPT2M sequence-adapter feature
 
 CpGPT begins with a DNA-language-model vector for sequence flanking each CpG and projects it through a methylation-pretrained sequence adapter.
