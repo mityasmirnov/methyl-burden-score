@@ -13,7 +13,7 @@ from mbs.inspect_source import inventory_source, write_inspection_report
 runner = CliRunner()
 
 EXPECTED_TABLES = 19
-EXPECTED_VIEWS = 8
+EXPECTED_VIEWS = 9
 POLICY_EXIT_CODE = 2
 
 
