@@ -2,7 +2,11 @@
 
 Normative model math: [`ARCHITECTURE.md`](../ARCHITECTURE.md). Registry /
 pack inventory: Milestone 5b ([ADR 0003](../adr/0003-milestone-5b-phenotype-registry.md)).
-Status: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md) §5c.
+**Prerequisite (done):** Hub/Atlas metadata structure contracts
+([`EWAS_METADATA.md`](../EWAS_METADATA.md),
+[`ewas-metadata-structure` plan](ewas-metadata-structure.md),
+`reports/inspection/ewas_metadata_structure/`) — read before inventing
+phenotype columns or joins. Status: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md) §5b′ / §5c.
 
 ## Scope (acceptance)
 
@@ -182,5 +186,7 @@ Always report by study and platform. Use 5b metrics helpers.
 
 5b delivered registry, family downloads, sample-info Parquet path, metrics,
 study-grouped splits, TensorBoard, and **fixture** age/tissue holdout runs.
+**5b′** (metadata structure) documents Atlas small tables and Hub `sample_*.txt`
+parse/join contracts — required reading before the unified phenotype table in 5c.
 5c consumes those artifacts and ships **joint multitask training on real pack
 labels** with a single shared encoder.

@@ -32,6 +32,13 @@ historical CpGCorpus inspection and is not re-opened.
 - ADR: `docs/adr/0002-ewas-datahub-primary-source.md` (EWAS Data Hub primary).
 - Raw download inventory (sizes, schemas, top rows, cleanup checklist):
   `reports/inspection/raw_inventory/summary.md` (+ `summary.json`).
+- EWAS Atlas small tables + Hub sample-info structure contracts (**before 5c**):
+  `mbs inspect ewas-metadata` →
+  `reports/inspection/ewas_metadata_structure/`; durable doc
+  [`EWAS_METADATA.md`](EWAS_METADATA.md); plan
+  [`plans/ewas-metadata-structure.md`](plans/ewas-metadata-structure.md).
+  Sample-info export prefers unpacked
+  `reports/inspection/ewas_datahub_samples/*.txt` when zips are absent.
 - EWAS Atlas + Data Hub download scripts / Makefile targets
   (`docs/EWAS_DATA.md`).
 
@@ -75,6 +82,7 @@ uv run mbs doctor --create-directories
 uv run mbs catalog init
 uv run mbs inspect source --source-id cpgcorpus
 uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
+uv run mbs inspect ewas-metadata
 make download-ewas-study STUDY=GSE35069
 uv run mbs matrix convert --study-id GSE35069 --platform-id HM450 --verify
 # optional foundation-model tooling:
@@ -83,6 +91,8 @@ uv run mbs matrix convert --study-id GSE35069 --platform-id HM450 --verify
 # make setup-methylgpt && make download-methylgpt
 ```
 
+See [`EWAS_METADATA.md`](EWAS_METADATA.md) before multitask / Hub phenotype joins
+(Milestone 5c).
 ### Primary downloads (EWAS Open Platform)
 
 ```bash
@@ -234,7 +244,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `last.pt`, checksums). Unit tests: `tests/unit/test_training_flat.py`. Plan:
   [`plans/milestone-5-flat-deeprvat-baseline.md`](plans/milestone-5-flat-deeprvat-baseline.md).
 - **Depends on:** (4). Model module scaffolding alone is not sufficient.
-- **Next action:** Milestone 5c — multitask shared encoder (5b already done).
+- **Next action:** Milestone 5c — multitask shared encoder (after 5b′ metadata
+  gate; 5b already done).
 
 ---
 
@@ -258,7 +269,28 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   [`plans/milestone-5b-phenotype-registry-eval.md`](plans/milestone-5b-phenotype-registry-eval.md);
   [ADR 0003](adr/0003-milestone-5b-phenotype-registry.md).
 - **Depends on:** (5).
-- **Next action:** Milestone 5c — multitask shared encoder on Hub packs (before hierarchical).
+- **Next action:** Hub metadata structure contracts are done (see ops note +
+  [`EWAS_METADATA.md`](EWAS_METADATA.md)); proceed to Milestone 5c — multitask
+  shared encoder on Hub packs (before hierarchical).
+
+---
+
+## 5b′. Hub / Atlas metadata structure (pre-5c gate)
+
+- **Status:** `done`
+- **Done when:** Atlas small tables (studies, cohorts, trait×trait) and unpacked
+  DataHub `sample_*.txt` packs are profiled with parse recipes, join keys,
+  family→column map, and cross-pack ID overlap; sample-info Parquet export works
+  from unpacked `.txt` when zips are missing; docs link the report.
+- **Evidence:** `uv run mbs inspect ewas-metadata` →
+  `reports/inspection/ewas_metadata_structure/`;
+  [`EWAS_METADATA.md`](EWAS_METADATA.md);
+  [`plans/ewas-metadata-structure.md`](plans/ewas-metadata-structure.md);
+  `tests/unit/test_ewas_metadata.py`; unpacked extracts under
+  `reports/inspection/ewas_datahub_samples/`.
+- **Depends on:** (5b) sample-info / registry path.
+- **Next action:** Agents must treat this as **required reading before 5c**
+  (unified phenotype table / multitask heads). Do not invent Hub column names.
 
 ---
 
@@ -270,7 +302,10 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   sample phenotype table; batches use task masks so unlabeled heads do not
   contribute; study-grouped holdouts; checkpoints + resolved multitask config
   under `$MBS_ARTIFACT_ROOT`. Not one model per ZIP.
-- **Depends on:** (5b).
+- **Depends on:** (5b) and (5b′ metadata structure). Read
+  [`EWAS_METADATA.md`](EWAS_METADATA.md) and
+  `reports/inspection/ewas_metadata_structure/summary.md` before building the
+  unified phenotype table.
 - **Plan:** [`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md);
   draft config [`../configs/experiment/stage0_flat_multitask.yaml`](../configs/experiment/stage0_flat_multitask.yaml);
   schema [`../schemas/sample_phenotype_table.schema.json`](../schemas/sample_phenotype_table.schema.json).

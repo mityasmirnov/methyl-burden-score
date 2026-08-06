@@ -34,6 +34,12 @@ Keep Cursor session todos in sync (complete / cancel / start next).
 3. Static locus features (CpGPT default)
 4. One pilot canonical matrix
 5. Flat DeepRVAT-style baseline
+5b. Phenotype registry + multi-pack eval
+5b′. Hub/Atlas metadata structure (required before 5c)
+5c. Multitask shared encoder
 6. Hierarchical region model
 7. Study-grouped cross-fitting
 8. Optional layers only after 1–7
+
+Before starting **5c**, read `docs/EWAS_METADATA.md` and
+`reports/inspection/ewas_metadata_structure/summary.md`.
