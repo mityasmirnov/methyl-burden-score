@@ -1,0 +1,33 @@
+---
+description: NVIDIA CUDA / GPU conventions for this Linux host and torch pin
+globs: "**/*.py,pyproject.toml,Makefile"
+alwaysApply: false
+---
+
+# CUDA / GPU (MBS)
+
+Adapted from awesome-cursorrules Linux NVIDIA CUDA Python rule; retargeted to
+this project's pins (not the upstream quantization app).
+
+## Host constraints
+
+- Driver is CUDA **12.8**-class; Linux/Windows torch wheels use the **cu128**
+  index in `pyproject.toml`. Do not switch to PyPI's default cu130 wheel without
+  a matching driver.
+- Verify with `nvidia-smi` and `torch.cuda.is_available()` when changing torch
+  pins.
+- Hugging Face / torch caches belong under `$MBS_CACHE_ROOT`, never `$HOME`.
+
+## Coding
+
+- Write device-agnostic code (`cpu` / `cuda`); fail clearly if CUDA is required
+  but missing.
+- Prefer modest default batch sizes; profile before large GPU allocations.
+- Do not recursively scan `*.pt` / `*.ckpt` / `*.pth` under artifact roots;
+  use manifests and checksums.
+- MethylGPT stays in `.venv-methylgpt` (torch pin conflict); see
+  `docs/STATIC_FEATURES.md`.
+- CpGPT full-model import (`torchtune` → `torchao.dtypes.nf4tensor`) currently
+  fails on the MBS cu128 / torchao pin. Offline static export uses
+  `mbs.static_features.cpgpt_adapter` instead of `CpGPTInferencer`; see
+  `docs/STATIC_FEATURES.md`.

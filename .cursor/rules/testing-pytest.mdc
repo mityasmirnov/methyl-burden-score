@@ -1,0 +1,28 @@
+---
+description: pytest conventions and acceptance-style Done-when criteria
+globs: "tests/**/*.py,docs/TODO_PIPELINE.md"
+alwaysApply: false
+---
+
+# Testing (pytest)
+
+Adapted from awesome-cursorrules Python testing + Gherkin-style acceptance
+ideas; no Jest/Cypress.
+
+## Conventions
+
+- Use **pytest** only (no new unittest suites).
+- Put unit tests in `tests/unit/`, integration in `tests/integration/`.
+- Prefer typed fixtures; keep fixtures tiny and synthetic under
+  `tests/fixtures/`.
+- Cover permutation invariance, missing-gene / presence mask, path policy, and
+  schema/manifest validation where those modules change.
+- Mark slow tests; default agent checks:
+  `uv run pytest tests/unit` and
+  `uv run pytest tests/integration -m "not slow"`.
+
+## Acceptance wording
+
+When defining or verifying milestone **Done when** criteria, write them as
+observable outcomes (artifact path, schema-valid manifest, test name)—not
+"code exists".

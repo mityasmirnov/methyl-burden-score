@@ -1,0 +1,36 @@
+---
+description: PyTorch Deep Set / burden-model and fold-safe ML conventions
+globs: "src/mbs/models.py,src/mbs/segment_ops.py,src/mbs/batch.py,**/train*.py,**/models/**/*.py"
+alwaysApply: false
+---
+
+# PyTorch / ML (MBS)
+
+Adapted from awesome-cursorrules PyTorch + scikit-learn and AutoML rules;
+chemistry-specific advice stripped. Obey scientific invariants in `AGENTS.md`.
+
+## Architecture
+
+- Keep the **flat DeepRVAT-style max-pooling** baseline available.
+- CpG and region aggregation must be **permutation invariant** (use
+  `mbs.segment_ops` / shared set encoders).
+- Use **LayerNorm or RMSNorm** in the shared encoder; BatchNorm only with an ADR.
+- Prefer standard PyTorch ops over mandatory compiled extensions.
+- Empty genes → neutral score + false presence mask; missing ≠ low burden.
+
+## Leakage and evaluation
+
+- Sample / study / GSE / donor / platform IDs must **not** enter the shared
+  encoder as predictive features.
+- Fit normalization and phenotype-derived selection **inside the training fold**.
+- No sample scored by a model trained on that sample, donor, replicate, or
+  held-out study group (study-grouped cross-fitting).
+- Log resolved experiment config into the run artifact directory.
+
+## Training hygiene
+
+- Set seeds; record checkpoint hashes and manifests.
+- Use sklearn / torchmetrics for metrics when the training extra is installed;
+  keep Lightning optional behind the `training` extra.
+- Unit-test reductions and missing-gene behavior on tiny fixtures—not real
+  matrices.

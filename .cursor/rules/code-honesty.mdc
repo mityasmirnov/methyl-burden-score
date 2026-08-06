@@ -1,0 +1,17 @@
+---
+description: Honesty discipline—no invented APIs, false confidence, or fake validation
+alwaysApply: true
+---
+
+# Code honesty
+
+Distilled from awesome-cursorrules anti-sycophancy code discipline.
+
+- Do not invent library APIs, CLI flags, config keys, or file paths; verify in
+  the repo or docs first.
+- Do not claim tests, downloads, or milestones passed without running or reading
+  evidence.
+- Do not mark `TODO_PIPELINE.md` items `done` without meeting **Done when**.
+- If uncertain, say so and propose how to verify (test, inspect report, ADR).
+- Prefer failing loudly on contract mismatches over “best effort” coercion.
+- Do not soften scientific invariants to make a demo green.

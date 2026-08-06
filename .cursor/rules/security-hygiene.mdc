@@ -1,0 +1,18 @@
+---
+description: Secret handling and safe dependency / path hygiene
+alwaysApply: true
+---
+
+# Security hygiene
+
+Adapted lightly from awesome-cursorrules DevSecOps rule; scoped to this
+research codebase (no web auth stack).
+
+- Never commit `.env`, API tokens, Hugging Face tokens, or credentials.
+- Do not print secrets in logs or inspection reports.
+- Keep downloads and caches under `$MBS_*` roots on `/data`.
+- Do not weaken path guards that require artifacts under `/data`.
+- Prefer pinning and reviewing `vendor/` via `SOURCES.lock.yaml`; do not
+  silently vendor unpinned third-party code into `src/`.
+- When reviewing PRs or diffs, flag secret leaks, path escapes, and unvalidated
+  deserialization of untrusted pickles/checkpoints.

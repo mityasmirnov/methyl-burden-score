@@ -89,25 +89,41 @@ def load_hub_sample_info_phenotypes(
     *,
     sample_ids: list[str] | None = None,
     value_column: str = "phenotype_value",
+    empty_as_control: bool = False,
 ) -> tuple[list[SamplePhenotype], list[str]]:
-    """Load multiclass labels from Hub sample-info Parquet (Milestone 5b)."""
+    """Load multiclass labels from Hub sample-info / matrix sidecar Parquet.
+
+    When ``empty_as_control`` is True, blank/NA ``value_column`` values become
+    the class ``control`` (disease case/control packs).
+    """
     path = parquet_path.resolve()
     if not path.is_file():
         raise FileNotFoundError(f"sample-info parquet not found: {path}")
     frame = pd.read_parquet(path)
-    if "sample_id" not in frame.columns or value_column not in frame.columns:
-        raise ValueError(f"parquet must contain sample_id and {value_column}")
+    if "sample_id" not in frame.columns:
+        raise ValueError("parquet must contain sample_id")
+    if value_column not in frame.columns:
+        raise ValueError(f"parquet must contain {value_column}")
     records = frame.to_dict(orient="records")
     by_id: dict[str, dict[str, object]] = {str(row["sample_id"]): row for row in records}
     ordered = sample_ids if sample_ids is not None else [str(x) for x in frame["sample_id"]]
+
+    def _label_of(row: dict[str, object]) -> str | None:
+        raw = row.get(value_column)
+        if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+            return "control" if empty_as_control else None
+        text = str(raw).strip()
+        if text == "":
+            return "control" if empty_as_control else None
+        return text
+
     labels = []
     for sid in ordered:
         if sid not in by_id:
             continue
-        raw = by_id[sid].get(value_column)
-        if raw is None or (isinstance(raw, float) and pd.isna(raw)):
-            continue
-        labels.append(str(raw))
+        lab = _label_of(by_id[sid])
+        if lab is not None:
+            labels.append(lab)
     class_names = sorted(set(labels))
     if not class_names:
         raise ValueError("no phenotype labels found in sample-info parquet")
@@ -117,13 +133,22 @@ def load_hub_sample_info_phenotypes(
         if sid not in by_id:
             raise KeyError(f"sample_id missing from sample-info: {sid}")
         row = by_id[sid]
-        value = row.get(value_column)
-        if value is None or (isinstance(value, float) and pd.isna(value)):
+        value = _label_of(row)
+        if value is None:
             raise KeyError(f"missing phenotype for sample_id={sid}")
         study = row.get("study_id")
         age_val = row.get("phenotype_value_numeric")
-        if age_val is not None and isinstance(age_val, float) and pd.isna(age_val):
-            age_val = None
+        if age_val is None and "age" in row:
+            age_val = row.get("age")
+        if age_val is not None:
+            try:
+                age_f = float(age_val)  # type: ignore[arg-type]
+                if pd.isna(age_f):
+                    age_f = None
+            except (TypeError, ValueError):
+                age_f = None
+        else:
+            age_f = None
         platform = row.get("platform")
         phenotypes.append(
             SamplePhenotype(
@@ -133,8 +158,58 @@ def load_hub_sample_info_phenotypes(
                 title=str(value),
                 class_index=class_to_idx[str(value)],
                 study_id=None if study is None else str(study),
-                age=None if age_val is None else float(age_val),  # type: ignore[arg-type]
+                age=age_f,
                 platform=None if platform is None else str(platform),
             )
         )
     return phenotypes, class_names
+
+
+def load_hub_regression_phenotypes(
+    parquet_path: Path,
+    *,
+    sample_ids: list[str] | None = None,
+    value_column: str = "phenotype_value_numeric",
+) -> tuple[list[SamplePhenotype], list[str]]:
+    """Load continuous targets (age/BMI) from Hub sidecar / sample-info Parquet."""
+    path = parquet_path.resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"sample-info parquet not found: {path}")
+    frame = pd.read_parquet(path)
+    if "sample_id" not in frame.columns:
+        raise ValueError("parquet must contain sample_id")
+    if value_column not in frame.columns and value_column == "phenotype_value_numeric":
+        if "age" in frame.columns:
+            value_column = "age"
+        else:
+            raise ValueError("parquet must contain phenotype_value_numeric or age")
+    records = frame.to_dict(orient="records")
+    by_id: dict[str, dict[str, object]] = {str(row["sample_id"]): row for row in records}
+    ordered = sample_ids if sample_ids is not None else [str(x) for x in frame["sample_id"]]
+    phenotypes: list[SamplePhenotype] = []
+    for sid in ordered:
+        if sid not in by_id:
+            raise KeyError(f"sample_id missing from sample-info: {sid}")
+        row = by_id[sid]
+        raw = row.get(value_column)
+        try:
+            age_f = float(raw)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            raise KeyError(f"non-numeric regression target for sample_id={sid}") from None
+        if pd.isna(age_f):
+            raise KeyError(f"missing regression target for sample_id={sid}")
+        study = row.get("study_id")
+        platform = row.get("platform")
+        phenotypes.append(
+            SamplePhenotype(
+                sample_id=sid,
+                cell_type="age",
+                donor_id=str(study or sid),
+                title=str(age_f),
+                class_index=0,
+                study_id=None if study is None else str(study),
+                age=age_f,
+                platform=None if platform is None else str(platform),
+            )
+        )
+    return phenotypes, ["age"]

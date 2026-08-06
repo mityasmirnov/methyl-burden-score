@@ -23,6 +23,7 @@ from mbs.inspect_cpgcorpus import inspect_cpgcorpus_gpl, write_cpgcorpus_report
 from mbs.inspect_ewas_metadata import inspect_ewas_metadata, write_ewas_metadata_report
 from mbs.inspect_source import inventory_source, write_inspection_report
 from mbs.matrix.convert import DEFAULT_MATRIX_ID, convert_ewas_db_study
+from mbs.matrix.hub_pack import convert_hub_pack_subset
 from mbs.paths import DataPaths, PathPolicyError
 from mbs.static_features.export_cpgpt import DEFAULT_FEATURE_SET_ID, export_cpgpt_adapter
 from mbs.training.loop import load_experiment_config, train_flat_baseline
@@ -486,6 +487,104 @@ def matrix_convert_cmd(  # noqa: PLR0917
                 "n_study_loci": result.stats["n_study_loci"],
                 "n_unmapped_probes": result.stats["n_unmapped_probes"],
                 "roundtrip_ok": None if result.roundtrip is None else result.roundtrip.ok,
+            }
+        )
+    )
+
+
+@matrix_app.command("convert-pack")
+def matrix_convert_pack_cmd(  # noqa: PLR0917
+    phenotype_family: Annotated[
+        str,
+        typer.Option(help="Hub pack family: age|tissue|disease|cancer|blood|brain"),
+    ],
+    study_ids: Annotated[
+        str,
+        typer.Option(help="Comma-separated study accessions to include"),
+    ],
+    matrix_id: Annotated[
+        str,
+        typer.Option(help="Immutable matrix release id"),
+    ],
+    annotations_dir: Annotated[
+        Path | None,
+        typer.Option(help="Canonical annotations dir (loci + probe_locus_edges)"),
+    ] = None,
+    output_dir: Annotated[
+        Path | None,
+        typer.Option(help="Output matrix directory under canonical/matrices/"),
+    ] = None,
+    sample_info: Annotated[
+        Path | None,
+        typer.Option(help="Sample-info parquet (default: canonical/phenotypes/<family>_…)"),
+    ] = None,
+    platform_id: Annotated[
+        str,
+        typer.Option(help="Infinium platform id for probe→locus edges"),
+    ] = "HM450",
+    processing_level: Annotated[
+        str,
+        typer.Option(help="Processing level label (Hub baselines are GMQN)"),
+    ] = "gmqn",
+    max_per_study: Annotated[
+        int | None,
+        typer.Option(help="Optional cap on samples per study (stable sample_id order)"),
+    ] = None,
+) -> None:
+    """Convert a study-subset of one EWAS Data Hub baseline pack to a canonical matrix."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    paths.ensure_directories()
+    studies = [s.strip() for s in study_ids.split(",") if s.strip()]
+    if not studies:
+        raise typer.BadParameter("study_ids must list at least one accession")
+    if max_per_study is not None and max_per_study < 1:
+        raise typer.BadParameter("max_per_study must be >= 1")
+
+    resolved_annotations = (
+        annotations_dir or (paths.data_root / "canonical" / "annotations")
+    ).resolve()
+    resolved_output = (
+        output_dir or (paths.data_root / "canonical" / "matrices" / matrix_id)
+    ).resolve()
+    for label, path in (
+        ("annotations_dir", resolved_annotations),
+        ("output_dir", resolved_output),
+    ):
+        _require_under_data(path, label)
+    if not (resolved_annotations / "probe_locus_edges.parquet").is_file():
+        raise typer.BadParameter(
+            f"annotations_dir missing probe_locus_edges.parquet: {resolved_annotations}"
+        )
+
+    result = convert_hub_pack_subset(
+        project_root=paths.project_root,
+        data_root=paths.data_root,
+        annotations_dir=resolved_annotations,
+        phenotype_family=phenotype_family,
+        study_ids=studies,
+        matrix_id=matrix_id,
+        output_dir=resolved_output,
+        platform_id=platform_id,
+        processing_level=processing_level,
+        max_per_study=max_per_study,
+        sample_info_path=sample_info.resolve() if sample_info is not None else None,
+    )
+    console.print_json(
+        json.dumps(
+            {
+                "matrix_id": result.matrix_id,
+                "phenotype_family": result.phenotype_family,
+                "study_ids": list(result.study_ids),
+                "output_dir": str(result.output_dir),
+                "n_samples": result.stats["n_samples"],
+                "n_study_loci": result.stats["n_study_loci"],
+                "n_unmapped_probes": result.stats["n_unmapped_probes"],
+                "sample_phenotypes": result.stats["matrix_paths"]["sample_phenotypes"],
             }
         )
     )

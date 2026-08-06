@@ -235,3 +235,97 @@ entries:
     download_path: raw/ewas_datahub/download/sample_bmi_methylation_v1.zip
     checksum: null
     notes: Unpacked txt under reports/inspection/ewas_datahub_samples/ preferred when zip absent. Nuisance sample-info.
+
+  # --- Real Hub pack → canonical matrix benchmarks (study-grouped) ---
+  - entry_id: hub-age-matrix-studyholdout-v1
+    source_system: ewas_datahub
+    phenotype_family: age
+    study_id: null
+    study_ids: [GSE51032, GSE56105, GSE55763, GSE78874]
+    platform: HM450
+    sample_count: 140
+    label_type: regression
+    split_role: benchmark
+    download_path: raw/ewas_datahub/download/age_methylation_v1.zip
+    matrix_path: canonical/matrices/matrix-hub-age-studyholdout-v1
+    checksum: null
+    notes: >
+      Converted from age_methylation_v1.zip; max 35 samples/study.
+      Split train=[GSE51032,GSE56105] val=[GSE55763] test=[GSE78874].
+
+  - entry_id: hub-tissue-matrix-studyholdout-v1
+    source_system: ewas_datahub
+    phenotype_family: tissue
+    study_id: null
+    study_ids: [GSE58885, GSE52401, GSE97628, GSE78874, GSE75248]
+    platform: HM450
+    sample_count: 175
+    label_type: multiclass
+    split_role: benchmark
+    download_path: raw/ewas_datahub/download/tissue_methylation_v1.zip
+    matrix_path: canonical/matrices/matrix-hub-tissue-studyholdout-v1
+    checksum: null
+    notes: >
+      Single-tissue studies; train=[GSE58885,GSE52401,GSE97628]
+      val=[GSE78874] test=[GSE75248].
+
+  - entry_id: hub-blood-matrix-studyholdout-v1
+    source_system: ewas_datahub
+    phenotype_family: blood
+    study_id: null
+    study_ids: [GSE56105, GSE56046, GSE51032, GSE56581, GSE97628]
+    platform: HM450
+    sample_count: 175
+    label_type: multiclass
+    split_role: benchmark
+    download_path: raw/ewas_datahub/download/blood_methylation_v1.zip
+    matrix_path: canonical/matrices/matrix-hub-blood-studyholdout-v1
+    checksum: null
+    notes: >
+      Benchmark uses tissue column (not cell-fraction phenotype_value).
+      train=[GSE56105,GSE56046,GSE51032] val=[GSE56581] test=[GSE97628].
+
+  - entry_id: hub-brain-matrix-studyholdout-v1
+    source_system: ewas_datahub
+    phenotype_family: brain
+    study_id: null
+    study_ids: [GSE64509, GSE59457, GSE80970, GSE98203, GSE66351]
+    platform: HM450
+    sample_count: 175
+    label_type: multiclass
+    split_role: benchmark
+    download_path: raw/ewas_datahub/download/brain_methylation_v1.zip
+    matrix_path: canonical/matrices/matrix-hub-brain-studyholdout-v1
+    checksum: null
+    notes: >
+      Brain-region multiclass; train=[GSE64509,GSE59457,GSE80970]
+      val=[GSE98203] test=[GSE66351].
+
+  - entry_id: hub-disease-profile-v1-pending-matrix
+    source_system: ewas_datahub
+    phenotype_family: disease
+    study_id: null
+    platform: HM450
+    sample_count: null
+    label_type: multiclass
+    split_role: registered
+    download_path: raw/ewas_datahub/download/disease_methylation_v1.zip
+    matrix_path: null
+    checksum: null
+    notes: >
+      Profile zip still downloading at first real-matrix gate. Age-pack overlap
+      for candidate studies lacks case labels (controls only). Convert after pack
+      completes; harmonize empty→control and ulcerative colitis casing.
+
+  - entry_id: hub-cancer-profile-v1-pending-matrix
+    source_system: ewas_datahub
+    phenotype_family: cancer
+    study_id: null
+    platform: HM450
+    sample_count: null
+    label_type: multiclass
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/cancer_methylation_v1.zip
+    matrix_path: null
+    checksum: null
+    notes: Profile zip incomplete (~half of expected size); matrix convert deferred.

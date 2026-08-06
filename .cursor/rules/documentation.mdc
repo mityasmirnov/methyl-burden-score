@@ -1,0 +1,24 @@
+---
+description: Task-oriented docs; keep plans, contracts, and ADRs accurate
+globs: "docs/**/*.md,README.md,AGENTS.md"
+alwaysApply: false
+---
+
+# Documentation
+
+Adapted from awesome-cursorrules how-to documentation + README practices.
+
+## Prefer
+
+- Task-oriented sections: prerequisites → commands → expected artifacts.
+- Link normative contracts (`DATA_CONTRACT.md`, schemas, ADRs) instead of
+  duplicating long tables.
+- After Plan Mode, save the plan under `docs/plans/` (see `plan-mode-docs`
+  rule) with decisions, schemas, and non-goals.
+- Update `docs/TODO_PIPELINE.md` status only when acceptance criteria are met.
+- Keep `docs/PROJECT_MAP.md` in sync when adding major packages or entrypoints.
+
+## Avoid
+
+- Marketing fluff; inventing CLI flags that are not implemented.
+- Pasting huge raw inventories into docs—point at `reports/inspection/`.

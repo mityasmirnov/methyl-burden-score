@@ -1,0 +1,30 @@
+---
+description: Conventional commit messages when the user asks to commit
+alwaysApply: false
+---
+
+# Git commits
+
+Adapted from awesome-cursorrules conventional-commit rule. Only commit when the
+user explicitly asks.
+
+## Format
+
+```text
+<type>(optional-scope): <short imperative summary>
+
+Optional body: why, not what. Reference docs/ADR/milestone when relevant.
+```
+
+Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `ci`.
+
+## Examples
+
+- `feat(annotation): build five-role GRCh38 graph from GENCODE v38`
+- `fix(matrix): reject genome-build mismatch in manifest`
+- `docs(plans): record milestone 3 static-feature export plan`
+
+## Do not
+
+- Update git config, force-push, or amend unless the user's commit rules allow.
+- Commit secrets, `.env`, credentials, or large raw data under `data/`.

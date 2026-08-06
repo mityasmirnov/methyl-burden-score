@@ -1,0 +1,49 @@
+{
+  "best_epoch": 1,
+  "best_val_loss": 2.110267857142857,
+  "external_test": {
+    "accuracy": 0.0,
+    "loss": 2.0955357142857145,
+    "mae": 0.0,
+    "mae_note": null,
+    "n_samples": 35
+  },
+  "final_val_accuracy": 0.0,
+  "final_val_loss": 5.444642857142857,
+  "final_val_mae": 0.0,
+  "matrix_id": "matrix-hub-tissue-studyholdout-v1",
+  "matrix_path": "/data/projects/methyl-burden-score/data/canonical/matrices/matrix-hub-tissue-studyholdout-v1",
+  "metrics_jsonl": "/data/projects/methyl-burden-score/artifacts/runs/stage0-hub-tissue-studyholdout-v1/metrics.jsonl",
+  "model_public_name": "deepMAT",
+  "n_samples_matrix": 175,
+  "phenotype_family": "tissue",
+  "run_id": "stage0-hub-tissue-studyholdout-v1",
+  "split": {
+    "external_test_studies": [
+      "GSE75248"
+    ],
+    "mode": "study_grouped",
+    "n_external_test": 35,
+    "n_train": 105,
+    "n_validation": 35,
+    "split_id": "hub-tissue-studyholdout-v1",
+    "train_studies": [
+      "GSE52401",
+      "GSE58885",
+      "GSE97628"
+    ],
+    "validation_studies": [
+      "GSE78874"
+    ]
+  },
+  "study_ids": [
+    "GSE58885",
+    "GSE52401",
+    "GSE97628",
+    "GSE78874",
+    "GSE75248"
+  ],
+  "synthetic_fixture": false,
+  "task": "multiclass",
+  "tensorboard_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-hub-tissue-studyholdout-v1/tb"
+}

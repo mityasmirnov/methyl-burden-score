@@ -11,8 +11,11 @@ True next milestone after bootstrap:
 
 > one source ingested cleanly → one graph built → one canonical matrix written →
 > one baseline trained → phenotype registry + multi-pack eval → Hub metadata
-> contracts → real Hub pack matrices + study-grouped eval → multitask shared
-> encoder → hierarchical → one cross-fitted score matrix produced.
+> contracts → real Hub pack matrices + study-grouped eval → **multitask shared
+> encoder (5c — start now)** → hierarchical → one cross-fitted score matrix.
+
+**Current gate:** Milestone **5c**. Prerequisites 5b / 5b′ / 5b″ are `done`.
+Do **not** wait on incomplete disease/cancer profile zips to begin 5c.
 
 Primary open data source going forward: **EWAS Data Hub**
 ([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
@@ -33,8 +36,8 @@ historical CpGCorpus inspection and is not re-opened.
 - ADR: `docs/adr/0002-ewas-datahub-primary-source.md` (EWAS Data Hub primary).
 - Raw download inventory (sizes, schemas, top rows, cleanup checklist):
   `reports/inspection/raw_inventory/summary.md` (+ `summary.json`).
-- EWAS Atlas small tables + Hub sample-info structure contracts (**before 5c**):
-  `mbs inspect ewas-metadata` →
+- EWAS Atlas small tables + Hub sample-info structure contracts (**done; required
+  reading for 5c**): `mbs inspect ewas-metadata` →
   `reports/inspection/ewas_metadata_structure/`; durable doc
   [`EWAS_METADATA.md`](EWAS_METADATA.md); plan
   [`plans/ewas-metadata-structure.md`](plans/ewas-metadata-structure.md).
@@ -73,6 +76,12 @@ historical CpGCorpus inspection and is not re-opened.
   into catalog tables; committing the shallow whole-corpus inventory under
   `reports/inspection/cpgcorpus/` (GSE/GPL report for milestone 1 is enough).
   MethylGPT token-prior export remains ablation-only (not Stage 0 default).
+- **Incomplete Hub profile zips (do not block 5c MVP):**
+  `disease_methylation_v1.zip` / `cancer_methylation_v1.zip` may still be
+  downloading (`wget -c`). Age/tissue/blood/brain packs +
+  `matrix-hub-{age,tissue,blood,brain}-studyholdout-v1` are enough to start 5c.
+  Sample-info Parquets for disease/cancer labels already exist under
+  `$MBS_DATA_ROOT/canonical/phenotypes/` but betas require the profile zips.
 
 ### Useful commands (already safe to re-run)
 
@@ -245,8 +254,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `last.pt`, checksums). Unit tests: `tests/unit/test_training_flat.py`. Plan:
   [`plans/milestone-5-flat-deeprvat-baseline.md`](plans/milestone-5-flat-deeprvat-baseline.md).
 - **Depends on:** (4). Model module scaffolding alone is not sufficient.
-- **Next action:** Milestone 5c — multitask shared encoder (after 5b′ metadata
-  gate; 5b already done).
+- **Next action:** Milestone 5c — multitask shared encoder (5b / 5b′ / 5b″ done;
+  do not wait on disease/cancer zips).
 
 ---
 
@@ -270,9 +279,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   [`plans/milestone-5b-phenotype-registry-eval.md`](plans/milestone-5b-phenotype-registry-eval.md);
   [ADR 0003](adr/0003-milestone-5b-phenotype-registry.md).
 - **Depends on:** (5).
-- **Next action:** Hub metadata structure contracts are done (see ops note +
-  [`EWAS_METADATA.md`](EWAS_METADATA.md)); proceed to Milestone 5c — multitask
-  shared encoder on Hub packs (before hierarchical).
+- **Next action:** Milestone 5c (5b′ / 5b″ already done).
 
 ---
 
@@ -290,8 +297,9 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `tests/unit/test_ewas_metadata.py`; nine unpacked families under
   `reports/inspection/ewas_datahub_samples/` (incl. ancestry=`sample_race.txt`, bmi, cancer).
 - **Depends on:** (5b) sample-info / registry path.
-- **Next action:** Agents must treat this as **required reading before 5c**
-  (unified phenotype table / multitask heads). Do not invent Hub column names.
+- **Next action:** **Required reading** at 5c start (do not invent Hub columns;
+  do not join Atlas `study_ID` to Hub `project_id` by raw equality). No further
+  metadata milestone work before coding 5c.
 
 ---
 
@@ -312,33 +320,60 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `model_public_name: deepMAT`); reports
   `reports/inspection/stage0_hub_real_benchmark/`. Scripts:
   `scripts/convert_hub_pack_subsets.sh`, `scripts/train_hub_real_benchmarks.sh`.
-  **Caveats:** disease pack still downloading; cancer zip incomplete; single-tissue
-  study-holdout yields disjoint CE classes (0% holdout accuracy expected —
-  plumbing gate, not biology). Age external-test MAE logged in years.
+  **Caveats (do not block 5c):** disease/cancer profile zips still incomplete on
+  disk; single-tissue study-holdout yields disjoint CE classes (0% holdout
+  accuracy expected — plumbing gate, not biology). Age external-test MAE logged
+  in years.
 - **Depends on:** (5b), (5b′).
-- **Next action:** Milestone 5c — multitask shared encoder; re-convert disease /
-  cancer when packs complete; redesign tissue holdouts for shared classes before
-  biological claims.
+- **Next action:** Start Milestone 5c on the **ready** age + tissue assets below.
+  Re-convert disease/cancer and redesign tissue holdouts for shared classes when
+  packs finish — as follow-ons, not 5c start gates.
 
 ---
 
 ## 5c. Multitask shared encoder (Hub packs)
 
-- **Status:** `pending`
-- **Done when:** One shared flat DeepRVAT-style encoder trains with **linear**
-  age + tissue heads (and masked aux disease/cancer as configured) on a unified
-  sample phenotype table; batches use task masks so unlabeled heads do not
-  contribute; study-grouped holdouts; checkpoints + resolved multitask config
-  under `$MBS_ARTIFACT_ROOT`. Not one model per ZIP.
-- **Depends on:** (5b), (5b′), and (5b″ real Hub matrices) preferred.
-  Read [`EWAS_METADATA.md`](EWAS_METADATA.md) and
-  `reports/inspection/ewas_metadata_structure/summary.md` before building the
-  unified phenotype table. Prefer real Hub matrices from 5b″ over fixtures.
+- **Status:** `pending` — **ready to start with assets already on disk**
+- **Done when (MVP — sufficient to mark `done`):**
+  - Unified `sample_phenotype_table.parquet` joins Hub sample-info →
+    `sample_id` / `study_id` / per-task masks using
+    [`EWAS_METADATA.md`](EWAS_METADATA.md) column contracts
+  - One shared flat `FlatDeepSet` trains with **linear** age (MSE/Huber) +
+    tissue (CE) heads; unlabeled heads masked out per sample
+  - Study-grouped train/val/test (no study in more than one role) on **real**
+    Hub-derived matrices (`matrix-hub-age-*` + `matrix-hub-tissue-*` or a
+    merged multitask matrix build from those packs)
+  - Checkpoints + resolved multitask config + TensorBoard/JSONL under
+    `$MBS_ARTIFACT_ROOT`; `model_public_name: deepMAT`
+  - Unit tests on synthetic multitask fixtures (no full Hub matrices in CI)
+- **Explicitly not required for MVP `done`:** complete disease/cancer profile
+  zips; disease/cancer aux heads; blood/brain as tissue CE classes; Atlas
+  joins; biological tissue accuracy on disjoint single-tissue holdouts.
+- **Optional follow-ons (same milestone or soon after, when downloads finish):**
+  masked disease/cancer aux heads; blood/brain as **domain aux** after a tissue
+  ontology (do not dump into primary tissue CE); shared-class tissue holdouts.
+- **Ready inventory (do not wait):**
+
+  | Asset | Status |
+  |-------|--------|
+  | `age_methylation_v1.zip` + age sample-info parquet | Ready |
+  | `tissue_methylation_v1.zip` + tissue sample-info parquet | Ready |
+  | `matrix-hub-age-studyholdout-v1` / `matrix-hub-tissue-studyholdout-v1` | Ready |
+  | `blood` / `brain` packs + matrices + sample-info | Ready (domain aux only) |
+  | Sample-info parquet for disease/cancer/ancestry/bmi | Ready (labels) |
+  | `disease_methylation_v1.zip` / `cancer_methylation_v1.zip` | Incomplete (wget in progress) — **skip for MVP** |
+  | [`EWAS_METADATA.md`](EWAS_METADATA.md) + ewas_metadata_structure report | Ready |
+
+- **Depends on:** (5b), (5b′), (5b″) — all `done`. Read
+  [`EWAS_METADATA.md`](EWAS_METADATA.md) before inventing phenotype columns.
 - **Plan:** [`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md);
   draft config [`../configs/experiment/stage0_flat_multitask.yaml`](../configs/experiment/stage0_flat_multitask.yaml);
   schema [`../schemas/sample_phenotype_table.schema.json`](../schemas/sample_phenotype_table.schema.json).
-- **Next action:** Build `sample_phenotype_table.parquet` + masked multitask
-  train path; then Milestone 6.
+- **Next action:** (1) Build `canonical/phenotypes/sample_phenotype_table.parquet`
+  for age+tissue (masks; `450K`→`HM450`); (2) tissue ontology / min-n class
+  filter; (3) `multitask.py` masked loss + heads on `FlatDeepSet`; (4) train
+  study-grouped age+tissue holdout on real Hub matrices; then Milestone 6.
+  Wire disease/cancer aux only after those profile zips verify complete.
 
 ---
 

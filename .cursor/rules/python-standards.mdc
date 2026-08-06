@@ -1,0 +1,36 @@
+---
+description: Python 3.11+ package standards (uv, ruff, pyright, pytest, src layout)
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# Python standards (MBS)
+
+Adapted from [awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules)
+Python best-practices / projects guides; aligned with `AGENTS.md` and
+`pyproject.toml`.
+
+## Layout and tooling
+
+- Package code under `src/mbs/`; tests under `tests/` (unit / integration).
+- Manage deps with **uv** (`pyproject.toml` + `uv.lock`); never invent
+  `requirements.txt` as the source of truth.
+- Lint/format with **ruff**; typecheck with **pyright**; test with **pytest**.
+- Use `pathlib.Path`; no string path concatenation.
+- Production logic in `src/`; notebooks only call package functions.
+- Do not edit `vendor/`; pin reference code by commit SHA elsewhere.
+
+## Style and typing
+
+- Target Python 3.11+; annotate public functions and dataclasses (incl. `-> None`).
+- Prefer `X | None` over `Optional[X]`; use modern `collections.abc` types.
+- snake_case / PascalCase / UPPER_CASE per PEP 8; line length 100 (ruff).
+- Prefer absolute imports from `mbs.*`.
+- Raise explicit errors on manifest, coordinate, genome-build, or checkpoint
+  mismatches; never silently clip methylation or drop samples.
+
+## CLI and config
+
+- Extend the existing **Typer** app in `mbs.cli`; do not advertise stub commands
+  as implemented.
+- Resolve paths via `mbs.paths` / `$MBS_*`; all artifacts stay under `/data`.

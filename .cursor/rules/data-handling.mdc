@@ -1,0 +1,31 @@
+---
+description: Pandas, DuckDB, Parquet, and matrix/data handling without scanning blobs
+globs: "src/mbs/**/*.py,sql/**/*.sql,schemas/**/*.json,tests/**/*.py"
+alwaysApply: false
+---
+
+# Data handling (DuckDB / pandas / Parquet)
+
+Adapted from awesome-cursorrules pandas + scikit-learn guide; ORM/Flask advice
+removed. Catalog SQL and JSON schemas are normative.
+
+## Prefer
+
+- DuckDB for catalog / interval joins; pandas or pyarrow for tabular transforms.
+- Vectorized ops over Python row loops on large frames.
+- Validate artifacts against `schemas/*.schema.json` and `sql/*.sql`.
+- Write sanitized reports under `reports/inspection/`; inventory via `mbs inspect`.
+
+## Never
+
+- Recursively read or summarize `$MBS_DATA_ROOT`, `$MBS_CACHE_ROOT`,
+  `$MBS_SCRATCH_ROOT`, `$MBS_ARTIFACT_ROOT`, or `*.zarr` / `*.h5` / `*.bam` /
+  `*.idat` / checkpoint blobs (see `AGENTS.md`).
+- Silently clip betas or drop samples during ingestion.
+- Depend on private or large real datasets in unit tests—use `tests/fixtures/`.
+
+## Splits and QC
+
+- Study-aware splits for evaluation; document cohort filters in manifests.
+- Record genome build, probe/locus hashes, and source IDs in manifests—not as
+  model features.

@@ -1,0 +1,66 @@
+experiment:
+  name: stage0_flat_hub_brain_studyholdout
+  stage: 0
+  seed: 42
+
+pilot:
+  mode: hub_pack
+  task: multiclass
+  label_column: phenotype_value
+  matrix_id: matrix-hub-brain-studyholdout-v1
+  graph_id: graph-grch38-gencode38-five-role-v1
+  static_feature_set: cpgpt2m_adapter_128_v1
+  phenotype_family: brain
+  train_studies: ["GSE64509", "GSE59457", "GSE80970"]
+  validation_studies: ["GSE98203"]
+  external_test_studies: ["GSE66351"]
+  split_id: hub-brain-studyholdout-v1
+
+features:
+  methylation:
+    beta: true
+    m_value: true
+    epsilon: 0.001
+  static_feature_set: cpgpt2m_adapter_128_v1
+
+model:
+  type: flat_deepset
+  phi_layers: 2
+  phi_hidden_dimension: 20
+  rho_layers: 3
+  rho_hidden_dimension: 10
+  activation: leaky_relu
+  pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  dropout: 0.0
+
+heads:
+  age:
+    enabled: false
+  tissue:
+    enabled: true
+    loss: cross_entropy
+    class_weighting: train_fold_balanced
+
+training:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_size: 1
+  gradient_clip_norm: 2.0
+  max_epochs: 40
+  early_stopping_patience: 8
+  precision: bf16-mixed
+  require_cuda: true
+
+device:
+  cuda_visible_devices: "0"
+  torch_device: cuda
+
+logging:
+  tensorboard: true
+  wandb: false
+  save_resolved_config: true
+  save_environment: true
+  save_checksums: true

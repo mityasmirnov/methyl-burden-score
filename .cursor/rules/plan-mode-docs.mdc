@@ -1,0 +1,43 @@
+---
+description: Persist Plan Mode outputs into project documentation with decisions and schemas
+alwaysApply: true
+---
+
+# Plan Mode → documentation
+
+When **Plan Mode** is used (or an equivalent multi-step design is agreed before
+implementation), do not leave the plan only in chat. Persist it under `docs/` in
+the same change set that locks the design, before or with implementation.
+
+## Where to save
+
+| Plan kind | Destination |
+|-----------|-------------|
+| Milestone / Stage 0 build plan | `docs/plans/<slug>.md` (see existing `docs/plans/`) |
+| Binding architectural choice | New ADR under `docs/adr/` (numbered) |
+| Topic already has a normative doc | Update that doc (`ANNOTATION_GRAPH.md`, `DATA_CONTRACT.md`, …) and link the plan |
+
+Prefer one primary plan file plus short cross-links from `TODO_PIPELINE.md` /
+topic docs. Do not duplicate large prose in three places.
+
+## What the saved plan must include
+
+1. **Scope and acceptance** — what “done” means; link the milestone in
+   `docs/TODO_PIPELINE.md` when applicable.
+2. **Locked decisions** — table or bullets of choice → decision → why (motivation).
+3. **Schemas / contracts** — paths to JSON Schema, SQL, config keys, artifact
+   layouts, or inline sketches if schemas do not exist yet.
+4. **Data / artifact flow** — mermaid or short pipeline of inputs → modules →
+   outputs under `$MBS_*` roots.
+5. **Non-goals / deferred** — what is explicitly out of scope.
+6. **Open questions** — only unresolved items; resolve or ADR them before coding
+   when they block the milestone.
+
+## Discipline
+
+- Treat the saved plan as the implementation brief; update it if the design
+  changes during the work.
+- Normative contracts still win via the source-of-truth hierarchy in
+  `AGENTS.md` (ADR → schemas/SQL → config → code). The plan motivates and
+  points; it does not override an accepted ADR.
+- Chat-only plans are incomplete for this repo.

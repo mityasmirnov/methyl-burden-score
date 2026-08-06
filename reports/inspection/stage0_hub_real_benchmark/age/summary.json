@@ -1,0 +1,47 @@
+{
+  "best_epoch": 9,
+  "best_val_loss": 1.0472601579103087,
+  "external_test": {
+    "accuracy": 0.0,
+    "loss": 2.532346995600632,
+    "mae": 24.154735084170746,
+    "mae_note": "years (destandardized)",
+    "n_samples": 35
+  },
+  "final_val_accuracy": 0.0,
+  "final_val_loss": 1.2662068621654596,
+  "final_val_mae": 0.9190104024750846,
+  "matrix_id": "matrix-hub-age-studyholdout-v1",
+  "matrix_path": "/data/projects/methyl-burden-score/data/canonical/matrices/matrix-hub-age-studyholdout-v1",
+  "metrics_jsonl": "/data/projects/methyl-burden-score/artifacts/runs/stage0-hub-age-studyholdout-v1/metrics.jsonl",
+  "model_public_name": "deepMAT",
+  "n_samples_matrix": 140,
+  "phenotype_family": "age",
+  "run_id": "stage0-hub-age-studyholdout-v1",
+  "split": {
+    "external_test_studies": [
+      "GSE78874"
+    ],
+    "mode": "study_grouped",
+    "n_external_test": 35,
+    "n_train": 70,
+    "n_validation": 35,
+    "split_id": "hub-age-studyholdout-v1",
+    "train_studies": [
+      "GSE51032",
+      "GSE56105"
+    ],
+    "validation_studies": [
+      "GSE55763"
+    ]
+  },
+  "study_ids": [
+    "GSE51032",
+    "GSE56105",
+    "GSE55763",
+    "GSE78874"
+  ],
+  "synthetic_fixture": false,
+  "task": "regression",
+  "tensorboard_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-hub-age-studyholdout-v1/tb"
+}

@@ -44,6 +44,10 @@
             ]
           },
           "study_id": {"type": ["string", "null"]},
+          "study_ids": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1}
+          },
           "platform": {"type": ["string", "null"]},
           "sample_count": {"type": ["integer", "null"], "minimum": 0},
           "label_type": {
@@ -59,9 +63,18 @@
           },
           "split_role": {
             "type": "string",
-            "enum": ["train", "validation", "external_test", "pilot", "registered", "secondary"]
+            "enum": [
+              "train",
+              "validation",
+              "external_test",
+              "pilot",
+              "registered",
+              "secondary",
+              "benchmark"
+            ]
           },
           "download_path": {"type": "string", "minLength": 1},
+          "matrix_path": {"type": ["string", "null"]},
           "checksum": {
             "type": ["string", "null"],
             "pattern": "^[0-9a-f]{64}$"

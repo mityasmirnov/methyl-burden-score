@@ -1,0 +1,49 @@
+{
+  "best_epoch": 1,
+  "best_val_loss": 3.577232142857143,
+  "external_test": {
+    "accuracy": 0.0,
+    "loss": 3.5973214285714286,
+    "mae": 0.0,
+    "mae_note": null,
+    "n_samples": 35
+  },
+  "final_val_accuracy": 0.0,
+  "final_val_loss": 8.0875,
+  "final_val_mae": 0.0,
+  "matrix_id": "matrix-hub-brain-studyholdout-v1",
+  "matrix_path": "/data/projects/methyl-burden-score/data/canonical/matrices/matrix-hub-brain-studyholdout-v1",
+  "metrics_jsonl": "/data/projects/methyl-burden-score/artifacts/runs/stage0-hub-brain-studyholdout-v1/metrics.jsonl",
+  "model_public_name": "deepMAT",
+  "n_samples_matrix": 175,
+  "phenotype_family": "brain",
+  "run_id": "stage0-hub-brain-studyholdout-v1",
+  "split": {
+    "external_test_studies": [
+      "GSE66351"
+    ],
+    "mode": "study_grouped",
+    "n_external_test": 35,
+    "n_train": 105,
+    "n_validation": 35,
+    "split_id": "hub-brain-studyholdout-v1",
+    "train_studies": [
+      "GSE59457",
+      "GSE64509",
+      "GSE80970"
+    ],
+    "validation_studies": [
+      "GSE98203"
+    ]
+  },
+  "study_ids": [
+    "GSE64509",
+    "GSE59457",
+    "GSE80970",
+    "GSE98203",
+    "GSE66351"
+  ],
+  "synthetic_fixture": false,
+  "task": "multiclass",
+  "tensorboard_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-hub-brain-studyholdout-v1/tb"
+}

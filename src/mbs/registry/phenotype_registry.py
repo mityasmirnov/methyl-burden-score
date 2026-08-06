@@ -38,6 +38,7 @@ SplitRole = Literal[
     "pilot",
     "registered",
     "secondary",
+    "benchmark",
 ]
 
 _SOURCE_SYSTEMS = frozenset({"ewas_datahub", "ewas_atlas", "cpgcorpus"})
@@ -59,7 +60,15 @@ _LABEL_TYPES = frozenset(
     {"regression", "binary", "multiclass", "pack_profile", "sample_info", "none"}
 )
 _SPLIT_ROLES = frozenset(
-    {"train", "validation", "external_test", "pilot", "registered", "secondary"}
+    {
+        "train",
+        "validation",
+        "external_test",
+        "pilot",
+        "registered",
+        "secondary",
+        "benchmark",
+    }
 )
 
 
@@ -72,13 +81,21 @@ class RegistryEntry:
     split_role: SplitRole
     download_path: str
     study_id: str | None = None
+    study_ids: tuple[str, ...] | None = None
     platform: str | None = None
     sample_count: int | None = None
+    matrix_path: str | None = None
     checksum: str | None = None
     notes: str | None = None
 
     def resolve_download_path(self, data_root: Path) -> Path:
         rel = Path(self.download_path)
+        return rel if rel.is_absolute() else (data_root / rel).resolve()
+
+    def resolve_matrix_path(self, data_root: Path) -> Path | None:
+        if self.matrix_path is None:
+            return None
+        rel = Path(self.matrix_path)
         return rel if rel.is_absolute() else (data_root / rel).resolve()
 
 
@@ -160,6 +177,14 @@ def validate_phenotype_registry(payload: dict[str, Any]) -> None:
 
 
 def _entry_from_dict(raw: dict[str, Any]) -> RegistryEntry:
+    study_ids_raw = raw.get("study_ids")
+    study_ids: tuple[str, ...] | None
+    if study_ids_raw is None:
+        study_ids = None
+    elif isinstance(study_ids_raw, list) and all(isinstance(x, str) for x in study_ids_raw):
+        study_ids = tuple(study_ids_raw)
+    else:
+        raise TypeError(f"study_ids must be a list of strings or null: {raw.get('entry_id')}")
     return RegistryEntry(
         entry_id=_require_str(raw, "entry_id"),
         source_system=_require_str(raw, "source_system"),  # type: ignore[arg-type]
@@ -168,8 +193,10 @@ def _entry_from_dict(raw: dict[str, Any]) -> RegistryEntry:
         split_role=_require_str(raw, "split_role"),  # type: ignore[arg-type]
         download_path=_require_str(raw, "download_path"),
         study_id=raw.get("study_id"),
+        study_ids=study_ids,
         platform=raw.get("platform"),
         sample_count=raw.get("sample_count"),
+        matrix_path=raw.get("matrix_path"),
         checksum=raw.get("checksum"),
         notes=raw.get("notes"),
     )
@@ -236,11 +263,13 @@ def export_registry_parquet(registry: PhenotypeRegistry, output_path: Path) -> P
             "source_system": e.source_system,
             "phenotype_family": e.phenotype_family,
             "study_id": e.study_id,
+            "study_ids": None if e.study_ids is None else ",".join(e.study_ids),
             "platform": e.platform,
             "sample_count": e.sample_count,
             "label_type": e.label_type,
             "split_role": e.split_role,
             "download_path": e.download_path,
+            "matrix_path": e.matrix_path,
             "checksum": e.checksum,
             "notes": e.notes,
         }

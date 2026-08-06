@@ -1,0 +1,19 @@
+---
+description: YAML configs and JSON Schema manifests stay normative and validated
+globs: "configs/**/*.{yaml,yml},schemas/**/*.json,**/manifest*.json,vendor/SOURCES.lock.yaml"
+alwaysApply: false
+---
+
+# Configs and manifests
+
+Adapted from awesome-cursorrules manifest-yaml guidance for this repo's
+experiment configs and content-addressed artifacts.
+
+- Treat `schemas/*.schema.json` and `sql/*.sql` as interfaces; validate writes.
+- Experiment YAMLs under `configs/experiment/`; machine overrides only under
+  `configs/local/` (ignored).
+- Graph / matrix / static-feature / checkpoint artifacts need manifests with
+  hashes, genome build, dimensions/dtype, and export or build command as
+  required by `AGENTS.md`.
+- Raise on schema or genome-build mismatch; do not silently coerce.
+- Prefer editing existing keys over inventing parallel undocumented config trees.

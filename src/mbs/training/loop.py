@@ -37,7 +37,12 @@ from mbs.training.dataset import (
 )
 from mbs.training.features import build_static_column_table
 from mbs.training.locus_gene import LocusGeneIndex, build_locus_gene_index, load_graph_tables
-from mbs.training.phenotypes import SamplePhenotype, load_gse35069_phenotypes
+from mbs.training.phenotypes import (
+    SamplePhenotype,
+    load_gse35069_phenotypes,
+    load_hub_regression_phenotypes,
+    load_hub_sample_info_phenotypes,
+)
 from mbs.training.run_artifacts import (
     checkpoint_dir,
     collect_environment,
@@ -129,8 +134,26 @@ def _forward_tissue_loss(
     metrics = {
         "loss": float(tissue_loss.detach().item()),
         "tissue_correct": float(pred == int(batch.tissue_target.item())),
+        "mae": 0.0,
     }
     return tissue_loss, metrics
+
+
+def _forward_age_loss(
+    *,
+    model: FlatDeepSet,
+    head: nn.Module,
+    batch: FlatBatch,
+) -> tuple[torch.Tensor, dict[str, float]]:
+    if batch.age_target is None:
+        raise RuntimeError("age_target required for regression task")
+    output = model(batch.cpg_features, batch.cpg_to_gene, batch.n_genes)
+    mbs = output["mbs"] * output["present"]
+    pred = head(mbs).squeeze(-1)
+    target = batch.age_target.reshape(pred.shape)
+    loss = F.mse_loss(pred, target)
+    mae = float((pred.detach() - target.detach()).abs().mean().item())
+    return loss, {"loss": float(loss.detach().item()), "tissue_correct": 0.0, "mae": mae}
 
 
 def _materialize_record(
@@ -155,7 +178,7 @@ def _run_epoch(
     phenotypes: list[SamplePhenotype] | None,
     pilot_store: _PilotStore | None,
     model: FlatDeepSet,
-    head: SeedMaskedLinearHead,
+    head: nn.Module,
     optimizer: torch.optim.Optimizer | None,
     device: torch.device,
     n_genes: int,
@@ -163,6 +186,9 @@ def _run_epoch(
     use_amp: bool,
     grad_clip: float,
     train: bool,
+    task: str = "multiclass",
+    age_mean: float = 0.0,
+    age_std: float = 1.0,
 ) -> dict[str, float]:
     if train:
         model.train()
@@ -173,6 +199,7 @@ def _run_epoch(
 
     total_loss = 0.0
     total_correct = 0.0
+    total_mae = 0.0
     n = 0
     amp_dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
     context = torch.enable_grad() if train else torch.no_grad()
@@ -184,18 +211,35 @@ def _run_epoch(
             raise RuntimeError("pilot phenotypes and store are required when records is None")
         return [_materialize_record(ph, pilot_store) for ph in phenotypes]
 
+    ph_by_id = {p.sample_id: p for p in (phenotypes or [])}
+
     with context:
         for record in _iter_records():
-            batch = record_to_batch(record, n_genes=n_genes).to(device)
+            age_value = None
+            age_enabled = task == "regression"
+            if age_enabled:
+                ph = ph_by_id.get(record.sample_id)
+                if ph is None or ph.age is None:
+                    raise RuntimeError(f"missing age for sample {record.sample_id}")
+                age_value = (float(ph.age) - age_mean) / age_std
+            batch = record_to_batch(
+                record,
+                n_genes=n_genes,
+                age_value=age_value,
+                age_enabled=age_enabled,
+            ).to(device)
             if train and optimizer is not None:
                 optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device_type=device.type, dtype=amp_dtype, enabled=use_amp):
-                loss, metrics = _forward_tissue_loss(
-                    model=model,
-                    head=head,
-                    batch=batch,
-                    class_weights=class_weights,
-                )
+                if task == "regression":
+                    loss, metrics = _forward_age_loss(model=model, head=head, batch=batch)
+                else:
+                    loss, metrics = _forward_tissue_loss(
+                        model=model,
+                        head=head,  # type: ignore[arg-type]
+                        batch=batch,
+                        class_weights=class_weights,
+                    )
             if train and optimizer is not None:
                 loss.backward()
                 if grad_clip > 0:
@@ -206,11 +250,13 @@ def _run_epoch(
                 optimizer.step()
             total_loss += metrics["loss"]
             total_correct += metrics["tissue_correct"]
+            total_mae += metrics["mae"]
             n += 1
 
     return {
         "loss": total_loss / max(n, 1),
         "accuracy": total_correct / max(n, 1),
+        "mae": total_mae / max(n, 1),
         "n_samples": float(n),
     }
 
@@ -326,6 +372,10 @@ def train_flat_baseline(
         class_weights = _class_weights([r.class_index for r in fixture_records], n_classes)
         if torch.allclose(class_weights, torch.ones_like(class_weights)):
             class_weights = None
+        task_kind = "multiclass"
+        age_mean = 0.0
+        age_std = 1.0
+        test_phenotypes: list[SamplePhenotype] | None = None
     else:
         pilot = config.get("pilot", {})
         matrix_id = str(pilot["matrix_id"])
@@ -333,20 +383,74 @@ def train_flat_baseline(
         feature_set = str(
             pilot.get("static_feature_set") or config.get("features", {}).get("static_feature_set")
         )
-        meta_rel = Path(str(pilot["phenotype_metadata"]))
-        metadata_path = meta_rel if meta_rel.is_absolute() else data_root / meta_rel
-
         matrix_paths = matrix_store_paths(data_root / "canonical" / "matrices" / matrix_id)
         sample_index = read_sample_index(matrix_paths.sample_index_path)
         locus_index = read_locus_index(matrix_paths.locus_index_path)
         sample_ids = sample_index.sort_values("row_index")["sample_id"].astype(str).tolist()
-        phenotypes, class_names = load_gse35069_phenotypes(metadata_path, sample_ids=sample_ids)
+        mode = str(pilot.get("mode", "gse35069"))
+        task_kind = str(pilot.get("task", "multiclass"))
+        test_phenotypes = None
+        age_mean = 0.0
+        age_std = 1.0
 
-        train_donors = {str(x) for x in pilot.get("train_donors", ["1", "2", "3", "4"])}
-        val_donors = {str(x) for x in pilot.get("val_donors", ["5", "6"])}
-        train_phenotypes, val_phenotypes, split = _split_by_donor(
-            phenotypes, train_donors=train_donors, val_donors=val_donors
-        )
+        if mode == "hub_pack":
+            pheno_path = matrix_paths.root / "sample_phenotypes.parquet"
+            if not pheno_path.is_file():
+                raise FileNotFoundError(
+                    f"hub_pack mode requires sample_phenotypes.parquet next to matrix: {pheno_path}"
+                )
+            value_column = str(pilot.get("label_column", "phenotype_value"))
+            empty_as_control = bool(pilot.get("empty_as_control", False))
+            if task_kind == "regression":
+                phenotypes, class_names = load_hub_regression_phenotypes(
+                    pheno_path, sample_ids=sample_ids
+                )
+            else:
+                phenotypes, class_names = load_hub_sample_info_phenotypes(
+                    pheno_path,
+                    sample_ids=sample_ids,
+                    value_column=value_column,
+                    empty_as_control=empty_as_control,
+                )
+            sample_rows = [
+                {
+                    "sample_id": p.sample_id,
+                    "study_id": p.study_id or p.donor_id,
+                    "platform": p.platform,
+                }
+                for p in phenotypes
+            ]
+            split = build_study_grouped_split(
+                sample_rows,
+                train_studies=[str(x) for x in pilot["train_studies"]],
+                validation_studies=[str(x) for x in pilot["validation_studies"]],
+                external_test_studies=[str(x) for x in pilot.get("external_test_studies", [])],
+                split_id=str(pilot.get("split_id", f"{matrix_id}-study-grouped-v1")),
+            )
+            train_ids = set(split["train_sample_ids"])
+            val_ids = set(split["validation_sample_ids"])
+            test_ids = set(split.get("external_test_sample_ids") or [])
+            train_phenotypes = [p for p in phenotypes if p.sample_id in train_ids]
+            val_phenotypes = [p for p in phenotypes if p.sample_id in val_ids]
+            test_phenotypes = [p for p in phenotypes if p.sample_id in test_ids]
+            if task_kind == "regression":
+                ages = [float(p.age) for p in train_phenotypes if p.age is not None]
+                if not ages:
+                    raise ValueError("no train ages for standardization")
+                age_mean = float(np.mean(ages))
+                age_std = float(np.std(ages))
+                if age_std < 1e-6:
+                    age_std = 1.0
+        else:
+            meta_rel = Path(str(pilot["phenotype_metadata"]))
+            metadata_path = meta_rel if meta_rel.is_absolute() else data_root / meta_rel
+            phenotypes, class_names = load_gse35069_phenotypes(metadata_path, sample_ids=sample_ids)
+            train_donors = {str(x) for x in pilot.get("train_donors", ["1", "2", "3", "4"])}
+            val_donors = {str(x) for x in pilot.get("val_donors", ["5", "6"])}
+            train_phenotypes, val_phenotypes, split = _split_by_donor(
+                phenotypes, train_donors=train_donors, val_donors=val_donors
+            )
+            task_kind = "multiclass"
 
         lr_edges, regions = load_graph_tables(data_root / "canonical" / "graphs" / graph_id)
         locus_gene = build_locus_gene_index(
@@ -357,7 +461,7 @@ def train_flat_baseline(
         )
         gene_ids = locus_gene.gene_ids
         n_genes = locus_gene.n_genes
-        n_classes = len(class_names)
+        n_classes = 1 if task_kind == "regression" else len(class_names)
         n_cols = locus_gene.n_study_loci if max_loci is None else int(max_loci)
 
         static_paths = static_feature_store_paths(
@@ -389,9 +493,10 @@ def train_flat_baseline(
             epsilon=epsilon,
             n_cols=n_cols,
         )
-        class_weights = _class_weights([p.class_index for p in train_phenotypes], n_classes)
-        if torch.allclose(class_weights, torch.ones_like(class_weights)):
-            class_weights = None
+        if task_kind != "regression":
+            class_weights = _class_weights([p.class_index for p in train_phenotypes], n_classes)
+            if torch.allclose(class_weights, torch.ones_like(class_weights)):
+                class_weights = None
         split.update(
             {
                 "n_genes": n_genes,
@@ -399,8 +504,17 @@ def train_flat_baseline(
                 "class_names": class_names,
                 "matrix_id": matrix_id,
                 "max_loci": max_loci,
+                "task": task_kind,
+                "age_mean": age_mean,
+                "age_std": age_std,
             }
         )
+
+    if study_holdout_fixture:
+        task_kind = "multiclass"
+        age_mean = 0.0
+        age_std = 1.0
+        test_phenotypes = None
 
     pool_name: PoolName = str(model_cfg.get("pooling", "max"))  # type: ignore[assignment]
     model = FlatDeepSet(
@@ -413,11 +527,17 @@ def train_flat_baseline(
         neutral_score=float(model_cfg.get("neutral_score", 0.5)),
         dropout=float(model_cfg.get("dropout", 0.0)),
     ).to(device)
-    seed_mask = torch.ones(n_classes, n_genes, dtype=torch.float32, device=device)
-    head = SeedMaskedLinearHead(n_genes, n_classes, seed_mask).to(device)
-    # Zero gene_weight is a saddle for CE on saturated MBS; break symmetry.
-    with torch.no_grad():
-        head.gene_weight.normal_(0.0, 0.05)
+    if task_kind == "regression":
+        head: nn.Module = nn.Linear(n_genes, 1).to(device)
+        with torch.no_grad():
+            head.weight.normal_(0.0, 0.05)
+            head.bias.zero_()
+    else:
+        seed_mask = torch.ones(n_classes, n_genes, dtype=torch.float32, device=device)
+        head = SeedMaskedLinearHead(n_genes, n_classes, seed_mask).to(device)
+        # Zero gene_weight is a saddle for CE on saturated MBS; break symmetry.
+        with torch.no_grad():
+            head.gene_weight.normal_(0.0, 0.05)
     opt_name = "adam" if overfit_fixture else str(train_cfg.get("optimizer", "adamw")).lower()
     if opt_name == "adam":
         optimizer = torch.optim.Adam(
@@ -468,6 +588,9 @@ def train_flat_baseline(
             use_amp=use_amp,
             grad_clip=grad_clip,
             train=True,
+            task=task_kind,
+            age_mean=age_mean,
+            age_std=age_std,
         )
         val_metrics = _run_epoch(
             records=val_records,
@@ -482,14 +605,20 @@ def train_flat_baseline(
             use_amp=use_amp,
             grad_clip=grad_clip,
             train=False,
+            task=task_kind,
+            age_mean=age_mean,
+            age_std=age_std,
         )
         row = {
             "epoch": epoch,
             "train_loss": train_metrics["loss"],
             "train_accuracy": train_metrics["accuracy"],
+            "train_mae": train_metrics["mae"],
             "val_loss": val_metrics["loss"],
             "val_accuracy": val_metrics["accuracy"],
+            "val_mae": val_metrics["mae"],
             "learning_rate": lr,
+            "task": task_kind,
         }
         history.append(row)
         with jsonl_path.open("a", encoding="utf-8") as jsonl_handle:
@@ -497,8 +626,12 @@ def train_flat_baseline(
         if tb_writer is not None:
             tb_writer.add_scalar("loss/train", row["train_loss"], epoch)
             tb_writer.add_scalar("loss/val", row["val_loss"], epoch)
-            tb_writer.add_scalar("accuracy/train", row["train_accuracy"], epoch)
-            tb_writer.add_scalar("accuracy/val", row["val_accuracy"], epoch)
+            if task_kind == "regression":
+                tb_writer.add_scalar("mae/train", row["train_mae"], epoch)
+                tb_writer.add_scalar("mae/val", row["val_mae"], epoch)
+            else:
+                tb_writer.add_scalar("accuracy/train", row["train_accuracy"], epoch)
+                tb_writer.add_scalar("accuracy/val", row["val_accuracy"], epoch)
             tb_writer.add_scalar("lr", lr, epoch)
         checkpoint_hashes["last.pt"] = save_checkpoint(
             ckpt_root / "last.pt",
@@ -538,6 +671,50 @@ def train_flat_baseline(
         if not overfit_fixture and stale >= patience:
             break
 
+    holdout_metrics: dict[str, Any] | None = None
+    if (
+        test_phenotypes
+        and pilot_store is not None
+        and not overfit_fixture
+        and not study_holdout_fixture
+    ):
+        # Reload best checkpoint for external_test scoring.
+        best_path = ckpt_root / "best.pt"
+        if best_path.is_file():
+            payload = torch.load(best_path, map_location=device, weights_only=False)
+            model.load_state_dict(payload["model_state"])
+            head.load_state_dict(payload["head_state"])
+        test_metrics = _run_epoch(
+            records=None,
+            phenotypes=test_phenotypes,
+            pilot_store=pilot_store,
+            model=model,
+            head=head,
+            optimizer=None,
+            device=device,
+            n_genes=n_genes,
+            class_weights=class_weights,
+            use_amp=use_amp,
+            grad_clip=grad_clip,
+            train=False,
+            task=task_kind,
+            age_mean=age_mean,
+            age_std=age_std,
+        )
+        test_mae = test_metrics["mae"]
+        if task_kind == "regression":
+            test_mae = test_mae * age_std
+        holdout_metrics = {
+            "n_samples": int(test_metrics["n_samples"]),
+            "loss": test_metrics["loss"],
+            "accuracy": test_metrics["accuracy"],
+            "mae": test_mae,
+            "mae_note": "years (destandardized)" if task_kind == "regression" else None,
+        }
+
+    age_std_meta = None
+    if task_kind == "regression":
+        age_std_meta = {"mean": age_mean, "std": age_std}
     metrics_out: dict[str, Any] = {
         "history": history,
         "best_epoch": best_epoch,
@@ -550,6 +727,9 @@ def train_flat_baseline(
         "overfit_fixture": overfit_fixture,
         "device": str(device),
         "model_public_name": "deepMAT",
+        "task": task_kind,
+        "external_test": holdout_metrics,
+        "age_standardization": age_std_meta,
     }
     if overfit_fixture and history:
         metrics_out["overfit_train_accuracy"] = history[-1]["train_accuracy"]
