@@ -78,9 +78,13 @@ class DataPaths:
         return (
             self.project_root,
             self.data_root / "raw" / "cpgcorpus",
+            self.data_root / "raw" / "cpgcorpus" / "_partial_fullsync",
             self.data_root / "raw" / "ewas_datahub",
+            self.data_root / "raw" / "ewas_datahub" / "download",
+            self.data_root / "raw" / "ewas_datahub" / "EWAS_db",
             self.data_root / "raw" / "ewas_atlas",
             self.data_root / "raw" / "manifests",
+            self.data_root / "raw" / "manifests" / "epicv2",
             self.data_root / "staging",
             self.scratch_root / "downloads",
             self.artifact_root / "logs" / "downloads",

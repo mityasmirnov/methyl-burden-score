@@ -1063,5 +1063,25 @@
     "EWAS_db sample files are probe\\tbeta text (no header); study IDs mix GSE*, E-MTAB*, ENCODE, CPTAC, CGCI; not all filenames are GSM*.",
     "Atlas associations are TSV knowledge tables; DataHub baseline zips are trait-bundle matrices; do not mix into one catalog without provenance tags.",
     "EPICv2 manifest is annotation-only (Zenodo); store under manifests/epicv2 only."
-  ]
+  ],
+  "organization": {
+    "flat_zips_consolidated": true,
+    "cpgcorpus_quarantined": true,
+    "empty_ewas_db_dirs_removed": true,
+    "junk_href_file_deleted": true,
+    "stage0_cpgcorpus_gses": [
+      "GSE116992",
+      "GSE125367",
+      "GSE35069"
+    ],
+    "partial_fullsync_dir": "raw/cpgcorpus/_partial_fullsync",
+    "provenance_lanes": [
+      "cpgcorpus",
+      "ewas_atlas",
+      "ewas_datahub_db",
+      "ewas_datahub_baseline",
+      "epicv2_manifest"
+    ],
+    "organized_at": "2026-08-06"
+  }
 }

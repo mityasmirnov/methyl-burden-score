@@ -4,6 +4,9 @@
 CREATE TABLE IF NOT EXISTS source_release (
     source_release_id VARCHAR PRIMARY KEY,
     source_name VARCHAR NOT NULL,
+    -- Provenance lane key; must match provenance_lane.source_system.
+    -- Keep Atlas / DataHub / CpGCorpus / manifests as separate lanes.
+    source_system VARCHAR,
     source_version VARCHAR,
     retrieved_at TIMESTAMPTZ,
     source_uri VARCHAR,

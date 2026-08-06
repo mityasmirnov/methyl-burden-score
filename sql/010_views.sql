@@ -2,6 +2,8 @@
 
 CREATE OR REPLACE VIEW v_source_inventory AS
 SELECT
+    sr.source_system,
+    pl.display_name AS provenance_lane,
     sr.source_name,
     sr.source_version,
     s.study_id,
@@ -13,9 +15,21 @@ SELECT
     sum(coalesce(af.byte_size, 0)) AS total_bytes
 FROM study AS s
 LEFT JOIN source_release AS sr USING (source_release_id)
+LEFT JOIN provenance_lane AS pl ON pl.source_system = sr.source_system
 LEFT JOIN sample AS sm USING (study_id)
 LEFT JOIN assay_file AS af USING (study_id)
 GROUP BY ALL;
+
+CREATE OR REPLACE VIEW v_provenance_lanes AS
+SELECT
+    source_system,
+    display_name,
+    raw_root_relpath,
+    role,
+    default_file_formats,
+    notes
+FROM provenance_lane
+ORDER BY source_system;
 
 CREATE OR REPLACE VIEW v_study_platform_tissue AS
 SELECT

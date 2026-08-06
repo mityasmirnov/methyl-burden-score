@@ -8,9 +8,9 @@ import duckdb
 from mbs.catalog import build_catalog, init_catalog
 from mbs.paths import DataPaths
 
-# sql/001_schema.sql + sql/010_views.sql (keep in sync when schema changes)
-EXPECTED_TABLES = 18
-EXPECTED_VIEWS = 8
+# sql/001 + 002 + 010 (keep in sync when schema changes)
+EXPECTED_TABLES = 19
+EXPECTED_VIEWS = 9
 
 
 def _repo_root() -> Path:
@@ -31,7 +31,11 @@ def test_build_catalog_applies_project_sql(tmp_path: Path) -> None:
     )
 
     assert database.exists()
-    assert result["executed_sql"] == ["001_schema.sql", "010_views.sql"]
+    assert result["executed_sql"] == [
+        "001_schema.sql",
+        "002_provenance_lanes.sql",
+        "010_views.sql",
+    ]
     assert result["tables"] == EXPECTED_TABLES
     assert result["views"] == EXPECTED_VIEWS
 
@@ -47,12 +51,26 @@ def test_build_catalog_applies_project_sql(tmp_path: Path) -> None:
                 """
             ).fetchall()
         }
+        lanes = {
+            row[0]
+            for row in connection.execute(
+                "SELECT source_system FROM provenance_lane"
+            ).fetchall()
+        }
     finally:
         connection.close()
 
     assert "source_release" in tables
+    assert "provenance_lane" in tables
     assert "sample" in tables
     assert "fold_assignment" in tables
+    assert lanes == {
+        "cpgcorpus",
+        "ewas_atlas",
+        "ewas_datahub_db",
+        "ewas_datahub_baseline",
+        "epicv2_manifest",
+    }
 
 
 def test_init_catalog_creates_dirs_and_schema() -> None:

@@ -136,24 +136,19 @@ HTTP root: https://download.cncb.ac.cn/ewas/datahub/
 | `brain_methylation_v1.zip` | 2,975,575,853 | yes | 2 | complete |
 | `cancer_methylation_v1.zip` | ~0.5–GB+ | **no** | — | still downloading |
 
-Still missing under `download/` at inspection: disease pack, several
-`sample_*.zip` (some only exist as flat copies), tissue/sex may only be flat.
+**Organized 2026-08-06:** unique flat packs moved into `download/`;
+identical flats (blood/brain) deleted; incomplete flat age deleted
+(download/ copy larger). No `ewas_datahub/*.zip` remain.
 
-### 4b. Flat duplicates under `ewas_datahub/*.zip` (cleanup needed)
+### 4b. Flat duplicates under `ewas_datahub/*.zip` — done
 
-These sit beside `download/` and waste space / confuse ingest:
+Previously flats sat beside `download/`. Consolidated:
 
-| Flat file | Bytes | Also in `download/`? | Same size? |
-|-----------|------:|:--------------------:|:----------:|
-| `tissue_methylation_v1.zip` | 8,266,723,841 | no | — |
-| `sex_methylation_v1.zip` | 4,652,187,604 | no | — |
-| `age_methylation_v1.zip` | 7,747,500,041 | yes | **no** (flat smaller/incomplete vs download/) |
-| `blood_methylation_v1.zip` | 5,220,215,339 | yes | yes |
-| `brain_methylation_v1.zip` | 2,975,575,853 | yes | yes |
-| `sample_tissue/brain/blood/sex_*.zip` | small | mostly no | — |
-
-**Action:** move unique flat zips into `download/`; delete byte-identical
-duplicates; re-download incomplete flats.
+| Flat file | Action |
+|-----------|--------|
+| `tissue_methylation_v1.zip`, `sex_methylation_v1.zip`, `sample_*.zip` | moved → `download/` |
+| `blood_methylation_v1.zip`, `brain_methylation_v1.zip` | deleted (byte-identical to `download/`) |
+| `age_methylation_v1.zip` | deleted incomplete flat; kept larger `download/` copy |
 
 ### 4c. Sample metadata zips
 
@@ -186,23 +181,30 @@ cg14361672	0.659
 - CPTAC: UUID-like or `C3L-….txt` / `C3N-….txt` (sometimes `_935k` twin)
 - CGCI: `HTMCP-….txt`
 
-Junk artifact to delete: empty file named `(.+?)` under `CGCI-HTMCP-CC/`
-(from an earlier HTML-parser bug; filter now fixed).
+Junk artifact `(.+?)` under `CGCI-HTMCP-CC/` **deleted** (2026-08-06).
+Empty leftover study dirs from failed recursive wget **removed** (357);
+non-empty remain: `CGCI-HTMCP-CC`, `CPTAC-3` (All Data pull still running).
 
 ### 4e. `add_ewas_db/`
 
 Directories `add_txt_450/`, `add_txt_850/`, `add_txt_935/` exist but were
 **empty** on the HTTP server at pull time (+ `move.sh` only).
 
+### 4f. CpGCorpus quarantine
+
+Stage 0 kept under `raw/cpgcorpus/`: `GSE116992`, `GSE125367`, `GSE35069`.
+**46** leftover GSE dirs from the aborted full sync moved to
+`raw/cpgcorpus/_partial_fullsync/` (see README there). Not for default ingest.
+
 ---
 
 ## Organization checklist
 
-1. **Consolidate DataHub baseline** into `ewas_datahub/download/` only; remove flat duplicates after size/checksum match.
-2. **Quarantine CpGCorpus leftovers** (`_partial_fullsync/`) vs Stage 0 GSEs.
-3. **Delete empty `EWAS_db` dirs** and the `(.+?)` junk file; resume All Data pull until Stage 0 GSEs are present as text betas (or keep using CpGCorpus Arrow where available).
-4. **Catalog schema columns to add later:** `source_system`, `study_id`, `platform`, `n_samples`, `n_features`, `file_format` (`arrow`|`tsv`|`probe_beta_txt`|`zip_r`|`csv_gz`), `bytes`, `sha256`.
-5. **Keep Atlas vs DataHub vs CpGCorpus separate** in DuckDB tables / release manifests.
+1. ~~**Consolidate DataHub baseline** into `ewas_datahub/download/` only~~ **done**
+2. ~~**Quarantine CpGCorpus leftovers** (`_partial_fullsync/`) vs Stage 0 GSEs~~ **done**
+3. ~~**Delete empty `EWAS_db` dirs** and the `(.+?)` junk file~~ **done**; resume All Data pull until Stage 0 GSEs are present as text betas (or keep using CpGCorpus Arrow where available).
+4. ~~**Catalog provenance lanes**~~ **done** — `provenance_lane` + `source_release.source_system` (`cpgcorpus` | `ewas_atlas` | `ewas_datahub_db` | `ewas_datahub_baseline` | `epicv2_manifest`). Assay-level `file_format` / `sha256` remain on `assay_file` as ingest fills them.
+5. ~~**Keep Atlas vs DataHub vs CpGCorpus separate**~~ **done** (lanes + raw roots).
 
 ## Related docs
 

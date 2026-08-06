@@ -62,11 +62,17 @@ Local layout after mirror:
 
 ```text
 data/raw/ewas_datahub/
-  EWAS_db/
+  EWAS_db/          # All Data only — provenance lane ewas_datahub_db
   add_ewas_db/
-  download/
+  download/         # Baseline packs only — lane ewas_datahub_baseline
   SOURCE.txt
 ```
+
+Do **not** leave baseline zips as flat `ewas_datahub/*.zip`; everything under
+`download/`. Atlas stays in `raw/ewas_atlas/`; CpGCorpus Arrow in
+`raw/cpgcorpus/` (Stage 0 GSEs) with aborted-sync leftovers in
+`raw/cpgcorpus/_partial_fullsync/`. Catalog seeds these as separate
+`provenance_lane` / `source_system` values (see `sql/002_provenance_lanes.sql`).
 
 ### All Data (`EWAS_db/`)
 
