@@ -23,6 +23,8 @@ True next milestone after bootstrap:
   `scripts/download_cpgcorpus_background.sh` (nohup; no auto-download).
 - Path / catalog / CLI / no-home tests green; vendor kept as gitlink submodules.
 - ADR: `docs/adr/0001-project-local-workspace.md`.
+- Raw download inventory (sizes, schemas, top rows, cleanup checklist):
+  `reports/inspection/raw_inventory/summary.md` (+ `summary.json`).
 
 ### Blocked / caveats (do not treat as scientific blockers)
 

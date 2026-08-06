@@ -52,8 +52,11 @@ Downloader: `scripts/download_ewas_datahub.sh` parses nginx HTML indexes and
 JS-enhanced listings / robots.txt). Use `--execute robots=off` is not enough
 for `EWAS_db`; the script lists `href`s explicitly.
 
-Inspection snapshot:
+Inspection snapshot (hosts, layouts, local examples):
 [`reports/inspection/raw_data_snapshot/summary.md`](../reports/inspection/raw_data_snapshot/summary.md).
+
+**Full size / schema / top-row inventory (for organizing ingest):**
+[`reports/inspection/raw_inventory/summary.md`](../reports/inspection/raw_inventory/summary.md).
 
 Local layout after mirror:
 

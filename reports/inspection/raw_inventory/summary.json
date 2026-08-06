@@ -1,0 +1,1067 @@
+{
+  "inspected_at": "2026-08-06T10:07:55.983945+00:00",
+  "totals": {
+    "raw_bytes": 87181378320,
+    "cpgcorpus_bytes": 7213545748,
+    "ewas_atlas_bytes": 281746404,
+    "ewas_datahub_bytes": 79219317123,
+    "manifests_bytes": 466769045
+  },
+  "trees": {
+    "ewas_atlas": {
+      "files": [
+        {
+          "path": "data/raw/ewas_atlas/EWAS_Atlas_associations.tsv",
+          "bytes": 106146695,
+          "mtime_utc": "2026-04-13T11:14:34+00:00",
+          "n_rows_incl_header": 804920,
+          "n_data_rows": 804919,
+          "n_columns": 13,
+          "columns": [
+            "Association_ID",
+            "probe_ID",
+            "trait",
+            "case_description",
+            "case_beta",
+            "control_description",
+            "control_beta",
+            "correlation",
+            "p_value",
+            "rank_in_study",
+            "effect_size",
+            "study_ID",
+            "PMID"
+          ],
+          "top_rows_first_8_fields": [
+            [
+              "EA00332384",
+              "cg21197425",
+              "fetal intolerance of labor",
+              "",
+              "NA",
+              "",
+              "NA",
+              "pos"
+            ],
+            [
+              "EA00332385",
+              "cg19672271",
+              "fetal intolerance of labor",
+              "",
+              "NA",
+              "",
+              "NA",
+              "pos"
+            ],
+            [
+              "EA00332386",
+              "cg06999381",
+              "fetal intolerance of labor",
+              "",
+              "NA",
+              "",
+              "NA",
+              "pos"
+            ]
+          ]
+        },
+        {
+          "path": "data/raw/ewas_atlas/EWAS_Atlas_cohorts.tsv",
+          "bytes": 397573,
+          "mtime_utc": "2026-04-13T11:14:36+00:00",
+          "n_rows_incl_header": 3984,
+          "n_data_rows": 3983,
+          "n_columns": 15,
+          "columns": [
+            "cohort_ID",
+            "study_ID",
+            "stage",
+            "platform",
+            "sample_size",
+            "male_percentage",
+            "min_age",
+            "max_age",
+            "mean_age",
+            "sd_age",
+            "tissue",
+            "cohort_name",
+            "full_name",
+            "description",
+            "ancestry"
+          ],
+          "top_rows_first_8_fields": [
+            [
+              "52",
+              "ES00033",
+              "Initial",
+              "450K",
+              "239",
+              "0.85",
+              "NA",
+              "NA"
+            ],
+            [
+              "53",
+              "ES00033",
+              "Initial",
+              "450K",
+              "220",
+              "0.57",
+              "NA",
+              "NA"
+            ],
+            [
+              "54",
+              "ES00033",
+              "Replication",
+              "450K",
+              "339",
+              "0.22",
+              "NA",
+              "NA"
+            ]
+          ]
+        },
+        {
+          "path": "data/raw/ewas_atlas/EWAS_Atlas_probe_annotations.tsv",
+          "bytes": 174062150,
+          "mtime_utc": "2026-04-13T11:14:37+00:00",
+          "n_rows_incl_header": 900414,
+          "n_data_rows": 900413,
+          "n_columns": 8,
+          "columns": [
+            "Probe.id",
+            "Chr",
+            "Pos",
+            "Related.transcripts",
+            "Pos.to.TSS",
+            "Related.GWAS.sites",
+            "Pos.to.GWAS.sites",
+            "CpG.islands"
+          ],
+          "top_rows_first_8_fields": [
+            [
+              "cg00000029",
+              "16",
+              "53468112",
+              "RBL2(ENST00000567964.6);RBL2(ENST00000262133.10);RBL2(ENST00000544405.6)",
+              "223;-220;-1419",
+              "",
+              "",
+              "N_Shore"
+            ],
+            [
+              "cg00000103",
+              "4",
+              "73470186",
+              "",
+              "",
+              "Small LDL particle concentration(rs181946711);Total cholesterol levels in small LDL(rs181946711)",
+              "4056;4056",
+              ""
+            ],
+            [
+              "cg00000108",
+              "3",
+              "37459206",
+              "AC136290.1(ENST00000425932.5);AC136290.1(ENST00000328376.9);AC136290.1(ENST00000332506.7);AC136290.1(ENST00000481400.5);AC136290.1(ENST00000466204.5);AC136290.1(ENST00000426078.5);AC136290.1(ENST00000425564.2);AC136290.1(ENST00000452017.3)",
+              "31446;18553;18553;18553;18553;18144;6506;448",
+              "",
+              "",
+              ""
+            ]
+          ]
+        },
+        {
+          "path": "data/raw/ewas_atlas/EWAS_Atlas_studies.tsv",
+          "bytes": 153681,
+          "mtime_utc": "2026-04-13T11:14:38+00:00",
+          "n_rows_incl_header": 1903,
+          "n_data_rows": 1902,
+          "n_columns": 5,
+          "columns": [
+            "study_ID",
+            "trait",
+            "case_description",
+            "control_description",
+            "PMID"
+          ],
+          "top_rows_first_8_fields": [
+            [
+              "ES00033",
+              "body mass index (BMI)",
+              "",
+              "",
+              "24630777"
+            ],
+            [
+              "ES00034",
+              "body mass index (BMI)",
+              "",
+              "",
+              "24630777"
+            ],
+            [
+              "ES00035",
+              "body mass index (BMI)",
+              "",
+              "",
+              "28002404"
+            ]
+          ]
+        },
+        {
+          "path": "data/raw/ewas_atlas/EWAS_trait_trait_logP.txt",
+          "bytes": 986305,
+          "mtime_utc": "2026-04-13T11:14:38+00:00",
+          "n_rows_incl_header": 373,
+          "n_data_rows": 372,
+          "n_columns": 373,
+          "columns": [
+            "trait",
+            "fruit consumption",
+            "age-related macular degeneration (AMD)",
+            "grandmaternal stress during pregnancy (domestic violence)",
+            "total cholesterol",
+            "1,6-hexamethylene diisocyanate exposure",
+            "blood fasting very-lowdensity lipoprotein cholesterol levels",
+            "intellectual disability",
+            "lubrication",
+            "maternal cadmium exposure",
+            "long-term air pollution exposure levels (PM10)",
+            "endometriosis",
+            "short-term PM2.5 exposure",
+            "derivatives of reactive oxygen metabolites (D-ROM) in plasma",
+            "one-year moving averages of PM2.5 species (V)",
+            "prenatal bisphenol A (BPA) exposure",
+            "hormone therapy",
+            "in utero arsenic exposure",
+            "childhood illness",
+            "gestational diabetes mellitus",
+            "soluble tumor necrosis factor receptor 2 (sTNFR2) levels in plasma",
+            "type 1 diabetes (T1D)",
+            "psoriasis",
+            "inflammatory bowel disease",
+            "bone mineral density (BMD)",
+            "blood high-density lipoprotein (HDL) levels",
+            "cerebral palsy",
+            "prenatal phthalate exposure",
+            "sperm viability",
+            "prostate cancer"
+          ],
+          "top_rows_first_8_fields": [
+            [
+              "fruit consumption",
+              "400",
+              "-0.0",
+              "-0.0",
+              "-0.0",
+              "-0.0",
+              "-0.0",
+              "-0.0"
+            ],
+            [
+              "age-related macular degeneration (AMD)",
+              "-0.0",
+              "104.04564255257793",
+              "-0.0",
+              "-0.0",
+              "-0.0",
+              "-0.0",
+              "-0.0"
+            ],
+            [
+              "grandmaternal stress during pregnancy (domestic violence)",
+              "-0.0",
+              "-0.0",
+              "203.82464942374156",
+              "-0.0",
+              "-0.0",
+              "-0.0",
+              "-0.0"
+            ]
+          ]
+        }
+      ]
+    },
+    "manifests": {
+      "files": [
+        {
+          "path": "data/raw/manifests/epicv2/EPICv2_reannotated_manifest_v3.0.csv.gz",
+          "bytes": 466768830,
+          "mtime_utc": "2026-08-05T14:55:50.064978+00:00",
+          "n_columns": 62,
+          "columns_head": [
+            "IlmnID",
+            "Name",
+            "AddressA_ID",
+            "AlleleA_ProbeSeq",
+            "AddressB_ID",
+            "AlleleB_ProbeSeq",
+            "Next_Base",
+            "Color_Channel",
+            "col",
+            "Probe_Type",
+            "Strand_FR",
+            "Strand_TB",
+            "Strand_CO",
+            "Infinium_Design",
+            "Infinium_Design_Type",
+            "CHR",
+            "MAPINFO",
+            "Species",
+            "Genome_Build",
+            "Source_Seq"
+          ],
+          "top_rows_first_8_fields": [
+            [
+              "cg25324105_BC11",
+              "cg25324105",
+              "1754126",
+              "ATTTATAAACTAATAACCCAAAATACATTTCCCAAAAACCTTCACAACCA",
+              "99753217",
+              "GTTTATAAACTAATAACCCGAAATACATTTCCCAAAAACCTTCGCGACCG",
+              "A",
+              "Red"
+            ],
+            [
+              "cg25383568_TC11",
+              "cg25383568",
+              "79792482",
+              "AAACCAAAAAAATAACAAACTACTCACCTTATCAAAATAATTAAAAAACA",
+              "69667133",
+              "AAACCGAAAAAATAACAAACTACTCACCTTATCGAAATAATTAAAAAACG",
+              "C",
+              "Grn"
+            ],
+            [
+              "cg25455143_BC11",
+              "cg25455143",
+              "80699190",
+              "ATAAAAAAAAATATACAACTAATCCCCCTTTTTCCCACAACTCAAAATCA",
+              "7659147",
+              "ATAAAAAAAAATATACGACTAATCCCCCTTTTTCCCACAACTCGAAATCG",
+              "T",
+              "Red"
+            ]
+          ],
+          "n_rows_incl_header": 937692,
+          "n_data_rows": 937691
+        }
+      ]
+    },
+    "cpgcorpus": {
+      "stage0_selected": {
+        "GSE116992": {
+          "bytes": 421867008,
+          "platforms": {
+            "GPL13534": {
+              "cpgcorpus/GSE116992/GPL13534/betas/QCDPB.arrow": {
+                "path": "data/raw/cpgcorpus/GSE116992/GPL13534/betas/QCDPB.arrow",
+                "bytes": 119137146,
+                "mtime_utc": "2025-02-25T00:40:13+00:00",
+                "num_rows": 7,
+                "num_columns": 485579,
+                "column_names_head": [
+                  "GSM_ID",
+                  "cg00000029",
+                  "cg00000108",
+                  "cg00000109",
+                  "cg00000165",
+                  "cg00000236",
+                  "cg00000289",
+                  "cg00000292",
+                  "cg00000321",
+                  "cg00000363",
+                  "cg00000622",
+                  "cg00000658"
+                ],
+                "orientation": "samples_as_rows",
+                "first_sample_probe_head": {
+                  "GSM_ID": "GSM3267080",
+                  "cg00000029": 0.6839679925317613,
+                  "cg00000108": 0.9662801586980231,
+                  "cg00000109": 0.899913896454249,
+                  "cg00000165": 0.16793990022009367,
+                  "cg00000236": 0.8326081935173153
+                }
+              },
+              "cpgcorpus/GSE116992/GPL13534/metadata/metadata.arrow": {
+                "path": "data/raw/cpgcorpus/GSE116992/GPL13534/metadata/metadata.arrow",
+                "bytes": 13866,
+                "mtime_utc": "2025-02-25T00:40:14+00:00",
+                "num_rows": 7,
+                "num_columns": 38,
+                "column_names_head": [
+                  "GSM_ID",
+                  "title",
+                  "geo_accession",
+                  "status",
+                  "submission_date",
+                  "last_update_date",
+                  "type",
+                  "channel_count",
+                  "source_name_ch1",
+                  "organism_ch1",
+                  "characteristics_ch1",
+                  "characteristics_ch1.1"
+                ],
+                "orientation": "samples_as_rows",
+                "top_metadata_fields": {
+                  "GSM_ID": [
+                    "GSM3267080",
+                    "GSM3267081",
+                    "GSM3267082"
+                  ],
+                  "title": [
+                    "MS0674_Coffin-Siris Syndrome 1",
+                    "MS0676_Coffin-Siris Syndrome 1",
+                    "MS0678_Coffin-Siris Syndrome 1"
+                  ],
+                  "geo_accession": [
+                    "GSM3267080",
+                    "GSM3267081",
+                    "GSM3267082"
+                  ],
+                  "source_name_ch1": [
+                    "MS0674",
+                    "MS0676",
+                    "MS0678"
+                  ],
+                  "characteristics_ch1": [
+                    "disease state: Coffin-Siris syndrome",
+                    "disease state: Coffin-Siris syndrome",
+                    "disease state: Coffin-Siris syndrome"
+                  ]
+                }
+              }
+            },
+            "GPL21145": {
+              "cpgcorpus/GSE116992/GPL21145/betas/QCDPB.arrow": {
+                "path": "data/raw/cpgcorpus/GSE116992/GPL21145/betas/QCDPB.arrow",
+                "bytes": 302698730,
+                "mtime_utc": "2025-02-25T00:40:14+00:00",
+                "num_rows": 22,
+                "num_columns": 865920,
+                "column_names_head": [
+                  "GSM_ID",
+                  "cg00000029",
+                  "cg00000103",
+                  "cg00000109",
+                  "cg00000155",
+                  "cg00000158",
+                  "cg00000165",
+                  "cg00000221",
+                  "cg00000236",
+                  "cg00000289",
+                  "cg00000292",
+                  "cg00000321"
+                ],
+                "orientation": "samples_as_rows",
+                "first_sample_probe_head": {
+                  "GSM_ID": "GSM3267111",
+                  "cg00000029": 0.8167889209240101,
+                  "cg00000103": NaN,
+                  "cg00000109": 0.9258277940760246,
+                  "cg00000155": 0.9574171783253248,
+                  "cg00000158": 0.9661668655463078
+                }
+              },
+              "cpgcorpus/GSE116992/GPL21145/metadata/metadata.arrow": {
+                "path": "data/raw/cpgcorpus/GSE116992/GPL21145/metadata/metadata.arrow",
+                "bytes": 17266,
+                "mtime_utc": "2025-02-25T00:40:15+00:00",
+                "num_rows": 22,
+                "num_columns": 38,
+                "column_names_head": [
+                  "GSM_ID",
+                  "title",
+                  "geo_accession",
+                  "status",
+                  "submission_date",
+                  "last_update_date",
+                  "type",
+                  "channel_count",
+                  "source_name_ch1",
+                  "organism_ch1",
+                  "characteristics_ch1",
+                  "characteristics_ch1.1"
+                ],
+                "orientation": "samples_as_rows",
+                "top_metadata_fields": {
+                  "GSM_ID": [
+                    "GSM3267111",
+                    "GSM3267112",
+                    "GSM3267113"
+                  ],
+                  "title": [
+                    "MS1160_Nicolaides-Baraitser syndrome",
+                    "MS1162_Coffin-Siris Syndrome 3",
+                    "MS1163_Coffin-Siris Syndrome 3"
+                  ],
+                  "geo_accession": [
+                    "GSM3267111",
+                    "GSM3267112",
+                    "GSM3267113"
+                  ],
+                  "source_name_ch1": [
+                    "MS1160",
+                    "MS1162",
+                    "MS1163"
+                  ],
+                  "characteristics_ch1": [
+                    "disease state: Nicolaides-Baraitser syndrome",
+                    "disease state: Coffin-Siris syndrome",
+                    "disease state: Coffin-Siris syndrome"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "GSE125367": {
+          "bytes": 435129780,
+          "platforms": {
+            "GPL21145": {
+              "cpgcorpus/GSE125367/GPL21145/betas/QCDPB.arrow": {
+                "path": "data/raw/cpgcorpus/GSE125367/GPL21145/betas/QCDPB.arrow",
+                "bytes": 435108762,
+                "mtime_utc": "2025-02-25T00:44:32+00:00",
+                "num_rows": 44,
+                "num_columns": 865920,
+                "column_names_head": [
+                  "GSM_ID",
+                  "cg00000029",
+                  "cg00000103",
+                  "cg00000109",
+                  "cg00000155",
+                  "cg00000158",
+                  "cg00000165",
+                  "cg00000221",
+                  "cg00000236",
+                  "cg00000289",
+                  "cg00000292",
+                  "cg00000321"
+                ],
+                "orientation": "samples_as_rows",
+                "first_sample_probe_head": {
+                  "GSM_ID": "GSM3572680",
+                  "cg00000029": NaN,
+                  "cg00000103": NaN,
+                  "cg00000109": 0.9491120351348872,
+                  "cg00000155": 0.9769667101595703,
+                  "cg00000158": 0.9758653012698042
+                }
+              },
+              "cpgcorpus/GSE125367/GPL21145/metadata/metadata.arrow": {
+                "path": "data/raw/cpgcorpus/GSE125367/GPL21145/metadata/metadata.arrow",
+                "bytes": 21018,
+                "mtime_utc": "2025-02-25T00:44:33+00:00",
+                "num_rows": 44,
+                "num_columns": 36,
+                "column_names_head": [
+                  "GSM_ID",
+                  "title",
+                  "geo_accession",
+                  "status",
+                  "submission_date",
+                  "last_update_date",
+                  "type",
+                  "channel_count",
+                  "source_name_ch1",
+                  "organism_ch1",
+                  "characteristics_ch1",
+                  "characteristics_ch1.1"
+                ],
+                "orientation": "samples_as_rows",
+                "top_metadata_fields": {
+                  "GSM_ID": [
+                    "GSM3572680",
+                    "GSM3572681",
+                    "GSM3572682"
+                  ],
+                  "title": [
+                    "Control sample 1",
+                    "Control sample 2",
+                    "Control sample 3"
+                  ],
+                  "geo_accession": [
+                    "GSM3572680",
+                    "GSM3572681",
+                    "GSM3572682"
+                  ],
+                  "source_name_ch1": [
+                    "Blood",
+                    "Blood",
+                    "Blood"
+                  ],
+                  "characteristics_ch1": [
+                    "Sex: F",
+                    "Sex: F",
+                    "Sex: F"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "GSE35069": {
+          "bytes": 327603372,
+          "platforms": {
+            "GPL13534": {
+              "cpgcorpus/GSE35069/GPL13534/betas/gse_betas.arrow": {
+                "path": "data/raw/cpgcorpus/GSE35069/GPL13534/betas/gse_betas.arrow",
+                "bytes": 327582018,
+                "mtime_utc": "2025-02-25T02:11:39+00:00",
+                "num_rows": 60,
+                "num_columns": 485578,
+                "column_names_head": [
+                  "GSM_ID",
+                  "cg00000029",
+                  "cg00000108",
+                  "cg00000109",
+                  "cg00000165",
+                  "cg00000236",
+                  "cg00000289",
+                  "cg00000292",
+                  "cg00000321",
+                  "cg00000363",
+                  "cg00000622",
+                  "cg00000658"
+                ],
+                "orientation": "samples_as_rows",
+                "first_sample_probe_head": {
+                  "GSM_ID": "GSM861635",
+                  "cg00000029": 0.5413522,
+                  "cg00000108": 0.9644357,
+                  "cg00000109": 0.7937799,
+                  "cg00000165": 0.2204557,
+                  "cg00000236": 0.8289168
+                }
+              },
+              "cpgcorpus/GSE35069/GPL13534/metadata/metadata.arrow": {
+                "path": "data/raw/cpgcorpus/GSE35069/GPL13534/metadata/metadata.arrow",
+                "bytes": 21354,
+                "mtime_utc": "2025-02-25T02:11:40+00:00",
+                "num_rows": 60,
+                "num_columns": 34,
+                "column_names_head": [
+                  "GSM_ID",
+                  "title",
+                  "geo_accession",
+                  "status",
+                  "submission_date",
+                  "last_update_date",
+                  "type",
+                  "channel_count",
+                  "source_name_ch1",
+                  "organism_ch1",
+                  "characteristics_ch1",
+                  "characteristics_ch1.1"
+                ],
+                "orientation": "samples_as_rows",
+                "top_metadata_fields": {
+                  "GSM_ID": [
+                    "GSM861635",
+                    "GSM861636",
+                    "GSM861637"
+                  ],
+                  "title": [
+                    "WB_1",
+                    "WB_2",
+                    "WB_3"
+                  ],
+                  "geo_accession": [
+                    "GSM861635",
+                    "GSM861636",
+                    "GSM861637"
+                  ],
+                  "source_name_ch1": [
+                    "Whole blood",
+                    "Whole blood",
+                    "Whole blood"
+                  ],
+                  "characteristics_ch1": [
+                    "gender: Male",
+                    "gender: Male",
+                    "gender: Male"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "leftover_gse_dirs": [
+        "GSE100184",
+        "GSE100208",
+        "GSE100209",
+        "GSE100779",
+        "GSE100780",
+        "GSE100781",
+        "GSE100782",
+        "GSE100783",
+        "GSE100784",
+        "GSE100825",
+        "GSE100850",
+        "GSE101908",
+        "GSE102031",
+        "GSE103189",
+        "GSE103271",
+        "GSE103279",
+        "GSE103280",
+        "GSE103286",
+        "GSE103287",
+        "GSE103328",
+        "GSE103332",
+        "GSE103397",
+        "GSE103498",
+        "GSE103505",
+        "GSE103541",
+        "GSE103556",
+        "GSE103558",
+        "GSE103738",
+        "GSE104210",
+        "GSE104723",
+        "GSE104724",
+        "GSE106727",
+        "GSE106728",
+        "GSE106902",
+        "GSE107917",
+        "GSE107946",
+        "GSE108202",
+        "GSE108982",
+        "GSE108985",
+        "GSE109330",
+        "GSE109364",
+        "GSE109399",
+        "GSE109402",
+        "GSE109403",
+        "GSE109541",
+        "GSE110184"
+      ],
+      "file_inventory_stage0": [],
+      "n_gse_dirs_total": 49
+    },
+    "ewas_datahub": {
+      "layout": {
+        "children": [
+          "EWAS_db",
+          "SOURCE.txt",
+          "add_ewas_db",
+          "age_methylation_v1.zip",
+          "blood_methylation_v1.zip",
+          "brain_methylation_v1.zip",
+          "download",
+          "robots.txt",
+          "sample_blood_methylation_v1.zip",
+          "sample_brain_methylation_v1.zip",
+          "sample_sex_methylation_v1.zip",
+          "sample_tissue_methylation_v1.zip",
+          "sex_methylation_v1.zip",
+          "tissue_methylation_v1.zip"
+        ]
+      },
+      "baseline_download_dir": [
+        {
+          "path": "data/raw/ewas_datahub/download/GMQN.zip",
+          "bytes": 42008375,
+          "mtime_utc": "2026-04-13T02:39:09+00:00",
+          "expected_bytes": 42008375,
+          "complete": true,
+          "fraction": 1.0,
+          "zip_ok": true,
+          "n_zip_members": 16,
+          "zip_members_head": [
+            "GMQN/",
+            "GMQN/.Rhistory",
+            "GMQN/450K_test_data/",
+            "GMQN/450K_test_data/450_Grn.idat",
+            "GMQN/450K_test_data/450_Red.idat",
+            "GMQN/850K_test_data/",
+            "GMQN/850K_test_data/850_Grn.idat",
+            "GMQN/850K_test_data/850_Red.idat",
+            "GMQN/script/",
+            "GMQN/script/betaEst2.R",
+            "GMQN/script/blc2.R",
+            "GMQN/script/BMIQ_1.4.R",
+            "GMQN/script/gmqn.R",
+            "GMQN/script/probe_type_450k.RData",
+            "GMQN/script/probe_type_850k.RData"
+          ]
+        },
+        {
+          "path": "data/raw/ewas_datahub/download/age_methylation_v1.zip",
+          "bytes": 12598215716,
+          "mtime_utc": "2026-04-13T02:36:35+00:00",
+          "complete": null,
+          "zip_ok": true,
+          "n_zip_members": 2,
+          "zip_members_head": [
+            "age_methylation_v1.RData",
+            "age_methylation_v1.txt"
+          ]
+        },
+        {
+          "path": "data/raw/ewas_datahub/download/ancestry_category_methylation_v1.zip",
+          "bytes": 2109764152,
+          "mtime_utc": "2026-04-13T02:40:37+00:00",
+          "complete": null,
+          "zip_ok": true,
+          "n_zip_members": 2,
+          "zip_members_head": [
+            "ancestry_category_methylation_v1.RData",
+            "ancestry_category_methylation_v1.txt"
+          ]
+        },
+        {
+          "path": "data/raw/ewas_datahub/download/blood_methylation_v1.zip",
+          "bytes": 5220215339,
+          "mtime_utc": "2026-04-13T02:37:21+00:00",
+          "expected_bytes": 5220215339,
+          "complete": true,
+          "fraction": 1.0,
+          "zip_ok": true,
+          "n_zip_members": 2,
+          "zip_members_head": [
+            "blood_methylation_v1.RData",
+            "blood_methylation_v1.txt"
+          ]
+        },
+        {
+          "path": "data/raw/ewas_datahub/download/bmi_methylation_v1.zip",
+          "bytes": 3284635193,
+          "mtime_utc": "2026-04-13T02:39:08+00:00",
+          "complete": null,
+          "zip_ok": true,
+          "n_zip_members": 2,
+          "zip_members_head": [
+            "bmi_methylation_v1.RData",
+            "bmi_methylation_v1.txt"
+          ]
+        },
+        {
+          "path": "data/raw/ewas_datahub/download/brain_methylation_v1.zip",
+          "bytes": 2975575853,
+          "mtime_utc": "2026-04-13T02:35:39+00:00",
+          "expected_bytes": 2975575853,
+          "complete": true,
+          "fraction": 1.0,
+          "zip_ok": true,
+          "n_zip_members": 2,
+          "zip_members_head": [
+            "brain_methylation_v1.RData",
+            "brain_methylation_v1.txt"
+          ]
+        },
+        {
+          "path": "data/raw/ewas_datahub/download/cancer_methylation_v1.zip",
+          "bytes": 555662811,
+          "mtime_utc": "2026-08-06T10:09:32.840852+00:00",
+          "complete": null,
+          "zip_ok": false,
+          "zip_note": "BadZipFile"
+        }
+      ],
+      "baseline_flat_duplicates": [
+        {
+          "path": "data/raw/ewas_datahub/age_methylation_v1.zip",
+          "bytes": 7747500041,
+          "mtime_utc": "2026-08-06T10:09:32.899852+00:00",
+          "also_in_download_dir": true,
+          "download_dir_bytes": 12598215716,
+          "duplicate_same_size": false
+        },
+        {
+          "path": "data/raw/ewas_datahub/blood_methylation_v1.zip",
+          "bytes": 5220215339,
+          "mtime_utc": "2026-04-13T02:37:21+00:00",
+          "also_in_download_dir": true,
+          "download_dir_bytes": 5220215339,
+          "duplicate_same_size": true
+        },
+        {
+          "path": "data/raw/ewas_datahub/brain_methylation_v1.zip",
+          "bytes": 2975575853,
+          "mtime_utc": "2026-04-13T02:35:39+00:00",
+          "also_in_download_dir": true,
+          "download_dir_bytes": 2975575853,
+          "duplicate_same_size": true
+        },
+        {
+          "path": "data/raw/ewas_datahub/sample_blood_methylation_v1.zip",
+          "bytes": 92815,
+          "mtime_utc": "2026-04-13T02:40:37+00:00",
+          "also_in_download_dir": false
+        },
+        {
+          "path": "data/raw/ewas_datahub/sample_brain_methylation_v1.zip",
+          "bytes": 48705,
+          "mtime_utc": "2026-04-13T02:40:37+00:00",
+          "also_in_download_dir": false
+        },
+        {
+          "path": "data/raw/ewas_datahub/sample_sex_methylation_v1.zip",
+          "bytes": 115018,
+          "mtime_utc": "2026-04-13T02:35:25+00:00",
+          "also_in_download_dir": false
+        },
+        {
+          "path": "data/raw/ewas_datahub/sample_tissue_methylation_v1.zip",
+          "bytes": 195615,
+          "mtime_utc": "2026-04-13T02:35:25+00:00",
+          "also_in_download_dir": false
+        },
+        {
+          "path": "data/raw/ewas_datahub/sex_methylation_v1.zip",
+          "bytes": 4652187604,
+          "mtime_utc": "2026-04-13T02:36:56+00:00",
+          "also_in_download_dir": false
+        },
+        {
+          "path": "data/raw/ewas_datahub/tissue_methylation_v1.zip",
+          "bytes": 8266723841,
+          "mtime_utc": "2026-04-13T02:35:25+00:00",
+          "also_in_download_dir": false
+        }
+      ],
+      "EWAS_db": {
+        "n_study_dirs_total": 359,
+        "n_study_dirs_nonempty": 2,
+        "n_files": 1665,
+        "bytes": 23727243854,
+        "file_extensions": {
+          ".txt": 1664,
+          ".+?)": 1
+        },
+        "largest_studies_head": [
+          {
+            "study": "CPTAC-3",
+            "n_files": 1544,
+            "bytes": 21971134772
+          },
+          {
+            "study": "CGCI-HTMCP-CC",
+            "n_files": 121,
+            "bytes": 1756092698
+          }
+        ],
+        "sample_studies": {
+          "CGCI-HTMCP-CC": {
+            "n_files": 121,
+            "bytes": 1756092698,
+            "example_file": "(.+?)",
+            "example_bytes": 0,
+            "top_lines": [
+              "",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "file_name_head": [
+              "(.+?)",
+              "HTMCP-03-06-02001-01A.txt",
+              "HTMCP-03-06-02002-01A.txt",
+              "HTMCP-03-06-02003-01A.txt",
+              "HTMCP-03-06-02006-01A.txt",
+              "HTMCP-03-06-02007-01A.txt",
+              "HTMCP-03-06-02008-01A.txt",
+              "HTMCP-03-06-02012-01A.txt"
+            ]
+          },
+          "CPTAC-3": {
+            "n_files": 1544,
+            "bytes": 21971151156,
+            "example_file": "2f2e5477-42a4-4906-a943-bf7f80.txt",
+            "example_bytes": 14623049,
+            "top_lines": [
+              "cg18478105\t0.04",
+              "cg09835024\t0.094",
+              "cg14361672\t0.659",
+              "cg01763666\t0.924",
+              "cg12950382\t0.942"
+            ],
+            "file_name_head": [
+              "2f2e5477-42a4-4906-a943-bf7f80.txt",
+              "5a84eae1-197e-4463-ad65-59becc.txt",
+              "93e30fd5-e57e-4503-a175-863c7d.txt",
+              "93e30fd5-e57e-4503-a175-863c7d_935k.txt",
+              "9f905736-f662-41d6-b3ac-16758d.txt",
+              "9f905736-f662-41d6-b3ac-16758d_935k.txt",
+              "C3L-00001-02.txt",
+              "C3L-00001-06.txt"
+            ]
+          }
+        }
+      },
+      "add_ewas_db": {
+        "children": [
+          "(.+?)",
+          "add_txt_450",
+          "add_txt_850",
+          "add_txt_935",
+          "move.sh"
+        ],
+        "files": [
+          {
+            "path": "data/raw/ewas_datahub/add_ewas_db/move.sh",
+            "bytes": 582,
+            "mtime_utc": "2026-04-13T11:14:33+00:00"
+          },
+          {
+            "path": "data/raw/ewas_datahub/add_ewas_db/(.+?)",
+            "bytes": 0,
+            "mtime_utc": "2026-08-05T15:44:16.660805+00:00"
+          },
+          {
+            "path": "data/raw/ewas_datahub/add_ewas_db/add_txt_450/(.+?)",
+            "bytes": 0,
+            "mtime_utc": "2026-08-05T15:44:10.347806+00:00"
+          },
+          {
+            "path": "data/raw/ewas_datahub/add_ewas_db/add_txt_850/(.+?)",
+            "bytes": 0,
+            "mtime_utc": "2026-08-05T15:44:12.511805+00:00"
+          },
+          {
+            "path": "data/raw/ewas_datahub/add_ewas_db/add_txt_935/(.+?)",
+            "bytes": 0,
+            "mtime_utc": "2026-08-05T15:44:14.528805+00:00"
+          }
+        ]
+      },
+      "sample_table_previews": {
+        "data/raw/ewas_datahub/sample_tissue_methylation_v1.zip": {
+          "zip_member": "sample_tissue.RData",
+          "n_lines_in_preview": 213,
+          "header": "RDX3",
+          "top_rows": [
+            "X",
+            "\u0000\u0000\u0000\u0003\u0000\u0003\u0006\u0001\u0000\u0003\u0005\u0000\u0000\u0000\u0000\u0005UTF-8\u0000\u0000\u0004\u0002\u0000\u0000\u0000\u0001\u0000\u0004\u0000\t\u0000\u0000\u0000",
+            "sample_tissue\u0000\u0000\u0003\u0013\u0000\u0000\u0000h\u0000\u0000\u0000\u0010\u0000\u0000\u0014\ufffd\u0000\u0004\u0000\t\u0000\u0000\u0000"
+          ]
+        },
+        "data/raw/ewas_datahub/sample_blood_methylation_v1.zip": {
+          "zip_member": "sample_blood.RData",
+          "n_lines_in_preview": 212,
+          "header": "RDX3",
+          "top_rows": [
+            "X",
+            "\u0000\u0000\u0000\u0003\u0000\u0003\u0006\u0001\u0000\u0003\u0005\u0000\u0000\u0000\u0000\u0005UTF-8\u0000\u0000\u0004\u0002\u0000\u0000\u0000\u0001\u0000\u0004\u0000\t\u0000\u0000\u0000",
+            "sample_blood\u0000\u0000\u0003\u0013\u0000\u0000\u0000E\u0000\u0000\u0000\u0010\u0000\u0000"
+          ]
+        }
+      }
+    }
+  },
+  "samples": {},
+  "organization_notes": [
+    "Canonical layout should be data/raw/{cpgcorpus,ewas_atlas,ewas_datahub/{EWAS_db,download,add_ewas_db},manifests}.",
+    "Flattened *.zip files under ewas_datahub/ duplicate download/; migrate flat zips into download/ and delete duplicates after checksum match.",
+    "CpGCorpus has 46 leftover GSE dirs from aborted full sync besides Stage 0 trio; keep Stage 0 selected and quarantine leftovers or delete.",
+    "EWAS_db sample files are probe\\tbeta text (no header); study IDs mix GSE*, E-MTAB*, ENCODE, CPTAC, CGCI; not all filenames are GSM*.",
+    "Atlas associations are TSV knowledge tables; DataHub baseline zips are trait-bundle matrices; do not mix into one catalog without provenance tags.",
+    "EPICv2 manifest is annotation-only (Zenodo); store under manifests/epicv2 only."
+  ]
+}
