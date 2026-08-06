@@ -78,6 +78,7 @@ vendor/methylcapsnet         capsule/region taxonomy reference (Milestone 2)
 vendor/*                     read-only submodule pointers after installation
 docs/EWAS_DATA.md            EWAS Atlas + DataHub download inventory
 docs/CPGCORPUS_STAGE0.md     selective CpGCorpus GSE cohort
+reports/inspection/raw_inventory/  sizes, schemas, top rows for organizing ingest
 ```
 
 Reference code must not become a runtime import path. Downloaded manifests and corpora belong under `$MBS_DATA_ROOT/raw/`.
