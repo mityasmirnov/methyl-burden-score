@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import socket
 import subprocess
+import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -22,6 +25,9 @@ from mbs.training.run_artifacts import checkpoint_dir, run_dir
 _RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 _PS_BIN = "/usr/bin/ps"
 _NVIDIA_SMI_BIN = "/usr/bin/nvidia-smi"
+_DEFAULT_TB_PORT = 6006
+_TB_META_NAME = "tensorboard.json"
+_PORT_RE = re.compile(r"(?:--port(?:=|\s+)|-p\s+)(\d+)")
 
 
 @dataclass(frozen=True)
@@ -49,6 +55,16 @@ class GpuSnapshot:
     mem_total_mib: float | None
 
 
+@dataclass(frozen=True)
+class TensorBoardServer:
+    port: int
+    pid: int | None
+    logdir: Path
+    url: str
+    reused: bool
+    meta_path: Path
+
+
 @dataclass
 class MonitorSnapshot:
     run_id: str
@@ -67,6 +83,7 @@ class MonitorSnapshot:
     seconds_per_epoch: float | None
     jsonl_mtime: float | None
     note: str | None = None
+    tensorboard: TensorBoardServer | None = None
 
 
 def validate_run_id(run_id: str) -> str:
@@ -76,6 +93,206 @@ def validate_run_id(run_id: str) -> str:
             r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$"
         )
     return run_id
+
+
+def _pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def port_is_free(port: int, *, host: str = "127.0.0.1") -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind((host, port))
+        except OSError:
+            return False
+    return True
+
+
+def find_free_port(preferred: int = _DEFAULT_TB_PORT, *, attempts: int = 40) -> int:
+    if preferred < 1 or preferred > 65535:
+        raise ValueError("preferred port out of range")
+    for offset in range(attempts):
+        port = preferred + offset
+        if port > 65535:
+            break
+        if port_is_free(port):
+            return port
+    raise RuntimeError(f"no free TCP port near {preferred}")
+
+
+def _tensorboard_bin() -> Path:
+    candidate = Path(sys.executable).resolve().parent / "tensorboard"
+    if candidate.is_file():
+        return candidate
+    raise RuntimeError(
+        "tensorboard executable not found next to the active Python. "
+        "Install the training extra: uv sync --extra training"
+    )
+
+
+def _parse_port_from_args(args: str) -> int | None:
+    match = _PORT_RE.search(args)
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except ValueError:
+        return None
+
+
+def find_running_tensorboard(logdir: Path) -> TensorBoardServer | None:
+    """Return a live TensorBoard process whose cmdline includes ``logdir``."""
+    target = str(logdir.resolve())
+    try:
+        proc = subprocess.run(  # noqa: S603
+            [_PS_BIN, "-eo", "pid=,args="],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    for raw_line in proc.stdout.splitlines():
+        line = raw_line.strip()
+        if not line or "tensorboard" not in line.lower():
+            continue
+        parts = line.split(None, 1)
+        if len(parts) != 2:
+            continue
+        pid_s, args = parts
+        if target not in args and str(logdir) not in args:
+            continue
+        try:
+            pid = int(pid_s)
+        except ValueError:
+            continue
+        port = _parse_port_from_args(args) or _DEFAULT_TB_PORT
+        return TensorBoardServer(
+            port=port,
+            pid=pid,
+            logdir=logdir.resolve(),
+            url=f"http://127.0.0.1:{port}",
+            reused=True,
+            meta_path=logdir.parent / _TB_META_NAME,
+        )
+    return None
+
+
+def read_tensorboard_meta(run_root: Path) -> TensorBoardServer | None:
+    path = run_root / _TB_META_NAME
+    if not path.is_file():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    server: TensorBoardServer | None = None
+    if isinstance(payload, dict):
+        try:
+            port = int(payload["port"])
+            logdir = Path(str(payload["logdir"]))
+            pid_raw = payload.get("pid")
+            pid = int(pid_raw) if pid_raw is not None else None
+            alive = pid is not None and _pid_alive(pid)
+            port_held = pid is None and not port_is_free(port)
+            if alive or port_held:
+                server = TensorBoardServer(
+                    port=port,
+                    pid=pid,
+                    logdir=logdir,
+                    url=str(payload.get("url") or f"http://127.0.0.1:{port}"),
+                    reused=True,
+                    meta_path=path,
+                )
+        except (KeyError, TypeError, ValueError):
+            server = None
+    return server
+
+
+def write_tensorboard_meta(run_root: Path, server: TensorBoardServer) -> Path:
+    path = run_root / _TB_META_NAME
+    payload = {
+        "port": server.port,
+        "pid": server.pid,
+        "logdir": str(server.logdir),
+        "url": server.url,
+        "ssh_tunnel": ssh_tunnel_hint(server.port),
+    }
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return path
+
+
+def ssh_tunnel_hint(port: int) -> str:
+    return f"ssh -L {port}:localhost:{port} <user>@<power-horse-host>"
+
+
+def ensure_tensorboard(
+    *,
+    run_root: Path,
+    logdir: Path | None = None,
+    preferred_port: int = _DEFAULT_TB_PORT,
+) -> TensorBoardServer:
+    """Start or reuse TensorBoard for a run's ``tb/`` directory."""
+    run_root = run_root.resolve()
+    tb_dir = (logdir or (run_root / "tb")).resolve()
+    tb_dir.mkdir(parents=True, exist_ok=True)
+
+    existing = read_tensorboard_meta(run_root) or find_running_tensorboard(tb_dir)
+    if existing is not None:
+        server = TensorBoardServer(
+            port=existing.port,
+            pid=existing.pid,
+            logdir=tb_dir,
+            url=f"http://127.0.0.1:{existing.port}",
+            reused=True,
+            meta_path=run_root / _TB_META_NAME,
+        )
+        write_tensorboard_meta(run_root, server)
+        return server
+
+    port = preferred_port if port_is_free(preferred_port) else find_free_port(preferred_port)
+    tb_bin = _tensorboard_bin()
+    log_path = run_root / "tensorboard.log"
+    with log_path.open("a", encoding="utf-8") as log_handle:
+        proc = subprocess.Popen(  # noqa: S603
+            [
+                str(tb_bin),
+                "--logdir",
+                str(tb_dir),
+                "--host",
+                "0.0.0.0",  # noqa: S104 — bind for SSH tunnel from laptop
+                "--port",
+                str(port),
+            ],
+            stdout=log_handle,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+    time.sleep(0.4)
+    if proc.poll() is not None:
+        raise RuntimeError(
+            f"TensorBoard exited immediately (code {proc.returncode}). See {log_path}"
+        )
+    server = TensorBoardServer(
+        port=port,
+        pid=proc.pid,
+        logdir=tb_dir,
+        url=f"http://127.0.0.1:{port}",
+        reused=False,
+        meta_path=run_root / _TB_META_NAME,
+    )
+    write_tensorboard_meta(run_root, server)
+    return server
 
 
 def _opt_float(row: dict[str, Any], *keys: str) -> float | None:
@@ -266,7 +483,6 @@ def estimate_eta(
             deltas.append(dt / (e1 - e0))
     if not deltas:
         return None, None
-    # Prefer recent epochs (last up to 5 intervals).
     window = deltas[-5:]
     sec_per = sum(window) / len(window)
     if max_epochs is None or not history:
@@ -284,6 +500,7 @@ def collect_snapshot(
     config_path: Path | None = None,
     max_epochs_override: int | None = None,
     epoch_timestamps: dict[int, float] | None = None,
+    tensorboard: TensorBoardServer | None = None,
 ) -> MonitorSnapshot:
     run_id = validate_run_id(run_id)
     run_root = run_dir(artifact_root, run_id)
@@ -318,6 +535,7 @@ def collect_snapshot(
         status = "waiting"
         note = f"run directory missing: {run_root}"
 
+    tb = tensorboard or read_tensorboard_meta(run_root)
     jsonl_mtime = jsonl_path.stat().st_mtime if jsonl_path.is_file() else None
     return MonitorSnapshot(
         run_id=run_id,
@@ -336,6 +554,7 @@ def collect_snapshot(
         seconds_per_epoch=spe,
         jsonl_mtime=jsonl_mtime,
         note=note,
+        tensorboard=tb,
     )
 
 
@@ -428,6 +647,11 @@ def render_snapshot(snap: MonitorSnapshot) -> RenderableType:
     meta.add_row("best.pt", str(snap.best_ckpt) if snap.best_ckpt else "—")
     meta.add_row("last.pt", str(snap.last_ckpt) if snap.last_ckpt else "—")
     meta.add_row("metrics.jsonl", str(snap.jsonl_path))
+    if snap.tensorboard is not None:
+        meta.add_row("TensorBoard", snap.tensorboard.url)
+        meta.add_row("SSH tunnel", ssh_tunnel_hint(snap.tensorboard.port))
+    else:
+        meta.add_row("TensorBoard", "—")
 
     gpu_table = Table(show_header=True, header_style="bold", expand=True, box=None)
     gpu_table.add_column("#", justify="right")
@@ -480,10 +704,22 @@ def run_monitor(
     max_epochs: int | None = None,
     interval_s: float = 2.0,
     once: bool = False,
+    start_tensorboard: bool = True,
+    tb_port: int = _DEFAULT_TB_PORT,
 ) -> MonitorSnapshot:
-    """Render a live Rich dashboard until finished (or once)."""
+    """Start TensorBoard (default) and render a live Rich TUI until finished."""
     if interval_s < 0.2:
         raise ValueError("interval_s must be >= 0.2")
+
+    run_id = validate_run_id(run_id)
+    run_root = run_dir(artifact_root, run_id)
+    run_root.mkdir(parents=True, exist_ok=True)
+    tb_server: TensorBoardServer | None = None
+    if start_tensorboard:
+        tb_server = ensure_tensorboard(
+            run_root=run_root,
+            preferred_port=tb_port,
+        )
 
     epoch_timestamps: dict[int, float] = {}
     snap = collect_snapshot(
@@ -492,6 +728,7 @@ def run_monitor(
         config_path=config_path,
         max_epochs_override=max_epochs,
         epoch_timestamps=epoch_timestamps,
+        tensorboard=tb_server,
     )
     if snap.latest is not None:
         epoch_timestamps[snap.latest.epoch] = time.time()
@@ -508,10 +745,10 @@ def run_monitor(
                 config_path=config_path,
                 max_epochs_override=max_epochs,
                 epoch_timestamps=epoch_timestamps,
+                tensorboard=tb_server,
             )
             if snap.latest is not None and snap.latest.epoch not in epoch_timestamps:
                 epoch_timestamps[snap.latest.epoch] = time.time()
-            # Recompute ETA with updated stamps.
             eta, spe = estimate_eta(
                 history=snap.history,
                 max_epochs=snap.max_epochs,

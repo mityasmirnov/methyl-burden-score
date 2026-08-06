@@ -213,30 +213,35 @@ Stage 0 does not require a specific biological benchmark value before implementa
 
 Flat / multitask runs write under `$MBS_ARTIFACT_ROOT` when
 `logging.tensorboard` and `logging.jsonl` are enabled in the experiment YAML
-(default for Hub and 5c configs).
+(default for Hub and 5c configs). With `logging.auto_tensorboard` (default
+**true** whenever TensorBoard logging is on), `mbs train flat` also spawns or
+reuses a TensorBoard process for that run’s `tb/` directory and prints
+`tensorboard_url` / `monitor_hint` in the train summary.
 
 ```text
-$MBS_ARTIFACT_ROOT/runs/<run_id>/metrics.jsonl   # one JSON record per epoch
-$MBS_ARTIFACT_ROOT/runs/<run_id>/tb/             # TensorBoard events
+$MBS_ARTIFACT_ROOT/runs/<run_id>/metrics.jsonl      # one JSON record per epoch
+$MBS_ARTIFACT_ROOT/runs/<run_id>/tb/                # TensorBoard events
+$MBS_ARTIFACT_ROOT/runs/<run_id>/tensorboard.json   # port / pid / SSH tunnel hint
 $MBS_ARTIFACT_ROOT/checkpoints/<run_id>/best.pt
 $MBS_ARTIFACT_ROOT/checkpoints/<run_id>/last.pt
 ```
 
-Live 5c MVP example (`stage0-flat-multitask-age-tissue-v1`):
+Live dashboard (second SSH session; starts/reuses TensorBoard + Rich TUI):
 
 ```bash
 source scripts/activate_data_environment.sh
 RUN=stage0-flat-multitask-age-tissue-v1
-
-# Preferred: live terminal dashboard
-uv run mbs monitor --run-id "$RUN" \
-  --config configs/experiment/stage0_flat_multitask.yaml
-
-ps -eo pid,etime,%cpu,%mem,cmd | rg 'mbs train flat'
-tail -f "$MBS_ARTIFACT_ROOT/runs/$RUN/metrics.jsonl"
-nvidia-smi
-uv run tensorboard --logdir "$MBS_ARTIFACT_ROOT/runs/$RUN/tb" --bind_all --port 6006
+uv run mbs monitor --run-id "$RUN"
+# --no-tensorboard / --tb-port 6007 as needed
 ```
+
+SSH tunnel from your laptop: `ssh -L <port>:localhost:<port> …` then open
+`http://localhost:<port>`. Prefer the port from `tensorboard.json` or the
+train/monitor printout — do not launch a second manual TensorBoard for the same
+run (busy port errors usually mean one is already serving).
+
+Optional raw checks: `tail -f …/metrics.jsonl`, `nvidia-smi`,
+`ps … | rg 'mbs train flat'`.
 
 Do not interpret `val_accuracy == 0` on study-holdout tissue CE as model failure
 when the holdout study’s tissue class is absent from train (closed-set

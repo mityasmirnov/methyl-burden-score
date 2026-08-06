@@ -90,9 +90,11 @@ def masked_multitask_loss(
     tissue_on = bool(batch.tissue_mask.reshape(-1)[0].item())
 
     if age_on:
-        assert batch.age_target is not None
+        age_target = batch.age_target
+        if age_target is None:
+            raise RuntimeError("age_mask set but age_target is None")
         pred = heads.forward_age(mbs_b, present_b)
-        target = batch.age_target.reshape(pred.shape)
+        target = age_target.reshape(pred.shape)
         if age_loss == "mse":
             age_term = F.mse_loss(pred, target)
         else:

@@ -28,7 +28,7 @@ from mbs.matrix.multitask_merge import merge_age_tissue_matrices
 from mbs.paths import DataPaths, PathPolicyError
 from mbs.static_features.export_cpgpt import DEFAULT_FEATURE_SET_ID, export_cpgpt_adapter
 from mbs.training.loop import load_experiment_config, train_flat_baseline
-from mbs.training.monitor import run_monitor, validate_run_id
+from mbs.training.monitor import run_monitor, ssh_tunnel_hint, validate_run_id
 
 app = typer.Typer(no_args_is_help=True, help="Methylation Burden Score tooling")
 catalog_app = typer.Typer(no_args_is_help=True, help="DuckDB catalog operations")
@@ -837,7 +837,7 @@ def train_flat_cmd(  # noqa: PLR0917
                 "precision": "bf16-mixed",
                 "require_cuda": False,
             },
-            "logging": {"tensorboard": True},
+            "logging": {"tensorboard": True, "auto_tensorboard": False},
             "heads": {"age": {"enabled": True}, "tissue": {"enabled": True}},
             "pilot": {"fixture_task": "tissue"},
         }
@@ -850,8 +850,12 @@ def train_flat_cmd(  # noqa: PLR0917
     else:
         cfg = load_experiment_config(config_path)
         run_name = run_id
-        if study_holdout_fixture:
-            cfg.setdefault("logging", {})["tensorboard"] = True
+        if overfit_fixture or study_holdout_fixture:
+            # Fixtures write TB events but skip spawning a server (CI / no training extra).
+            log = cfg.setdefault("logging", {})
+            log.setdefault("auto_tensorboard", False)
+            if study_holdout_fixture:
+                log["tensorboard"] = True
 
     try:
         result = train_flat_baseline(
@@ -880,13 +884,23 @@ def train_flat_cmd(  # noqa: PLR0917
                 "final": result.metrics.get("final"),
                 "overfit_ok": result.metrics.get("overfit_ok"),
                 "device": result.metrics.get("device"),
+                "tensorboard_url": result.tensorboard_url,
+                "tensorboard_port": result.tensorboard_port,
+                "monitor_hint": result.monitor_hint,
             }
         )
     )
+    if result.tensorboard_url:
+        console.print(
+            f"[green]TensorBoard[/green] {result.tensorboard_url}  "
+            f"({ssh_tunnel_hint(int(result.tensorboard_port or 6006))})"
+        )
+    if result.monitor_hint:
+        console.print(f"[cyan]TUI monitor[/cyan] {result.monitor_hint}")
 
 
 @app.command("monitor")
-def monitor_cmd(
+def monitor_cmd(  # noqa: PLR0917
     run_id: Annotated[
         str,
         typer.Option(help="Run id under $MBS_ARTIFACT_ROOT/runs/<run_id>/"),
@@ -907,8 +921,19 @@ def monitor_cmd(
         bool,
         typer.Option("--once", help="Print one snapshot and exit (no live refresh)"),
     ] = False,
+    no_tensorboard: Annotated[
+        bool,
+        typer.Option(
+            "--no-tensorboard",
+            help="Do not start/reuse TensorBoard (TUI only)",
+        ),
+    ] = False,
+    tb_port: Annotated[
+        int,
+        typer.Option(help="Preferred TensorBoard port (falls back if busy)"),
+    ] = 6006,
 ) -> None:
-    """Live terminal dashboard for a train run (metrics.jsonl + GPU + checkpoints)."""
+    """Live TUI + TensorBoard for a train run (default: both)."""
     try:
         paths = DataPaths.from_environment()
     except PathPolicyError as error:
@@ -929,6 +954,8 @@ def monitor_cmd(
         raise typer.BadParameter("max_epochs must be >= 1")
     if interval < 0.2:
         raise typer.BadParameter("interval must be >= 0.2")
+    if tb_port < 1 or tb_port > 65535:
+        raise typer.BadParameter("tb_port out of range")
 
     try:
         snap = run_monitor(
@@ -938,14 +965,25 @@ def monitor_cmd(
             max_epochs=max_epochs,
             interval_s=interval,
             once=once,
+            start_tensorboard=not no_tensorboard,
+            tb_port=tb_port,
         )
     except ValueError as error:
+        console.print(f"[bold red]Monitor error:[/bold red] {error}")
+        raise typer.Exit(code=1) from error
+    except RuntimeError as error:
         console.print(f"[bold red]Monitor error:[/bold red] {error}")
         raise typer.Exit(code=1) from error
     except KeyboardInterrupt:
         console.print("\n[dim]monitor stopped[/dim]")
         raise typer.Exit(code=0) from None
 
+    if snap.tensorboard is not None:
+        console.print(
+            f"[green]TensorBoard[/green] {snap.tensorboard.url}  "
+            f"({'reused' if snap.tensorboard.reused else 'started'})  "
+            f"tunnel: {ssh_tunnel_hint(snap.tensorboard.port)}"
+        )
     if snap.status == "finished":
         console.print(f"[green]Run finished:[/green] {snap.run_root}")
     elif snap.status == "stalled":

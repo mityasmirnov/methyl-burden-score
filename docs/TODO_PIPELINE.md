@@ -11,12 +11,12 @@ True next milestone after bootstrap:
 
 > one source ingested cleanly → one graph built → one canonical matrix written →
 > one baseline trained → phenotype registry + multi-pack eval → Hub metadata
-> contracts → real Hub pack matrices + study-grouped eval → **multitask shared
-> encoder (5c — in progress)** → hierarchical → one cross-fitted score matrix.
+> contracts → real Hub pack matrices + study-grouped eval → multitask shared
+> encoder (5c — **done**) → **hierarchical (6 — start now)** → one cross-fitted
+> score matrix.
 
-**Current gate:** Milestone **5c** (`in_progress`). Prerequisites 5b / 5b′ / 5b″
-are `done`. Do **not** wait on incomplete disease/cancer profile zips to finish
-the 5c MVP.
+**Current gate:** Milestone **6**. Prerequisites through 5c are `done`.
+Disease/cancer aux heads remain optional 5c follow-ons (incomplete profile zips).
 
 Primary open data source going forward: **EWAS Data Hub**
 ([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
@@ -255,8 +255,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `last.pt`, checksums). Unit tests: `tests/unit/test_training_flat.py`. Plan:
   [`plans/milestone-5-flat-deeprvat-baseline.md`](plans/milestone-5-flat-deeprvat-baseline.md).
 - **Depends on:** (4). Model module scaffolding alone is not sufficient.
-- **Next action:** Milestone 5c — multitask shared encoder (5b / 5b′ / 5b″ done;
-  do not wait on disease/cancer zips).
+- **Next action:** Milestone 6 — hierarchical region model.
 
 ---
 
@@ -280,7 +279,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   [`plans/milestone-5b-phenotype-registry-eval.md`](plans/milestone-5b-phenotype-registry-eval.md);
   [ADR 0003](adr/0003-milestone-5b-phenotype-registry.md).
 - **Depends on:** (5).
-- **Next action:** Milestone 5c (5b′ / 5b″ already done).
+- **Next action:** Milestone 6 (5c done).
 
 ---
 
@@ -334,7 +333,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 5c. Multitask shared encoder (Hub packs)
 
-- **Status:** `in_progress`
+- **Status:** `done`
 - **Done when (MVP — sufficient to mark `done`):**
   - Unified `sample_phenotype_table.parquet` joins Hub sample-info →
     `sample_id` / `study_id` / per-task masks using
@@ -347,41 +346,28 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   - Checkpoints + resolved multitask config + TensorBoard/JSONL under
     `$MBS_ARTIFACT_ROOT`; `model_public_name: deepMAT`
   - Unit tests on synthetic multitask fixtures (no full Hub matrices in CI)
+- **Evidence:** `mbs phenotypes build-multitask-table` →
+  `matrix-hub-age-tissue-multitask-v1` (299 samples, 16 GSM deduped) +
+  `canonical/phenotypes/sample_phenotype_table.parquet` +
+  `tissue_ontology.yaml` (5 classes). Train:
+  `CUDA_VISIBLE_DEVICES=0 mbs train flat --config
+  configs/experiment/stage0_flat_multitask.yaml --run-id
+  stage0-flat-multitask-age-tissue-v1` →
+  `$MBS_ARTIFACT_ROOT/runs/stage0-flat-multitask-age-tissue-v1/` (TB,
+  `metrics.jsonl`, resolved config, split) and
+  `checkpoints/stage0-flat-multitask-age-tissue-v1/` (`best.pt` epoch 15,
+  `model_public_name: deepMAT`, task=`multitask`). Units:
+  `tests/unit/test_multitask.py`, `tests/unit/test_phenotype_table.py`.
+  Plan: [`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md).
 - **Explicitly not required for MVP `done`:** complete disease/cancer profile
   zips; disease/cancer aux heads; blood/brain as tissue CE classes; Atlas
-  joins; biological tissue accuracy on disjoint single-tissue holdouts.
-- **Optional follow-ons (same milestone or soon after, when downloads finish):**
-  masked disease/cancer aux heads; blood/brain as **domain aux** after a tissue
-  ontology (do not dump into primary tissue CE); shared-class tissue holdouts.
-- **Progress (do not mark `done` yet):**
-  - Built: `sample_phenotype_table.parquet`, `tissue_ontology.yaml`,
-    `matrix-hub-age-tissue-multitask-v1`, masked multitask train path,
-    `mbs phenotypes build-multitask-table`, `mbs monitor`
-  - In flight: `stage0-flat-multitask-age-tissue-v1` study-grouped Hub train
-    (await final `metrics.json` + checkpoint evidence)
-- **Ready inventory (do not wait):**
-
-  | Asset | Status |
-  |-------|--------|
-  | `age_methylation_v1.zip` + age sample-info parquet | Ready |
-  | `tissue_methylation_v1.zip` + tissue sample-info parquet | Ready |
-  | `matrix-hub-age-studyholdout-v1` / `matrix-hub-tissue-studyholdout-v1` | Ready |
-  | `matrix-hub-age-tissue-multitask-v1` + phenotype table | Ready |
-  | `blood` / `brain` packs + matrices + sample-info | Ready (domain aux only) |
-  | Sample-info parquet for disease/cancer/ancestry/bmi | Ready (labels) |
-  | `disease_methylation_v1.zip` / `cancer_methylation_v1.zip` | Incomplete (wget in progress) — **skip for MVP** |
-  | [`EWAS_METADATA.md`](EWAS_METADATA.md) + ewas_metadata_structure report | Ready |
-
-- **Depends on:** (5b), (5b′), (5b″) — all `done`. Read
-  [`EWAS_METADATA.md`](EWAS_METADATA.md) before inventing phenotype columns.
-- **Plan:** [`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md);
-  config [`../configs/experiment/stage0_flat_multitask.yaml`](../configs/experiment/stage0_flat_multitask.yaml);
-  schema [`../schemas/sample_phenotype_table.schema.json`](../schemas/sample_phenotype_table.schema.json).
-- **Next action:** Finish / verify `stage0-flat-multitask-age-tissue-v1`
-  (`mbs monitor --run-id stage0-flat-multitask-age-tissue-v1`); confirm
-  checkpoints + resolved config + external-test metrics; then mark §5c `done`
-  and start Milestone 6. Wire disease/cancer aux only after those profile zips
-  verify complete.
+  joins; biological tissue accuracy on disjoint single-tissue holdouts
+  (external-test tissue accuracy 0% expected under current single-tissue
+  studyholdout design — same caveat as 5b″).
+- **Optional follow-ons:** masked disease/cancer aux heads; blood/brain as
+  **domain aux** after ontology; shared-class tissue holdouts.
+- **Depends on:** (5b), (5b′), (5b″) — all `done`.
+- **Next action:** Milestone 6 — hierarchical region model.
 
 ---
 

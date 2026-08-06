@@ -123,6 +123,9 @@ device:
 
 logging:
   tensorboard: true
+  # Spawn TensorBoard with train (reuse if already serving this run's tb/).
+  auto_tensorboard: true
+  tensorboard_port: 6006
   jsonl: true
   wandb: false
   save_resolved_config: true

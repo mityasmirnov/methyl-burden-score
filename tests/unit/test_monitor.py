@@ -13,13 +13,19 @@ from typer.testing import CliRunner
 from mbs.cli import app
 from mbs.training.monitor import (
     EpochMetrics,
+    TensorBoardServer,
     collect_snapshot,
     estimate_eta,
+    find_free_port,
     parse_metrics_row,
+    port_is_free,
     read_metrics_jsonl,
+    read_tensorboard_meta,
     render_snapshot,
     resolve_max_epochs,
+    ssh_tunnel_hint,
     validate_run_id,
+    write_tensorboard_meta,
 )
 
 runner = CliRunner()
@@ -172,6 +178,23 @@ def test_collect_and_render(art_root: Path) -> None:
     assert rendered is not None
 
 
+def test_port_helpers_and_tb_meta(tmp_path: Path) -> None:
+    free = find_free_port(6010)
+    assert port_is_free(free)
+    assert "ssh -L" in ssh_tunnel_hint(6006)
+    server = TensorBoardServer(
+        port=6011,
+        pid=None,
+        logdir=tmp_path / "tb",
+        url="http://127.0.0.1:6011",
+        reused=False,
+        meta_path=tmp_path / "tensorboard.json",
+    )
+    write_tensorboard_meta(tmp_path, server)
+    # pid None + free port → meta treated as stale
+    assert read_tensorboard_meta(tmp_path) is None
+
+
 def test_monitor_cli_once(art_root: Path) -> None:
     run_id = "stage0-monitor-cli-v1"
     run_root = art_root / "runs" / run_id
@@ -195,7 +218,15 @@ def test_monitor_cli_once(art_root: Path) -> None:
     (run_root / "metrics.json").write_text("{}\n", encoding="utf-8")
     result = runner.invoke(
         app,
-        ["monitor", "--run-id", run_id, "--once", "--max-epochs", "5"],
+        [
+            "monitor",
+            "--run-id",
+            run_id,
+            "--once",
+            "--max-epochs",
+            "5",
+            "--no-tensorboard",
+        ],
     )
     assert result.exit_code == 0, result.output
     assert (

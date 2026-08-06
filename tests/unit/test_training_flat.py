@@ -156,7 +156,7 @@ def test_overfit_fixture_reaches_perfect_accuracy(isolated_workspace: Path) -> N
             "require_cuda": False,
         },
         "heads": {"tissue": {"enabled": True}},
-        "logging": {"tensorboard": True},
+        "logging": {"tensorboard": True, "auto_tensorboard": False},
     }
     result = train_flat_baseline(
         project_root=paths.project_root,

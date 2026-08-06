@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -63,6 +64,9 @@ class TrainResult:
     checkpoint_dir: Path
     metrics: dict[str, Any]
     best_epoch: int
+    tensorboard_url: str | None = None
+    tensorboard_port: int | None = None
+    monitor_hint: str | None = None
 
 
 @dataclass(slots=True)
@@ -697,7 +701,11 @@ def train_flat_baseline(
 
     log_cfg = config.get("logging", {})
     use_tb = bool(log_cfg.get("tensorboard", False))
+    # Default on when TensorBoard logging is enabled.
+    auto_tb = bool(log_cfg.get("auto_tensorboard", use_tb))
+    tb_port = int(log_cfg.get("tensorboard_port", 6006))
     tb_writer = None
+    tb_server = None
     jsonl_path = run_root / "metrics.jsonl"
     if use_tb:
         from torch.utils.tensorboard import SummaryWriter  # noqa: PLC0415
@@ -705,6 +713,22 @@ def train_flat_baseline(
         tb_dir = run_root / "tb"
         tb_dir.mkdir(parents=True, exist_ok=True)
         tb_writer = SummaryWriter(log_dir=str(tb_dir))
+        if auto_tb:
+            from mbs.training.monitor import ensure_tensorboard  # noqa: PLC0415
+
+            try:
+                tb_server = ensure_tensorboard(
+                    run_root=run_root,
+                    logdir=tb_dir,
+                    preferred_port=tb_port,
+                )
+            except RuntimeError as tb_error:
+                # Train must not die if TensorBoard is missing / port-stuck.
+                warnings.warn(
+                    f"auto TensorBoard skipped: {tb_error}",
+                    stacklevel=2,
+                )
+                tb_server = None
 
     for epoch in range(1, epochs + 1):
         train_metrics = _run_epoch(
@@ -918,4 +942,7 @@ def train_flat_baseline(
         checkpoint_dir=ckpt_root,
         metrics=metrics_out,
         best_epoch=best_epoch,
+        tensorboard_url=None if tb_server is None else tb_server.url,
+        tensorboard_port=None if tb_server is None else tb_server.port,
+        monitor_hint=(f"uv run mbs monitor --run-id {run_id}" if use_tb else None),
     )
