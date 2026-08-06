@@ -156,6 +156,7 @@ def test_overfit_fixture_reaches_perfect_accuracy(isolated_workspace: Path) -> N
             "require_cuda": False,
         },
         "heads": {"tissue": {"enabled": True}},
+        "logging": {"tensorboard": True},
     }
     result = train_flat_baseline(
         project_root=paths.project_root,
@@ -168,7 +169,10 @@ def test_overfit_fixture_reaches_perfect_accuracy(isolated_workspace: Path) -> N
         max_epochs=100,
     )
     assert result.metrics.get("overfit_ok") is True
+    assert result.metrics.get("model_public_name") == "deepMAT"
     assert (result.run_dir / "resolved_config.yaml").is_file()
+    assert (result.run_dir / "metrics.jsonl").is_file()
+    assert (result.run_dir / "tb").is_dir()
     assert (result.checkpoint_dir / "best.pt").is_file()
     assert (result.checkpoint_dir / "checkpoint_manifest.json").is_file()
 

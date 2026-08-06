@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mityasmirnov/methyl-burden-score/schemas/phenotype_registry.schema.json",
+  "title": "MBS phenotype / source dataset registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["registry_version", "entries"],
+  "properties": {
+    "registry_version": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entry_id",
+          "source_system",
+          "phenotype_family",
+          "label_type",
+          "split_role",
+          "download_path"
+        ],
+        "properties": {
+          "entry_id": {"type": "string", "minLength": 1},
+          "source_system": {
+            "type": "string",
+            "enum": ["ewas_datahub", "ewas_atlas", "cpgcorpus"]
+          },
+          "phenotype_family": {
+            "type": "string",
+            "enum": [
+              "age",
+              "tissue",
+              "disease",
+              "cancer",
+              "blood",
+              "brain",
+              "sex",
+              "ancestry",
+              "bmi",
+              "cell_type"
+            ]
+          },
+          "study_id": {"type": ["string", "null"]},
+          "platform": {"type": ["string", "null"]},
+          "sample_count": {"type": ["integer", "null"], "minimum": 0},
+          "label_type": {
+            "type": "string",
+            "enum": [
+              "regression",
+              "binary",
+              "multiclass",
+              "pack_profile",
+              "sample_info",
+              "none"
+            ]
+          },
+          "split_role": {
+            "type": "string",
+            "enum": ["train", "validation", "external_test", "pilot", "registered", "secondary"]
+          },
+          "download_path": {"type": "string", "minLength": 1},
+          "checksum": {
+            "type": ["string", "null"],
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "notes": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}

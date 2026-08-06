@@ -166,3 +166,63 @@ def make_synthetic_overfit_bundle(
         "input_dim": 2 + static_dim,
         "n_classes": n_classes,
     }
+
+
+def make_synthetic_study_holdout_bundle(
+    *,
+    studies: tuple[str, ...] = ("GSE_A", "GSE_B", "GSE_C"),
+    samples_per_study: int = 6,
+    n_cpgs: int = 15,
+    n_genes: int = 3,
+    n_classes: int = 3,
+    static_dim: int = 4,
+    seed: int = 0,
+    task: str = "tissue",
+) -> dict[str, Any]:
+    """Multi-study synthetic fixture for study-grouped holdout benchmarks.
+
+    ``task='tissue'`` → multiclass labels; ``task='age'`` → ages tied to class
+    with continuous targets (class_index still set for shared head smoke).
+    """
+    base = make_synthetic_overfit_bundle(
+        n_samples=len(studies) * samples_per_study,
+        n_cpgs=n_cpgs,
+        n_genes=n_genes,
+        n_classes=n_classes,
+        static_dim=static_dim,
+        seed=seed,
+    )
+    records: list[FlatSampleRecord] = []
+    sample_rows: list[dict[str, Any]] = []
+    ages: list[float] = []
+    for i, rec in enumerate(base["records"]):
+        study = studies[i // samples_per_study]
+        new_id = f"{study}_{rec.sample_id}"
+        records.append(
+            FlatSampleRecord(
+                sample_id=new_id,
+                donor_id=f"{study}_{rec.donor_id}",
+                class_index=rec.class_index,
+                features=rec.features,
+            )
+        )
+        age = float(base["ages"][i]) + (0.1 if task == "age" else 0.0)
+        ages.append(age)
+        sample_rows.append(
+            {
+                "sample_id": new_id,
+                "study_id": study,
+                "platform": "HM450",
+                "group_id": study,
+                "class_index": rec.class_index,
+                "age": age,
+            }
+        )
+    return {
+        **base,
+        "records": records,
+        "ages": ages,
+        "sample_rows": sample_rows,
+        "studies": list(studies),
+        "task": task,
+    }

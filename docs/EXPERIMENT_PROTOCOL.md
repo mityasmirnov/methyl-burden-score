@@ -41,6 +41,15 @@ donor and technical replicate
 
 No group may cross outer folds. Inner validation is also study-grouped.
 
+For **multi-study** runs (Milestone 5b+), study-grouped holdout is mandatory:
+the same `study_id` must not appear in more than one of
+`train` / `validation` / `external_test`. Single-study smoke pilots (for example
+GSE35069 donor-grouped 4/2) remain valid for debugging only and must not define
+the final performance story.
+
+Use `mbs.evaluation.build_study_grouped_split` and the phenotype registry
+(`configs/data/phenotype_registry.yaml`) to record split roles.
+
 Development protocol:
 
 ```text
@@ -60,14 +69,27 @@ up to 6 restarts per fold
 ### Age
 
 - regression on age standardized with train-fold statistics;
-- report MAE in years, RMSE, Pearson correlation, Spearman correlation, and R²;
-- stratify by study, tissue, platform, and age range.
+- report **MAE** in years, **RMSE**, Pearson correlation, Spearman correlation, and R²;
+- stratify by study, tissue, platform, and age range (`mbs.evaluation.regression_metrics`,
+  `metrics_by_group`).
 
-### Tissue
+### Tissue / multiclass cell type
 
 - multiclass cross-entropy;
-- report macro-F1, balanced accuracy, per-class precision/recall, and confusion matrix;
-- exclude classes represented by only one study from claims of cross-study generalization.
+- report **macro-F1**, **balanced accuracy**, per-class precision/recall, and
+  **confusion matrix**;
+- exclude classes represented by only one study from claims of cross-study
+  generalization (`mbs.evaluation.multiclass_metrics`).
+
+### Binary disease / condition
+
+- report **AUROC** and **AUPRC** (`mbs.evaluation.binary_auroc_auprc`);
+- always stratify by holdout study and platform.
+
+### Cross-study generalization
+
+- report performance **by holdout study** and **by platform**;
+- never claim generalization from a single-study donor split alone.
 
 ## Baseline matrix
 

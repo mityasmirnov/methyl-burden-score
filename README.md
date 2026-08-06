@@ -2,7 +2,11 @@
 
 A research codebase for learning a shared, gene-level DNA methylation burden score from variable sets of CpG measurements.
 
-Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks); the model path remains flat DeepRVAT → hierarchical → study-grouped cross-fitting. See [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md) and [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md).
+The public model name is **deepMAT** (deep Methylation Aggregation Transformer /
+Deep Set family). The Python package remains `methyl-burden-score` with the
+`mbs` CLI entry point; do not treat a package rename as required for Stage 0.
+
+Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks); the model path remains flat DeepRVAT-style deepMAT baseline → phenotype registry / multi-pack eval → hierarchical → study-grouped cross-fitting. See [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), and [`docs/adr/0003-milestone-5b-phenotype-registry.md`](docs/adr/0003-milestone-5b-phenotype-registry.md).
 
 The Stage 0 implementation follows four design principles:
 

@@ -9,6 +9,9 @@ Learn one scalar methylation burden score for every observed sample–gene pair 
 
 The model must accept variable sets of CpGs and remain independent of a fixed array manifest.
 
+**Public name:** deepMAT. **Package / CLI:** `methyl-burden-score` / `mbs`
+(unchanged; see [ADR 0003](adr/0003-milestone-5b-phenotype-registry.md)).
+
 ## Core contracts
 
 For sample `s`, CpG `c`, region `r`, and gene `g`:

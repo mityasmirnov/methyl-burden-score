@@ -13,6 +13,7 @@ import torch.nn.functional as F
 import yaml
 from torch import nn
 
+from mbs.evaluation.splits import build_study_grouped_split
 from mbs.matrix.store import (
     matrix_store_paths,
     open_betas_zarr,
@@ -31,6 +32,7 @@ from mbs.training.dataset import (
     FlatSampleRecord,
     build_flat_sample,
     make_synthetic_overfit_bundle,
+    make_synthetic_study_holdout_bundle,
     record_to_batch,
 )
 from mbs.training.features import build_static_column_table
@@ -246,6 +248,7 @@ def train_flat_baseline(
     run_id: str,
     device_str: str = "cuda",
     overfit_fixture: bool = False,
+    study_holdout_fixture: bool = False,
     max_epochs: int | None = None,
     max_loci: int | None = None,
 ) -> TrainResult:
@@ -254,8 +257,12 @@ def train_flat_baseline(
     _set_seed(seed)
 
     train_cfg = config.get("training", {})
-    require_cuda = bool(train_cfg.get("require_cuda", False)) and not overfit_fixture
-    if overfit_fixture and device_str.startswith("cuda") and not torch.cuda.is_available():
+    fixture_mode = overfit_fixture or study_holdout_fixture
+    if not fixture_mode and str(config.get("pilot", {}).get("mode", "")) == "study_holdout_fixture":
+        study_holdout_fixture = True
+        fixture_mode = True
+    require_cuda = bool(train_cfg.get("require_cuda", False)) and not fixture_mode
+    if fixture_mode and device_str.startswith("cuda") and not torch.cuda.is_available():
         device_str = "cpu"
         require_cuda = False
     device = resolve_device(device_str, require_cuda=require_cuda)
@@ -276,7 +283,32 @@ def train_flat_baseline(
     val_records: list[FlatSampleRecord] | None = None
     class_weights: torch.Tensor | None = None
 
-    if overfit_fixture:
+    if study_holdout_fixture:
+        task = str(config.get("pilot", {}).get("fixture_task", "tissue"))
+        bundle = make_synthetic_study_holdout_bundle(seed=seed, task=task)
+        records: list[FlatSampleRecord] = list(bundle["records"])
+        class_names = list(bundle["class_names"])
+        gene_ids = list(bundle["gene_ids"])
+        n_genes = int(bundle["n_genes"])
+        input_dim = int(bundle["input_dim"])
+        n_classes = int(bundle["n_classes"])
+        studies = list(bundle["studies"])
+        split_manifest = build_study_grouped_split(
+            bundle["sample_rows"],
+            train_studies=studies[:-2],
+            validation_studies=[studies[-2]],
+            external_test_studies=[studies[-1]],
+            split_id="study-holdout-fixture-v1",
+        )
+        train_ids = set(split_manifest["train_sample_ids"])
+        val_ids = set(split_manifest["validation_sample_ids"])
+        train_records = [r for r in records if r.sample_id in train_ids]
+        val_records = [r for r in records if r.sample_id in val_ids]
+        split = split_manifest
+        class_weights = _class_weights([r.class_index for r in train_records], n_classes)
+        if torch.allclose(class_weights, torch.ones_like(class_weights)):
+            class_weights = None
+    elif overfit_fixture:
         bundle = make_synthetic_overfit_bundle(seed=seed)
         fixture_records = list(bundle["records"])
         class_names = list(bundle["class_names"])
@@ -411,6 +443,17 @@ def train_flat_baseline(
     ckpt_root.mkdir(parents=True, exist_ok=True)
     checkpoint_hashes: dict[str, str] = {}
 
+    log_cfg = config.get("logging", {})
+    use_tb = bool(log_cfg.get("tensorboard", False))
+    tb_writer = None
+    jsonl_path = run_root / "metrics.jsonl"
+    if use_tb:
+        from torch.utils.tensorboard import SummaryWriter  # noqa: PLC0415
+
+        tb_dir = run_root / "tb"
+        tb_dir.mkdir(parents=True, exist_ok=True)
+        tb_writer = SummaryWriter(log_dir=str(tb_dir))
+
     for epoch in range(1, epochs + 1):
         train_metrics = _run_epoch(
             records=train_records,
@@ -446,8 +489,17 @@ def train_flat_baseline(
             "train_accuracy": train_metrics["accuracy"],
             "val_loss": val_metrics["loss"],
             "val_accuracy": val_metrics["accuracy"],
+            "learning_rate": lr,
         }
         history.append(row)
+        with jsonl_path.open("a", encoding="utf-8") as jsonl_handle:
+            jsonl_handle.write(json.dumps(row) + "\n")
+        if tb_writer is not None:
+            tb_writer.add_scalar("loss/train", row["train_loss"], epoch)
+            tb_writer.add_scalar("loss/val", row["val_loss"], epoch)
+            tb_writer.add_scalar("accuracy/train", row["train_accuracy"], epoch)
+            tb_writer.add_scalar("accuracy/val", row["val_accuracy"], epoch)
+            tb_writer.add_scalar("lr", lr, epoch)
         checkpoint_hashes["last.pt"] = save_checkpoint(
             ckpt_root / "last.pt",
             model_state=model.state_dict(),
@@ -497,10 +549,15 @@ def train_flat_baseline(
         "gene_panel_size": len(gene_ids),
         "overfit_fixture": overfit_fixture,
         "device": str(device),
+        "model_public_name": "deepMAT",
     }
     if overfit_fixture and history:
         metrics_out["overfit_train_accuracy"] = history[-1]["train_accuracy"]
         metrics_out["overfit_ok"] = bool(history[-1]["train_accuracy"] >= 0.999)
+
+    if tb_writer is not None:
+        tb_writer.flush()
+        tb_writer.close()
 
     resolved = dict(config)
     resolved["runtime"] = {

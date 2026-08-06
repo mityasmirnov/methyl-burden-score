@@ -567,6 +567,13 @@ def train_flat_cmd(  # noqa: PLR0917
             help="Overfit the tiny synthetic fixture instead of the pilot matrix",
         ),
     ] = False,
+    study_holdout_fixture: Annotated[
+        bool,
+        typer.Option(
+            "--study-holdout-fixture",
+            help="Multi-study synthetic fixture with study-grouped train/val/external_test",
+        ),
+    ] = False,
     max_epochs: Annotated[
         int | None,
         typer.Option(help="Override training.max_epochs"),
@@ -576,7 +583,7 @@ def train_flat_cmd(  # noqa: PLR0917
         typer.Option(help="Optional study-column cap for smoke runs"),
     ] = None,
 ) -> None:
-    """Train the exact flat DeepRVAT-style CpG→gene max-pooling baseline."""
+    """Train the exact flat DeepRVAT-style CpG→gene max-pooling baseline (deepMAT)."""
     try:
         paths = DataPaths.from_environment()
     except PathPolicyError as error:
@@ -586,7 +593,10 @@ def train_flat_cmd(  # noqa: PLR0917
     paths.ensure_directories()
     default_config = paths.project_root / "configs" / "experiment" / "stage0_flat_pilot.yaml"
     config_path = (config or default_config).resolve()
-    if not overfit_fixture and not config_path.is_file():
+    if overfit_fixture and study_holdout_fixture:
+        raise typer.BadParameter("choose only one of --overfit-fixture / --study-holdout-fixture")
+    fixture_mode = overfit_fixture or study_holdout_fixture
+    if not fixture_mode and not config_path.is_file():
         raise typer.BadParameter(f"config not found: {config_path}")
     if max_epochs is not None and max_epochs < 1:
         raise typer.BadParameter("max_epochs must be >= 1")
@@ -595,9 +605,17 @@ def train_flat_cmd(  # noqa: PLR0917
     if not run_id.strip() or "/" in run_id or ".." in run_id:
         raise typer.BadParameter("run_id must be a single path segment")
 
-    if overfit_fixture and not config_path.is_file():
+    if fixture_mode and not config_path.is_file():
         cfg: dict[str, Any] = {
-            "experiment": {"name": "flat_overfit_fixture", "stage": 0, "seed": 42},
+            "experiment": {
+                "name": (
+                    "flat_study_holdout_fixture"
+                    if study_holdout_fixture
+                    else "flat_overfit_fixture"
+                ),
+                "stage": 0,
+                "seed": 42,
+            },
             "model": {
                 "phi_layers": 2,
                 "phi_hidden_dimension": 20,
@@ -617,12 +635,21 @@ def train_flat_cmd(  # noqa: PLR0917
                 "precision": "bf16-mixed",
                 "require_cuda": False,
             },
+            "logging": {"tensorboard": True},
             "heads": {"age": {"enabled": True}, "tissue": {"enabled": True}},
+            "pilot": {"fixture_task": "tissue"},
         }
-        run_name = run_id if run_id != "stage0-flat-gse35069-v1" else "stage0-flat-overfit-fixture"
+        if study_holdout_fixture:
+            default_holdout = "stage0-flat-study-holdout-fixture"
+            run_name = run_id if run_id != "stage0-flat-gse35069-v1" else default_holdout
+        else:
+            default_overfit = "stage0-flat-overfit-fixture"
+            run_name = run_id if run_id != "stage0-flat-gse35069-v1" else default_overfit
     else:
         cfg = load_experiment_config(config_path)
         run_name = run_id
+        if study_holdout_fixture:
+            cfg.setdefault("logging", {})["tensorboard"] = True
 
     try:
         result = train_flat_baseline(
@@ -633,6 +660,7 @@ def train_flat_cmd(  # noqa: PLR0917
             run_id=run_name,
             device_str=device,
             overfit_fixture=overfit_fixture,
+            study_holdout_fixture=study_holdout_fixture,
             max_epochs=max_epochs,
             max_loci=max_loci,
         )

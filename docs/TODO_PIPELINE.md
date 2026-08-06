@@ -10,7 +10,8 @@ Status values: `done` | `in_progress` | `pending` | `deferred`
 True next milestone after bootstrap:
 
 > one source ingested cleanly → one graph built → one canonical matrix written →
-> one baseline trained → one cross-fitted score matrix produced.
+> one baseline trained → phenotype registry + multi-pack eval → hierarchical →
+> one cross-fitted score matrix produced.
 
 Primary open data source going forward: **EWAS Data Hub**
 ([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
@@ -237,13 +238,37 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ---
 
+## 5b. Phenotype registry and multi-pack eval
+
+- **Status:** `done`
+- **Done when:** Versioned phenotype/source registry exists; wave-1 Hub packs
+  (age, tissue, disease) have family download tooling and sample-info Parquet
+  export; evaluation metrics + study-grouped splits are coded and documented;
+  flat training logs to TensorBoard/JSONL; first benchmark report covers
+  GSE35069 smoke plus age and tissue study-holdout runs (disease subset
+  allowed if documented). Atlas remains validation-only.
+- **Evidence:** Registry `configs/data/phenotype_registry.yaml` + schema;
+  `scripts/download_ewas_phenotype_family.sh` / `make download-ewas-family`;
+  sample-info Parquet under `$MBS_DATA_ROOT/canonical/phenotypes/` for age /
+  tissue / disease; `src/mbs/evaluation` + unit tests; TensorBoard/JSONL on
+  flat loop; fixtures
+  `artifacts/runs/stage0-5b-{tissue,age}-holdout-fixture/` plus existing
+  GSE35069 pilot; report
+  `reports/inspection/stage0_5b_benchmark/`. Plan:
+  [`plans/milestone-5b-phenotype-registry-eval.md`](plans/milestone-5b-phenotype-registry-eval.md);
+  [ADR 0003](adr/0003-milestone-5b-phenotype-registry.md).
+- **Depends on:** (5).
+- **Next action:** Milestone 6 — hierarchical region model.
+
+---
+
 ## 6. Add the hierarchical model
 
 - **Status:** `pending`
 - **Done when:** Region layer is trained after the flat baseline is stable;
   promoter/body (and related roles) can be compared to the flat model on the
   same pilot folds.
-- **Depends on:** (5).
+- **Depends on:** (5b).
 
 ---
 
@@ -253,7 +278,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Done when:** Out-of-fold MBS scores, age predictions, and tissue predictions
   are generated with leakage controls (no sample/donor/replicate/held-out study
   scored by a model that saw it). Score matrix + fold-assignment hash stored.
-- **Depends on:** (5) at minimum; (6) preferred for hierarchical OOF scores.
+- **Depends on:** (5b) at minimum; (6) preferred for hierarchical OOF scores.
 
 ---
 

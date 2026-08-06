@@ -149,6 +149,25 @@ nohup bash scripts/download_ewas_datahub.sh all \
 # bash scripts/download_ewas_datahub.sh download
 # bash scripts/download_ewas_datahub.sh add_ewas_db
 
+# Single phenotype family (profile + sample-info) — Milestone 5b wave-1 order:
+# age → tissue → disease
+make download-ewas-family FAMILY=age
+make download-ewas-family FAMILY=tissue
+make download-ewas-family FAMILY=disease
+# Background example:
+# nohup make download-ewas-family FAMILY=age \
+#   > "$MBS_ARTIFACT_ROOT/logs/downloads/ewas_family_age.log" 2>&1 &
+
+# Export sample-info zip → canonical Parquet (prefers .txt member)
+make export-ewas-sample-info FAMILY=tissue
+# R fallback when only .RData is present:
+# Rscript scripts/export_ewas_sample_info.R tissue \
+#   "$MBS_DATA_ROOT/raw/ewas_datahub/download/sample_tissue_methylation_v1.zip" \
+#   "$MBS_DATA_ROOT/canonical/phenotypes/tissue_sample_info.parquet"
+
+# Phenotype registry (git): configs/data/phenotype_registry.yaml
+# Checksums after download: $MBS_DATA_ROOT/canonical/registries/download_checksums.parquet
+
 # Single EWAS_db study (preferred for Stage 0 pilot; ~60 GSM files for GSE35069)
 make download-ewas-study STUDY=GSE35069
 # or: bash scripts/download_ewas_datahub_study.sh GSE35069

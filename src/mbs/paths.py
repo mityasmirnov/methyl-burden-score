@@ -96,6 +96,8 @@ class DataPaths:
             self.data_root / "canonical" / "annotations",
             self.data_root / "canonical" / "graphs",
             self.data_root / "canonical" / "static_features",
+            self.data_root / "canonical" / "registries",
+            self.data_root / "canonical" / "phenotypes",
             self.scratch_root / "tmp",
             self.cache_root,
             self.artifact_root / "runs",

@@ -79,7 +79,7 @@ device:
   torch_device: cuda
 
 logging:
-  tensorboard: false
+  tensorboard: true
   wandb: false
   save_resolved_config: true
   save_environment: true

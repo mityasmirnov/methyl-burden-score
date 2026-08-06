@@ -1,0 +1,104 @@
+{
+  "milestone": "5b",
+  "model_public_name": "deepMAT",
+  "cli": "mbs",
+  "registry": "configs/data/phenotype_registry.yaml",
+  "sample_info_parquet": {
+    "age": "data/canonical/phenotypes/age_sample_info.parquet",
+    "tissue": "data/canonical/phenotypes/tissue_sample_info.parquet",
+    "disease": "data/canonical/phenotypes/disease_sample_info.parquet"
+  },
+  "runs": {
+    "stage0-flat-gse35069-v1": {
+      "metrics_final": {
+        "epoch": 19,
+        "train_accuracy": 0.025,
+        "train_loss": 2.3921875,
+        "val_accuracy": 0.1,
+        "val_loss": 2.315625
+      },
+      "best_epoch": 9,
+      "split_mode": null,
+      "train_studies": null,
+      "validation_studies": null,
+      "external_test_studies": null,
+      "tensorboard": false,
+      "metrics_jsonl": false
+    },
+    "stage0-5b-tissue-holdout-fixture": {
+      "metrics_final": {
+        "epoch": 60,
+        "learning_rate": 0.05,
+        "train_accuracy": 1.0,
+        "train_loss": 0.006848847105478247,
+        "val_accuracy": 1.0,
+        "val_loss": 0.006747476290911436
+      },
+      "best_epoch": 60,
+      "split_mode": "study_grouped",
+      "train_studies": [
+        "GSE_A"
+      ],
+      "validation_studies": [
+        "GSE_B"
+      ],
+      "external_test_studies": [
+        "GSE_C"
+      ],
+      "tensorboard": true,
+      "metrics_jsonl": true
+    },
+    "stage0-5b-age-holdout-fixture": {
+      "metrics_final": {
+        "epoch": 60,
+        "learning_rate": 0.05,
+        "train_accuracy": 1.0,
+        "train_loss": 0.006848847105478247,
+        "val_accuracy": 1.0,
+        "val_loss": 0.006747476290911436
+      },
+      "best_epoch": 60,
+      "split_mode": "study_grouped",
+      "train_studies": [
+        "GSE_A"
+      ],
+      "validation_studies": [
+        "GSE_B"
+      ],
+      "external_test_studies": [
+        "GSE_C"
+      ],
+      "tensorboard": true,
+      "metrics_jsonl": true
+    }
+  },
+  "notes": [
+    "GSE35069 remains the real pilot smoke benchmark (donor-grouped).",
+    "Age/tissue study-holdout fixtures exercise study-grouped splits + TensorBoard; full Hub profile matrix convert is documented as follow-on (packs already on disk).",
+    "Disease sample-info exported; disease profile zip not required for 5b gate when subset notes are recorded.",
+    "EWAS Atlas remains validation-only."
+  ],
+  "sample_info_stats": {
+    "age": {
+      "n_samples": 8374,
+      "n_studies": 143,
+      "platforms": {
+        "450K": 8374
+      }
+    },
+    "tissue": {
+      "n_samples": 5323,
+      "n_studies": 258,
+      "platforms": {
+        "450K": 5323
+      }
+    },
+    "disease": {
+      "n_samples": 14501,
+      "n_studies": 209,
+      "platforms": {
+        "450K": 14501
+      }
+    }
+  }
+}

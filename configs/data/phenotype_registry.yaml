@@ -1,0 +1,237 @@
+# Stage 0 phenotype / source dataset registry (Milestone 5b).
+# Checksums for large binaries live under
+# $MBS_DATA_ROOT/canonical/registries/download_checksums.parquet after download.
+registry_version: phenotype-registry-v1
+description: >
+  EWAS Data Hub phenotype packs and the GSE35069 pilot. Wave-1 families:
+  age, tissue, disease. Wave-2 / secondary: cancer, blood, brain, sex,
+  ancestry, BMI. Atlas is validation-only and is not listed as training data.
+
+entries:
+  - entry_id: gse35069-ewasdb-celltype-pilot
+    source_system: ewas_datahub
+    phenotype_family: cell_type
+    study_id: GSE35069
+    platform: HM450
+    sample_count: 60
+    label_type: multiclass
+    split_role: pilot
+    download_path: raw/ewas_datahub/EWAS_db/GSE35069
+    checksum: null
+    notes: Smoke pilot; labels from CpGCorpus metadata.arrow join.
+
+  - entry_id: hub-age-profile-v1
+    source_system: ewas_datahub
+    phenotype_family: age
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: pack_profile
+    split_role: registered
+    download_path: raw/ewas_datahub/download/age_methylation_v1.zip
+    checksum: null
+    notes: Wave-1 profile pack (~11.7 GB).
+
+  - entry_id: hub-age-sample-info-v1
+    source_system: ewas_datahub
+    phenotype_family: age
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: sample_info
+    split_role: registered
+    download_path: raw/ewas_datahub/download/sample_age_methylation_v1.zip
+    checksum: null
+    notes: Wave-1 sample-info; export to canonical/phenotypes/age_sample_info.parquet.
+
+  - entry_id: hub-tissue-profile-v1
+    source_system: ewas_datahub
+    phenotype_family: tissue
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: pack_profile
+    split_role: registered
+    download_path: raw/ewas_datahub/download/tissue_methylation_v1.zip
+    checksum: null
+    notes: Wave-1 profile pack (~7.7 GB).
+
+  - entry_id: hub-tissue-sample-info-v1
+    source_system: ewas_datahub
+    phenotype_family: tissue
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: sample_info
+    split_role: registered
+    download_path: raw/ewas_datahub/download/sample_tissue_methylation_v1.zip
+    checksum: null
+    notes: Wave-1 sample-info; export to canonical/phenotypes/tissue_sample_info.parquet.
+
+  - entry_id: hub-disease-profile-v1
+    source_system: ewas_datahub
+    phenotype_family: disease
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: pack_profile
+    split_role: registered
+    download_path: raw/ewas_datahub/download/disease_methylation_v1.zip
+    checksum: null
+    notes: Wave-1 profile pack (~20 GB); matrix convert may be study-subsetted.
+
+  - entry_id: hub-disease-sample-info-v1
+    source_system: ewas_datahub
+    phenotype_family: disease
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: sample_info
+    split_role: registered
+    download_path: raw/ewas_datahub/download/sample_disease_methylation_v1.zip
+    checksum: null
+    notes: Wave-1 sample-info; export to canonical/phenotypes/disease_sample_info.parquet.
+
+  - entry_id: hub-cancer-profile-v1
+    source_system: ewas_datahub
+    phenotype_family: cancer
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: pack_profile
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/cancer_methylation_v1.zip
+    checksum: null
+    notes: Wave-2; download optional for Milestone 5b gate.
+
+  - entry_id: hub-cancer-sample-info-v1
+    source_system: ewas_datahub
+    phenotype_family: cancer
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: sample_info
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/sample_cancer_methylation_v1.zip
+    checksum: null
+    notes: Wave-2 sample-info.
+
+  - entry_id: hub-blood-profile-v1
+    source_system: ewas_datahub
+    phenotype_family: blood
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: pack_profile
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/blood_methylation_v1.zip
+    checksum: null
+    notes: Wave-2.
+
+  - entry_id: hub-blood-sample-info-v1
+    source_system: ewas_datahub
+    phenotype_family: blood
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: sample_info
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/sample_blood_methylation_v1.zip
+    checksum: null
+    notes: Wave-2 sample-info.
+
+  - entry_id: hub-brain-profile-v1
+    source_system: ewas_datahub
+    phenotype_family: brain
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: pack_profile
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/brain_methylation_v1.zip
+    checksum: null
+    notes: Wave-2.
+
+  - entry_id: hub-brain-sample-info-v1
+    source_system: ewas_datahub
+    phenotype_family: brain
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: sample_info
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/sample_brain_methylation_v1.zip
+    checksum: null
+    notes: Wave-2 sample-info.
+
+  - entry_id: hub-sex-profile-v1
+    source_system: ewas_datahub
+    phenotype_family: sex
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: pack_profile
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/sex_methylation_v1.zip
+    checksum: null
+    notes: Nuisance / robustness task.
+
+  - entry_id: hub-sex-sample-info-v1
+    source_system: ewas_datahub
+    phenotype_family: sex
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: sample_info
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/sample_sex_methylation_v1.zip
+    checksum: null
+    notes: Nuisance sample-info.
+
+  - entry_id: hub-ancestry-profile-v1
+    source_system: ewas_datahub
+    phenotype_family: ancestry
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: pack_profile
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/ancestry_category_methylation_v1.zip
+    checksum: null
+    notes: Nuisance / robustness task.
+
+  - entry_id: hub-ancestry-sample-info-v1
+    source_system: ewas_datahub
+    phenotype_family: ancestry
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: sample_info
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/sample_ancestry_category_methylation_v1.zip
+    checksum: null
+    notes: Nuisance sample-info.
+
+  - entry_id: hub-bmi-profile-v1
+    source_system: ewas_datahub
+    phenotype_family: bmi
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: pack_profile
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/bmi_methylation_v1.zip
+    checksum: null
+    notes: Nuisance / robustness task.
+
+  - entry_id: hub-bmi-sample-info-v1
+    source_system: ewas_datahub
+    phenotype_family: bmi
+    study_id: null
+    platform: null
+    sample_count: null
+    label_type: sample_info
+    split_role: secondary
+    download_path: raw/ewas_datahub/download/sample_bmi_methylation_v1.zip
+    checksum: null
+    notes: Nuisance sample-info.

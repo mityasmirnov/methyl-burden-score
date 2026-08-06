@@ -8,7 +8,7 @@ SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
 CACHE_ROOT ?= $(PROJECT_ROOT)/cache
 ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
-.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static
+.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info
 
 help:
 	@printf '%s\n' \
@@ -30,6 +30,8 @@ help:
 	  'download-ewas-atlas    Download EWAS Atlas batch TSVs' \
 	  'download-ewas-datahub  Download EWAS DataHub methylation packs' \
 	  'download-ewas-study    Download one EWAS_db study (STUDY=GSE35069)' \
+	  'download-ewas-family   Download one phenotype family (FAMILY=age)' \
+	  'export-ewas-sample-info Export sample-info zip → Parquet (FAMILY=tissue)' \
 	  'download-manifests     Download EPICv2 Zenodo reannotated manifest' \
 	  'download-gencode       Download GENCODE v38 annotation GTF' \
 	  'download-cpg-islands   Download UCSC hg38 CpG island table' \
@@ -98,6 +100,13 @@ download-ewas-datahub:
 STUDY ?= GSE35069
 download-ewas-study:
 	bash scripts/download_ewas_datahub_study.sh $(STUDY)
+
+FAMILY ?= age
+download-ewas-family:
+	bash scripts/download_ewas_phenotype_family.sh $(FAMILY)
+
+export-ewas-sample-info:
+	uv run python -c "from pathlib import Path; from mbs.paths import DataPaths; from mbs.registry.sample_info import export_family_from_data_root; p=DataPaths.from_environment(); print(export_family_from_data_root(p.data_root, '$(FAMILY)'))"
 
 download-manifests:
 	bash scripts/download_manifests.sh

@@ -8,11 +8,11 @@ AGENTS.md                    authoritative coding-agent rules
 docs/TODO_PIPELINE.md        Stage 0 scientific milestone checklist (agents update)
 docs/STRATEGIC_PLAN.md       long-term data + multimodal vision (post–Stage 0)
 docs/WORKSPACE.md            server and /data layout
-docs/adr/                    architecture decision records (incl. 0002 EWAS Hub)
-docs/ARCHITECTURE.md         model contracts
+docs/adr/                    architecture decision records (0001 workspace, 0002 EWAS Hub, 0003 Milestone 5b)
+docs/ARCHITECTURE.md         model contracts (public name: deepMAT; package: mbs)
 docs/DATA_CONTRACT.md        canonical data contracts
 docs/ANNOTATION_GRAPH.md     biological topology
-docs/plans/                  milestone build plans (e.g. Milestone 2 graph)
+docs/plans/                  milestone build plans (incl. Milestone 5b registry/eval)
 docs/STATIC_FEATURES.md      CpGPT and MethylGPT artifacts
 docs/EXPERIMENT_PROTOCOL.md  evaluation and controls
 docs/DATA_INSPECTION.md      source acceptance workflow
@@ -34,12 +34,15 @@ src/mbs/models.py        flat/hierarchical scorers and linear heads
 src/mbs/annotation/      Stage 0 locus registry + five-role graph builder
 src/mbs/static_features/ offline CpGPT sequence-adapter export + artifact I/O
 src/mbs/matrix/          canonical matrix conversion (EWAS_db pilot)
-src/mbs/training/        flat DeepRVAT-style baseline train loop + CLI wiring
+src/mbs/training/        flat deepMAT / DeepRVAT-style baseline train loop + CLI
+src/mbs/registry/        phenotype / source dataset registry (Milestone 5b)
+src/mbs/evaluation/      metrics + study-grouped split helpers (Milestone 5b)
 ```
 
-Canonical matrix conversion and flat baseline training are implemented. Feature
-stores for online sampling and study-grouped cross-fitting remain later
-milestones.
+Canonical matrix conversion and flat baseline training are implemented.
+Milestone 5b adds the phenotype registry and multi-pack evaluation scaffold.
+Feature stores for online sampling and full study-grouped cross-fitting remain
+later milestones.
 
 ## SQL and schemas
 
@@ -49,6 +52,7 @@ sql/010_views.sql                        inspection views
 schemas/matrix_manifest.schema.json      canonical matrix manifest
 schemas/graph_manifest.schema.json       annotation graph manifest
 schemas/static_feature_manifest.schema.json static feature manifest
+schemas/phenotype_registry.schema.json   phenotype / source registry (5b)
 ```
 
 The SQL and JSON schemas are normative interfaces. Python code should validate against them rather than creating undocumented columns.
@@ -58,7 +62,10 @@ The SQL and JSON schemas are normative interfaces. Python code should validate a
 ```text
 configs/experiment/stage0_flat.yaml        exact DeepRVAT-style baseline
 configs/experiment/stage0_flat_pilot.yaml  GSE35069 cell-type pilot train config
+configs/experiment/stage0_flat_age_holdout.yaml   age study-holdout fixture config
+configs/experiment/stage0_flat_tissue_holdout.yaml tissue study-holdout fixture
 configs/experiment/stage0_hier_max.yaml    hierarchical reference model
+configs/data/phenotype_registry.yaml     dataset registry (Milestone 5b)
 configs/local/                             machine-specific overrides, ignored
 ```
 
@@ -73,6 +80,8 @@ tests/unit/test_cli.py             doctor / catalog / inspect CLI
 tests/unit/test_segment_ops.py     reductions and permutation invariance
 tests/unit/test_models.py          model and missing-gene invariants
 tests/unit/test_training_flat.py   flat baseline phenotypes / overfit / CLI
+tests/unit/test_phenotype_registry.py  registry loader / checksums
+tests/unit/test_evaluation.py      metrics + study-grouped splits
 tests/integration/test_smoke.py    catalog plus model smoke test
 ```
 

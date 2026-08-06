@@ -1,0 +1,46 @@
+experiment:
+  name: stage0_flat_age_study_holdout_fixture
+  stage: 0
+  seed: 42
+
+pilot:
+  fixture_task: age
+  mode: study_holdout_fixture
+
+model:
+  type: flat_deepset
+  phi_layers: 2
+  phi_hidden_dimension: 20
+  rho_layers: 3
+  rho_hidden_dimension: 10
+  activation: leaky_relu
+  pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  dropout: 0.0
+
+heads:
+  age:
+    enabled: true
+    loss: mse
+  tissue:
+    enabled: true
+    loss: cross_entropy
+
+training:
+  optimizer: adam
+  learning_rate: 0.05
+  weight_decay: 0.0
+  batch_size: 1
+  gradient_clip_norm: 2.0
+  max_epochs: 80
+  early_stopping_patience: 30
+  precision: bf16-mixed
+  require_cuda: false
+
+logging:
+  tensorboard: true
+  wandb: false
+  save_resolved_config: true
+  save_environment: true
+  save_checksums: true

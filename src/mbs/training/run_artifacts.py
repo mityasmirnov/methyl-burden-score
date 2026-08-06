@@ -36,6 +36,9 @@ def collect_environment(*, device: torch.device) -> dict[str, Any]:
         "cuda_available": torch.cuda.is_available(),
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
         "device": str(device),
+        "model_public_name": "deepMAT",
+        "package_name": "methyl-burden-score",
+        "cli_entrypoint": "mbs",
     }
     if torch.cuda.is_available():
         info["cuda_device_count"] = torch.cuda.device_count()
