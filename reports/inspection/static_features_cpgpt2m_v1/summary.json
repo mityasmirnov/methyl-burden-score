@@ -1,0 +1,48 @@
+{
+  "feature_set_id": "cpgpt2m_adapter_128_v1",
+  "manifest": {
+    "artifact_version": "static-feature-manifest-v1",
+    "checkpoint_sha256": "42b324bc3fd86062b00e2b3f742ae47c0012dabd2b480baaa3c6707ad12dc2f5",
+    "configuration_sha256": "e5de754732ce5c9af3baf003885e16c01f9e2f9417bed6a9fe6873ca18aca477",
+    "context_length": 2001,
+    "created_at": "2026-08-06T12:25:58Z",
+    "embedding_path": "/data/projects/methyl-burden-score/data/canonical/static_features/cpgpt2m_adapter_128_v1/embeddings.zarr",
+    "export_command": "uv run --extra cpgpt mbs features export-cpgpt --feature-set-id cpgpt2m_adapter_128_v1",
+    "feature_set_id": "cpgpt2m_adapter_128_v1",
+    "genome_build": "GRCh38",
+    "input_dimension": 1024,
+    "locus_index_path": "/data/projects/methyl-burden-score/data/canonical/static_features/cpgpt2m_adapter_128_v1/loci.parquet",
+    "locus_table_sha256": "6b1358fd1a4f8c3b1ef0bf6d3faf7027c77d16e25dcd98d9f126053cba228be8",
+    "n_loci": 1076246,
+    "normalization": null,
+    "notes": "CpGPT2M (small) sequence-adapter via net.encode_sequence(); MBS 1-based cytosine positions mapped to CpGPT 0-based Ensembl keys; precomputed NTv2 human dependencies only (no DNA-LM regeneration).",
+    "output_dimension": 128,
+    "source_commit": "a1d4f10d72cc30bdd6428b92ee6aa05e91adae21",
+    "source_model": "nucleotide-transformer-v2-500m-multi-species",
+    "source_repository": "https://github.com/lucascamillomd/CpGPT",
+    "storage_dtype": "float16",
+    "vocabulary_sha256": "01438f8b4d3b2757bfb2e33ed0f6d5b6943a1329d16b64e5c147a439348fc031"
+  },
+  "stats": {
+    "checkpoint_path": "/data/projects/methyl-burden-score/cache/huggingface/models--lucascamillomd--cpgpt-models/snapshots/159217abe074b1693c1bdb8cfae309b934592742/weights/small.ckpt",
+    "config_path": "/data/projects/methyl-burden-score/cache/huggingface/models--lucascamillomd--cpgpt-models/snapshots/159217abe074b1693c1bdb8cfae309b934592742/config/small.yaml",
+    "dependencies_path": "/data/projects/methyl-burden-score/cache/huggingface/models--lucascamillomd--cpgpt-human-dependencies/snapshots/e66bbe467b3404c1a783b1361e565c5fe6c7235f",
+    "device": "cuda",
+    "embedding_stats": {
+      "dim_var_max": 8.510597458829578,
+      "dim_var_mean": 0.8387312161697855,
+      "dim_var_min": 0.1391856147296965,
+      "n_dims": 128,
+      "n_near_zero_norm": 0,
+      "n_rows": 1076246,
+      "norm_max": 52.77446826201762,
+      "norm_mean": 10.131127627049327,
+      "norm_min": 4.550597823097557,
+      "norm_std": 2.3333331379283524
+    },
+    "mapping_rate": 0.9942024272947801,
+    "n_loci": 1082522,
+    "n_mapped": 1076246,
+    "n_missing": 6276
+  }
+}

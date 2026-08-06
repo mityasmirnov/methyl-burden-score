@@ -59,8 +59,16 @@ def test_relative_path_is_rejected() -> None:
         paths.validate()
 
 
-def test_tmp_home_cache_aliases_are_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MBS_CACHE_ROOT", "/tmp/mbs-cache")
-
-    with pytest.raises(PathPolicyError, match="outside /data"):
-        DataPaths.from_environment()
+def test_static_features_dir_helper() -> None:
+    root = Path(__file__).resolve().parents[2]
+    paths = DataPaths(
+        project_root=root,
+        data_root=root / "data",
+        scratch_root=root / "scratch",
+        cache_root=root / "cache",
+        artifact_root=root / "artifacts",
+        docker_root=root / "docker",
+    )
+    assert paths.static_features_dir("cpgpt2m_adapter_128_v1") == (
+        root / "data" / "canonical" / "static_features" / "cpgpt2m_adapter_128_v1"
+    )

@@ -1,0 +1,84 @@
+{
+  "conversion_commit": "a48ab0b8e05db940cc8ea7154691290a29a65aa7",
+  "created_at": "2026-08-06T12:27:09Z",
+  "dtype": "float32",
+  "genome_build": "GRCh38",
+  "matrix_id": "matrix-gse35069-ewasdb-v1",
+  "platform_id": "HM450",
+  "processing_level": "gmqn",
+  "shape": [
+    60,
+    485470
+  ],
+  "source_file_count": 60,
+  "source_files_head": [
+    {
+      "byte_size": 8207671,
+      "path": "/data/projects/methyl-burden-score/data/raw/ewas_datahub/EWAS_db/GSE35069/GSM861635.txt",
+      "sha256": "25c9cde21ada3a8c7ed997e385899cc7b8e9d37222ea988c4280ecdd241ec792"
+    },
+    {
+      "byte_size": 8208297,
+      "path": "/data/projects/methyl-burden-score/data/raw/ewas_datahub/EWAS_db/GSE35069/GSM861636.txt",
+      "sha256": "a158832f6b6e59bb691ad228e1c93dc7eed1f53f465cffa072f27c92c62335ab"
+    },
+    {
+      "byte_size": 8206629,
+      "path": "/data/projects/methyl-burden-score/data/raw/ewas_datahub/EWAS_db/GSE35069/GSM861637.txt",
+      "sha256": "3c4990862efb01b12cef6fba75149880e2e7cbfae9200dcd2665251232917b39"
+    },
+    {
+      "byte_size": 8209125,
+      "path": "/data/projects/methyl-burden-score/data/raw/ewas_datahub/EWAS_db/GSE35069/GSM861638.txt",
+      "sha256": "144523009da173f1bd84522f0bd24d6d507915822d9d6f6cf4b4ea9bae5f41de"
+    },
+    {
+      "byte_size": 8204707,
+      "path": "/data/projects/methyl-burden-score/data/raw/ewas_datahub/EWAS_db/GSE35069/GSM861639.txt",
+      "sha256": "a0266215e0d5d7b731590b1de2b4e511c38cbe2f32e680065fac6498be7d15d2"
+    }
+  ],
+  "stats": {
+    "beta_max": 1.0,
+    "beta_mean": 0.5290985703468323,
+    "beta_min": 0.0,
+    "matrix_paths": {
+      "betas": "/data/projects/methyl-burden-score/data/canonical/matrices/matrix-gse35069-ewasdb-v1/betas.zarr",
+      "locus_index": "/data/projects/methyl-burden-score/data/canonical/matrices/matrix-gse35069-ewasdb-v1/locus_index.parquet",
+      "manifest": "/data/projects/methyl-burden-score/data/canonical/matrices/matrix-gse35069-ewasdb-v1/matrix_manifest.json",
+      "root": "/data/projects/methyl-burden-score/data/canonical/matrices/matrix-gse35069-ewasdb-v1",
+      "sample_index": "/data/projects/methyl-burden-score/data/canonical/matrices/matrix-gse35069-ewasdb-v1/sample_index.parquet"
+    },
+    "n_collapsed_probes": 34,
+    "n_finite_betas": 28965328,
+    "n_mapped_probes": 485504,
+    "n_missing_cells": 162872,
+    "n_observed_probes": 485512,
+    "n_out_of_range": 0,
+    "n_samples": 60,
+    "n_study_loci": 485470,
+    "n_unmapped_probes": 8,
+    "roundtrip": {
+      "max_abs_diff": 0.0,
+      "n_compared": 6144,
+      "n_mismatch": 0,
+      "ok": true,
+      "sample_ids": [
+        "GSM861635",
+        "GSM861665",
+        "GSM861694"
+      ]
+    },
+    "unmapped_probe_ids_head": [
+      "cg01759674",
+      "cg03455418",
+      "cg06102775",
+      "cg06677538",
+      "cg08417382",
+      "cg11598976",
+      "cg22940546",
+      "cg25005368"
+    ]
+  },
+  "study_id": "GSE35069"
+}

@@ -51,16 +51,19 @@ historical CpGCorpus inspection and is not re-opened.
   vendored pin; `download_cpgpt(model="small", species="human",
   cache_dir=$HF_HOME)` materializes weights under
   `$MBS_CACHE_ROOT/huggingface` (see `docs/STATIC_FEATURES.md`). Not a CI /
-  default sync dep.
+  default sync dep. Full `CpGPTInferencer` import currently breaks on the MBS
+  torch / torchtune / torchao pin set; offline export uses
+  `mbs.static_features.cpgpt_adapter` (dna_encoder weights only) — see
+  `docs/STATIC_FEATURES.md` § “CpGPT vs MBS torch pin”.
 - **MethylGPT (dedicated env):** cannot share main `.venv` (torchtext requires
   torch ~2.1–2.4). Use `make setup-methylgpt` → `.venv-methylgpt` and
   `make download-methylgpt` → `$MBS_DATA_ROOT/raw/methylgpt/` (medium
   checkpoint + type3 probe IDs). See `docs/STATIC_FEATURES.md`. Ablation-only
   for Stage 0 static features.
 - **Intentional non-goals until later milestones:** Parquet population / ingest
-  into catalog tables; foundation-model export/training; committing the shallow
-  whole-corpus inventory under `reports/inspection/cpgcorpus/` (GSE/GPL report
-  for milestone 1 is enough).
+  into catalog tables; committing the shallow whole-corpus inventory under
+  `reports/inspection/cpgcorpus/` (GSE/GPL report for milestone 1 is enough).
+  MethylGPT token-prior export remains ablation-only (not Stage 0 default).
 
 ### Useful commands (already safe to re-run)
 
@@ -71,8 +74,11 @@ uv run mbs doctor --create-directories
 uv run mbs catalog init
 uv run mbs inspect source --source-id cpgcorpus
 uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
+make download-ewas-study STUDY=GSE35069
+uv run mbs matrix convert --study-id GSE35069 --platform-id HM450 --verify
 # optional foundation-model tooling:
 # uv sync --all-groups --extra cpgpt
+# uv run --extra cpgpt mbs features export-cpgpt
 # make setup-methylgpt && make download-methylgpt
 ```
 
@@ -81,6 +87,7 @@ uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
 ```bash
 make download-ewas-datahub
 make download-ewas-atlas
+make download-ewas-study STUDY=GSE35069
 make download-manifests
 ```
 
@@ -123,7 +130,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Note:** Primary ongoing open source is EWAS Data Hub (ADR 0002). This
   milestone’s CpGCorpus evidence stands; do not re-open milestone 1 to switch
   sources.
-- **Next action:** Milestone 3 — export static locus features.
+- **Next action:** Milestone 5 — train the flat DeepRVAT-style baseline.
 
 ---
 
@@ -157,24 +164,35 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
     Stage 0 region taxonomy (not the full CapsNet model).
   Convert or export needed tables into `$MBS_DATA_ROOT/canonical/annotations`
   (or graphs); keep bulky vendor blobs out of the Python runtime path.
-- **Next action:** Milestone 3 — export static locus features (CpGPT default).
+- **Next action:** Milestone 5 — train the flat DeepRVAT-style baseline.
 
 ---
 
 ## 3. Export static locus features
 
-- **Status:** `pending`  ← **do this next**
+- **Status:** `done`
 - **Done when:** Offline CpGPT sequence-adapter embedding artifact is the default
   static feature, with a complete static-feature manifest (commit, checkpoint
   hash, vocabulary/locus-table hash, dims, dtype, genome build, export command).
   MethylGPT token priors remain ablation-only.
+- **Evidence:** Feature set `cpgpt2m_adapter_128_v1` under
+  `$MBS_DATA_ROOT/canonical/static_features/cpgpt2m_adapter_128_v1/`
+  (`embeddings.zarr` 128-d float16, `loci.parquet`, schema-valid `artifact.json`).
+  Inspection report: `reports/inspection/static_features_cpgpt2m_v1/`
+  (~1.076M / 1.082M loci mapped, rate ≈0.994). Export via
+  `mbs features export-cpgpt` (optional `--extra cpgpt` for downloads only;
+  adapter forward uses `mbs.static_features.cpgpt_adapter` to avoid torchtune /
+  torchao breakage on the MBS torch pin). Unit tests:
+  `tests/unit/test_static_features.py`. Build plan:
+  [`plans/milestone-3-static-locus-features.md`](plans/milestone-3-static-locus-features.md).
 - **Depends on:** (2) locus registry.
+- **Next action:** Milestone 5 — train the flat DeepRVAT-style baseline.
 
 ---
 
 ## 4. Convert one pilot matrix into canonical storage
 
-- **Status:** `pending`
+- **Status:** `done`
 - **Done when:** One pilot source from **EWAS Data Hub** is written in
   project-local canonical matrix format; slices round-trip correctly from raw
   file to matrix store (checksum / equality checks in tests or inspection
@@ -182,7 +200,18 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.md) / [`EWAS_DATA.md`](EWAS_DATA.md))
   or a small baseline subset under `download/`. Do **not** default the pilot to
   CpGCorpus Arrow.
+- **Evidence:** Hub labeling study `GSE35069` (60 `GSM*.txt`) under
+  `$MBS_DATA_ROOT/raw/ewas_datahub/EWAS_db/GSE35069/`; canonical store
+  `matrix-gse35069-ewasdb-v1` at
+  `$MBS_DATA_ROOT/canonical/matrices/matrix-gse35069-ewasdb-v1/`
+  (`betas.zarr` shape `[60, 485470]` float32, sample/locus parquet indices,
+  schema-valid `matrix_manifest.json`). Round-trip PASS in
+  `reports/inspection/GSE35069_ewas_db/` (max_abs_diff=0). Convert via
+  `mbs matrix convert`; targeted download via
+  `make download-ewas-study STUDY=GSE35069`. Unit tests:
+  `tests/unit/test_matrix_store.py`.
 - **Depends on:** (1), (2).
+- **Next action:** Milestone 5 — train the flat DeepRVAT-style baseline.
 
 ---
 

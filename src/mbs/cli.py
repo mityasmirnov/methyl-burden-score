@@ -21,15 +21,21 @@ from mbs.annotation.export_infinium import DEFAULT_PLATFORMS
 from mbs.catalog import build_catalog, init_catalog
 from mbs.inspect_cpgcorpus import inspect_cpgcorpus_gpl, write_cpgcorpus_report
 from mbs.inspect_source import inventory_source, write_inspection_report
+from mbs.matrix.convert import DEFAULT_MATRIX_ID, convert_ewas_db_study
 from mbs.paths import DataPaths, PathPolicyError
+from mbs.static_features.export_cpgpt import DEFAULT_FEATURE_SET_ID, export_cpgpt_adapter
 
 app = typer.Typer(no_args_is_help=True, help="Methylation Burden Score tooling")
 catalog_app = typer.Typer(no_args_is_help=True, help="DuckDB catalog operations")
 inspect_app = typer.Typer(no_args_is_help=True, help="Source inspection reports")
 graph_app = typer.Typer(no_args_is_help=True, help="Annotation graph builds")
+matrix_app = typer.Typer(no_args_is_help=True, help="Canonical matrix conversion")
+features_app = typer.Typer(no_args_is_help=True, help="Static locus feature export")
 app.add_typer(catalog_app, name="catalog")
 app.add_typer(inspect_app, name="inspect")
 app.add_typer(graph_app, name="graph")
+app.add_typer(matrix_app, name="matrix")
+app.add_typer(features_app, name="features")
 console = Console()
 
 _SOURCE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
@@ -332,6 +338,204 @@ def graph_build_cmd(
                 "n_genes": result["validation_report"]["n_genes"],
                 "n_regions": result["validation_report"]["n_regions"],
                 "n_locus_region_edges": result["validation_report"]["n_locus_region_edges"],
+            }
+        )
+    )
+
+
+@matrix_app.command("convert")
+def matrix_convert_cmd(  # noqa: PLR0917
+    study_id: Annotated[
+        str,
+        typer.Option(help="Study accession (e.g. GSE35069)"),
+    ] = "GSE35069",
+    source_dir: Annotated[
+        Path | None,
+        typer.Option(help="EWAS_db study directory with GSM*.txt files"),
+    ] = None,
+    annotations_dir: Annotated[
+        Path | None,
+        typer.Option(help="Canonical annotations dir (loci + probe_locus_edges)"),
+    ] = None,
+    output_dir: Annotated[
+        Path | None,
+        typer.Option(help="Output matrix directory under canonical/matrices/"),
+    ] = None,
+    matrix_id: Annotated[
+        str,
+        typer.Option(help="Immutable matrix release id"),
+    ] = DEFAULT_MATRIX_ID,
+    platform_id: Annotated[
+        str,
+        typer.Option(help="Infinium platform id for probe→locus edges"),
+    ] = "HM450",
+    processing_level: Annotated[
+        str,
+        typer.Option(help="Processing level label (Hub baselines are GMQN)"),
+    ] = "gmqn",
+    report_dir: Annotated[
+        Path | None,
+        typer.Option(help="Inspection report directory (default under reports/inspection/)"),
+    ] = None,
+    verify: Annotated[
+        bool,
+        typer.Option(help="Round-trip verify raw Hub files against the written matrix"),
+    ] = True,
+) -> None:
+    """Convert one EWAS Data Hub EWAS_db study into canonical matrix storage."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    paths.ensure_directories()
+    resolved_source = (
+        source_dir or (paths.data_root / "raw" / "ewas_datahub" / "EWAS_db" / study_id)
+    ).resolve()
+    resolved_annotations = (
+        annotations_dir or (paths.data_root / "canonical" / "annotations")
+    ).resolve()
+    resolved_output = (
+        output_dir or (paths.data_root / "canonical" / "matrices" / matrix_id)
+    ).resolve()
+    resolved_report = (
+        report_dir or (paths.project_root / "reports" / "inspection" / f"{study_id}_ewas_db")
+    ).resolve()
+
+    for label, path in (
+        ("source_dir", resolved_source),
+        ("annotations_dir", resolved_annotations),
+        ("output_dir", resolved_output),
+    ):
+        _require_under_data(path, label)
+    if not resolved_source.is_dir():
+        raise typer.BadParameter(f"source_dir not found: {resolved_source}")
+    if not (resolved_annotations / "probe_locus_edges.parquet").is_file():
+        raise typer.BadParameter(
+            f"annotations_dir missing probe_locus_edges.parquet: {resolved_annotations}"
+        )
+
+    result = convert_ewas_db_study(
+        project_root=paths.project_root,
+        source_dir=resolved_source,
+        annotations_dir=resolved_annotations,
+        output_dir=resolved_output,
+        study_id=study_id,
+        matrix_id=matrix_id,
+        platform_id=platform_id,
+        processing_level=processing_level,
+        report_dir=resolved_report,
+        verify=verify,
+    )
+    console.print_json(
+        json.dumps(
+            {
+                "matrix_id": result.matrix_id,
+                "study_id": result.study_id,
+                "output_dir": str(result.output_dir),
+                "report_dir": str(result.report_dir) if result.report_dir else None,
+                "n_samples": result.stats["n_samples"],
+                "n_study_loci": result.stats["n_study_loci"],
+                "n_unmapped_probes": result.stats["n_unmapped_probes"],
+                "roundtrip_ok": None if result.roundtrip is None else result.roundtrip.ok,
+            }
+        )
+    )
+
+
+@features_app.command("export-cpgpt")
+def features_export_cpgpt_cmd(  # noqa: PLR0917
+    feature_set_id: Annotated[
+        str,
+        typer.Option(help="Immutable static feature set id"),
+    ] = DEFAULT_FEATURE_SET_ID,
+    loci: Annotated[
+        Path | None,
+        typer.Option(help="Canonical loci.parquet (default: canonical/annotations/loci.parquet)"),
+    ] = None,
+    annotations_manifest: Annotated[
+        Path | None,
+        typer.Option(help="annotations_manifest.json for locus hash verification"),
+    ] = None,
+    output_dir: Annotated[
+        Path | None,
+        typer.Option(help="Output directory under canonical/static_features/"),
+    ] = None,
+    report_dir: Annotated[
+        Path | None,
+        typer.Option(help="Inspection report directory"),
+    ] = None,
+    device: Annotated[
+        str,
+        typer.Option(help="Torch device for encode_sequence (cuda or cpu)"),
+    ] = "cuda",
+    batch_size: Annotated[
+        int,
+        typer.Option(help="Adapter forward batch size"),
+    ] = 8192,
+) -> None:
+    """Export CpGPT2M sequence-adapter embeddings for the locus registry."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    paths.ensure_directories()
+    annotations_dir = paths.data_root / "canonical" / "annotations"
+    resolved_loci = (loci or (annotations_dir / "loci.parquet")).resolve()
+    resolved_ann_manifest = (
+        annotations_manifest or (annotations_dir / "annotations_manifest.json")
+    ).resolve()
+    resolved_output = (output_dir or paths.static_features_dir(feature_set_id)).resolve()
+    resolved_report = (
+        report_dir or (paths.project_root / "reports" / "inspection" / "static_features_cpgpt2m_v1")
+    ).resolve()
+
+    for label, path in (
+        ("loci", resolved_loci.parent),
+        ("output_dir", resolved_output),
+    ):
+        _require_under_data(path, label)
+    if not resolved_loci.is_file():
+        raise typer.BadParameter(f"loci parquet not found: {resolved_loci}")
+    if not resolved_ann_manifest.is_file():
+        raise typer.BadParameter(f"annotations_manifest.json not found: {resolved_ann_manifest}")
+    if batch_size < 1:
+        raise typer.BadParameter("batch_size must be >= 1")
+
+    export_command = (
+        f"uv run --extra cpgpt mbs features export-cpgpt --feature-set-id {feature_set_id}"
+    )
+    try:
+        result = export_cpgpt_adapter(
+            project_root=paths.project_root,
+            loci_path=resolved_loci,
+            annotations_manifest_path=resolved_ann_manifest,
+            output_dir=resolved_output,
+            report_dir=resolved_report,
+            feature_set_id=feature_set_id,
+            device=device,
+            batch_size=batch_size,
+            export_command=export_command,
+        )
+    except RuntimeError as error:
+        console.print(f"[bold red]Export failed:[/bold red] {error}")
+        raise typer.Exit(code=1) from error
+
+    console.print_json(
+        json.dumps(
+            {
+                "feature_set_id": result.feature_set_id,
+                "output_dir": str(result.output_dir),
+                "report_dir": str(result.report_dir) if result.report_dir else None,
+                "n_loci": result.stats["n_loci"],
+                "n_mapped": result.stats["n_mapped"],
+                "n_missing": result.stats["n_missing"],
+                "mapping_rate": result.stats["mapping_rate"],
+                "checkpoint_sha256": result.manifest["checkpoint_sha256"],
+                "locus_table_sha256": result.manifest["locus_table_sha256"],
             }
         )
     )

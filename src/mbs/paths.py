@@ -111,6 +111,12 @@ class DataPaths:
         for directory in self.required_directories():
             directory.mkdir(parents=True, exist_ok=True)
 
+    def static_features_dir(self, feature_set_id: str) -> Path:
+        """Return ``canonical/static_features/{feature_set_id}`` under data_root."""
+        if not feature_set_id.strip():
+            raise ValueError("feature_set_id must be non-empty")
+        return self.data_root / "canonical" / "static_features" / feature_set_id
+
     def as_dict(self) -> dict[str, str]:
         """Return a JSON-serializable representation."""
         return {field.name: str(getattr(self, field.name)) for field in fields(self)}

@@ -8,7 +8,7 @@ SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
 CACHE_ROOT ?= $(PROJECT_ROOT)/cache
 ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
-.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt
+.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static
 
 help:
 	@printf '%s\n' \
@@ -29,11 +29,13 @@ help:
 	  'download-cpgcorpus-gse Sync Stage 0 GSE list from CpGCorpus' \
 	  'download-ewas-atlas    Download EWAS Atlas batch TSVs' \
 	  'download-ewas-datahub  Download EWAS DataHub methylation packs' \
+	  'download-ewas-study    Download one EWAS_db study (STUDY=GSE35069)' \
 	  'download-manifests     Download EPICv2 Zenodo reannotated manifest' \
 	  'download-gencode       Download GENCODE v38 annotation GTF' \
 	  'download-cpg-islands   Download UCSC hg38 CpG island table' \
 	  'setup-methylgpt        Create .venv-methylgpt and install MethylGPT deps' \
 	  'download-methylgpt     Download MethylGPT medium weights + probe IDs' \
+	  'export-cpgpt-static    Export CpGPT2M sequence-adapter static features' \
 	  'clean          Remove generated local Python caches only'
 
 bootstrap:
@@ -93,6 +95,10 @@ download-ewas-atlas:
 download-ewas-datahub:
 	bash scripts/download_ewas_datahub.sh
 
+STUDY ?= GSE35069
+download-ewas-study:
+	bash scripts/download_ewas_datahub_study.sh $(STUDY)
+
 download-manifests:
 	bash scripts/download_manifests.sh
 
@@ -107,6 +113,10 @@ setup-methylgpt:
 
 download-methylgpt:
 	bash scripts/download_methylgpt_weights.sh --medium
+
+export-cpgpt-static:
+	uv sync --all-groups --extra cpgpt
+	uv run --extra cpgpt mbs features export-cpgpt --feature-set-id cpgpt2m_adapter_128_v1
 
 clean:
 	find src tests -type d -name __pycache__ -prune -exec rm -rf {} +

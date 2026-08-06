@@ -106,6 +106,10 @@ uv sync --all-groups --extra cpgpt
 
 Weights and human dependencies go under `$MBS_CACHE_ROOT/huggingface` via
 `download_cpgpt` (see `docs/STATIC_FEATURES.md`). Never under `$HOME/.cache`.
+Export with `mbs features export-cpgpt` (or `make export-cpgpt-static`). Do not
+expect `CpGPTInferencer` to import cleanly on the MBS torch pin; the exporter
+loads sequence-adapter weights locally — details in
+`docs/STATIC_FEATURES.md` (“CpGPT vs MBS torch pin”).
 
 **MethylGPT** needs a separate env (torchtext ABI vs main torch). After bootstrap:
 

@@ -32,11 +32,14 @@ src/mbs/batch.py         ragged batch contract
 src/mbs/segment_ops.py   permutation-invariant segment reductions
 src/mbs/models.py        flat/hierarchical scorers and linear heads
 src/mbs/annotation/      Stage 0 locus registry + five-role graph builder
+src/mbs/static_features/ offline CpGPT sequence-adapter export + artifact I/O
+src/mbs/matrix/          canonical matrix conversion (EWAS_db pilot)
 ```
 
-These files form the current executable Stage 0 scaffold. Production ingestion,
-feature stores, samplers, cross-fitting, and training orchestration are
-intentionally not represented as finished modules yet.
+These files form the current executable Stage 0 scaffold. Feature stores for
+online sampling, cross-fitting, and training orchestration are intentionally
+not represented as finished modules yet (canonical matrix conversion for the
+EWAS_db pilot is implemented under `src/mbs/matrix/`).
 
 ## SQL and schemas
 
@@ -121,6 +124,9 @@ mbs catalog init           create dirs + apply sql/*.sql schema
 mbs catalog build          rebuild catalog with explicit paths
 mbs inspect source         shallow raw-source inventory report
 mbs inspect cpgcorpus-gpl  GSE/GPL layout, alignment, beta QC, metadata
+mbs graph build            locus registry + five-role annotation graph
+mbs features export-cpgpt  offline CpGPT2M sequence-adapter static features
+mbs matrix convert         EWAS_db study → canonical matrix store
 ```
 
 ## Planned next modules
@@ -129,13 +135,11 @@ Recommended implementation order:
 
 ```text
 src/mbs/ingest/
-src/mbs/annotations/
 src/mbs/stores/
 src/mbs/data/
 src/mbs/training/
 src/mbs/evaluation/
-tools/cpgpt_export/
-tools/methylgpt_export/
+tools/methylgpt_export/   # ablation-only; after core pipeline if needed
 ```
 
 Do not create all modules as empty placeholders. Add one when its contract and tests are ready. Deeper inspection helpers may grow beside `inspect_source.py` when needed.

@@ -148,6 +148,16 @@ nohup bash scripts/download_ewas_datahub.sh all \
 # bash scripts/download_ewas_datahub.sh EWAS_db
 # bash scripts/download_ewas_datahub.sh download
 # bash scripts/download_ewas_datahub.sh add_ewas_db
+
+# Single EWAS_db study (preferred for Stage 0 pilot; ~60 GSM files for GSE35069)
+make download-ewas-study STUDY=GSE35069
+# or: bash scripts/download_ewas_datahub_study.sh GSE35069
+
+# Convert Hub study → canonical matrix store
+uv run mbs matrix convert \
+  --study-id GSE35069 \
+  --platform-id HM450 \
+  --verify
 ```
 
 Inspect with DuckDB / sanitized reports only; do not recursively index raw

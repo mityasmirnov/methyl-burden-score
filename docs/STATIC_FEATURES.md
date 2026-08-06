@@ -65,6 +65,22 @@ exported dimension: 128
 
 Export only the output of `net.encode_sequence()`.
 
+Canonical export command (requires `--extra cpgpt` and the locus registry from
+Milestone 2):
+
+```bash
+cd /data/projects/methyl-burden-score
+source scripts/activate_data_environment.sh
+uv sync --all-groups --extra cpgpt
+uv run --extra cpgpt mbs features export-cpgpt --feature-set-id cpgpt2m_adapter_128_v1
+# or: make export-cpgpt-static
+```
+
+Artifacts land under
+`$MBS_DATA_ROOT/canonical/static_features/cpgpt2m_adapter_128_v1/`
+(`embeddings.zarr`, `loci.parquet`, `artifact.json`). Inspection summary:
+`reports/inspection/static_features_cpgpt2m_v1/`.
+
 Do not include:
 
 - sample beta values;
@@ -75,6 +91,42 @@ Do not include:
 - task-specific heads.
 
 The adapter output is static, sequence-derived, and available for arbitrary sequence-addressable CpG loci.
+
+**Coordinate convention:** the Methylation Burden Score (MBS) locus registry
+stores **1-based** cytosine positions (`GRCh38:chr1:10848`). CpGPT human
+dependency keys are **0-based** Ensembl locations (`1:10847`). The exporter
+converts automatically.
+
+### CpGPT vs MBS torch pin (why we do not call `CpGPTInferencer`)
+
+**MBS** = Methylation Burden Score (this repo / the `mbs` Python package and CLI).
+
+The Stage 0 training environment pins a newer PyTorch (Linux **cu128**, currently
+`torch==2.11.x`) so the GPUs work on the host driver. CpGPT’s optional extra is
+installed into the same `.venv`, but:
+
+1. Vendored CpGPT declares `torch<=2.6`; MBS overrides that via
+   `override-dependencies` in `pyproject.toml`.
+2. Importing `CpGPTInferencer` / `cpgpt.model` pulls
+   `torchtune.modules.RotaryPositionalEmbeddings`, which imports
+   `torchao.dtypes.nf4tensor` (`NF4Tensor`, `linear_nf4`, …).
+3. The torchao wheel resolved with the MBS torch line (**0.18.x** here) no longer
+   exposes that NF4 module API, so full CpGPT model import fails with
+   `ModuleNotFoundError: torchao.dtypes.nf4tensor`.
+
+Stage 0 only needs the **sequence adapter** (`dna_encoder` /
+`encode_sequence()` → 128-d). Export therefore:
+
+- uses `cpgpt.downloads` / Hugging Face cache for checkpoint + human NTv2 deps;
+- loads `dna_encoder.*` weights from `small.ckpt` into
+  `mbs.static_features.cpgpt_adapter.SequenceAdapterMLP` (local MLPBlock
+  equivalent);
+- never imports the full CpGPT Lightning module or torchtune at export time.
+
+Training must still **not** import CpGPT; it only reads the frozen
+`embeddings.zarr` + `artifact.json`. If upstream CpGPT/torchtune/torchao become
+compatible with the MBS torch pin, we can optionally switch back to
+`model.net.encode_sequence()` — the artifact contract stays the same.
 
 ## Ablation: raw DNA-language-model feature
 
