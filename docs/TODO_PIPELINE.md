@@ -40,13 +40,13 @@ historical CpGCorpus inspection and is not re-opened.
   Older runs may still have a copy in `$HOME/.local/bin`. Caches remain under
   `$MBS_CACHE_ROOT` (correct). Prefer
   `source scripts/activate_data_environment.sh` (puts `.tools` on `PATH` first).
-- **CUDA:** Host reports driver 570.x / CUDA 12.8 (`nvidia-smi`), while the
-  current project torch wheel is `2.13.0+cu130`. Torch therefore refuses GPU
-  init (`cuda.is_available() == False`). **No driver action required for Stage
-  0** — CPU is enough through inspection / catalog / graph / matrix work. When
-  GPU training or foundation-model export is needed, either install a
-  CUDA-12.8-compatible torch wheel (`cu128`) or upgrade the NVIDIA driver to
-  one that supports CUDA 13.0 for the current wheel.
+- **CUDA:** Host driver 570.x / CUDA 12.8 (`nvidia-smi`). Main `.venv` pins
+  Linux/Windows torch to the PyTorch **cu128** index
+  (`torch==2.11.0+cu128` at last sync) via `[[tool.uv.index]]` /
+  `[tool.uv.sources]` in `pyproject.toml`. Verified:
+  `torch.cuda.is_available()` is true on all three GPUs. Do not switch back to
+  PyPI's default Linux wheel (`cu130`) without a driver that supports CUDA 13.0.
+  macOS still resolves torch from PyPI (CPU/MPS).
 - **CpGPT (optional extra):** `uv sync --all-groups --extra cpgpt` installs the
   vendored pin; `download_cpgpt(model="small", species="human",
   cache_dir=$HF_HOME)` materializes weights under
