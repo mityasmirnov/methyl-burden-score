@@ -1,0 +1,79 @@
+{
+  "cpg_context_counts": {
+    "open_sea": 7
+  },
+  "locus_region_edges_by_type": {
+    "five_prime": 1,
+    "gene_body": 3,
+    "promoter_core": 1,
+    "promoter_proximal": 2,
+    "three_prime": 1
+  },
+  "n_genes": 2,
+  "n_loci": 7,
+  "n_loci_multi_gene": 2,
+  "n_locus_region_edges": 8,
+  "n_probe_locus_edges": 7,
+  "n_probes": 8,
+  "n_regions": 9,
+  "n_unassigned_loci": 1,
+  "n_unmapped_probes": 1,
+  "platform_coverage": [
+    {
+      "n_mapped": 2,
+      "n_probes": 2,
+      "platform_id": "EPIC"
+    },
+    {
+      "n_mapped": 2,
+      "n_probes": 2,
+      "platform_id": "EPICv2"
+    },
+    {
+      "n_mapped": 3,
+      "n_probes": 4,
+      "platform_id": "HM450"
+    }
+  ],
+  "probes_collapsed_max": 1,
+  "probes_collapsed_mean": 1.0,
+  "region_counts_by_type": {
+    "five_prime": 2,
+    "gene_body": 2,
+    "promoter_core": 2,
+    "promoter_proximal": 2,
+    "three_prime": 1
+  },
+  "region_policy": {
+    "cgi_shelf_bp": 4000,
+    "cgi_shore_bp": 2000,
+    "coordinate_convention": "1-based_inclusive_cytosine; BED export 0-based_half_open",
+    "gencode_release": 38,
+    "gene_types": [
+      "protein_coding"
+    ],
+    "intergenic_policy": "leave_unassigned",
+    "promoter_core_bp": 200,
+    "promoter_proximal_upstream_bp": 1500,
+    "region_types": [
+      "promoter_core",
+      "promoter_proximal",
+      "five_prime",
+      "three_prime",
+      "gene_body"
+    ],
+    "role_precedence": [
+      "promoter_core",
+      "promoter_proximal",
+      "five_prime",
+      "three_prime",
+      "gene_body"
+    ]
+  },
+  "source_stats": {
+    "n_raw_probes": 8,
+    "platforms": [
+      "HM450"
+    ]
+  }
+}

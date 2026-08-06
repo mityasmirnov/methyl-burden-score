@@ -16,6 +16,8 @@ from rich.console import Console
 from rich.table import Table
 
 from mbs import __version__
+from mbs.annotation.build import DEFAULT_GRAPH_ID, build_annotation_graph
+from mbs.annotation.export_infinium import DEFAULT_PLATFORMS
 from mbs.catalog import build_catalog, init_catalog
 from mbs.inspect_cpgcorpus import inspect_cpgcorpus_gpl, write_cpgcorpus_report
 from mbs.inspect_source import inventory_source, write_inspection_report
@@ -24,8 +26,10 @@ from mbs.paths import DataPaths, PathPolicyError
 app = typer.Typer(no_args_is_help=True, help="Methylation Burden Score tooling")
 catalog_app = typer.Typer(no_args_is_help=True, help="DuckDB catalog operations")
 inspect_app = typer.Typer(no_args_is_help=True, help="Source inspection reports")
+graph_app = typer.Typer(no_args_is_help=True, help="Annotation graph builds")
 app.add_typer(catalog_app, name="catalog")
 app.add_typer(inspect_app, name="inspect")
+app.add_typer(graph_app, name="graph")
 console = Console()
 
 _SOURCE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
@@ -248,6 +252,86 @@ def inspect_cpgcorpus_gpl_cmd(
                 "n_samples": report["value_qc"].get("n_samples"),
                 "n_probes": report["value_qc"].get("n_probes"),
                 "warnings": report["warnings"],
+            }
+        )
+    )
+
+
+@graph_app.command("build")
+def graph_build_cmd(
+    graph_id: Annotated[
+        str,
+        typer.Option(help="Immutable graph release id"),
+    ] = DEFAULT_GRAPH_ID,
+    platforms: Annotated[
+        str,
+        typer.Option(help="Comma-separated InfiniumAnnotation platform dirs"),
+    ] = ",".join(DEFAULT_PLATFORMS),
+    infinium_root: Annotated[
+        Path | None,
+        typer.Option(
+            help="InfiniumAnnotation root (default: $MBS_ROOT/vendor/infinium_annotation)"
+        ),
+    ] = None,
+    gencode: Annotated[
+        Path | None,
+        typer.Option(help="GENCODE GTF path (default: raw/gencode/gencode.v38.annotation.gtf.gz)"),
+    ] = None,
+    cgi: Annotated[
+        Path | None,
+        typer.Option(
+            help="UCSC CpG island table (default: raw/annotations/cpgIslandExt.hg38.txt.gz)"
+        ),
+    ] = None,
+) -> None:
+    """Build the Stage 0 locus registry and five-role annotation graph."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    paths.ensure_directories()
+    default_infinium = paths.project_root / "vendor" / "infinium_annotation"
+    resolved_infinium = (infinium_root or default_infinium).resolve()
+    resolved_gencode = (
+        gencode or (paths.data_root / "raw" / "gencode" / "gencode.v38.annotation.gtf.gz")
+    ).resolve()
+    resolved_cgi = (
+        cgi or (paths.data_root / "raw" / "annotations" / "cpgIslandExt.hg38.txt.gz")
+    ).resolve()
+
+    _require_under_data(paths.data_root, "data_root")
+    if not resolved_gencode.is_file():
+        raise typer.BadParameter(f"GENCODE GTF not found: {resolved_gencode}")
+    if not resolved_infinium.is_dir():
+        raise typer.BadParameter(f"InfiniumAnnotation root not found: {resolved_infinium}")
+    cgi_path = resolved_cgi if resolved_cgi.is_file() else None
+
+    platform_list = tuple(p.strip() for p in platforms.split(",") if p.strip())
+    if not platform_list:
+        raise typer.BadParameter("platforms must list at least one platform id")
+
+    result = build_annotation_graph(
+        project_root=paths.project_root,
+        data_root=paths.data_root,
+        infinium_root=resolved_infinium,
+        gencode_path=resolved_gencode,
+        cgi_path=cgi_path,
+        graph_id=graph_id,
+        platforms=platform_list,
+    )
+    console.print_json(
+        json.dumps(
+            {
+                "graph_id": result["graph_id"],
+                "annotations_dir": result["annotations_dir"],
+                "graph_dir": result["graph_dir"],
+                "report_dir": result["report_dir"],
+                "n_loci": result["validation_report"]["n_loci"],
+                "n_genes": result["validation_report"]["n_genes"],
+                "n_regions": result["validation_report"]["n_regions"],
+                "n_locus_region_edges": result["validation_report"]["n_locus_region_edges"],
             }
         )
     )

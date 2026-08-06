@@ -58,9 +58,9 @@ historical CpGCorpus inspection and is not re-opened.
   checkpoint + type3 probe IDs). See `docs/STATIC_FEATURES.md`. Ablation-only
   for Stage 0 static features.
 - **Intentional non-goals until later milestones:** Parquet population / ingest
-  into catalog tables; full annotation graph; foundation-model export/training;
-  committing the shallow whole-corpus inventory under
-  `reports/inspection/cpgcorpus/` (GSE/GPL report for milestone 1 is enough).
+  into catalog tables; foundation-model export/training; committing the shallow
+  whole-corpus inventory under `reports/inspection/cpgcorpus/` (GSE/GPL report
+  for milestone 1 is enough).
 
 ### Useful commands (already safe to re-run)
 
@@ -123,17 +123,28 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Note:** Primary ongoing open source is EWAS Data Hub (ADR 0002). This
   milestone’s CpGCorpus evidence stands; do not re-open milestone 1 to switch
   sources.
-- **Next action:** Milestone 2 — build the canonical annotation graph.
+- **Next action:** Milestone 3 — export static locus features.
 
 ---
 
 ## 2. Build the canonical annotation graph
 
-- **Status:** `pending`  ← **do this next**
+- **Status:** `done`
 - **Done when:** Stable locus registry and first
   `probe → locus → region → gene` mapping exist. Keep simple: promoter, body,
   UTR, and a few annotation flags. Do **not** expand to full MethylGPT /
   MethylCapsNet topology yet.
+- **Evidence:** Graph release
+  `graph-grch38-gencode38-five-role-v1` under
+  `$MBS_DATA_ROOT/canonical/graphs/graph-grch38-gencode38-five-role-v1/`
+  (genes/regions/edges/BED + `graph_manifest.json`); locus registry under
+  `$MBS_DATA_ROOT/canonical/annotations/` (`loci`/`probes`/`probe_locus_edges`
+  + `annotations_manifest.json`). Validation report:
+  `reports/inspection/annotation_graph_v1/` (~1.08M loci, 19937 protein-coding
+  genes, five roles, island/QC flags). Built via `mbs graph build` from
+  InfiniumAnnotation (HM450/EPIC/EPICv2) + GENCODE v38 + UCSC CpG islands.
+  Unit tests: `tests/unit/test_annotation_graph.py`. Build plan:
+  [`plans/milestone-2-canonical-annotation-graph.md`](plans/milestone-2-canonical-annotation-graph.md).
 - **Depends on:** (1) at least partially (platform/probe IDs known).
 - **Leverage (read-only vendor references; do not runtime-import):**
   - [`vendor/infinium_annotation`](https://github.com/zhou-lab/InfiniumAnnotation)
@@ -146,12 +157,13 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
     Stage 0 region taxonomy (not the full CapsNet model).
   Convert or export needed tables into `$MBS_DATA_ROOT/canonical/annotations`
   (or graphs); keep bulky vendor blobs out of the Python runtime path.
+- **Next action:** Milestone 3 — export static locus features (CpGPT default).
 
 ---
 
 ## 3. Export static locus features
 
-- **Status:** `pending`
+- **Status:** `pending`  ← **do this next**
 - **Done when:** Offline CpGPT sequence-adapter embedding artifact is the default
   static feature, with a complete static-feature manifest (commit, checkpoint
   hash, vocabulary/locus-table hash, dims, dtype, genome build, export command).

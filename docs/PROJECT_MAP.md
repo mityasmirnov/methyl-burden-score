@@ -12,6 +12,7 @@ docs/adr/                    architecture decision records (incl. 0002 EWAS Hub)
 docs/ARCHITECTURE.md         model contracts
 docs/DATA_CONTRACT.md        canonical data contracts
 docs/ANNOTATION_GRAPH.md     biological topology
+docs/plans/                  milestone build plans (e.g. Milestone 2 graph)
 docs/STATIC_FEATURES.md      CpGPT and MethylGPT artifacts
 docs/EXPERIMENT_PROTOCOL.md  evaluation and controls
 docs/DATA_INSPECTION.md      source acceptance workflow
@@ -30,9 +31,12 @@ src/mbs/inspect_cpgcorpus.py CpGCorpus GSE/GPL scientific inspection
 src/mbs/batch.py         ragged batch contract
 src/mbs/segment_ops.py   permutation-invariant segment reductions
 src/mbs/models.py        flat/hierarchical scorers and linear heads
+src/mbs/annotation/      Stage 0 locus registry + five-role graph builder
 ```
 
-These files form the current executable Stage 0 scaffold. Production ingestion, graph construction, feature stores, samplers, cross-fitting, and training orchestration are intentionally not represented as finished modules yet.
+These files form the current executable Stage 0 scaffold. Production ingestion,
+feature stores, samplers, cross-fitting, and training orchestration are
+intentionally not represented as finished modules yet.
 
 ## SQL and schemas
 

@@ -6,6 +6,10 @@ The annotation graph separates biological topology from model code. It maps cano
 
 Stage 0 uses only evidence that can be built reproducibly and audited across 450K, EPIC, and EPICv2 arrays.
 
+Implementation plan and rebuild commands for Milestone 2:
+[`plans/milestone-2-canonical-annotation-graph.md`](plans/milestone-2-canonical-annotation-graph.md).
+CLI: `mbs graph build`.
+
 ## Graph layers
 
 ```text

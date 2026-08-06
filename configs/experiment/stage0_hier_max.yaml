@@ -14,7 +14,7 @@ stage0:
 paths:
   # Resolved relative to MBS_DATA_ROOT / MBS_ARTIFACT_ROOT / MBS_SCRATCH_ROOT
   data_release: canonical/release=stage0-v1
-  graph_release: canonical/release=stage0-v1/graphs/graph-grch38-gencode38-five-role-v1
+  graph_release: canonical/graphs/graph-grch38-gencode38-five-role-v1
   artifact_root: .
   scratch_root: .
 

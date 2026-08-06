@@ -22,7 +22,10 @@ mkdir -p \
   "$MBS_DATA_ROOT/raw/ewas_datahub" \
   "$MBS_DATA_ROOT/raw/ewas_atlas" \
   "$MBS_DATA_ROOT/raw/manifests" \
+  "$MBS_DATA_ROOT/raw/gencode" \
+  "$MBS_DATA_ROOT/raw/annotations" \
   "$MBS_DATA_ROOT/staging" \
+  "$MBS_DATA_ROOT/staging/infinium_export" \
   "$MBS_DATA_ROOT/canonical/catalog/tables" \
   "$MBS_DATA_ROOT/canonical/matrices" \
   "$MBS_DATA_ROOT/canonical/annotations" \

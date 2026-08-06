@@ -53,9 +53,7 @@ def test_build_catalog_applies_project_sql(tmp_path: Path) -> None:
         }
         lanes = {
             row[0]
-            for row in connection.execute(
-                "SELECT source_system FROM provenance_lane"
-            ).fetchall()
+            for row in connection.execute("SELECT source_system FROM provenance_lane").fetchall()
         }
     finally:
         connection.close()

@@ -76,8 +76,22 @@ override-dependencies = [
   "torch>=2.3",
 ]
 
+# Host NVIDIA driver 570.x exposes CUDA 12.8. Pin Linux/Windows torch wheels to
+# the cu128 index so cuda.is_available() works (PyPI's default Linux wheel is
+# currently cu130 and refuses to init on this driver).
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
 [tool.uv.sources]
 cpgpt = { path = "vendor/cpgpt", editable = true }
+torch = [
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchvision = [
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
 
 [build-system]
 requires = ["hatchling>=1.25"]
@@ -150,8 +164,11 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "ANN201", "PLR2004", "S108"]
+"tests/**/*.py" = ["S101", "ANN201", "PLR2004", "S108", "E501"]
 "src/mbs/**/*.py" = ["TRY003", "PLR0912", "RUF002"]
+"src/mbs/annotation/cgi_context.py" = ["S608"]
+"src/mbs/annotation/map_loci.py" = ["S608"]
+"src/mbs/annotation/manifest.py" = ["S603", "S607"]
 
 [tool.ruff.format]
 quote-style = "double"
