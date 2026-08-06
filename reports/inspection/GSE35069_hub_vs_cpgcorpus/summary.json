@@ -1,0 +1,183 @@
+{
+  "beta_comparison": {
+    "frac_abs_diff_le_1e-2": 0.2099424062054136,
+    "frac_abs_diff_le_1e-3": 0.020308881445694163,
+    "frac_abs_diff_le_1e-4": 0.002036472729290919,
+    "frac_exact": 1.3028393811920724e-05,
+    "mae": 0.050346148524446764,
+    "max_abs_diff": 1.0,
+    "max_abs_diff_probe": "cg09644806",
+    "max_abs_diff_sample": "GSM861646",
+    "n_both_finite": 28936798,
+    "n_cpgcorpus_missing_cells": 31442,
+    "n_hub_missing_cells": 162922,
+    "n_missingness_asymmetric": 193480,
+    "n_shared_sample_probe_cells": 29130720,
+    "pearson_r": 0.9765679117215363,
+    "rmse": 0.08613945912771914
+  },
+  "cpgcorpus_betas_path": "/data/projects/methyl-burden-score/data/raw/cpgcorpus/GSE35069/GPL13534/betas/gse_betas.arrow",
+  "cpgcorpus_platform": "GPL13534",
+  "generated_at": "2026-08-06T12:53:55Z",
+  "hub_path": "/data/projects/methyl-burden-score/data/raw/ewas_datahub/EWAS_db/GSE35069",
+  "notes": [
+    "Hub All Data files are GMQN-normalized probe\\tbeta text (ADR 0002).",
+    "CpGCorpus Arrow is GEO-derived betas (gse_betas.arrow) for GPL13534.",
+    "Exact equality is not expected when processing pipelines differ.",
+    "Probe scan used all Hub samples for sample IDs; probe union from first 5 Hub files plus first-file base set."
+  ],
+  "per_sample_mae_head": [
+    {
+      "mae": 0.03001745385015211,
+      "max_abs_diff": 0.09304709999999994,
+      "n_both_finite": 482536,
+      "n_both_missing": 10,
+      "n_cpg_only_missing": 402,
+      "n_hub_only_missing": 2564,
+      "n_shared_probes": 485512,
+      "sample_id": "GSM861663"
+    },
+    {
+      "mae": 0.03015263986788811,
+      "max_abs_diff": 0.09316019999999992,
+      "n_both_finite": 480252,
+      "n_both_missing": 19,
+      "n_cpg_only_missing": 544,
+      "n_hub_only_missing": 4697,
+      "n_shared_probes": 485512,
+      "sample_id": "GSM861660"
+    },
+    {
+      "mae": 0.030493266821965,
+      "max_abs_diff": 0.09775,
+      "n_both_finite": 476294,
+      "n_both_missing": 64,
+      "n_cpg_only_missing": 1584,
+      "n_hub_only_missing": 7570,
+      "n_shared_probes": 485512,
+      "sample_id": "GSM861659"
+    },
+    {
+      "mae": 0.030537057361287447,
+      "max_abs_diff": 0.09401899999999996,
+      "n_both_finite": 481885,
+      "n_both_missing": 10,
+      "n_cpg_only_missing": 372,
+      "n_hub_only_missing": 3245,
+      "n_shared_probes": 485512,
+      "sample_id": "GSM861664"
+    },
+    {
+      "mae": 0.03072191945051746,
+      "max_abs_diff": 0.08827379999999996,
+      "n_both_finite": 479553,
+      "n_both_missing": 15,
+      "n_cpg_only_missing": 466,
+      "n_hub_only_missing": 5478,
+      "n_shared_probes": 485512,
+      "sample_id": "GSM861661"
+    }
+  ],
+  "per_sample_mae_tail": [
+    {
+      "mae": 0.07841428933599709,
+      "max_abs_diff": 0.95832526,
+      "n_both_finite": 482525,
+      "n_both_missing": 2,
+      "n_cpg_only_missing": 343,
+      "n_hub_only_missing": 2642,
+      "n_shared_probes": 485512,
+      "sample_id": "GSM861683"
+    },
+    {
+      "mae": 0.0699597452801438,
+      "max_abs_diff": 0.8298572999999999,
+      "n_both_finite": 482081,
+      "n_both_missing": 3,
+      "n_cpg_only_missing": 269,
+      "n_hub_only_missing": 3159,
+      "n_shared_probes": 485512,
+      "sample_id": "GSM861678"
+    },
+    {
+      "mae": 0.06979445253628595,
+      "max_abs_diff": 0.95673268,
+      "n_both_finite": 481674,
+      "n_both_missing": 6,
+      "n_cpg_only_missing": 623,
+      "n_hub_only_missing": 3209,
+      "n_shared_probes": 485512,
+      "sample_id": "GSM861684"
+    },
+    {
+      "mae": 0.06868774890441906,
+      "max_abs_diff": 0.9378033299999999,
+      "n_both_finite": 482094,
+      "n_both_missing": 9,
+      "n_cpg_only_missing": 302,
+      "n_hub_only_missing": 3107,
+      "n_shared_probes": 485512,
+      "sample_id": "GSM861649"
+    },
+    {
+      "mae": 0.06787150953987364,
+      "max_abs_diff": 0.8682506,
+      "n_both_finite": 480242,
+      "n_both_missing": 9,
+      "n_cpg_only_missing": 380,
+      "n_hub_only_missing": 4881,
+      "n_shared_probes": 485512,
+      "sample_id": "GSM861673"
+    }
+  ],
+  "probes": {
+    "cpgcorpus_n": 485577,
+    "cpgcorpus_only_head": [
+      "rs10033147",
+      "rs1019916",
+      "rs1040870",
+      "rs10457834",
+      "rs10774834",
+      "rs10796216",
+      "rs10846239",
+      "rs10882854",
+      "rs10936224",
+      "rs11034952",
+      "rs11249206",
+      "rs13369115",
+      "rs133860",
+      "rs1414097",
+      "rs1416770",
+      "rs1467387",
+      "rs1484127",
+      "rs1495031",
+      "rs1510189",
+      "rs1510480"
+    ],
+    "cpgcorpus_only_n": 65,
+    "hub_n": 485512,
+    "hub_only_head": [],
+    "hub_only_n": 0,
+    "shared_n": 485512
+  },
+  "samples": {
+    "cpgcorpus_n": 60,
+    "cpgcorpus_only": [],
+    "hub_n": 60,
+    "hub_only": [],
+    "shared_ids_head": [
+      "GSM861635",
+      "GSM861636",
+      "GSM861637",
+      "GSM861638",
+      "GSM861639",
+      "GSM861640",
+      "GSM861641",
+      "GSM861642",
+      "GSM861643",
+      "GSM861644"
+    ],
+    "shared_n": 60
+  },
+  "study_id": "GSE35069"
+}
