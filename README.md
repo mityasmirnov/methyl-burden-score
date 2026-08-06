@@ -6,7 +6,7 @@ The public model name is **deepMAT** (deep Methylation Aggregation Transformer /
 Deep Set family). The Python package remains `methyl-burden-score` with the
 `mbs` CLI entry point; do not treat a package rename as required for Stage 0.
 
-Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks); the model path remains flat DeepRVAT-style deepMAT baseline → phenotype registry / multi-pack eval → hierarchical → study-grouped cross-fitting. See [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), and [`docs/adr/0003-milestone-5b-phenotype-registry.md`](docs/adr/0003-milestone-5b-phenotype-registry.md).
+Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks). The model path is flat DeepRVAT-style **deepMAT** baseline → phenotype registry / multi-pack eval → real Hub pack matrices → **multitask shared encoder (next)** → hierarchical → study-grouped cross-fitting. Authoritative progress: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). See also [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), and [`docs/adr/0003-milestone-5b-phenotype-registry.md`](docs/adr/0003-milestone-5b-phenotype-registry.md).
 
 The Stage 0 implementation follows four design principles:
 
@@ -98,17 +98,22 @@ make catalog-init
 make catalog-build
 ```
 
-Useful first-pass commands after bootstrap:
+Useful commands:
 
 ```bash
 uv run mbs doctor --create-directories
 uv run mbs catalog init
-uv run mbs inspect source --source-id cpgcorpus
-uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
 uv run mbs inspect ewas-metadata
+uv run mbs train flat --overfit-fixture
+# after Hub packs / GSE35069 are on disk under $MBS_DATA_ROOT:
+# make download-ewas-study STUDY=GSE35069
+# uv run mbs matrix convert --study-id GSE35069 --platform-id HM450 --verify
+# uv run mbs matrix convert-pack --help
+# uv run mbs train flat --config configs/experiment/stage0_flat_pilot.yaml
 ```
 
 Hub/Atlas metadata contracts: [`docs/EWAS_METADATA.md`](docs/EWAS_METADATA.md).
+Hub downloads: [`docs/EWAS_DATA.md`](docs/EWAS_DATA.md).
 Inspection guide: [`docs/DATA_INSPECTION.md`](docs/DATA_INSPECTION.md).
 Machine-specific paths belong in `.env` or `configs/local/`; neither is committed.
 
@@ -134,7 +139,25 @@ Never committed:
 
 ## Status
 
-The repository is in Stage 0 bootstrap. Interfaces and tests are being established before full data ingestion and model training.
+Stage 0 is past bootstrap. Milestones **1–5b″** are done (see
+[`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md)):
+
+| Done | What shipped |
+|------|----------------|
+| Annotation + static features | GRCh38 five-role graph; offline CpGPT locus features |
+| Pilot matrix | GSE35069 EWAS_db → canonical Zarr (`mbs matrix convert`) |
+| Flat deepMAT baseline | Overfit fixture + GSE35069 cell-type pilot train path |
+| Phenotype registry (5b) | Versioned Hub packs, sample-info Parquet, study-grouped eval helpers |
+| Hub metadata (5b′) | Atlas/Hub column contracts ([`docs/EWAS_METADATA.md`](docs/EWAS_METADATA.md)) |
+| Real Hub packs (5b″) | `mbs matrix convert-pack`; age/tissue/blood/brain study-holdout matrices + reports under `reports/inspection/stage0_hub_real_benchmark/` |
+
+**Current gate — Milestone 5c (ready to start):** masked multitask age + tissue
+heads on a shared flat encoder using already-downloaded Hub age/tissue assets.
+Disease/cancer profile zips are optional for the MVP; hierarchical model and
+cross-fitting follow 5c.
+
+Public model name remains **deepMAT**; package/CLI stay `mbs` /
+`methyl-burden-score`.
 
 ## Licensing
 
