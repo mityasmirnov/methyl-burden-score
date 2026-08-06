@@ -12,6 +12,11 @@ True next milestone after bootstrap:
 > one source ingested cleanly → one graph built → one canonical matrix written →
 > one baseline trained → one cross-fitted score matrix produced.
 
+Primary open data source going forward: **EWAS Data Hub**
+([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
+[strategic plan](STRATEGIC_PLAN.md)). Milestone 1 evidence remains the
+historical CpGCorpus inspection and is not re-opened.
+
 ---
 
 ## Ops notes (plumbing)
@@ -23,8 +28,11 @@ True next milestone after bootstrap:
   `scripts/download_cpgcorpus_background.sh` (nohup; no auto-download).
 - Path / catalog / CLI / no-home tests green; vendor kept as gitlink submodules.
 - ADR: `docs/adr/0001-project-local-workspace.md`.
+- ADR: `docs/adr/0002-ewas-datahub-primary-source.md` (EWAS Data Hub primary).
 - Raw download inventory (sizes, schemas, top rows, cleanup checklist):
   `reports/inspection/raw_inventory/summary.md` (+ `summary.json`).
+- EWAS Atlas + Data Hub download scripts / Makefile targets
+  (`docs/EWAS_DATA.md`).
 
 ### Blocked / caveats (do not treat as scientific blockers)
 
@@ -62,15 +70,25 @@ uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
 # uv sync --all-groups --extra cpgpt
 ```
 
-### Downloads later (manual; requester-pays / large)
+### Primary downloads (EWAS Open Platform)
+
+```bash
+make download-ewas-datahub
+make download-ewas-atlas
+make download-manifests
+```
+
+See [`EWAS_DATA.md`](EWAS_DATA.md) for HTTP trees (`EWAS_db/`, `download/`,
+Atlas TSVs) and background `nohup` patterns.
+
+### Optional alternate (CpGCorpus; requester-pays / large)
 
 ```bash
 bash scripts/download_cpgcorpus_gse.sh
 # or: bash scripts/download_cpgcorpus_background.sh gse
-make download-ewas-atlas
-make download-ewas-datahub
-make download-manifests
 ```
+
+Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.md).
 
 ---
 
@@ -96,6 +114,9 @@ make download-manifests
   `reports/inspection/GSE125367_GPL21145/` (44 samples, 865919 probes, perfect
   GSM_ID alignment, betas in `[0,1]`, platform `GPL21145`). Unit coverage in
   `tests/unit/test_inspect_cpgcorpus.py`.
+- **Note:** Primary ongoing open source is EWAS Data Hub (ADR 0002). This
+  milestone’s CpGCorpus evidence stands; do not re-open milestone 1 to switch
+  sources.
 - **Next action:** Milestone 2 — build the canonical annotation graph.
 
 ---
@@ -136,9 +157,13 @@ make download-manifests
 ## 4. Convert one pilot matrix into canonical storage
 
 - **Status:** `pending`
-- **Done when:** One pilot source is written in project-local canonical matrix
-  format; slices round-trip correctly from raw file to matrix store (checksum /
-  equality checks in tests or inspection report).
+- **Done when:** One pilot source from **EWAS Data Hub** is written in
+  project-local canonical matrix format; slices round-trip correctly from raw
+  file to matrix store (checksum / equality checks in tests or inspection
+  report). Prefer a labeling GSE already under `EWAS_db/` (see
+  [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.md) / [`EWAS_DATA.md`](EWAS_DATA.md))
+  or a small baseline subset under `download/`. Do **not** default the pilot to
+  CpGCorpus Arrow.
 - **Depends on:** (1), (2).
 
 ---
@@ -176,9 +201,20 @@ make download-manifests
 ## 8. Optional layers (after core pipeline is stable)
 
 - **Status:** `deferred`
-- **Candidates:** MethylGPT priors, richer MethylCapsNet-inspired annotations,
-  intergenic tiles, epivariants, episignature work.
-- **Rule:** Do not start these until milestones 1–7 produce a real model pipeline.
+- **Rule:** Do not start these until milestones 1–7 produce a real model
+  pipeline. Full vision: [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md).
+
+### Stage 1+ roadmap (deferred candidates)
+
+| Candidate | Intent / acceptance hint |
+|-----------|--------------------------|
+| PROTRIDER-style conditional AE | Student-t NLL + missingness mask; two-sided CpG tail probabilities as optional features |
+| ComBat-met (rpy2) | Beta-regression batch correction for user/custom IDAT or uncorrected cohorts; assert corrected betas stay in `[0, 1]`. Not required for Data Hub GMQN baselines |
+| EPICv2 IlmnID collapse | Strip technical suffixes, groupby core CpG ID, mean beta before matrix build |
+| REGENIE association | Export MBS×2 as pseudodosages (BGEN/VCF); Step 1 + Step 2; Firth for imbalanced binary traits; QQ / λ near 1 |
+| EWAS Atlas enrichment | Compare significant gene–trait hits to Atlas curated associations / pathway enrichment |
+| Richer annotations | MethylGPT priors, MethylCapsNet-inspired topology, intergenic tiles |
+| Epivariants / episignatures | Explicit epivariant calling and clinical episignature work |
 
 ---
 
