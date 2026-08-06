@@ -114,6 +114,8 @@ def test_ancestry_uses_sample_race_txt_name() -> None:
     assert sample_zip_filename("ancestry") == "sample_ancestry_category_methylation_v1.zip"
     assert sample_txt_filename("ancestry") == "sample_race.txt"
 
+
+def test_profile_helpers_missing_paths(tmp_path: Path) -> None:
     missing = profile_atlas_table(tmp_path / "nope.tsv", table_id="studies", fmt="tsv")
     assert missing["exists"] is False
     missing_pack = profile_sample_pack(tmp_path / "nope.txt", family="age")
