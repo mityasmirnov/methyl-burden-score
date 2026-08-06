@@ -290,4 +290,8 @@ The score manifest records fold and restart membership. Every sample must be tra
 
 ## Inspection policy
 
-Agents and routine code review use aggregate reports under `reports/inspection/`. Raw sample-level data are not committed, indexed, or embedded in documentation.
+Agents and routine code review use aggregate reports under `reports/inspection/`.
+Do not embed raw methylation matrices in docs. Hub sample-info `.txt` extracts
+under `reports/inspection/ewas_datahub_samples/` and Atlas small TSVs are
+allowed for phenotype contracts; follow [`DATA_INSPECTION.md`](DATA_INSPECTION.md)
+and [`EWAS_METADATA.md`](EWAS_METADATA.md) (`mbs inspect ewas-metadata`).

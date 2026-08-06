@@ -17,6 +17,8 @@ after zip deletion.
 - `sample_info` export works from unpacked `.txt` when zip is absent
 - Unit tests cover fixtures; plan saved here
 
+**Packs covered (2026-08-06):** age, ancestry (`sample_race.txt`), blood, bmi,
+brain, cancer, disease, sex, tissue — all nine Hub sample-info families.
 ## Locked decisions
 
 | Choice | Decision | Why |

@@ -10,7 +10,8 @@ Status values: `done` | `in_progress` | `pending` | `deferred`
 True next milestone after bootstrap:
 
 > one source ingested cleanly → one graph built → one canonical matrix written →
-> one baseline trained → phenotype registry + multi-pack eval → multitask shared
+> one baseline trained → phenotype registry + multi-pack eval → Hub metadata
+> contracts → real Hub pack matrices + study-grouped eval → multitask shared
 > encoder → hierarchical → one cross-fitted score matrix produced.
 
 Primary open data source going forward: **EWAS Data Hub**
@@ -286,11 +287,38 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `reports/inspection/ewas_metadata_structure/`;
   [`EWAS_METADATA.md`](EWAS_METADATA.md);
   [`plans/ewas-metadata-structure.md`](plans/ewas-metadata-structure.md);
-  `tests/unit/test_ewas_metadata.py`; unpacked extracts under
-  `reports/inspection/ewas_datahub_samples/`.
+  `tests/unit/test_ewas_metadata.py`; nine unpacked families under
+  `reports/inspection/ewas_datahub_samples/` (incl. ancestry=`sample_race.txt`, bmi, cancer).
 - **Depends on:** (5b) sample-info / registry path.
 - **Next action:** Agents must treat this as **required reading before 5c**
   (unified phenotype table / multitask heads). Do not invent Hub column names.
+
+---
+
+## 5b″. Real Hub pack → matrix + study-grouped eval
+
+- **Status:** `done`
+- **Done when:** Downloaded Hub profile packs convert to canonical matrices for
+  feasible families; registry lists study IDs / platform / label type / split
+  role / matrix paths; study-grouped train/val/test runs on **real** Hub
+  matrices (not synthetic fixtures) with TensorBoard + JSONL; per-family and
+  combined reports exist. Disease/cancer may remain registered-but-blocked if
+  packs are incomplete, with explicit notes.
+- **Evidence:** `mbs matrix convert-pack`; matrices
+  `matrix-hub-{age,tissue,blood,brain}-studyholdout-v1` under
+  `$MBS_DATA_ROOT/canonical/matrices/`; registry benchmark entries in
+  `configs/data/phenotype_registry.yaml`; runs
+  `artifacts/runs/stage0-hub-*-studyholdout-v1/` (TB + `metrics.jsonl`,
+  `model_public_name: deepMAT`); reports
+  `reports/inspection/stage0_hub_real_benchmark/`. Scripts:
+  `scripts/convert_hub_pack_subsets.sh`, `scripts/train_hub_real_benchmarks.sh`.
+  **Caveats:** disease pack still downloading; cancer zip incomplete; single-tissue
+  study-holdout yields disjoint CE classes (0% holdout accuracy expected —
+  plumbing gate, not biology). Age external-test MAE logged in years.
+- **Depends on:** (5b), (5b′).
+- **Next action:** Milestone 5c — multitask shared encoder; re-convert disease /
+  cancer when packs complete; redesign tissue holdouts for shared classes before
+  biological claims.
 
 ---
 
@@ -302,10 +330,10 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   sample phenotype table; batches use task masks so unlabeled heads do not
   contribute; study-grouped holdouts; checkpoints + resolved multitask config
   under `$MBS_ARTIFACT_ROOT`. Not one model per ZIP.
-- **Depends on:** (5b) and (5b′ metadata structure). Read
-  [`EWAS_METADATA.md`](EWAS_METADATA.md) and
+- **Depends on:** (5b), (5b′), and (5b″ real Hub matrices) preferred.
+  Read [`EWAS_METADATA.md`](EWAS_METADATA.md) and
   `reports/inspection/ewas_metadata_structure/summary.md` before building the
-  unified phenotype table.
+  unified phenotype table. Prefer real Hub matrices from 5b″ over fixtures.
 - **Plan:** [`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md);
   draft config [`../configs/experiment/stage0_flat_multitask.yaml`](../configs/experiment/stage0_flat_multitask.yaml);
   schema [`../schemas/sample_phenotype_table.schema.json`](../schemas/sample_phenotype_table.schema.json).

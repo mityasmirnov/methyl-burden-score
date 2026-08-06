@@ -17,6 +17,7 @@ docs/STATIC_FEATURES.md      CpGPT and MethylGPT artifacts
 docs/EXPERIMENT_PROTOCOL.md  evaluation and controls
 docs/DATA_INSPECTION.md      source acceptance workflow
 docs/EWAS_DATA.md            primary open Data Hub + Atlas downloads
+docs/EWAS_METADATA.md        Atlas small tables + Hub sample-info contracts
 ```
 
 ## Source package

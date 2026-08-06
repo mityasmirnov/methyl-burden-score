@@ -34,6 +34,9 @@ Out of scope here: large Atlas associations / probe annotations, matrix zips,
 different namespaces (ES* vs GSE*). Prefer PMID / curated maps when linking
 Atlas knowledge to Hub profiles.
 
+Nine families currently unpacked and profiled: age, ancestry (`sample_race.txt`),
+blood, bmi, brain, cancer, disease, sex, tissue.
+
 ## Family → primary phenotype column
 
 Used by `mbs.registry.sample_info.FAMILY_VALUE_COLUMN` when exporting Parquet:
@@ -56,6 +59,7 @@ Sample-info export prefers unpacked extracts, then download zips:
 
 ```text
 reports/inspection/ewas_datahub_samples/sample_{family}_methylation_v1/sample_{family}.txt
+# ancestry exception: …/sample_ancestry_category_methylation_v1/sample_race.txt
 # else
 $MBS_DATA_ROOT/raw/ewas_datahub/download/sample_{family}_methylation_v1.zip
 → $MBS_DATA_ROOT/canonical/phenotypes/{family}_sample_info.parquet
@@ -70,5 +74,7 @@ make export-ewas-sample-info FAMILY=age
 ## Related
 
 - Downloads: [`EWAS_DATA.md`](EWAS_DATA.md)
+- Inspection guide: [`DATA_INSPECTION.md`](DATA_INSPECTION.md)
 - Registry: `configs/data/phenotype_registry.yaml`
 - Plan: [`plans/ewas-metadata-structure.md`](plans/ewas-metadata-structure.md)
+- Pipeline gate: [`TODO_PIPELINE.md`](TODO_PIPELINE.md) §5b′

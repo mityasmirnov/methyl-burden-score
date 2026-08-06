@@ -150,10 +150,15 @@ Previously flats sat beside `download/`. Consolidated:
 | `blood_methylation_v1.zip`, `brain_methylation_v1.zip` | deleted (byte-identical to `download/`) |
 | `age_methylation_v1.zip` | deleted incomplete flat; kept larger `download/` copy |
 
-### 4c. Sample metadata zips
+### 4c. Sample metadata (unzips)
 
-`sample_*_methylation_v1.zip` members begin with **`RDX3`** (serialized **R**
-objects, not TSV). Treat as R/metadata sidecars, not line-oriented tables.
+Remote `sample_*_methylation_v1.zip` members include **`RDX3`** RData plus a
+space-quoted `.txt` table. Prefer `.txt`.
+
+**Current local layout (2026-08-06):** all nine families unpacked under
+`reports/inspection/ewas_datahub_samples/` (zips deleted after extract).
+Ancestry members are named `sample_race.*`. Structure profiles:
+`reports/inspection/ewas_metadata_structure/` and [`docs/EWAS_METADATA.md`](../../docs/EWAS_METADATA.md).
 
 ### 4d. All Data — `EWAS_db/` (in progress)
 

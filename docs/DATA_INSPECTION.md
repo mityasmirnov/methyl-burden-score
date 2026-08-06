@@ -230,23 +230,77 @@ A missing or incompatible checkpoint key is an error; partial loading is not acc
 
 ## EWAS DataHub
 
-Keep DataHub external validation releases separate from CpGCorpus training releases until study overlap and normalization provenance are resolved.
+Keep DataHub external validation / Hub-pack training releases separate from
+CpGCorpus until study overlap and normalization provenance are resolved.
 
-**Policy: download all public DataHub data** (All Data `EWAS_db` FTP tree plus Baseline packs). See [`EWAS_DATA.md`](EWAS_DATA.md).
+**Policy: download all public DataHub data** (All Data `EWAS_db` plus Baseline
+packs). See [`EWAS_DATA.md`](EWAS_DATA.md).
 
 Inspect:
 
-- study and GSE identifiers;
-- trait bundle definitions;
-- sample information file;
+- study and GSE identifiers (`project_id` in sample-info; study dirs under `EWAS_db`);
+- trait bundle definitions (baseline `*_methylation_v1.zip` packs);
+- **sample information** (see below);
 - matrix processing and batch-correction description (GMQN);
 - platform and genome build;
 - overlap with CpGCorpus studies;
-- phenotype coding.
+- phenotype coding and primary columns per family.
+
+### Sample-info packs (required before Hub phenotype joins / Milestone 5c)
+
+Remote archives are `sample_*_methylation_v1.zip` under
+`raw/ewas_datahub/download/`. After download they are **unzipped once** to
+Cursor-visible extracts:
+
+```text
+reports/inspection/ewas_datahub_samples/sample_{family}_methylation_v1/
+  sample_{family}.txt     # R write.table (prefer this)
+  sample_{family}.RData   # binary sidecar (do not index)
+```
+
+**Exception:** ancestry zip is `sample_ancestry_category_methylation_v1.zip` but
+members are `sample_race.txt` / `sample_race.RData`.
+
+Nine families are profiled: age, ancestry, blood, bmi, brain, cancer, disease,
+sex, tissue. Contracts (parse recipe, join keys, family→column map, overlaps):
+
+- [`EWAS_METADATA.md`](EWAS_METADATA.md)
+- `reports/inspection/ewas_metadata_structure/` (`mbs inspect ewas-metadata`)
+
+```bash
+uv run mbs inspect ewas-metadata
+make export-ewas-sample-info FAMILY=tissue
+# → $MBS_DATA_ROOT/canonical/phenotypes/{family}_sample_info.parquet
+```
+
+Do not invent Hub column names; use `FAMILY_VALUE_COLUMN` in
+`mbs.registry.sample_info`. Each zip also contains RData (`RDX3`); prefer the
+`.txt` member.
+
+Shallow download layout / sizes: `reports/inspection/raw_inventory/`.
 
 ## EWAS Atlas
 
-Atlas is an association evidence source, not a sample matrix. Freeze and checksum association, study, cohort, and annotation exports. Map CpGs through the project graph rather than relying only on supplied nearest-gene fields. Full batch exports are documented in [`EWAS_DATA.md`](EWAS_DATA.md).
+Atlas is an association evidence source, not a sample matrix. Freeze and
+checksum association, study, cohort, and annotation exports. Map CpGs through
+the project graph rather than relying only on supplied nearest-gene fields.
+Full batch exports: [`EWAS_DATA.md`](EWAS_DATA.md).
+
+**Small tables (Cursor-indexed; inspect before 5c):**
+
+| File | Role |
+|------|------|
+| `EWAS_Atlas_studies.tsv` | study_ID (ES…), trait, PMID |
+| `EWAS_Atlas_cohorts.tsv` | cohort_ID → study_ID, platform, ages, tissue, ancestry |
+| `EWAS_trait_trait_logP.txt` | trait×trait logP matrix |
+
+Encoding is latin-1; rare malformed cohort rows with extra tabs are skipped by
+`mbs inspect ewas-metadata`. **Do not** join Atlas `study_ID` to Hub
+`project_id` by string equality (ES* vs GSE*).
+
+Large tables (associations, probe annotations) stay out of the Cursor index;
+profile them only via sanitized reports when needed. Structure contracts:
+[`EWAS_METADATA.md`](EWAS_METADATA.md).
 
 ## Long-read and methylartist inputs
 

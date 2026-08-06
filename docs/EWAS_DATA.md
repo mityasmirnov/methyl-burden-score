@@ -98,27 +98,35 @@ Per-study layout: `{STUDY}/GSM*.txt` with `probe_id<TAB>beta` (no header).
 HTTP: `https://download.cncb.ac.cn/ewas/datahub/download/`  
 FTP: `ftp://download.big.ac.cn/ewas/datahub/download/`
 
+Matrix packs stay under `download/`. **Sample-info zips** are downloaded, then
+unzipped to `reports/inspection/ewas_datahub_samples/` (zips may be deleted
+after extract). Prefer the unpacked `.txt` for export; see
+[`EWAS_METADATA.md`](EWAS_METADATA.md).
+
 | Description | Archive | Approx. size |
 |-------------|---------|--------------|
 | DNA methylation profiles of 31 organism parts | `tissue_methylation_v1.zip` | 7.7 GB |
-| Sample information (tissue) | `sample_tissue_methylation_v1.zip` | 62 KB |
+| Sample information (tissue) | `sample_tissue_methylation_v1.zip` → `…/sample_tissue.txt` | 62 KB |
 | DNA methylation profiles of 25 brain parts | `brain_methylation_v1.zip` | 2.77 GB |
-| Sample information (brain) | `sample_brain_methylation_v1.zip` | 27 KB |
+| Sample information (brain) | `sample_brain_methylation_v1.zip` → `…/sample_brain.txt` | 27 KB |
 | DNA methylation profiles of 25 blood cell types | `blood_methylation_v1.zip` | 4.86 GB |
-| Sample information (blood) | `sample_blood_methylation_v1.zip` | 42 KB |
+| Sample information (blood) | `sample_blood_methylation_v1.zip` → `…/sample_blood.txt` | 42 KB |
 | Male/female profiles in 24 tissues | `sex_methylation_v1.zip` | 4.33 GB |
-| Sample information (sex) | `sample_sex_methylation_v1.zip` | 38 KB |
+| Sample information (sex) | `sample_sex_methylation_v1.zip` → `…/sample_sex.txt` | 38 KB |
 | DNA methylation changes with age | `age_methylation_v1.zip` | 11.73 GB |
-| Sample information (age) | `sample_age_methylation_v1.zip` | 89 KB |
+| Sample information (age) | `sample_age_methylation_v1.zip` → `…/sample_age.txt` | 89 KB |
 | Six ancestry categories | `ancestry_category_methylation_v1.zip` | 1.96 GB |
-| Sample information (ancestry) | `sample_ancestry_category_methylation_v1.zip` | 21 KB |
+| Sample information (ancestry) | `sample_ancestry_category_methylation_v1.zip` → **`sample_race.txt`** | 21 KB |
 | DNA methylation changes with BMI | `bmi_methylation_v1.zip` | 3.06 GB |
-| Sample information (BMI) | `sample_bmi_methylation_v1.zip` | 28 KB |
+| Sample information (BMI) | `sample_bmi_methylation_v1.zip` → `…/sample_bmi.txt` | 28 KB |
 | Profiles of 39 cancers | `cancer_methylation_v1.zip` | 16.07 GB |
-| Sample information (cancer) | `sample_cancer_methylation_v1.zip` | 117 KB |
+| Sample information (cancer) | `sample_cancer_methylation_v1.zip` → `…/sample_cancer.txt` | 117 KB |
 | Profiles of 28 diseases | `disease_methylation_v1.zip` | 20.11 GB |
-| Sample information (disease) | `sample_disease_methylation_v1.zip` | 154 KB |
+| Sample information (disease) | `sample_disease_methylation_v1.zip` → `…/sample_disease.txt` | 154 KB |
 | GMQN reference materials | `GMQN.zip` | (see remote) |
+
+All nine sample-info families above are unpacked and covered by
+`mbs inspect ewas-metadata` (as of 2026-08-06).
 
 ### Supplemental (`add_ewas_db/`)
 

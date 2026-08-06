@@ -31,7 +31,12 @@ Defaults are **project-local** under the Git working tree. Any absolute path und
 │       ├── matrices/
 │       ├── annotations/
 │       ├── graphs/
+│       ├── phenotypes/                      # Hub sample-info Parquet exports
 │       └── static_features/
+├── reports/
+│   └── inspection/
+│       ├── ewas_datahub_samples/            # unpacked sample_*.txt (Cursor-visible)
+│       └── ewas_metadata_structure/         # mbs inspect ewas-metadata
 ├── scratch/                                 # $MBS_SCRATCH_ROOT (TMPDIR)
 │   ├── tmp/
 │   └── downloads/

@@ -105,7 +105,11 @@ uv run mbs doctor --create-directories
 uv run mbs catalog init
 uv run mbs inspect source --source-id cpgcorpus
 uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
+uv run mbs inspect ewas-metadata
 ```
+
+Hub/Atlas metadata contracts: [`docs/EWAS_METADATA.md`](docs/EWAS_METADATA.md).
+Inspection guide: [`docs/DATA_INSPECTION.md`](docs/DATA_INSPECTION.md).
 Machine-specific paths belong in `.env` or `configs/local/`; neither is committed.
 
 ## Repository policy
