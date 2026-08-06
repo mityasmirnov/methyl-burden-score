@@ -42,6 +42,8 @@ REGENIE. The critical path is:
 3. Static locus features (CpGPT default).
 4. One pilot canonical matrix from **EWAS Data Hub**.
 5. Flat DeepRVAT-style max-pooling baseline.
+5b–5c. Phenotype registry, Hub pack matrices, multitask shared encoder (see
+   [`TODO_PIPELINE.md`](TODO_PIPELINE.md)).
 6. Hierarchical region model.
 7. Study-grouped cross-fitting.
 

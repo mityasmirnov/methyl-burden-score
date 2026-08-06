@@ -1,6 +1,5 @@
-# Stage 0 flat multitask experiment (Milestone 5c draft)
-# Shared FlatDeepSet encoder + linear task heads + label masks.
-# Do not treat as fully implemented until TODO_PIPELINE §5c is done.
+# Stage 0 flat multitask experiment (Milestone 5c)
+# Shared FlatDeepSet encoder + linear age/tissue heads + label masks.
 
 experiment:
   name: stage0_flat_multitask_hub
@@ -16,12 +15,30 @@ stage0:
   use_longread: false
   use_attention_pooling: false
 
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-age-tissue-multitask-v1
+  graph_id: graph-grch38-gencode38-five-role-v1
+  static_feature_set: cpgpt2m_adapter_128_v1
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology.yaml
+  train_studies: ["GSE51032", "GSE56105", "GSE58885", "GSE52401", "GSE97628"]
+  validation_studies: ["GSE55763"]
+  external_test_studies: ["GSE78874", "GSE75248"]
+  split_id: hub-age-tissue-multitask-v1
+
 data:
   phenotype_registry: configs/data/phenotype_registry.yaml
   sample_phenotype_table: canonical/phenotypes/sample_phenotype_table.parquet
   tissue_ontology: canonical/phenotypes/tissue_ontology.yaml
-  # Matrices resolved via sample_phenotype_table.matrix_id
-  wave: 1  # age + tissue primary; disease aux
+  wave: 1
+
+features:
+  methylation:
+    beta: true
+    m_value: true
+    epsilon: 0.001
+  static_feature_set: cpgpt2m_adapter_128_v1
 
 model:
   type: flat_deepset
@@ -39,7 +56,7 @@ model:
 heads:
   age:
     enabled: true
-    loss: huber  # or mse
+    loss: huber
     huber_delta: 1.0
     target_standardization: train_fold
     linear: true
@@ -47,10 +64,10 @@ heads:
     enabled: true
     loss: cross_entropy
     class_weighting: train_fold_balanced
-    ontology: harmonized  # not raw pack strings
+    ontology: harmonized
     linear: true
   disease:
-    enabled: true
+    enabled: false
     loss: bce_with_logits
     role: auxiliary
     linear: true
@@ -71,14 +88,12 @@ heads:
     linear: true
 
 loss:
-  # Fixed lambdas first pass; uncertainty weighting deferred
   lambda_age: 1.0
   lambda_tissue: 1.0
-  lambda_disease: 0.25
+  lambda_disease: 0.0
   lambda_cancer: 0.0
   lambda_blood: 0.0
   lambda_brain: 0.0
-  # Samples without a label never contribute (task masks)
 
 training:
   optimizer: adamw
@@ -87,8 +102,8 @@ training:
   batch_size: 1
   batch_token_budget: 500000
   gradient_clip_norm: 2.0
-  max_epochs: 100
-  early_stopping_patience: 10
+  max_epochs: 40
+  early_stopping_patience: 8
   precision: bf16-mixed
   num_workers: 0
   require_cuda: true
@@ -97,7 +112,6 @@ splits:
   grouping_columns:
     - study_id
     - donor_id
-  # Prefer study-grouped holdouts within each primary family
   protocol: study_grouped
   train_fraction: 0.7
   val_fraction: 0.15

@@ -19,6 +19,117 @@ class SamplePhenotype:
     study_id: str | None = None
     age: float | None = None
     platform: str | None = None
+    age_mask: bool = False
+    tissue_mask: bool = False
+
+
+def load_multitask_phenotypes(
+    parquet_path: Path,
+    *,
+    sample_ids: list[str] | None = None,
+    class_names: list[str] | None = None,
+) -> tuple[list[SamplePhenotype], list[str]]:
+    """Load partial age/tissue labels from ``sample_phenotype_table.parquet``.
+
+    Samples may have only ``age_mask`` or only ``tissue_mask`` set. Tissue class
+    names are taken from ``class_names`` when provided (ontology order); otherwise
+    from distinct non-null ``tissue_label`` values among masked rows.
+    """
+    path = parquet_path.resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"sample phenotype table not found: {path}")
+    frame = pd.read_parquet(path)
+    required = {
+        "sample_id",
+        "study_id",
+        "age_mask",
+        "tissue_mask",
+        "row_index",
+        "matrix_id",
+    }
+    missing = required - set(frame.columns)
+    if missing:
+        raise ValueError(f"phenotype table missing columns: {sorted(missing)}")
+
+    records = frame.to_dict(orient="records")
+    by_id: dict[str, dict[str, object]] = {str(row["sample_id"]): row for row in records}
+    ordered = sample_ids if sample_ids is not None else [str(x) for x in frame["sample_id"]]
+
+    if class_names is None:
+        labels = []
+        for sid in ordered:
+            row = by_id.get(sid)
+            if row is None:
+                continue
+            if not bool(row.get("tissue_mask")):
+                continue
+            lab = row.get("tissue_label")
+            if lab is None or (isinstance(lab, float) and pd.isna(lab)):
+                continue
+            labels.append(str(lab))
+        names = sorted(set(labels))
+    else:
+        names = list(class_names)
+    if not names:
+        raise ValueError("no tissue classes found in phenotype table")
+    class_to_idx = {name: i for i, name in enumerate(names)}
+
+    phenotypes: list[SamplePhenotype] = []
+    for sid in ordered:
+        if sid not in by_id:
+            raise KeyError(f"sample_id missing from phenotype table: {sid}")
+        row = by_id[sid]
+        age_mask = bool(row.get("age_mask"))
+        tissue_mask = bool(row.get("tissue_mask"))
+        if not age_mask and not tissue_mask:
+            raise ValueError(f"sample {sid} has no task masks")
+        age_f: float | None = None
+        if age_mask:
+            raw_age = row.get("age_years")
+            try:
+                age_f = float(raw_age)  # type: ignore[arg-type]
+            except (TypeError, ValueError) as exc:
+                raise KeyError(f"age_mask set but age_years invalid for {sid}") from exc
+            if pd.isna(age_f):
+                raise KeyError(f"age_mask set but age_years missing for {sid}")
+        class_index = 0
+        cell = "age"
+        if tissue_mask:
+            lab = row.get("tissue_label")
+            if lab is None or (isinstance(lab, float) and pd.isna(lab)):
+                raise KeyError(f"tissue_mask set but tissue_label missing for {sid}")
+            cell = str(lab)
+            if cell not in class_to_idx:
+                raise KeyError(f"tissue label {cell!r} not in class_names for {sid}")
+            class_index = class_to_idx[cell]
+            cid = row.get("tissue_class_id")
+            if (
+                cid is not None
+                and not (isinstance(cid, float) and pd.isna(cid))
+                and int(cid) != class_index  # type: ignore[arg-type]
+            ):
+                # Prefer ontology order from class_names; class_id must agree.
+                raise ValueError(
+                    f"tissue_class_id={cid} disagrees with ontology index "
+                    f"{class_index} for label {cell!r}"
+                )
+        study = row.get("study_id")
+        platform = row.get("platform_id") or row.get("platform")
+        phenotypes.append(
+            SamplePhenotype(
+                sample_id=sid,
+                cell_type=cell,
+                donor_id=str(study or sid),
+                title=cell if tissue_mask else f"age={age_f}",
+                class_index=class_index,
+                study_id=None if study is None else str(study),
+                age=age_f,
+                platform=None if platform is None else str(platform),
+                age_mask=age_mask,
+                tissue_mask=tissue_mask,
+            )
+        )
+    return phenotypes, names
 
 
 def _donor_from_title(title: str) -> str:

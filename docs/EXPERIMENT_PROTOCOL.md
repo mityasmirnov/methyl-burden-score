@@ -209,6 +209,42 @@ Stage 0 does not require a specific biological benchmark value before implementa
 - all negative controls behaving as expected;
 - at least one hierarchical configuration that is competitive with transparent baselines.
 
+## Training monitoring
+
+Flat / multitask runs write under `$MBS_ARTIFACT_ROOT` when
+`logging.tensorboard` and `logging.jsonl` are enabled in the experiment YAML
+(default for Hub and 5c configs).
+
+```text
+$MBS_ARTIFACT_ROOT/runs/<run_id>/metrics.jsonl   # one JSON record per epoch
+$MBS_ARTIFACT_ROOT/runs/<run_id>/tb/             # TensorBoard events
+$MBS_ARTIFACT_ROOT/checkpoints/<run_id>/best.pt
+$MBS_ARTIFACT_ROOT/checkpoints/<run_id>/last.pt
+```
+
+Live 5c MVP example (`stage0-flat-multitask-age-tissue-v1`):
+
+```bash
+source scripts/activate_data_environment.sh
+RUN=stage0-flat-multitask-age-tissue-v1
+
+# Preferred: live terminal dashboard
+uv run mbs monitor --run-id "$RUN" \
+  --config configs/experiment/stage0_flat_multitask.yaml
+
+ps -eo pid,etime,%cpu,%mem,cmd | rg 'mbs train flat'
+tail -f "$MBS_ARTIFACT_ROOT/runs/$RUN/metrics.jsonl"
+nvidia-smi
+uv run tensorboard --logdir "$MBS_ARTIFACT_ROOT/runs/$RUN/tb" --bind_all --port 6006
+```
+
+Do not interpret `val_accuracy == 0` on study-holdout tissue CE as model failure
+when the holdout study’s tissue class is absent from train (closed-set
+multiclass). Prefer `val_loss` / `val_mae` trends and final external-test
+destandardized age MAE (years). Storage layer guidance for 5c:
+[`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md)
+§ Storage recommendations.
+
 ## Reporting
 
 Every experiment report includes:

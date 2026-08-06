@@ -155,6 +155,11 @@ primary_gene_role
 
 ## Numeric matrix contract
 
+Large sample×locus arrays live in **Zarr/HDF5**, not DuckDB. DuckDB holds
+catalog metadata (and optional views over Parquet); phenotype labels for
+training are Parquet (`canonical/phenotypes/`). See Milestone 5c storage notes
+in [`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md).
+
 Each canonical study matrix has:
 
 ```text

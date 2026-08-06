@@ -14,7 +14,7 @@ docs/DATA_CONTRACT.md        canonical data contracts
 docs/ANNOTATION_GRAPH.md     biological topology
 docs/plans/                  milestone build plans (5b registry; 5c multitask)
 docs/STATIC_FEATURES.md      CpGPT and MethylGPT artifacts
-docs/EXPERIMENT_PROTOCOL.md  evaluation and controls
+docs/EXPERIMENT_PROTOCOL.md  evaluation, controls, train monitoring (TB/JSONL)
 docs/DATA_INSPECTION.md      source acceptance workflow
 docs/EWAS_DATA.md            primary open Data Hub + Atlas downloads
 docs/EWAS_METADATA.md        Atlas small tables + Hub sample-info contracts
@@ -151,6 +151,8 @@ mbs graph build            locus registry + five-role annotation graph
 mbs features export-cpgpt  offline CpGPT2M sequence-adapter static features
 mbs matrix convert         EWAS_db study → canonical matrix store
 mbs train flat             flat DeepRVAT-style baseline (fixture or pilot)
+mbs monitor                live Rich TUI for a run (metrics.jsonl + GPU + ckpts)
+mbs phenotypes build-multitask-table   Hub age+tissue phenotype table + merge matrix
 ```
 
 ## Planned next modules

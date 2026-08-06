@@ -6,7 +6,7 @@ The public model name is **deepMAT** (deep Methylation Aggregation Transformer /
 Deep Set family). The Python package remains `methyl-burden-score` with the
 `mbs` CLI entry point; do not treat a package rename as required for Stage 0.
 
-Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks). The model path is flat DeepRVAT-style **deepMAT** baseline → phenotype registry / multi-pack eval → real Hub pack matrices → **multitask shared encoder (next)** → hierarchical → study-grouped cross-fitting. Authoritative progress: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). See also [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), and [`docs/adr/0003-milestone-5b-phenotype-registry.md`](docs/adr/0003-milestone-5b-phenotype-registry.md).
+Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks). The model path is flat DeepRVAT-style **deepMAT** baseline → phenotype registry / multi-pack eval → real Hub pack matrices → **multitask shared encoder (5c in progress)** → hierarchical → study-grouped cross-fitting. Authoritative progress: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). See also [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), and [`docs/adr/0003-milestone-5b-phenotype-registry.md`](docs/adr/0003-milestone-5b-phenotype-registry.md).
 
 The Stage 0 implementation follows four design principles:
 
@@ -110,11 +110,20 @@ uv run mbs train flat --overfit-fixture
 # uv run mbs matrix convert --study-id GSE35069 --platform-id HM450 --verify
 # uv run mbs matrix convert-pack --help
 # uv run mbs train flat --config configs/experiment/stage0_flat_pilot.yaml
+# Milestone 5c multitask (age + tissue):
+# uv run mbs phenotypes build-multitask-table
+# CUDA_VISIBLE_DEVICES=0 uv run mbs train flat \
+#   --config configs/experiment/stage0_flat_multitask.yaml \
+#   --run-id stage0-flat-multitask-age-tissue-v1
+# uv run mbs monitor --run-id stage0-flat-multitask-age-tissue-v1 \
+#   --config configs/experiment/stage0_flat_multitask.yaml
 ```
 
 Hub/Atlas metadata contracts: [`docs/EWAS_METADATA.md`](docs/EWAS_METADATA.md).
 Hub downloads: [`docs/EWAS_DATA.md`](docs/EWAS_DATA.md).
 Inspection guide: [`docs/DATA_INSPECTION.md`](docs/DATA_INSPECTION.md).
+Train monitoring (TB / JSONL / `mbs monitor`):
+[`docs/EXPERIMENT_PROTOCOL.md`](docs/EXPERIMENT_PROTOCOL.md).
 Machine-specific paths belong in `.env` or `configs/local/`; neither is committed.
 
 ## Repository policy
@@ -151,10 +160,11 @@ Stage 0 is past bootstrap. Milestones **1–5b″** are done (see
 | Hub metadata (5b′) | Atlas/Hub column contracts ([`docs/EWAS_METADATA.md`](docs/EWAS_METADATA.md)) |
 | Real Hub packs (5b″) | `mbs matrix convert-pack`; age/tissue/blood/brain study-holdout matrices + reports under `reports/inspection/stage0_hub_real_benchmark/` |
 
-**Current gate — Milestone 5c (ready to start):** masked multitask age + tissue
-heads on a shared flat encoder using already-downloaded Hub age/tissue assets.
-Disease/cancer profile zips are optional for the MVP; hierarchical model and
-cross-fitting follow 5c.
+**Current gate — Milestone 5c (`in_progress`):** masked multitask age + tissue
+heads on a shared flat encoder; merged Hub matrix + phenotype table built;
+train run `stage0-flat-multitask-age-tissue-v1` + `mbs monitor` TUI. Mark
+`done` only when MVP acceptance in [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md)
+is met. Hierarchical model and cross-fitting follow 5c.
 
 Public model name remains **deepMAT**; package/CLI stay `mbs` /
 `methyl-burden-score`.

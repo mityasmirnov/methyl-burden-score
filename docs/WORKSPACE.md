@@ -26,12 +26,12 @@ Defaults are **project-local** under the Git working tree. Any absolute path und
 │   ├── staging/                             # disposable conversions
 │   └── canonical/
 │       ├── catalog/
-│       │   ├── catalog.duckdb
+│       │   ├── catalog.duckdb               # DuckDB schema; tables may be empty in 5c
 │       │   └── tables/                      # Parquet metadata tables
-│       ├── matrices/
+│       ├── matrices/                        # Zarr float32 betas (not DuckDB)
 │       ├── annotations/
 │       ├── graphs/
-│       ├── phenotypes/                      # Hub sample-info Parquet exports
+│       ├── phenotypes/                      # Hub sample-info + multitask Parquet
 │       └── static_features/
 ├── reports/
 │   └── inspection/
@@ -71,6 +71,14 @@ MBS_DOCKER_ROOT     $MBS_ROOT/docker
 ```
 
 `MBS_PROJECT_ROOT` remains a compatibility alias for `MBS_ROOT`.
+
+**Storage roles (Stage 0 / 5c):** betas stay in Zarr; phenotypes and graph
+tables in Parquet; DuckDB catalog is for metadata joins / inspection and is
+**not** required to be populated for multitask training. Prefer one merged
+multitask matrix over duplicate dense stores; keep Hub profile ZIPs compressed.
+Details: [`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md)
+§ Storage recommendations. Train monitoring:
+[`EXPERIMENT_PROTOCOL.md`](EXPERIMENT_PROTOCOL.md) § Training monitoring.
 
 The host Docker **daemon** data root is separate and typically `/data/docker` (see below). That is an administrator concern, not the project-local `$MBS_DOCKER_ROOT` helper directory.
 

@@ -24,9 +24,11 @@ from mbs.inspect_ewas_metadata import inspect_ewas_metadata, write_ewas_metadata
 from mbs.inspect_source import inventory_source, write_inspection_report
 from mbs.matrix.convert import DEFAULT_MATRIX_ID, convert_ewas_db_study
 from mbs.matrix.hub_pack import convert_hub_pack_subset
+from mbs.matrix.multitask_merge import merge_age_tissue_matrices
 from mbs.paths import DataPaths, PathPolicyError
 from mbs.static_features.export_cpgpt import DEFAULT_FEATURE_SET_ID, export_cpgpt_adapter
 from mbs.training.loop import load_experiment_config, train_flat_baseline
+from mbs.training.monitor import run_monitor, validate_run_id
 
 app = typer.Typer(no_args_is_help=True, help="Methylation Burden Score tooling")
 catalog_app = typer.Typer(no_args_is_help=True, help="DuckDB catalog operations")
@@ -35,12 +37,14 @@ graph_app = typer.Typer(no_args_is_help=True, help="Annotation graph builds")
 matrix_app = typer.Typer(no_args_is_help=True, help="Canonical matrix conversion")
 features_app = typer.Typer(no_args_is_help=True, help="Static locus feature export")
 train_app = typer.Typer(no_args_is_help=True, help="Model training")
+phenotypes_app = typer.Typer(no_args_is_help=True, help="Phenotype table builds")
 app.add_typer(catalog_app, name="catalog")
 app.add_typer(inspect_app, name="inspect")
 app.add_typer(graph_app, name="graph")
 app.add_typer(matrix_app, name="matrix")
 app.add_typer(features_app, name="features")
 app.add_typer(train_app, name="train")
+app.add_typer(phenotypes_app, name="phenotypes")
 console = Console()
 
 _SOURCE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
@@ -272,9 +276,7 @@ def inspect_cpgcorpus_gpl_cmd(
 def inspect_ewas_metadata_cmd(
     report_dir: Annotated[
         Path | None,
-        typer.Option(
-            help="Report directory (default: reports/inspection/ewas_metadata_structure)"
-        ),
+        typer.Option(help="Report directory (default: reports/inspection/ewas_metadata_structure)"),
     ] = None,
 ) -> None:
     """Profile Atlas small tables and unpacked DataHub sample-info .txt packs."""
@@ -687,6 +689,63 @@ def features_export_cpgpt_cmd(  # noqa: PLR0917
     )
 
 
+@phenotypes_app.command("build-multitask-table")
+def phenotypes_build_multitask_table_cmd(
+    matrix_id: Annotated[
+        str,
+        typer.Option(help="Output multitask matrix id"),
+    ] = "matrix-hub-age-tissue-multitask-v1",
+    age_matrix_id: Annotated[
+        str,
+        typer.Option(help="Source age studyholdout matrix id"),
+    ] = "matrix-hub-age-studyholdout-v1",
+    tissue_matrix_id: Annotated[
+        str,
+        typer.Option(help="Source tissue studyholdout matrix id"),
+    ] = "matrix-hub-tissue-studyholdout-v1",
+    min_tissue_n: Annotated[
+        int,
+        typer.Option(help="Minimum samples per tissue class"),
+    ] = 10,
+) -> None:
+    """Merge age+tissue Hub matrices and write sample_phenotype_table + tissue ontology."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    paths.ensure_directories()
+    try:
+        result = merge_age_tissue_matrices(
+            project_root=paths.project_root,
+            data_root=paths.data_root,
+            age_matrix_id=age_matrix_id,
+            tissue_matrix_id=tissue_matrix_id,
+            output_matrix_id=matrix_id,
+            min_tissue_n=min_tissue_n,
+        )
+    except (FileNotFoundError, ValueError) as error:
+        console.print(f"[bold red]Build failed:[/bold red] {error}")
+        raise typer.Exit(code=1) from error
+
+    console.print_json(
+        json.dumps(
+            {
+                "matrix_id": result.matrix_id,
+                "output_dir": str(result.output_dir),
+                "n_samples": result.n_samples,
+                "n_loci": result.n_loci,
+                "n_deduped": result.n_deduped,
+                "phenotype_table": str(result.phenotype_table_path),
+                "tissue_ontology": str(result.tissue_ontology_path),
+                "stats": result.stats,
+            },
+            default=str,
+        )
+    )
+
+
 @train_app.command("flat")
 def train_flat_cmd(  # noqa: PLR0917
     config: Annotated[
@@ -824,6 +883,73 @@ def train_flat_cmd(  # noqa: PLR0917
             }
         )
     )
+
+
+@app.command("monitor")
+def monitor_cmd(
+    run_id: Annotated[
+        str,
+        typer.Option(help="Run id under $MBS_ARTIFACT_ROOT/runs/<run_id>/"),
+    ],
+    config: Annotated[
+        Path | None,
+        typer.Option(help="Experiment YAML for max_epochs when resolved_config is absent"),
+    ] = None,
+    max_epochs: Annotated[
+        int | None,
+        typer.Option(help="Override training.max_epochs for ETA"),
+    ] = None,
+    interval: Annotated[
+        float,
+        typer.Option(help="Refresh interval in seconds"),
+    ] = 2.0,
+    once: Annotated[
+        bool,
+        typer.Option("--once", help="Print one snapshot and exit (no live refresh)"),
+    ] = False,
+) -> None:
+    """Live terminal dashboard for a train run (metrics.jsonl + GPU + checkpoints)."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    try:
+        validate_run_id(run_id)
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+
+    config_path: Path | None = None
+    if config is not None:
+        config_path = _require_under_data(config.absolute(), "config")
+        if not config_path.is_file():
+            raise typer.BadParameter(f"config not found: {config_path}")
+    if max_epochs is not None and max_epochs < 1:
+        raise typer.BadParameter("max_epochs must be >= 1")
+    if interval < 0.2:
+        raise typer.BadParameter("interval must be >= 0.2")
+
+    try:
+        snap = run_monitor(
+            run_id=run_id,
+            artifact_root=paths.artifact_root,
+            config_path=config_path,
+            max_epochs=max_epochs,
+            interval_s=interval,
+            once=once,
+        )
+    except ValueError as error:
+        console.print(f"[bold red]Monitor error:[/bold red] {error}")
+        raise typer.Exit(code=1) from error
+    except KeyboardInterrupt:
+        console.print("\n[dim]monitor stopped[/dim]")
+        raise typer.Exit(code=0) from None
+
+    if snap.status == "finished":
+        console.print(f"[green]Run finished:[/green] {snap.run_root}")
+    elif snap.status == "stalled":
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

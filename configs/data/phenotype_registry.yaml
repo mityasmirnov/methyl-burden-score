@@ -269,6 +269,25 @@ entries:
       Single-tissue studies; train=[GSE58885,GSE52401,GSE97628]
       val=[GSE78874] test=[GSE75248].
 
+  - entry_id: hub-age-tissue-multitask-v1
+    source_system: ewas_datahub
+    phenotype_family: age
+    study_id: null
+    study_ids:
+      [GSE51032, GSE56105, GSE55763, GSE78874, GSE58885, GSE52401, GSE97628, GSE75248]
+    platform: HM450
+    sample_count: 299
+    label_type: multiclass
+    split_role: benchmark
+    download_path: raw/ewas_datahub/download/age_methylation_v1.zip
+    matrix_path: canonical/matrices/matrix-hub-age-tissue-multitask-v1
+    checksum: null
+    notes: >
+      Milestone 5c merge of age+tissue studyholdout matrices (GSM dedupe).
+      train=[GSE51032,GSE56105,GSE58885,GSE52401,GSE97628] val=[GSE55763]
+      test=[GSE78874,GSE75248]. Phenotype table:
+      canonical/phenotypes/sample_phenotype_table.parquet.
+
   - entry_id: hub-blood-matrix-studyholdout-v1
     source_system: ewas_datahub
     phenotype_family: blood

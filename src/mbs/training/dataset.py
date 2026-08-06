@@ -84,21 +84,20 @@ def record_to_batch(
     n_genes: int,
     age_value: float | None = None,
     age_enabled: bool = False,
+    tissue_enabled: bool = True,
 ) -> FlatBatch:
     feats = record.features
+    tissue_on = bool(tissue_enabled)
+    age_on = bool(age_enabled and age_value is not None)
     return FlatBatch(
         sample_ids=[record.sample_id],
         cpg_features=torch.from_numpy(feats.cpg_features),
         cpg_to_gene=torch.from_numpy(feats.cpg_to_gene),
         n_genes=n_genes,
         tissue_target=torch.tensor([record.class_index], dtype=torch.long),
-        tissue_mask=torch.tensor([True]),
-        age_target=(
-            torch.tensor([float(age_value)], dtype=torch.float32)
-            if age_enabled and age_value is not None
-            else None
-        ),
-        age_mask=torch.tensor([bool(age_enabled and age_value is not None)]),
+        tissue_mask=torch.tensor([tissue_on]),
+        age_target=(torch.tensor([float(age_value)], dtype=torch.float32) if age_on else None),
+        age_mask=torch.tensor([age_on]),
     )
 
 

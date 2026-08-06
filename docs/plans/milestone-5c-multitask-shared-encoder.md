@@ -31,13 +31,15 @@ with **task-specific linear heads** and **label masks**—not one model per ZIP.
 | Choice | Decision | Why |
 |--------|----------|-----|
 | Topology for 5c | Keep **flat** `FlatDeepSet` max-pool | Isolates multitask labels before hierarchy (M6) |
-| Heads | **Linear** `SeedMaskedLinearHead` (or thin linear age head) first | Interpretable MBS; DeepRVAT-style |
-| Primary tasks | Age (MSE/Huber) + tissue (CE) | Pack coverage + EXPERIMENT_PROTOCOL |
-| Auxiliary | Disease / cancer BCE (masked); blood/brain as domain aux after ontology | Avoid one giant unharmonized tissue set |
-| Tissue labels | Coarse family + optional fine subtype; or one harmonized ontology with min-n filter | Blood/brain packs must not collide with `tissue_methylation` classes blindly |
+| Heads | **Linear** age + `SeedMaskedLinearHead` tissue | Interpretable MBS; DeepRVAT-style |
+| Primary tasks | Age (Huber) + tissue (CE) | Pack coverage + EXPERIMENT_PROTOCOL |
+| Auxiliary | Disease / cancer / blood / brain **off for MVP** | Incomplete disease/cancer zips; domain aux later |
+| Matrix strategy | Merge `matrix-hub-age-studyholdout-v1` + `matrix-hub-tissue-studyholdout-v1` → `matrix-hub-age-tissue-multitask-v1` (identical loci; GSM dedupe) | Shortest train path; schema `matrix_id`+`row_index` |
+| Tissue labels | Identity map of 5 pack classes; `min_n=10` in `tissue_ontology.yaml` | Avoid dumping blood/brain into primary CE |
 | Loss | Fixed \(\lambda\) weighted sum + per-sample task masks | Uncertainty weighting deferred |
-| Splits | Study-grouped (5b `build_study_grouped_split`) | Leakage control |
-| Monitoring | TensorBoard + JSONL + torchmetrics (already on flat loop); Lightning optional later | Match 5b |
+| Splits | train=`GSE51032,GSE56105,GSE58885,GSE52401,GSE97628`; val=`GSE55763`; test=`GSE78874,GSE75248` | No study in more than one role |
+| Monitoring | TensorBoard + JSONL + torchmetrics (already on flat loop); Lightning optional later | Match 5b; see § Monitoring below |
+| Storage | Zarr betas + Parquet phenotypes; DuckDB catalog optional/empty | ADR 0003; see § Storage recommendations |
 | Not yet | Hierarchical (M6), full OOF score matrix (M7), one-model-per-ZIP | Ordering |
 
 ## Formula (shared encoder)
@@ -174,13 +176,28 @@ Always report by study and platform. Use 5b metrics helpers.
 
 ## Implementation order (when coding starts)
 
-1. Build `sample_phenotype_table.parquet` from wave-1 sample-info + matrix indices
-2. Tissue ontology / class filter
-3. `multitask.py` masked loss + head bundle on top of existing `FlatDeepSet`
-4. CLI / config `stage0_flat_multitask.yaml`
-5. Real age + tissue study-holdout runs (not synthetic fixtures)
-6. Wire disease aux; document blood/brain ontology decision
+1. ~~Build `sample_phenotype_table.parquet` from wave-1 sample-info + matrix indices~~
+2. ~~Tissue ontology / class filter~~
+3. ~~`multitask.py` masked loss + head bundle on top of existing `FlatDeepSet`~~
+4. ~~CLI / config `stage0_flat_multitask.yaml`~~ (`mbs phenotypes build-multitask-table`)
+5. ~~Real age + tissue study-holdout runs (not synthetic fixtures)~~
+6. Wire disease aux; document blood/brain ontology decision (follow-on)
 7. Mark TODO §5c done; then Milestone 6
+
+**MVP build command:**
+
+```bash
+uv run mbs phenotypes build-multitask-table
+CUDA_VISIBLE_DEVICES=0 uv run mbs train flat \
+  --config configs/experiment/stage0_flat_multitask.yaml \
+  --run-id stage0-flat-multitask-age-tissue-v1
+```
+
+Artifacts: `$MBS_ARTIFACT_ROOT/runs/stage0-flat-multitask-age-tissue-v1/`,
+`$MBS_ARTIFACT_ROOT/checkpoints/stage0-flat-multitask-age-tissue-v1/`,
+`canonical/matrices/matrix-hub-age-tissue-multitask-v1/`,
+`canonical/phenotypes/sample_phenotype_table.parquet`,
+`canonical/phenotypes/tissue_ontology.yaml`.
 
 ## Relation to Milestone 5b
 
@@ -190,3 +207,131 @@ study-grouped splits, TensorBoard, and **fixture** age/tissue holdout runs.
 parse/join contracts — required reading before the unified phenotype table in 5c.
 5c consumes those artifacts and ships **joint multitask training on real pack
 labels** with a single shared encoder.
+
+## Storage recommendations (5c)
+
+Layer roles (do not collapse these):
+
+| Layer | Format | Role |
+|-------|--------|------|
+| Betas | Zarr `float32`, chunks `(≤64, ≤4096)` | Sample×locus matrices under `canonical/matrices/` |
+| Phenotypes | Parquet | `sample_phenotype_table.parquet` + family sample-info |
+| Annotations / graph | Parquet | Locus registry + five-role graph |
+| Static features | Zarr (CpGPT adapter) | Once per locus |
+| Catalog | DuckDB (`catalog.duckdb`) | Schema-ready metadata DB; **empty is OK for 5c** |
+| Raw Hub packs | ZIP | Keep compressed; stream-convert subsets only |
+
+**Do**
+
+1. Keep Parquet + Zarr as the training source of truth (ADR 0003). Do **not**
+   put betas into DuckDB.
+2. Prefer one merged multitask matrix (`matrix-hub-age-tissue-multitask-v1`)
+   over duplicate dense copies of the same GSM rows.
+3. Keep canonical betas `float32` + NaN missingness (no silent clip/quantize).
+4. Leave full Hub profile ZIPs archived; only materialize selected studies /
+   max-per-study subsets.
+5. When scaling to thousands of samples, keep the sample chunk small (1–16)
+   so row reads do not pull many unused samples.
+6. Put disposable train caches (ragged CpG lists, gene-aggregated features)
+   under `$MBS_SCRATCH_ROOT`, keyed by `(matrix_id, sample_id, graph_hash)`.
+
+**Defer**
+
+- Populating DuckDB `sample` / `sample_phenotype` tables — optional later for
+  SQL QC via `read_parquet` views; not a 5c train gate.
+- Zarr Blosc/Zstd compression — worth enabling when converting full packs;
+  current studyholdout matrices are small (~100–280 MiB).
+- Canonical `float16` betas — reject; scratch-only caches may use lower
+  precision if needed.
+
+Disk is not the bottleneck on this host (~9 TiB free). The costly path is
+materializing full probe rows into `FlatSampleRecord`s each epoch — optimize
+that with scratch caches before changing the storage stack.
+
+Normative matrix layout: [`DATA_CONTRACT.md`](../DATA_CONTRACT.md). Workspace
+roots: [`WORKSPACE.md`](../WORKSPACE.md).
+
+## Monitoring a live 5c train run
+
+Current MVP run id: `stage0-flat-multitask-age-tissue-v1`
+(`configs/experiment/stage0_flat_multitask.yaml`, `logging.tensorboard` +
+`logging.jsonl` enabled).
+
+### Artifacts
+
+```text
+$MBS_ARTIFACT_ROOT/runs/stage0-flat-multitask-age-tissue-v1/
+  metrics.jsonl          # one JSON object per epoch
+  tb/                    # TensorBoard event files
+  resolved_config.yaml   # written when run finishes (or mid-run if saved)
+$MBS_ARTIFACT_ROOT/checkpoints/stage0-flat-multitask-age-tissue-v1/
+  best.pt
+  last.pt
+```
+
+### Quick CLI checks
+
+```bash
+source scripts/activate_data_environment.sh
+RUN=stage0-flat-multitask-age-tissue-v1
+
+# Is the train process alive?
+ps -eo pid,etime,%cpu,%mem,cmd | rg 'mbs train flat|stage0-flat-multitask'
+
+# Epoch metrics (JSONL)
+tail -f "$MBS_ARTIFACT_ROOT/runs/$RUN/metrics.jsonl"
+
+# GPU
+nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total \
+  --format=csv
+
+# Checkpoint freshness
+ls -lah "$MBS_ARTIFACT_ROOT/checkpoints/$RUN/"
+```
+
+### TensorBoard
+
+```bash
+source scripts/activate_data_environment.sh
+uv run tensorboard \
+  --logdir "$MBS_ARTIFACT_ROOT/runs/stage0-flat-multitask-age-tissue-v1/tb" \
+  --bind_all --port 6006
+```
+
+Open `http://<host>:6006` (or SSH tunnel the port). Compare multiple runs with
+`--logdir_spec name1:path1,name2:path2` or point `--logdir` at
+`$MBS_ARTIFACT_ROOT/runs/`.
+
+### Terminal dashboard (`mbs monitor`)
+
+Lightweight Rich TUI (no TensorBoard required):
+
+```bash
+source scripts/activate_data_environment.sh
+uv run mbs monitor --run-id stage0-flat-multitask-age-tissue-v1 \
+  --config configs/experiment/stage0_flat_multitask.yaml
+
+# one-shot snapshot
+uv run mbs monitor --run-id stage0-flat-multitask-age-tissue-v1 --once
+```
+
+Shows epoch / train·val loss / age MAE / tissue accuracy (+ macro-F1 when
+logged) / GPU memory / ETA / `best.pt`·`last.pt`. Pass `--config` or
+`--max-epochs` so ETA works before `resolved_config.yaml` is written at run end.
+
+### How to read metrics
+
+JSONL fields (multitask): `epoch`, `train_loss`, `train_accuracy`,
+`train_mae`, `val_loss`, `val_accuracy`, `val_mae`, `learning_rate`, `task`.
+
+| Signal | Meaning for this MVP split |
+|--------|----------------------------|
+| `train_loss` ↓ | Joint masked age+tissue objective improving on train studies |
+| `train_mae` | Age error in **train-fold standardized** units (not years) |
+| `val_mae` | Val age error (standardized); study `GSE55763` |
+| `val_accuracy` | Tissue CE on val — may stay **0%** if val tissue classes are absent from train (closed-set CE); treat as plumbing, not biology |
+| `best.pt` mtime | Last improvement on the early-stopping metric |
+
+External-test metrics and destandardized age MAE (years) land in the final run
+`metrics.json` when training completes. Full monitoring protocol:
+[`EXPERIMENT_PROTOCOL.md`](../EXPERIMENT_PROTOCOL.md) § Training monitoring.
