@@ -44,6 +44,14 @@ sources:
     zenodo: https://doi.org/10.5281/zenodo.14933468
     zenodo_records: https://zenodo.org/records/15181885
 
+  infinium_annotation:
+    repository: https://github.com/zhou-lab/InfiniumAnnotation.git
+    commit: e91f9e992cc60f2f52f15c564e359ac6718d4cfd
+    role: Zhou-lab Infinium probe coordinates, masks, and KnowYourCG feature sets (HM450/EPIC/EPICv2/…)
+    runtime_dependency: false
+    browser: https://zwdzwd.github.io/InfiniumAnnotation
+    tag: v8.1
+
 policy:
   update_requires:
     - source diff review

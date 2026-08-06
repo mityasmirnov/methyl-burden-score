@@ -16,3 +16,6 @@
 [submodule "vendor/epicv2_manifest"]
 	path = vendor/epicv2_manifest
 	url = https://github.com/bethan-mallabar-rimmer/EPICv2_manifest.git
+[submodule "vendor/infinium_annotation"]
+	path = vendor/infinium_annotation
+	url = https://github.com/zhou-lab/InfiniumAnnotation.git

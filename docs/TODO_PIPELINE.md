@@ -94,6 +94,17 @@ make download-manifests
   UTR, and a few annotation flags. Do **not** expand to full MethylGPT /
   MethylCapsNet topology yet.
 - **Depends on:** (1) at least partially (platform/probe IDs known).
+- **Leverage (read-only vendor references; do not runtime-import):**
+  - [`vendor/infinium_annotation`](https://github.com/zhou-lab/InfiniumAnnotation)
+    (Zhou-lab InfiniumAnnotation): hg38 probe ordering, genomic coordinates,
+    mapping/quality masks, KnowYourCG feature sets for HM450/EPIC/EPICv2/….
+  - [`vendor/epicv2_manifest`](https://github.com/bethan-mallabar-rimmer/EPICv2_manifest):
+    EPICv2 reannotation code; Zenodo tables under `$MBS_DATA_ROOT/raw/manifests`.
+  - [`vendor/methylcapsnet`](https://github.com/Christensen-Lab-Dartmouth/MethylCapsNet):
+    regulatory capsule / typed-region grouping approach to adapt for a simple
+    Stage 0 region taxonomy (not the full CapsNet model).
+  Convert or export needed tables into `$MBS_DATA_ROOT/canonical/annotations`
+  (or graphs); keep bulky vendor blobs out of the Python runtime path.
 
 ---
 

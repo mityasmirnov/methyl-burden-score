@@ -32,6 +32,7 @@ add_submodule https://github.com/albert-ying/MethylGPT.git vendor/methylgpt
 add_submodule https://github.com/Christensen-Lab-Dartmouth/MethylCapsNet.git vendor/methylcapsnet
 add_submodule https://github.com/adamewing/methylartist.git vendor/methylartist
 add_submodule https://github.com/bethan-mallabar-rimmer/EPICv2_manifest.git vendor/epicv2_manifest
+add_submodule https://github.com/zhou-lab/InfiniumAnnotation.git vendor/infinium_annotation
 
 git submodule update --init --recursive
 
