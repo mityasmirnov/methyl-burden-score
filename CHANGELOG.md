@@ -6,6 +6,13 @@ The project follows semantic versioning once the first public API is released.
 
 ## Unreleased
 
+### Changed
+
+- Pin Linux/Windows `torch` (and `torchvision`) to the PyTorch **cu128** index
+  so wheels match host CUDA 12.8 / driver 570.x. Resolves
+  `torch.cuda.is_available() == False` caused by PyPI's default `cu130` wheel.
+  Documented in `docs/WORKSPACE.md` and `docs/TODO_PIPELINE.md`.
+
 ### Added
 
 - Optional `cpgpt` extra (`uv sync --extra cpgpt`) installing the vendored

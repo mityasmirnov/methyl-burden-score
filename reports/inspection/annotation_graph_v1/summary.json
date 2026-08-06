@@ -1,48 +1,53 @@
 {
   "cpg_context_counts": {
-    "open_sea": 7
+    "island": 179826,
+    "north_shelf": 36648,
+    "north_shore": 88753,
+    "open_sea": 647094,
+    "south_shelf": 37046,
+    "south_shore": 93155
   },
   "locus_region_edges_by_type": {
-    "five_prime": 1,
-    "gene_body": 3,
-    "promoter_core": 1,
-    "promoter_proximal": 2,
-    "three_prime": 1
+    "five_prime": 22071,
+    "gene_body": 433506,
+    "promoter_core": 200605,
+    "promoter_proximal": 175070,
+    "three_prime": 39695
   },
-  "n_genes": 2,
-  "n_loci": 7,
-  "n_loci_multi_gene": 2,
-  "n_locus_region_edges": 8,
-  "n_probe_locus_edges": 7,
-  "n_probes": 8,
-  "n_regions": 9,
-  "n_unassigned_loci": 1,
-  "n_unmapped_probes": 1,
+  "n_genes": 19937,
+  "n_loci": 1082522,
+  "n_loci_multi_gene": 92793,
+  "n_locus_region_edges": 870947,
+  "n_probe_locus_edges": 2288527,
+  "n_probes": 2290670,
+  "n_regions": 322331,
+  "n_unassigned_loci": 321112,
+  "n_unmapped_probes": 2143,
   "platform_coverage": [
     {
-      "n_mapped": 2,
-      "n_probes": 2,
+      "n_mapped": 865904,
+      "n_probes": 866553,
       "platform_id": "EPIC"
     },
     {
-      "n_mapped": 2,
-      "n_probes": 2,
+      "n_mapped": 937054,
+      "n_probes": 937690,
       "platform_id": "EPICv2"
     },
     {
-      "n_mapped": 3,
-      "n_probes": 4,
+      "n_mapped": 485569,
+      "n_probes": 486427,
       "platform_id": "HM450"
     }
   ],
-  "probes_collapsed_max": 1,
-  "probes_collapsed_mean": 1.0,
+  "probes_collapsed_max": 12,
+  "probes_collapsed_mean": 2.1140697371508383,
   "region_counts_by_type": {
-    "five_prime": 2,
-    "gene_body": 2,
-    "promoter_core": 2,
-    "promoter_proximal": 2,
-    "three_prime": 1
+    "five_prime": 92299,
+    "gene_body": 19940,
+    "promoter_core": 70994,
+    "promoter_proximal": 58824,
+    "three_prime": 80274
   },
   "region_policy": {
     "cgi_shelf_bp": 4000,
@@ -71,9 +76,11 @@
     ]
   },
   "source_stats": {
-    "n_raw_probes": 8,
+    "n_raw_probes": 2290670,
     "platforms": [
-      "HM450"
+      "HM450",
+      "EPIC",
+      "EPICv2"
     ]
   }
 }

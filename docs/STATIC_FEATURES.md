@@ -23,6 +23,8 @@ uv sync --all-groups --extra cpgpt
 
 CpGPT declares `torch<=2.6`. The project keeps a newer MBS torch line via
 `[tool.uv] override-dependencies = ["torch>=2.3"]` in `pyproject.toml`.
+Linux/Windows torch wheels come from the PyTorch **cu128** index (CUDA 12.8
+driver match); see `docs/WORKSPACE.md`.
 
 Download **small** / **human** resources into the project Hugging Face cache
 (`$HF_HOME` → `$MBS_CACHE_ROOT/huggingface`; never `$HOME/.cache`):

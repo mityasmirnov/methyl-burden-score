@@ -84,6 +84,18 @@ bash scripts/bootstrap_server.sh
 
 The bootstrap script installs `uv` under `$MBS_ROOT/.tools/uv/bin`, creates `.venv` inside the project, and places all tool caches under `$MBS_CACHE_ROOT`.
 
+**PyTorch / CUDA:** On Linux and Windows, `uv sync` installs torch from the
+PyTorch **cu128** wheel index (matches this server's NVIDIA driver 570.x /
+CUDA 12.8). Confirm GPUs with:
+
+```bash
+uv run python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.device_count())"
+```
+
+Expect something like `2.11.0+cu128 True 3`. If you see `+cu130` and
+`cuda.is_available() == False`, re-sync from a clean lock that still points at
+`https://download.pytorch.org/whl/cu128` (see `pyproject.toml`).
+
 Optional foundation-model export tooling is **not** in the default sync.
 
 **CpGPT** (optional extra on the main `.venv`):

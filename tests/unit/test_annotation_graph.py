@@ -208,6 +208,7 @@ def test_build_annotation_graph_fixture(workspace: Path) -> None:
         probes=probes,
         genes=genes,
         regions=regions,
+        report_dir=workspace / "reports" / "inspection" / "annotation_graph_v1",
     )
     graph_dir = Path(result["graph_dir"])
     ann_dir = Path(result["annotations_dir"])
