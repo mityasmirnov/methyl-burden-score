@@ -47,7 +47,7 @@ Used by `mbs.registry.sample_info.FAMILY_VALUE_COLUMN` when exporting Parquet:
 | blood | `cell_component` |
 | brain | `tissue` |
 | sex | `sex` |
-| ancestry | `race` |
+| ancestry | `race` (file: `sample_race.txt` inside `sample_ancestry_category_methylation_v1/`) |
 | bmi | `bmi` |
 
 ## Export paths

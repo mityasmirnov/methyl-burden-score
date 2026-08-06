@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-06T14:27:56.965813+00:00",
+  "generated_at": "2026-08-06T14:48:43.718354+00:00",
   "data_root": "/data/projects/methyl-burden-score/data",
   "project_root": "/data/projects/methyl-burden-score",
   "atlas_tables": [
@@ -2455,6 +2455,590 @@
       "n_project_id": 143
     },
     {
+      "family": "ancestry",
+      "path": "/data/projects/methyl-burden-score/reports/inspection/ewas_datahub_samples/sample_ancestry_category_methylation_v1/sample_race.txt",
+      "exists": true,
+      "bytes": 224431,
+      "parse_recipe": "R write.table: space-separated, double-quoted fields, index_col=0 dropped",
+      "n_rows": 1380,
+      "n_cols": 23,
+      "columns": [
+        "sample_id",
+        "age",
+        "bmi",
+        "body_fat",
+        "cell_component",
+        "childhood_abuse",
+        "disease",
+        "disease_stage",
+        "infection",
+        "genotype",
+        "gestational_age",
+        "morphology",
+        "overall_survival",
+        "project_id",
+        "race",
+        "sex",
+        "time_point",
+        "tissue",
+        "treatment",
+        "vital_status",
+        "tissue_or_organ_of_origin",
+        "sample_type",
+        "platform"
+      ],
+      "column_profiles": [
+        {
+          "name": "sample_id",
+          "kind": "string",
+          "non_null_rate": 1.0,
+          "n_unique": 1380
+        },
+        {
+          "name": "age",
+          "kind": "numeric",
+          "non_null_rate": 0.8732,
+          "n_unique": 179,
+          "min": 0.0,
+          "max": 96.0,
+          "mean": 51.92501457261411
+        },
+        {
+          "name": "bmi",
+          "kind": "string",
+          "non_null_rate": 0.1543,
+          "n_unique": 213
+        },
+        {
+          "name": "body_fat",
+          "kind": "categorical",
+          "non_null_rate": 0.0029,
+          "n_unique": 4,
+          "top_values": [
+            {
+              "value": "33.7",
+              "count": 1
+            },
+            {
+              "value": "52.8",
+              "count": 1
+            },
+            {
+              "value": "39.9",
+              "count": 1
+            },
+            {
+              "value": "31.1",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "cell_component",
+          "kind": "string",
+          "non_null_rate": 0.1667,
+          "n_unique": 230
+        },
+        {
+          "name": "childhood_abuse",
+          "kind": "categorical",
+          "non_null_rate": 0.1645,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "no",
+              "count": 125
+            },
+            {
+              "value": "yes",
+              "count": 102
+            }
+          ]
+        },
+        {
+          "name": "disease",
+          "kind": "categorical",
+          "non_null_rate": 0.1536,
+          "n_unique": 9,
+          "top_values": [
+            {
+              "value": "Parkinson's disease",
+              "count": 87
+            },
+            {
+              "value": "frontotemporal dementia",
+              "count": 31
+            },
+            {
+              "value": "polycystic ovarian syndrome",
+              "count": 27
+            },
+            {
+              "value": "acute respiratory distress syndrome",
+              "count": 25
+            },
+            {
+              "value": "acute myeloid leukemia",
+              "count": 11
+            },
+            {
+              "value": "systemic lupus erythematosus",
+              "count": 11
+            },
+            {
+              "value": "progressive supranuclear palsy",
+              "count": 11
+            },
+            {
+              "value": "Alzheimer's disease",
+              "count": 7
+            }
+          ]
+        },
+        {
+          "name": "disease_stage",
+          "kind": "categorical",
+          "non_null_rate": 0.0007,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "recurrent",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "infection",
+          "kind": "categorical",
+          "non_null_rate": 0.042,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "HIV+",
+              "count": 45
+            },
+            {
+              "value": "HIV-",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "name": "genotype",
+          "kind": "categorical",
+          "non_null_rate": 0.0942,
+          "n_unique": 7,
+          "top_values": [
+            {
+              "value": "tau A1 H1, tau A2 H1",
+              "count": 93
+            },
+            {
+              "value": "tau A1 H1, tau A2 H2",
+              "count": 24
+            },
+            {
+              "value": "tau A1 H2, tau A2 H1",
+              "count": 5
+            },
+            {
+              "value": "tau A1 H2, tau A2 H2",
+              "count": 5
+            },
+            {
+              "value": "tau A1 H1I, tau A2 H1L",
+              "count": 1
+            },
+            {
+              "value": "tau A1 H1E, tau A2 H1B",
+              "count": 1
+            },
+            {
+              "value": "tau A1 H1U, tau A2 H1M",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "gestational_age",
+          "kind": "categorical",
+          "non_null_rate": 0.0333,
+          "n_unique": 20,
+          "top_values": [
+            {
+              "value": "40.4",
+              "count": 4
+            },
+            {
+              "value": "42.9",
+              "count": 3
+            },
+            {
+              "value": "38.6",
+              "count": 3
+            },
+            {
+              "value": "41.1",
+              "count": 3
+            },
+            {
+              "value": "40.6",
+              "count": 3
+            },
+            {
+              "value": "39",
+              "count": 3
+            },
+            {
+              "value": "40.9",
+              "count": 3
+            },
+            {
+              "value": "39.9",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "name": "morphology",
+          "kind": "categorical",
+          "non_null_rate": 0.0065,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "9861/3",
+              "count": 9
+            }
+          ]
+        },
+        {
+          "name": "overall_survival",
+          "kind": "categorical",
+          "non_null_rate": 0.0065,
+          "n_unique": 9,
+          "top_values": [
+            {
+              "value": "0.665753",
+              "count": 1
+            },
+            {
+              "value": "6.41096",
+              "count": 1
+            },
+            {
+              "value": "3.91781",
+              "count": 1
+            },
+            {
+              "value": "0.915069",
+              "count": 1
+            },
+            {
+              "value": "0.747945",
+              "count": 1
+            },
+            {
+              "value": "0.419178",
+              "count": 1
+            },
+            {
+              "value": "1.74795",
+              "count": 1
+            },
+            {
+              "value": "0.50411",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "project_id",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 21,
+          "top_values": [
+            {
+              "value": "GSE40279",
+              "count": 371
+            },
+            {
+              "value": "GSE72680",
+              "count": 230
+            },
+            {
+              "value": "GSE53740",
+              "count": 132
+            },
+            {
+              "value": "GSE67530",
+              "count": 96
+            },
+            {
+              "value": "GSE72776",
+              "count": 80
+            },
+            {
+              "value": "GSE73412",
+              "count": 74
+            },
+            {
+              "value": "GSE60132",
+              "count": 73
+            },
+            {
+              "value": "GSE111629",
+              "count": 59
+            }
+          ]
+        },
+        {
+          "name": "race",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 16,
+          "top_values": [
+            {
+              "value": "African American",
+              "count": 237
+            },
+            {
+              "value": "Hispanic - Mexican",
+              "count": 227
+            },
+            {
+              "value": "Hispanic",
+              "count": 168
+            },
+            {
+              "value": "Chinese",
+              "count": 167
+            },
+            {
+              "value": "white",
+              "count": 159
+            },
+            {
+              "value": "Caucasian - European",
+              "count": 144
+            },
+            {
+              "value": "East Asian",
+              "count": 74
+            },
+            {
+              "value": "Northern European",
+              "count": 73
+            }
+          ]
+        },
+        {
+          "name": "sex",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "F",
+              "count": 690
+            },
+            {
+              "value": "M",
+              "count": 690
+            }
+          ]
+        },
+        {
+          "name": "time_point",
+          "kind": "categorical",
+          "non_null_rate": 0.0188,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "prenatal",
+              "count": 14
+            },
+            {
+              "value": "at delivery",
+              "count": 12
+            }
+          ]
+        },
+        {
+          "name": "tissue",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "whole blood",
+              "count": 1380
+            }
+          ]
+        },
+        {
+          "name": "treatment",
+          "kind": "categorical",
+          "non_null_rate": 0.0246,
+          "n_unique": 4,
+          "top_values": [
+            {
+              "value": "Levodopa",
+              "count": 30
+            },
+            {
+              "value": "12 month after baseline",
+              "count": 2
+            },
+            {
+              "value": "6 month after baseline",
+              "count": 1
+            },
+            {
+              "value": "baseline",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "vital_status",
+          "kind": "categorical",
+          "non_null_rate": 0.008,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "alive",
+              "count": 6
+            },
+            {
+              "value": "dead",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "name": "tissue_or_organ_of_origin",
+          "kind": "categorical",
+          "non_null_rate": 0.0065,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "bone marrow",
+              "count": 9
+            }
+          ]
+        },
+        {
+          "name": "sample_type",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "control",
+              "count": 1168
+            },
+            {
+              "value": "disease tissue",
+              "count": 212
+            }
+          ]
+        },
+        {
+          "name": "platform",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "450K",
+              "count": 1380
+            }
+          ]
+        }
+      ],
+      "join_keys": [
+        "sample_id",
+        "project_id"
+      ],
+      "primary_phenotype_column": "race",
+      "primary_phenotype_stats": {
+        "column": "race",
+        "kind": "categorical",
+        "non_null_rate": 1.0,
+        "n_unique": 16,
+        "top_values": [
+          {
+            "value": "African American",
+            "count": 237
+          },
+          {
+            "value": "Hispanic - Mexican",
+            "count": 227
+          },
+          {
+            "value": "Hispanic",
+            "count": 168
+          },
+          {
+            "value": "Chinese",
+            "count": 167
+          },
+          {
+            "value": "white",
+            "count": 159
+          },
+          {
+            "value": "Caucasian - European",
+            "count": 144
+          },
+          {
+            "value": "East Asian",
+            "count": 74
+          },
+          {
+            "value": "Northern European",
+            "count": 73
+          },
+          {
+            "value": "African",
+            "count": 72
+          },
+          {
+            "value": "European",
+            "count": 24
+          }
+        ]
+      },
+      "example_rows": [
+        {
+          "sample_id": "GSM2109349",
+          "age": "0",
+          "cell_component": null,
+          "disease": null,
+          "project_id": "GSE79969",
+          "race": "Australian",
+          "sex": "F",
+          "tissue": "whole blood",
+          "sample_type": "control",
+          "platform": "450K"
+        },
+        {
+          "sample_id": "GSM2109350",
+          "age": "0",
+          "cell_component": null,
+          "disease": null,
+          "project_id": "GSE79969",
+          "race": "Australian",
+          "sex": "F",
+          "tissue": "whole blood",
+          "sample_type": "control",
+          "platform": "450K"
+        }
+      ],
+      "n_sample_id": 1380,
+      "n_project_id": 21
+    },
+    {
       "family": "blood",
       "path": "/data/projects/methyl-burden-score/reports/inspection/ewas_datahub_samples/sample_blood_methylation_v1/sample_blood.txt",
       "exists": true,
@@ -4386,6 +4970,1071 @@
       "n_project_id": 161
     },
     {
+      "family": "bmi",
+      "path": "/data/projects/methyl-burden-score/reports/inspection/ewas_datahub_samples/sample_bmi_methylation_v1/sample_bmi.txt",
+      "exists": true,
+      "bytes": 483837,
+      "parse_recipe": "R write.table: space-separated, double-quoted fields, index_col=0 dropped",
+      "n_rows": 2070,
+      "n_cols": 38,
+      "columns": [
+        "sample_id",
+        "age",
+        "atopy",
+        "bmi",
+        "body_fat",
+        "cd4_nadir",
+        "cell_component",
+        "cell_component_abs",
+        "childhood_abuse",
+        "disease",
+        "disease_stage",
+        "disease_subtype",
+        "family_disease_history",
+        "infection",
+        "drinking",
+        "gail_risk_model_score",
+        "genotype",
+        "height",
+        "hormone_therapy_use",
+        "maternal_age",
+        "maternal_bmi",
+        "maternal_waist",
+        "menopausal_status",
+        "metastasis",
+        "morphology",
+        "overall_survival",
+        "pregnancy_ever",
+        "project_id",
+        "race",
+        "sex",
+        "tissue",
+        "treatment",
+        "viral_load",
+        "vital_status",
+        "weight",
+        "tissue_or_organ_of_origin",
+        "sample_type",
+        "platform"
+      ],
+      "column_profiles": [
+        {
+          "name": "sample_id",
+          "kind": "string",
+          "non_null_rate": 1.0,
+          "n_unique": 2070
+        },
+        {
+          "name": "age",
+          "kind": "numeric",
+          "non_null_rate": 0.999,
+          "n_unique": 405,
+          "min": 3.0,
+          "max": 89.1,
+          "mean": 44.75891634429401
+        },
+        {
+          "name": "atopy",
+          "kind": "categorical",
+          "non_null_rate": 0.0116,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "yes",
+              "count": 18
+            },
+            {
+              "value": "no",
+              "count": 6
+            }
+          ]
+        },
+        {
+          "name": "bmi",
+          "kind": "numeric",
+          "non_null_rate": 1.0,
+          "n_unique": 1451,
+          "min": 6.07,
+          "max": 73.617,
+          "mean": 30.873200966183575
+        },
+        {
+          "name": "body_fat",
+          "kind": "categorical",
+          "non_null_rate": 0.0174,
+          "n_unique": 12,
+          "top_values": [
+            {
+              "value": "23.9",
+              "count": 3
+            },
+            {
+              "value": "52.8",
+              "count": 3
+            },
+            {
+              "value": "19",
+              "count": 3
+            },
+            {
+              "value": "24.7",
+              "count": 3
+            },
+            {
+              "value": "31.1",
+              "count": 3
+            },
+            {
+              "value": "40.6",
+              "count": 3
+            },
+            {
+              "value": "23.7",
+              "count": 3
+            },
+            {
+              "value": "18.5",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "name": "cd4_nadir",
+          "kind": "categorical",
+          "non_null_rate": 0.0454,
+          "n_unique": 85,
+          "top_values": [
+            {
+              "value": "348",
+              "count": 3
+            },
+            {
+              "value": "176",
+              "count": 2
+            },
+            {
+              "value": "383",
+              "count": 2
+            },
+            {
+              "value": "78",
+              "count": 2
+            },
+            {
+              "value": "188",
+              "count": 2
+            },
+            {
+              "value": "267",
+              "count": 2
+            },
+            {
+              "value": "401",
+              "count": 2
+            },
+            {
+              "value": "282",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "name": "cell_component",
+          "kind": "string",
+          "non_null_rate": 0.2227,
+          "n_unique": 460
+        },
+        {
+          "name": "cell_component_abs",
+          "kind": "categorical",
+          "non_null_rate": 0.0372,
+          "n_unique": 76,
+          "top_values": [
+            {
+              "value": "CD8 T:585, CD4 T:534, CD3 T:1068, lymphocyte:1722",
+              "count": 2
+            },
+            {
+              "value": "CD8 T:909, CD4 T:489, CD3 T:1451, lymphocyte:1748",
+              "count": 1
+            },
+            {
+              "value": "CD8 T:881, CD4 T:906, CD3 T:1812, lymphocyte:2448",
+              "count": 1
+            },
+            {
+              "value": "CD8 T:690, CD4 T:640, CD3 T:1313, lymphocyte:1683",
+              "count": 1
+            },
+            {
+              "value": "CD8 T:923, CD4 T:708, CD3 T:1588, lymphocyte:2146",
+              "count": 1
+            },
+            {
+              "value": "CD8 T:484, CD4 T:211, CD3 T:686, lymphocyte:880",
+              "count": 1
+            },
+            {
+              "value": "CD8 T:894, CD4 T:830, CD3 T:1745, lymphocyte:2128",
+              "count": 1
+            },
+            {
+              "value": "CD8 T:590, CD4 T:937, CD3 T:1545, lymphocyte:1736",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "childhood_abuse",
+          "kind": "categorical",
+          "non_null_rate": 0.1821,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "no",
+              "count": 210
+            },
+            {
+              "value": "yes",
+              "count": 167
+            }
+          ]
+        },
+        {
+          "name": "disease",
+          "kind": "categorical",
+          "non_null_rate": 0.2469,
+          "n_unique": 7,
+          "top_values": [
+            {
+              "value": "hepatocellular carcinoma",
+              "count": 364
+            },
+            {
+              "value": "breast cancer",
+              "count": 70
+            },
+            {
+              "value": "non-alcoholic fatty liver disease",
+              "count": 28
+            },
+            {
+              "value": "non-alcoholic steatohepatitis",
+              "count": 22
+            },
+            {
+              "value": "primary sclerosing cholangitis",
+              "count": 14
+            },
+            {
+              "value": "primary biliary cirrhosis",
+              "count": 12
+            },
+            {
+              "value": "melanoma",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "disease_stage",
+          "kind": "categorical",
+          "non_null_rate": 0.1763,
+          "n_unique": 11,
+          "top_values": [
+            {
+              "value": "stage i",
+              "count": 176
+            },
+            {
+              "value": "stage ii",
+              "count": 82
+            },
+            {
+              "value": "stage iiia",
+              "count": 56
+            },
+            {
+              "value": "not reported",
+              "count": 20
+            },
+            {
+              "value": "stage iiic",
+              "count": 10
+            },
+            {
+              "value": "stage iiib",
+              "count": 9
+            },
+            {
+              "value": "stage iii",
+              "count": 5
+            },
+            {
+              "value": "stage ivb",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "name": "disease_subtype",
+          "kind": "categorical",
+          "non_null_rate": 0.0068,
+          "n_unique": 6,
+          "top_values": [
+            {
+              "value": "Combined hepatocellular carcinoma and cholangiocarcinoma",
+              "count": 5
+            },
+            {
+              "value": "clear cell type",
+              "count": 4
+            },
+            {
+              "value": "fibrolamellar",
+              "count": 2
+            },
+            {
+              "value": "spindle cell variant",
+              "count": 1
+            },
+            {
+              "value": "clear cell adenocarcinoma",
+              "count": 1
+            },
+            {
+              "value": "malignant melanoma, NOS",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "family_disease_history",
+          "kind": "categorical",
+          "non_null_rate": 0.0222,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "family history of breast or ovarian cancer",
+              "count": 46
+            }
+          ]
+        },
+        {
+          "name": "infection",
+          "kind": "categorical",
+          "non_null_rate": 0.0454,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "HIV+",
+              "count": 94
+            }
+          ]
+        },
+        {
+          "name": "drinking",
+          "kind": "categorical",
+          "non_null_rate": 0.0435,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "drinker",
+              "count": 73
+            },
+            {
+              "value": "non-drinker",
+              "count": 17
+            }
+          ]
+        },
+        {
+          "name": "gail_risk_model_score",
+          "kind": "categorical",
+          "non_null_rate": 0.0266,
+          "n_unique": 46,
+          "top_values": [
+            {
+              "value": "7.5",
+              "count": 3
+            },
+            {
+              "value": "10.5",
+              "count": 3
+            },
+            {
+              "value": "6.4",
+              "count": 2
+            },
+            {
+              "value": "11.2",
+              "count": 2
+            },
+            {
+              "value": "12",
+              "count": 2
+            },
+            {
+              "value": "11.1",
+              "count": 2
+            },
+            {
+              "value": "11.6",
+              "count": 2
+            },
+            {
+              "value": "7",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "genotype",
+          "kind": "categorical",
+          "non_null_rate": 0.0116,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "GSTP1 genotype: A allele",
+              "count": 12
+            },
+            {
+              "value": "GSTP1 genotype: G allele",
+              "count": 12
+            }
+          ]
+        },
+        {
+          "name": "height",
+          "kind": "categorical",
+          "non_null_rate": 0.2396,
+          "n_unique": 62,
+          "top_values": [
+            {
+              "value": "165",
+              "count": 27
+            },
+            {
+              "value": "168",
+              "count": 25
+            },
+            {
+              "value": "175",
+              "count": 18
+            },
+            {
+              "value": "170",
+              "count": 18
+            },
+            {
+              "value": "182.88",
+              "count": 18
+            },
+            {
+              "value": "167",
+              "count": 16
+            },
+            {
+              "value": "172",
+              "count": 15
+            },
+            {
+              "value": "174",
+              "count": 15
+            }
+          ]
+        },
+        {
+          "name": "hormone_therapy_use",
+          "kind": "categorical",
+          "non_null_rate": 0.0401,
+          "n_unique": 3,
+          "top_values": [
+            {
+              "value": "never",
+              "count": 34
+            },
+            {
+              "value": "current",
+              "count": 28
+            },
+            {
+              "value": "former",
+              "count": 21
+            }
+          ]
+        },
+        {
+          "name": "maternal_age",
+          "kind": "categorical",
+          "non_null_rate": 0.0449,
+          "n_unique": 24,
+          "top_values": [
+            {
+              "value": "30",
+              "count": 12
+            },
+            {
+              "value": "34",
+              "count": 7
+            },
+            {
+              "value": "24",
+              "count": 6
+            },
+            {
+              "value": "36",
+              "count": 6
+            },
+            {
+              "value": "35",
+              "count": 6
+            },
+            {
+              "value": "38",
+              "count": 6
+            },
+            {
+              "value": "28",
+              "count": 5
+            },
+            {
+              "value": "29",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "name": "maternal_bmi",
+          "kind": "categorical",
+          "non_null_rate": 0.0449,
+          "n_unique": 91,
+          "top_values": [
+            {
+              "value": "32.1594",
+              "count": 2
+            },
+            {
+              "value": "23.4239",
+              "count": 2
+            },
+            {
+              "value": "24.3705",
+              "count": 1
+            },
+            {
+              "value": "21.5658",
+              "count": 1
+            },
+            {
+              "value": "31.6534",
+              "count": 1
+            },
+            {
+              "value": "37.645",
+              "count": 1
+            },
+            {
+              "value": "26.4285",
+              "count": 1
+            },
+            {
+              "value": "23.9018",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "maternal_waist",
+          "kind": "categorical",
+          "non_null_rate": 0.0449,
+          "n_unique": 82,
+          "top_values": [
+            {
+              "value": "87.15",
+              "count": 2
+            },
+            {
+              "value": "116.6",
+              "count": 2
+            },
+            {
+              "value": "89.1",
+              "count": 2
+            },
+            {
+              "value": "83.35",
+              "count": 2
+            },
+            {
+              "value": "83.1",
+              "count": 2
+            },
+            {
+              "value": "106",
+              "count": 2
+            },
+            {
+              "value": "78.8",
+              "count": 2
+            },
+            {
+              "value": "103.5",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "name": "menopausal_status",
+          "kind": "categorical",
+          "non_null_rate": 0.0401,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "post",
+              "count": 54
+            },
+            {
+              "value": "pre",
+              "count": 29
+            }
+          ]
+        },
+        {
+          "name": "metastasis",
+          "kind": "categorical",
+          "non_null_rate": 0.0005,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "metastasis",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "morphology",
+          "kind": "categorical",
+          "non_null_rate": 0.1763,
+          "n_unique": 7,
+          "top_values": [
+            {
+              "value": "8170/3",
+              "count": 351
+            },
+            {
+              "value": "8180/3",
+              "count": 5
+            },
+            {
+              "value": "8174/3",
+              "count": 4
+            },
+            {
+              "value": "8171/3",
+              "count": 2
+            },
+            {
+              "value": "8173/3",
+              "count": 1
+            },
+            {
+              "value": "8310/3",
+              "count": 1
+            },
+            {
+              "value": "8720/3",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "overall_survival",
+          "kind": "string",
+          "non_null_rate": 0.1758,
+          "n_unique": 300
+        },
+        {
+          "name": "pregnancy_ever",
+          "kind": "categorical",
+          "non_null_rate": 0.0483,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "Yes",
+              "count": 56
+            },
+            {
+              "value": "No",
+              "count": 44
+            }
+          ]
+        },
+        {
+          "name": "project_id",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 25,
+          "top_values": [
+            {
+              "value": "GSE72680",
+              "count": 384
+            },
+            {
+              "value": "TCGA-LIHC",
+              "count": 364
+            },
+            {
+              "value": "GSE101961",
+              "count": 121
+            },
+            {
+              "value": "GSE105123",
+              "count": 107
+            },
+            {
+              "value": "GSE88883",
+              "count": 100
+            },
+            {
+              "value": "GSE67919",
+              "count": 94
+            },
+            {
+              "value": "GSE72556",
+              "count": 93
+            },
+            {
+              "value": "GSE48325",
+              "count": 85
+            }
+          ]
+        },
+        {
+          "name": "race",
+          "kind": "categorical",
+          "non_null_rate": 0.5676,
+          "n_unique": 13,
+          "top_values": [
+            {
+              "value": "African American",
+              "count": 369
+            },
+            {
+              "value": "white",
+              "count": 218
+            },
+            {
+              "value": "Asian (not Hispanic or Latino)",
+              "count": 158
+            },
+            {
+              "value": "white (not hispanic or latino)",
+              "count": 150
+            },
+            {
+              "value": "Latino",
+              "count": 93
+            },
+            {
+              "value": "Caucasian",
+              "count": 71
+            },
+            {
+              "value": "black",
+              "count": 65
+            },
+            {
+              "value": "black or African American (not Hispanic or Latino)",
+              "count": 19
+            }
+          ]
+        },
+        {
+          "name": "sex",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "F",
+              "count": 1290
+            },
+            {
+              "value": "M",
+              "count": 780
+            }
+          ]
+        },
+        {
+          "name": "tissue",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 11,
+          "top_values": [
+            {
+              "value": "liver",
+              "count": 596
+            },
+            {
+              "value": "whole blood",
+              "count": 514
+            },
+            {
+              "value": "breast",
+              "count": 416
+            },
+            {
+              "value": "peripheral blood mononuclear cell",
+              "count": 131
+            },
+            {
+              "value": "saliva",
+              "count": 93
+            },
+            {
+              "value": "subcutaneous adipose tissue",
+              "count": 71
+            },
+            {
+              "value": "abdominal adipose tissue",
+              "count": 71
+            },
+            {
+              "value": "muscle",
+              "count": 70
+            }
+          ]
+        },
+        {
+          "name": "treatment",
+          "kind": "categorical",
+          "non_null_rate": 0.1024,
+          "n_unique": 18,
+          "top_values": [
+            {
+              "value": "after bariatric surgery",
+              "count": 23
+            },
+            {
+              "value": "before bariatric surgery",
+              "count": 22
+            },
+            {
+              "value": "16 days at 5260 m altitude",
+              "count": 19
+            },
+            {
+              "value": "baseline (sea level)",
+              "count": 19
+            },
+            {
+              "value": "7 days at 5260 m altitude",
+              "count": 18
+            },
+            {
+              "value": "first days at 5260 m altitude (noon)",
+              "count": 18
+            },
+            {
+              "value": "reascend to 5260 m after 7 days at 1525 m",
+              "count": 14
+            },
+            {
+              "value": "first days at 5260 m altitude (pm)",
+              "count": 14
+            }
+          ]
+        },
+        {
+          "name": "viral_load",
+          "kind": "categorical",
+          "non_null_rate": 0.0454,
+          "n_unique": 20,
+          "top_values": [
+            {
+              "value": "10",
+              "count": 73
+            },
+            {
+              "value": "26400",
+              "count": 2
+            },
+            {
+              "value": "29",
+              "count": 2
+            },
+            {
+              "value": "2240000",
+              "count": 1
+            },
+            {
+              "value": "36",
+              "count": 1
+            },
+            {
+              "value": "583",
+              "count": 1
+            },
+            {
+              "value": "148",
+              "count": 1
+            },
+            {
+              "value": "110",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "vital_status",
+          "kind": "categorical",
+          "non_null_rate": 0.1763,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "alive",
+              "count": 241
+            },
+            {
+              "value": "dead",
+              "count": 124
+            }
+          ]
+        },
+        {
+          "name": "weight",
+          "kind": "categorical",
+          "non_null_rate": 0.2396,
+          "n_unique": 100,
+          "top_values": [
+            {
+              "value": "69",
+              "count": 21
+            },
+            {
+              "value": "62",
+              "count": 18
+            },
+            {
+              "value": "58",
+              "count": 13
+            },
+            {
+              "value": "74",
+              "count": 13
+            },
+            {
+              "value": "88",
+              "count": 12
+            },
+            {
+              "value": "67",
+              "count": 12
+            },
+            {
+              "value": "73",
+              "count": 12
+            },
+            {
+              "value": "64",
+              "count": 12
+            }
+          ]
+        },
+        {
+          "name": "tissue_or_organ_of_origin",
+          "kind": "categorical",
+          "non_null_rate": 0.1763,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "liver",
+              "count": 364
+            },
+            {
+              "value": "skin",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "sample_type",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 3,
+          "top_values": [
+            {
+              "value": "control",
+              "count": 1559
+            },
+            {
+              "value": "disease tissue",
+              "count": 405
+            },
+            {
+              "value": "adjacent normal",
+              "count": 106
+            }
+          ]
+        },
+        {
+          "name": "platform",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "450K",
+              "count": 2070
+            }
+          ]
+        }
+      ],
+      "join_keys": [
+        "sample_id",
+        "project_id"
+      ],
+      "primary_phenotype_column": "bmi",
+      "primary_phenotype_stats": {
+        "column": "bmi",
+        "kind": "numeric",
+        "non_null_rate": 1.0,
+        "n_unique": 1451,
+        "min": 6.07,
+        "max": 73.617,
+        "mean": 30.873200966183575
+      },
+      "example_rows": [
+        {
+          "sample_id": "GSM1505103",
+          "age": "35",
+          "bmi": "30.694",
+          "cell_component": null,
+          "disease": null,
+          "project_id": "GSE61452",
+          "sex": "F",
+          "tissue": "muscle",
+          "sample_type": "control",
+          "platform": "450K"
+        },
+        {
+          "sample_id": "GSM1505113",
+          "age": "40",
+          "bmi": "41.66",
+          "cell_component": null,
+          "disease": null,
+          "project_id": "GSE61452",
+          "sex": "F",
+          "tissue": "muscle",
+          "sample_type": "control",
+          "platform": "450K"
+        }
+      ],
+      "n_sample_id": 2070,
+      "n_project_id": 25
+    },
+    {
       "family": "brain",
       "path": "/data/projects/methyl-burden-score/reports/inspection/ewas_datahub_samples/sample_brain_methylation_v1/sample_brain.txt",
       "exists": true,
@@ -5002,6 +6651,2251 @@
       ],
       "n_sample_id": 1997,
       "n_project_id": 40
+    },
+    {
+      "family": "cancer",
+      "path": "/data/projects/methyl-burden-score/reports/inspection/ewas_datahub_samples/sample_cancer_methylation_v1/sample_cancer.txt",
+      "exists": true,
+      "bytes": 4005665,
+      "parse_recipe": "R write.table: space-separated, double-quoted fields, index_col=0 dropped",
+      "n_rows": 10841,
+      "n_cols": 73,
+      "columns": [
+        "sample_id",
+        "age",
+        "age_at_menarche",
+        "age_group",
+        "atopy",
+        "blood_lead_level",
+        "bmi",
+        "body_fat",
+        "braak_stage",
+        "cd4_cd8_ratio",
+        "cd4_nadir",
+        "cell_component",
+        "cell_component_abs",
+        "childhood_abuse",
+        "cigarettes_per_day",
+        "diagnosis_age",
+        "disease",
+        "disease_onset_age",
+        "disease_stage",
+        "disease_subtype",
+        "days_post_conception",
+        "drug_resistant",
+        "education_level",
+        "family_disease_history",
+        "fev1",
+        "fev1_fvc_ratio",
+        "infection",
+        "drinking",
+        "future_status",
+        "genotype",
+        "gestational_age",
+        "height",
+        "maternal_age",
+        "maternal_age_at_death",
+        "maternal_blood_lead_level",
+        "overall_survival_group",
+        "maternal_smoking",
+        "menopausal_status",
+        "menstrual_cycle_phase",
+        "metastasis",
+        "morphology",
+        "obese",
+        "overall_survival",
+        "pack_years",
+        "pain_temperature",
+        "passage",
+        "paternal_age_at_death",
+        "plasma_homocysteine_level",
+        "pmi",
+        "pregnancy_complication",
+        "progression_free_event",
+        "progression_free_survival",
+        "project_id",
+        "race",
+        "relapse_free_survival_time",
+        "sample_ph",
+        "serum_folate_level",
+        "serum_vitamin_b12_level",
+        "sex",
+        "smoking",
+        "tissue",
+        "role_in_family",
+        "treatment",
+        "tumor_grade",
+        "tumor_size",
+        "twin",
+        "viral_load",
+        "vital_status",
+        "weight",
+        "years_of_smoking",
+        "tissue_or_organ_of_origin",
+        "sample_type",
+        "platform"
+      ],
+      "column_profiles": [
+        {
+          "name": "sample_id",
+          "kind": "string",
+          "non_null_rate": 1.0,
+          "n_unique": 10101
+        },
+        {
+          "name": "age",
+          "kind": "string",
+          "non_null_rate": 0.7723,
+          "n_unique": 5233
+        },
+        {
+          "name": "age_at_menarche",
+          "kind": "categorical",
+          "non_null_rate": 0.0096,
+          "n_unique": 9,
+          "top_values": [
+            {
+              "value": "12",
+              "count": 29
+            },
+            {
+              "value": "13",
+              "count": 24
+            },
+            {
+              "value": "11",
+              "count": 20
+            },
+            {
+              "value": "14",
+              "count": 15
+            },
+            {
+              "value": "16",
+              "count": 5
+            },
+            {
+              "value": "10",
+              "count": 4
+            },
+            {
+              "value": "17",
+              "count": 3
+            },
+            {
+              "value": "15",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "name": "age_group",
+          "kind": "categorical",
+          "non_null_rate": 0.0078,
+          "n_unique": 9,
+          "top_values": [
+            {
+              "value": "adult",
+              "count": 20
+            },
+            {
+              "value": "nonagenarian",
+              "count": 17
+            },
+            {
+              "value": "fetal",
+              "count": 9
+            },
+            {
+              "value": "60s",
+              "count": 9
+            },
+            {
+              "value": "70s",
+              "count": 8
+            },
+            {
+              "value": "young control",
+              "count": 8
+            },
+            {
+              "value": "50s",
+              "count": 7
+            },
+            {
+              "value": "fetus",
+              "count": 6
+            }
+          ]
+        },
+        {
+          "name": "atopy",
+          "kind": "categorical",
+          "non_null_rate": 0.0001,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "yes",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "blood_lead_level",
+          "kind": "categorical",
+          "non_null_rate": 0.0002,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "6.24804",
+              "count": 1
+            },
+            {
+              "value": "3.0352",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "bmi",
+          "kind": "string",
+          "non_null_rate": 0.1594,
+          "n_unique": 1257
+        },
+        {
+          "name": "body_fat",
+          "kind": "categorical",
+          "non_null_rate": 0.0001,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "40.6",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "braak_stage",
+          "kind": "categorical",
+          "non_null_rate": 0.0018,
+          "n_unique": 6,
+          "top_values": [
+            {
+              "value": "6",
+              "count": 6
+            },
+            {
+              "value": "2",
+              "count": 4
+            },
+            {
+              "value": "1",
+              "count": 4
+            },
+            {
+              "value": "0",
+              "count": 4
+            },
+            {
+              "value": "3",
+              "count": 1
+            },
+            {
+              "value": "4",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "cd4_cd8_ratio",
+          "kind": "categorical",
+          "non_null_rate": 0.0022,
+          "n_unique": 24,
+          "top_values": [
+            {
+              "value": "1",
+              "count": 1
+            },
+            {
+              "value": "4.05",
+              "count": 1
+            },
+            {
+              "value": "2.29",
+              "count": 1
+            },
+            {
+              "value": "2.25",
+              "count": 1
+            },
+            {
+              "value": "1.16",
+              "count": 1
+            },
+            {
+              "value": "2.05",
+              "count": 1
+            },
+            {
+              "value": "1.75",
+              "count": 1
+            },
+            {
+              "value": "3.25",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "cd4_nadir",
+          "kind": "categorical",
+          "non_null_rate": 0.0001,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "3",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "cell_component",
+          "kind": "categorical",
+          "non_null_rate": 0.004,
+          "n_unique": 42,
+          "top_values": [
+            {
+              "value": "CD8 T cell:0.13242, CD4 T cell:0.18493, NK cell:0.0407, B cell:0.10864, monocyte:0.09055, granulocyte:0.50344",
+              "count": 2
+            },
+            {
+              "value": "CD8 T cell:0.10325, CD4 T cell:0.16726, NK cell:0.02886, B cell:0.12534, monocyte:0.08206, granulocyte:0.5607",
+              "count": 1
+            },
+            {
+              "value": "CD8 T cell:0.06075, CD4 T cell:0.17505, NK cell:0.11776, B cell:0.03597, monocyte:0.08014, granulocyte:0.54365",
+              "count": 1
+            },
+            {
+              "value": "CD8 T cell:0.04525, CD4 T cell:0.17631, NK cell:0.02276, B cell:0.06543, monocyte:0.0774, granulocyte:0.6405",
+              "count": 1
+            },
+            {
+              "value": "CD8 T cell:0.10085, CD4 T cell:0.1038, NK cell:0.00847, B cell:0.13079, monocyte:0.11263, granulocyte:0.56495",
+              "count": 1
+            },
+            {
+              "value": "CD8 T cell:0.03351, CD4 T cell:0.27669, NK cell:0.11674, B cell:0.01447, monocyte:0.12279, granulocyte:0.44916",
+              "count": 1
+            },
+            {
+              "value": "CD8 T cell:0.02236, CD4 T cell:0.18105, NK cell:0.05752, B cell:0.09193, monocyte:0.09697, granulocyte:0.54939",
+              "count": 1
+            },
+            {
+              "value": "CD8 T cell:0.10963, CD4 T cell:0.25951, NK cell:0.02542, B cell:0.10783, monocyte:0.10405, granulocyte:0.42352",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "cell_component_abs",
+          "kind": "categorical",
+          "non_null_rate": 0.0001,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "CD8 T:NA, CD4 T:NA, CD3 T:NA, lymphocyte:NA",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "childhood_abuse",
+          "kind": "categorical",
+          "non_null_rate": 0.0016,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "yes",
+              "count": 9
+            },
+            {
+              "value": "no",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "name": "cigarettes_per_day",
+          "kind": "categorical",
+          "non_null_rate": 0.0935,
+          "n_unique": 154,
+          "top_values": [
+            {
+              "value": "2.19178",
+              "count": 102
+            },
+            {
+              "value": "1.64384",
+              "count": 83
+            },
+            {
+              "value": "1.09589",
+              "count": 77
+            },
+            {
+              "value": "3.28767",
+              "count": 63
+            },
+            {
+              "value": "2.73973",
+              "count": 62
+            },
+            {
+              "value": "1.36986",
+              "count": 40
+            },
+            {
+              "value": "0.821918",
+              "count": 38
+            },
+            {
+              "value": "0.547945",
+              "count": 36
+            }
+          ]
+        },
+        {
+          "name": "diagnosis_age",
+          "kind": "categorical",
+          "non_null_rate": 0.0057,
+          "n_unique": 55,
+          "top_values": [
+            {
+              "value": "59",
+              "count": 3
+            },
+            {
+              "value": "51.7",
+              "count": 2
+            },
+            {
+              "value": "66",
+              "count": 2
+            },
+            {
+              "value": "55",
+              "count": 2
+            },
+            {
+              "value": "60",
+              "count": 2
+            },
+            {
+              "value": "62.3",
+              "count": 2
+            },
+            {
+              "value": "29.8",
+              "count": 1
+            },
+            {
+              "value": "61",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "disease",
+          "kind": "categorical",
+          "non_null_rate": 0.7999,
+          "n_unique": 43,
+          "top_values": [
+            {
+              "value": "acute myeloid leukemia",
+              "count": 657
+            },
+            {
+              "value": "prostate cancer",
+              "count": 613
+            },
+            {
+              "value": "breast cancer",
+              "count": 533
+            },
+            {
+              "value": "glioma",
+              "count": 481
+            },
+            {
+              "value": "head and neck squamous-cell carcinoma",
+              "count": 470
+            },
+            {
+              "value": "stomach cancer",
+              "count": 391
+            },
+            {
+              "value": "clear cell renal cell carcinoma",
+              "count": 331
+            },
+            {
+              "value": "melanoma",
+              "count": 331
+            }
+          ]
+        },
+        {
+          "name": "disease_onset_age",
+          "kind": "categorical",
+          "non_null_rate": 0.0022,
+          "n_unique": 20,
+          "top_values": [
+            {
+              "value": "30",
+              "count": 2
+            },
+            {
+              "value": "39",
+              "count": 2
+            },
+            {
+              "value": "38",
+              "count": 2
+            },
+            {
+              "value": "32",
+              "count": 2
+            },
+            {
+              "value": "49",
+              "count": 1
+            },
+            {
+              "value": "16",
+              "count": 1
+            },
+            {
+              "value": "25",
+              "count": 1
+            },
+            {
+              "value": "27",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "disease_stage",
+          "kind": "categorical",
+          "non_null_rate": 0.4096,
+          "n_unique": 46,
+          "top_values": [
+            {
+              "value": "stage i",
+              "count": 666
+            },
+            {
+              "value": "stage iii",
+              "count": 503
+            },
+            {
+              "value": "stage iib",
+              "count": 401
+            },
+            {
+              "value": "stage ii",
+              "count": 396
+            },
+            {
+              "value": "stage iia",
+              "count": 343
+            },
+            {
+              "value": "stage iv",
+              "count": 302
+            },
+            {
+              "value": "stage iiia",
+              "count": 227
+            },
+            {
+              "value": "stage iva",
+              "count": 226
+            }
+          ]
+        },
+        {
+          "name": "disease_subtype",
+          "kind": "categorical",
+          "non_null_rate": 0.4175,
+          "n_unique": 118,
+          "top_values": [
+            {
+              "value": "adenocarcinoma, NOS",
+              "count": 570
+            },
+            {
+              "value": "squamous cell carcinoma",
+              "count": 429
+            },
+            {
+              "value": "infiltrating duct carcinoma, NOS",
+              "count": 353
+            },
+            {
+              "value": "squamous cell carcinoma, NOS",
+              "count": 339
+            },
+            {
+              "value": "malignant melanoma, NOS",
+              "count": 287
+            },
+            {
+              "value": "papillary adenocarcinoma, NOS",
+              "count": 236
+            },
+            {
+              "value": "endometrioid adenocarcinoma, NOS",
+              "count": 160
+            },
+            {
+              "value": "pheochromocytoma, NOS",
+              "count": 113
+            }
+          ]
+        },
+        {
+          "name": "days_post_conception",
+          "kind": "categorical",
+          "non_null_rate": 0.0176,
+          "n_unique": 79,
+          "top_values": [
+            {
+              "value": "80",
+              "count": 7
+            },
+            {
+              "value": "94",
+              "count": 7
+            },
+            {
+              "value": "77",
+              "count": 6
+            },
+            {
+              "value": "99",
+              "count": 6
+            },
+            {
+              "value": "84",
+              "count": 5
+            },
+            {
+              "value": "97",
+              "count": 5
+            },
+            {
+              "value": "87",
+              "count": 5
+            },
+            {
+              "value": "92",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "name": "drug_resistant",
+          "kind": "categorical",
+          "non_null_rate": 0.0171,
+          "n_unique": 4,
+          "top_values": [
+            {
+              "value": "abiraterone acetate:Resistant",
+              "count": 107
+            },
+            {
+              "value": "abiraterone acetate:Sensitive",
+              "count": 74
+            },
+            {
+              "value": "HBV vannine:poor",
+              "count": 3
+            },
+            {
+              "value": "HBV vannine:good",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "education_level",
+          "kind": "categorical",
+          "non_null_rate": 0.0009,
+          "n_unique": 5,
+          "top_values": [
+            {
+              "value": "12",
+              "count": 4
+            },
+            {
+              "value": "18",
+              "count": 2
+            },
+            {
+              "value": "16",
+              "count": 2
+            },
+            {
+              "value": "14",
+              "count": 1
+            },
+            {
+              "value": "10",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "family_disease_history",
+          "kind": "categorical",
+          "non_null_rate": 0.0001,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "family history of Parkinson's disease",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "fev1",
+          "kind": "categorical",
+          "non_null_rate": 0.0022,
+          "n_unique": 13,
+          "top_values": [
+            {
+              "value": "102",
+              "count": 4
+            },
+            {
+              "value": "97",
+              "count": 3
+            },
+            {
+              "value": "99",
+              "count": 2
+            },
+            {
+              "value": "87",
+              "count": 2
+            },
+            {
+              "value": "89",
+              "count": 2
+            },
+            {
+              "value": "77",
+              "count": 2
+            },
+            {
+              "value": "113",
+              "count": 2
+            },
+            {
+              "value": "68",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "name": "fev1_fvc_ratio",
+          "kind": "categorical",
+          "non_null_rate": 0.002,
+          "n_unique": 10,
+          "top_values": [
+            {
+              "value": "0.79",
+              "count": 4
+            },
+            {
+              "value": "0.82",
+              "count": 3
+            },
+            {
+              "value": "0.8",
+              "count": 3
+            },
+            {
+              "value": "0.83",
+              "count": 2
+            },
+            {
+              "value": "0.73",
+              "count": 2
+            },
+            {
+              "value": "0.77",
+              "count": 2
+            },
+            {
+              "value": "0.85",
+              "count": 2
+            },
+            {
+              "value": "0.75",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "name": "infection",
+          "kind": "categorical",
+          "non_null_rate": 0.0173,
+          "n_unique": 8,
+          "top_values": [
+            {
+              "value": "HPV-",
+              "count": 69
+            },
+            {
+              "value": "HPV+",
+              "count": 35
+            },
+            {
+              "value": "Opisthorchis viverrini:non-infection",
+              "count": 27
+            },
+            {
+              "value": "HIV+",
+              "count": 26
+            },
+            {
+              "value": "HIV-",
+              "count": 13
+            },
+            {
+              "value": "Opisthorchis viverrini:infection",
+              "count": 9
+            },
+            {
+              "value": "HBV+",
+              "count": 6
+            },
+            {
+              "value": "HCV+",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "name": "drinking",
+          "kind": "categorical",
+          "non_null_rate": 0.0767,
+          "n_unique": 4,
+          "top_values": [
+            {
+              "value": "drinker",
+              "count": 573
+            },
+            {
+              "value": "non-drinker",
+              "count": 250
+            },
+            {
+              "value": "drinker to 5 drinks a week",
+              "count": 8
+            },
+            {
+              "value": "drinker to 1non-drinker drinks a",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "future_status",
+          "kind": "categorical",
+          "non_null_rate": 0.0001,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "invasive breast cancer free",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "genotype",
+          "kind": "categorical",
+          "non_null_rate": 0.0309,
+          "n_unique": 45,
+          "top_values": [
+            {
+              "value": "1p19q codel; IDH mutant",
+              "count": 32
+            },
+            {
+              "value": "IDH1 and IDH2 wildtype",
+              "count": 31
+            },
+            {
+              "value": "1p19q intact; IDH mutant",
+              "count": 30
+            },
+            {
+              "value": "IDH wild type",
+              "count": 27
+            },
+            {
+              "value": "Sporadic",
+              "count": 25
+            },
+            {
+              "value": "1p19q intact; IDH wild type",
+              "count": 15
+            },
+            {
+              "value": "IDH1 mutant",
+              "count": 14
+            },
+            {
+              "value": "1p19q intact",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "name": "gestational_age",
+          "kind": "categorical",
+          "non_null_rate": 0.0035,
+          "n_unique": 24,
+          "top_values": [
+            {
+              "value": "18",
+              "count": 6
+            },
+            {
+              "value": "17",
+              "count": 3
+            },
+            {
+              "value": "15",
+              "count": 3
+            },
+            {
+              "value": "9",
+              "count": 3
+            },
+            {
+              "value": "19.4",
+              "count": 2
+            },
+            {
+              "value": "28.86",
+              "count": 2
+            },
+            {
+              "value": "22",
+              "count": 2
+            },
+            {
+              "value": "24.2857",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "height",
+          "kind": "categorical",
+          "non_null_rate": 0.147,
+          "n_unique": 116,
+          "top_values": [
+            {
+              "value": "170",
+              "count": 90
+            },
+            {
+              "value": "160",
+              "count": 89
+            },
+            {
+              "value": "165",
+              "count": 81
+            },
+            {
+              "value": "168",
+              "count": 70
+            },
+            {
+              "value": "175",
+              "count": 58
+            },
+            {
+              "value": "162",
+              "count": 56
+            },
+            {
+              "value": "163",
+              "count": 56
+            },
+            {
+              "value": "173",
+              "count": 52
+            }
+          ]
+        },
+        {
+          "name": "maternal_age",
+          "kind": "categorical",
+          "non_null_rate": 0.0015,
+          "n_unique": 12,
+          "top_values": [
+            {
+              "value": "30",
+              "count": 2
+            },
+            {
+              "value": "23",
+              "count": 2
+            },
+            {
+              "value": "28",
+              "count": 2
+            },
+            {
+              "value": "35",
+              "count": 2
+            },
+            {
+              "value": "19",
+              "count": 1
+            },
+            {
+              "value": "38",
+              "count": 1
+            },
+            {
+              "value": "25",
+              "count": 1
+            },
+            {
+              "value": "21",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "maternal_age_at_death",
+          "kind": "categorical",
+          "non_null_rate": 0.001,
+          "n_unique": 9,
+          "top_values": [
+            {
+              "value": "82",
+              "count": 2
+            },
+            {
+              "value": "83",
+              "count": 2
+            },
+            {
+              "value": "90",
+              "count": 1
+            },
+            {
+              "value": "78",
+              "count": 1
+            },
+            {
+              "value": "84",
+              "count": 1
+            },
+            {
+              "value": "80",
+              "count": 1
+            },
+            {
+              "value": "85",
+              "count": 1
+            },
+            {
+              "value": "86",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "maternal_blood_lead_level",
+          "kind": "categorical",
+          "non_null_rate": 0.0002,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "6.41348",
+              "count": 1
+            },
+            {
+              "value": "36.1761",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "overall_survival_group",
+          "kind": "categorical",
+          "non_null_rate": 0.0009,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "longer than 3 years",
+              "count": 6
+            },
+            {
+              "value": "less than 1 year",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "name": "maternal_smoking",
+          "kind": "categorical",
+          "non_null_rate": 0.0002,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "non-smoker",
+              "count": 1
+            },
+            {
+              "value": "smoker",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "menopausal_status",
+          "kind": "categorical",
+          "non_null_rate": 0.0057,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "post",
+              "count": 46
+            },
+            {
+              "value": "pre",
+              "count": 16
+            }
+          ]
+        },
+        {
+          "name": "menstrual_cycle_phase",
+          "kind": "categorical",
+          "non_null_rate": 0.0078,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "mid secretory",
+              "count": 51
+            },
+            {
+              "value": "early secretory",
+              "count": 34
+            }
+          ]
+        },
+        {
+          "name": "metastasis",
+          "kind": "categorical",
+          "non_null_rate": 0.0277,
+          "n_unique": 4,
+          "top_values": [
+            {
+              "value": "metastasis",
+              "count": 246
+            },
+            {
+              "value": "lymph node metastasis",
+              "count": 30
+            },
+            {
+              "value": "true",
+              "count": 19
+            },
+            {
+              "value": "false",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "name": "morphology",
+          "kind": "categorical",
+          "non_null_rate": 0.5238,
+          "n_unique": 118,
+          "top_values": [
+            {
+              "value": "8070/3",
+              "count": 768
+            },
+            {
+              "value": "8140/3",
+              "count": 663
+            },
+            {
+              "value": "8260/3",
+              "count": 494
+            },
+            {
+              "value": "8500/3",
+              "count": 353
+            },
+            {
+              "value": "8720/3",
+              "count": 287
+            },
+            {
+              "value": "8310/3",
+              "count": 279
+            },
+            {
+              "value": "8120/3",
+              "count": 227
+            },
+            {
+              "value": "9861/3",
+              "count": 188
+            }
+          ]
+        },
+        {
+          "name": "obese",
+          "kind": "categorical",
+          "non_null_rate": 0.0017,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "normal weight",
+              "count": 9
+            },
+            {
+              "value": "obese",
+              "count": 9
+            }
+          ]
+        },
+        {
+          "name": "overall_survival",
+          "kind": "string",
+          "non_null_rate": 0.582,
+          "n_unique": 2398
+        },
+        {
+          "name": "pack_years",
+          "kind": "categorical",
+          "non_null_rate": 0.0066,
+          "n_unique": 34,
+          "top_values": [
+            {
+              "value": "0",
+              "count": 14
+            },
+            {
+              "value": "36",
+              "count": 7
+            },
+            {
+              "value": "35",
+              "count": 5
+            },
+            {
+              "value": "23",
+              "count": 3
+            },
+            {
+              "value": "20",
+              "count": 2
+            },
+            {
+              "value": "15",
+              "count": 2
+            },
+            {
+              "value": "25",
+              "count": 2
+            },
+            {
+              "value": "32",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "name": "pain_temperature",
+          "kind": "categorical",
+          "non_null_rate": 0.0004,
+          "n_unique": 4,
+          "top_values": [
+            {
+              "value": "42",
+              "count": 1
+            },
+            {
+              "value": "48.2",
+              "count": 1
+            },
+            {
+              "value": "48.3",
+              "count": 1
+            },
+            {
+              "value": "50",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "passage",
+          "kind": "categorical",
+          "non_null_rate": 0.0011,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "20",
+              "count": 12
+            }
+          ]
+        },
+        {
+          "name": "paternal_age_at_death",
+          "kind": "categorical",
+          "non_null_rate": 0.001,
+          "n_unique": 11,
+          "top_values": [
+            {
+              "value": "85",
+              "count": 1
+            },
+            {
+              "value": "64",
+              "count": 1
+            },
+            {
+              "value": "92",
+              "count": 1
+            },
+            {
+              "value": "81",
+              "count": 1
+            },
+            {
+              "value": "55",
+              "count": 1
+            },
+            {
+              "value": "79",
+              "count": 1
+            },
+            {
+              "value": "103",
+              "count": 1
+            },
+            {
+              "value": "47",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "plasma_homocysteine_level",
+          "kind": "categorical",
+          "non_null_rate": 0.0015,
+          "n_unique": 16,
+          "top_values": [
+            {
+              "value": "8.8",
+              "count": 1
+            },
+            {
+              "value": "14.1",
+              "count": 1
+            },
+            {
+              "value": "16.3",
+              "count": 1
+            },
+            {
+              "value": "23",
+              "count": 1
+            },
+            {
+              "value": "12.4",
+              "count": 1
+            },
+            {
+              "value": "12.2",
+              "count": 1
+            },
+            {
+              "value": "14.8",
+              "count": 1
+            },
+            {
+              "value": "15.2",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "pmi",
+          "kind": "categorical",
+          "non_null_rate": 0.0066,
+          "n_unique": 23,
+          "top_values": [
+            {
+              "value": "2",
+              "count": 27
+            },
+            {
+              "value": "4.35",
+              "count": 6
+            },
+            {
+              "value": "16",
+              "count": 5
+            },
+            {
+              "value": "2.73",
+              "count": 4
+            },
+            {
+              "value": "6.73",
+              "count": 4
+            },
+            {
+              "value": "15.58",
+              "count": 4
+            },
+            {
+              "value": "8.65",
+              "count": 3
+            },
+            {
+              "value": "12.95",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "name": "pregnancy_complication",
+          "kind": "categorical",
+          "non_null_rate": 0.001,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "no",
+              "count": 9
+            },
+            {
+              "value": "yes",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "name": "progression_free_event",
+          "kind": "categorical",
+          "non_null_rate": 0.0083,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "event occured",
+              "count": 63
+            },
+            {
+              "value": "no event",
+              "count": 27
+            }
+          ]
+        },
+        {
+          "name": "progression_free_survival",
+          "kind": "categorical",
+          "non_null_rate": 0.0083,
+          "n_unique": 88,
+          "top_values": [
+            {
+              "value": "0.709511",
+              "count": 3
+            },
+            {
+              "value": "1.76419",
+              "count": 1
+            },
+            {
+              "value": "0.309555",
+              "count": 1
+            },
+            {
+              "value": "0.613631",
+              "count": 1
+            },
+            {
+              "value": "0.605413",
+              "count": 1
+            },
+            {
+              "value": "3.04898",
+              "count": 1
+            },
+            {
+              "value": "1.32862",
+              "count": 1
+            },
+            {
+              "value": "0.52597",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "project_id",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 225,
+          "top_values": [
+            {
+              "value": "TCGA-HNSC",
+              "count": 411
+            },
+            {
+              "value": "TCGA-STAD",
+              "count": 391
+            },
+            {
+              "value": "TARGET-AML",
+              "count": 331
+            },
+            {
+              "value": "TCGA-SKCM",
+              "count": 331
+            },
+            {
+              "value": "TCGA-THCA",
+              "count": 306
+            },
+            {
+              "value": "TCGA-BRCA",
+              "count": 297
+            },
+            {
+              "value": "TCGA-KIRC",
+              "count": 293
+            },
+            {
+              "value": "TCGA-BLCA",
+              "count": 281
+            }
+          ]
+        },
+        {
+          "name": "race",
+          "kind": "categorical",
+          "non_null_rate": 0.5975,
+          "n_unique": 34,
+          "top_values": [
+            {
+              "value": "white (not hispanic or latino)",
+              "count": 3979
+            },
+            {
+              "value": "white",
+              "count": 690
+            },
+            {
+              "value": "black or African American (not Hispanic or Latino)",
+              "count": 467
+            },
+            {
+              "value": "Caucasian",
+              "count": 370
+            },
+            {
+              "value": "Asian (not Hispanic or Latino)",
+              "count": 350
+            },
+            {
+              "value": "white (hispanic or latino)",
+              "count": 232
+            },
+            {
+              "value": "African American",
+              "count": 68
+            },
+            {
+              "value": "black or African American",
+              "count": 52
+            }
+          ]
+        },
+        {
+          "name": "relapse_free_survival_time",
+          "kind": "categorical",
+          "non_null_rate": 0.001,
+          "n_unique": 6,
+          "top_values": [
+            {
+              "value": "0.666667",
+              "count": 5
+            },
+            {
+              "value": "0.25",
+              "count": 2
+            },
+            {
+              "value": "1.5",
+              "count": 1
+            },
+            {
+              "value": "1.58333",
+              "count": 1
+            },
+            {
+              "value": "0.75",
+              "count": 1
+            },
+            {
+              "value": "0.416667",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "sample_ph",
+          "kind": "categorical",
+          "non_null_rate": 0.0049,
+          "n_unique": 14,
+          "top_values": [
+            {
+              "value": "6.5",
+              "count": 7
+            },
+            {
+              "value": "6.75",
+              "count": 7
+            },
+            {
+              "value": "6.3",
+              "count": 6
+            },
+            {
+              "value": "5.65",
+              "count": 6
+            },
+            {
+              "value": "5.91",
+              "count": 4
+            },
+            {
+              "value": "6.72",
+              "count": 4
+            },
+            {
+              "value": "6.87",
+              "count": 4
+            },
+            {
+              "value": "6.21",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "name": "serum_folate_level",
+          "kind": "categorical",
+          "non_null_rate": 0.0015,
+          "n_unique": 16,
+          "top_values": [
+            {
+              "value": "80",
+              "count": 1
+            },
+            {
+              "value": "14.3",
+              "count": 1
+            },
+            {
+              "value": "29.6",
+              "count": 1
+            },
+            {
+              "value": "14.8",
+              "count": 1
+            },
+            {
+              "value": "19.2",
+              "count": 1
+            },
+            {
+              "value": "17",
+              "count": 1
+            },
+            {
+              "value": "20.4",
+              "count": 1
+            },
+            {
+              "value": "20.6",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "serum_vitamin_b12_level",
+          "kind": "categorical",
+          "non_null_rate": 0.0015,
+          "n_unique": 16,
+          "top_values": [
+            {
+              "value": "464.5",
+              "count": 1
+            },
+            {
+              "value": "204.1",
+              "count": 1
+            },
+            {
+              "value": "284.1",
+              "count": 1
+            },
+            {
+              "value": "173",
+              "count": 1
+            },
+            {
+              "value": "197.4",
+              "count": 1
+            },
+            {
+              "value": "231.4",
+              "count": 1
+            },
+            {
+              "value": "378.7",
+              "count": 1
+            },
+            {
+              "value": "425.7",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "sex",
+          "kind": "categorical",
+          "non_null_rate": 0.8775,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "M",
+              "count": 4869
+            },
+            {
+              "value": "F",
+              "count": 4644
+            }
+          ]
+        },
+        {
+          "name": "smoking",
+          "kind": "categorical",
+          "non_null_rate": 0.0137,
+          "n_unique": 6,
+          "top_values": [
+            {
+              "value": "non-smoker",
+              "count": 66
+            },
+            {
+              "value": "smoker",
+              "count": 48
+            },
+            {
+              "value": "former smoker",
+              "count": 16
+            },
+            {
+              "value": "current smoker",
+              "count": 12
+            },
+            {
+              "value": "occasional smoker",
+              "count": 4
+            },
+            {
+              "value": "ever smoker",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "name": "tissue",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 101,
+          "top_values": [
+            {
+              "value": "kidney",
+              "count": 821
+            },
+            {
+              "value": "brain",
+              "count": 681
+            },
+            {
+              "value": "whole blood",
+              "count": 674
+            },
+            {
+              "value": "lung",
+              "count": 660
+            },
+            {
+              "value": "thyroid gland",
+              "count": 625
+            },
+            {
+              "value": "prostate gland",
+              "count": 576
+            },
+            {
+              "value": "liver",
+              "count": 400
+            },
+            {
+              "value": "breast",
+              "count": 390
+            }
+          ]
+        },
+        {
+          "name": "role_in_family",
+          "kind": "categorical",
+          "non_null_rate": 0.0002,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "father",
+              "count": 1
+            },
+            {
+              "value": "mother",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "treatment",
+          "kind": "categorical",
+          "non_null_rate": 0.03,
+          "n_unique": 96,
+          "top_values": [
+            {
+              "value": "before abiraterone acetate treatment",
+              "count": 41
+            },
+            {
+              "value": "asbestos exposed",
+              "count": 25
+            },
+            {
+              "value": "asbestos unexposed",
+              "count": 17
+            },
+            {
+              "value": "28 days after abiraterone acetate treatment",
+              "count": 13
+            },
+            {
+              "value": "14 days after abiraterone acetate treatment",
+              "count": 9
+            },
+            {
+              "value": "tissue culture plastic ",
+              "count": 8
+            },
+            {
+              "value": "none",
+              "count": 7
+            },
+            {
+              "value": "42 days after abiraterone acetate treatment",
+              "count": 7
+            }
+          ]
+        },
+        {
+          "name": "tumor_grade",
+          "kind": "categorical",
+          "non_null_rate": 0.0096,
+          "n_unique": 5,
+          "top_values": [
+            {
+              "value": "low grade",
+              "count": 49
+            },
+            {
+              "value": "WHO grade:IV",
+              "count": 41
+            },
+            {
+              "value": "astrocytoma grad",
+              "count": 9
+            },
+            {
+              "value": "secondary gliobl",
+              "count": 4
+            },
+            {
+              "value": "astrocyotma grad",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "tumor_size",
+          "kind": "categorical",
+          "non_null_rate": 0.0006,
+          "n_unique": 5,
+          "top_values": [
+            {
+              "value": "10",
+              "count": 2
+            },
+            {
+              "value": "7",
+              "count": 2
+            },
+            {
+              "value": "6",
+              "count": 1
+            },
+            {
+              "value": "19",
+              "count": 1
+            },
+            {
+              "value": "8",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "twin",
+          "kind": "categorical",
+          "non_null_rate": 0.0057,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "monozygotic",
+              "count": 47
+            },
+            {
+              "value": "dizygotic",
+              "count": 15
+            }
+          ]
+        },
+        {
+          "name": "viral_load",
+          "kind": "categorical",
+          "non_null_rate": 0.0018,
+          "n_unique": 18,
+          "top_values": [
+            {
+              "value": "750000",
+              "count": 2
+            },
+            {
+              "value": "50",
+              "count": 2
+            },
+            {
+              "value": "10",
+              "count": 1
+            },
+            {
+              "value": "195573",
+              "count": 1
+            },
+            {
+              "value": "37060",
+              "count": 1
+            },
+            {
+              "value": "64",
+              "count": 1
+            },
+            {
+              "value": "9574",
+              "count": 1
+            },
+            {
+              "value": "40",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "vital_status",
+          "kind": "categorical",
+          "non_null_rate": 0.5844,
+          "n_unique": 2,
+          "top_values": [
+            {
+              "value": "alive",
+              "count": 4173
+            },
+            {
+              "value": "dead",
+              "count": 2163
+            }
+          ]
+        },
+        {
+          "name": "weight",
+          "kind": "categorical",
+          "non_null_rate": 0.1509,
+          "n_unique": 270,
+          "top_values": [
+            {
+              "value": "68",
+              "count": 43
+            },
+            {
+              "value": "80",
+              "count": 43
+            },
+            {
+              "value": "62",
+              "count": 36
+            },
+            {
+              "value": "60",
+              "count": 35
+            },
+            {
+              "value": "70",
+              "count": 35
+            },
+            {
+              "value": "67",
+              "count": 32
+            },
+            {
+              "value": "78",
+              "count": 31
+            },
+            {
+              "value": "69",
+              "count": 31
+            }
+          ]
+        },
+        {
+          "name": "years_of_smoking",
+          "kind": "categorical",
+          "non_null_rate": 0.031,
+          "n_unique": 56,
+          "top_values": [
+            {
+              "value": "50",
+              "count": 32
+            },
+            {
+              "value": "40",
+              "count": 31
+            },
+            {
+              "value": "30",
+              "count": 31
+            },
+            {
+              "value": "20",
+              "count": 25
+            },
+            {
+              "value": "15",
+              "count": 13
+            },
+            {
+              "value": "35",
+              "count": 12
+            },
+            {
+              "value": "25",
+              "count": 11
+            },
+            {
+              "value": "10",
+              "count": 10
+            }
+          ]
+        },
+        {
+          "name": "tissue_or_organ_of_origin",
+          "kind": "categorical",
+          "non_null_rate": 0.5235,
+          "n_unique": 87,
+          "top_values": [
+            {
+              "value": "kidney",
+              "count": 611
+            },
+            {
+              "value": "skin",
+              "count": 331
+            },
+            {
+              "value": "thyroid gland",
+              "count": 306
+            },
+            {
+              "value": "breast",
+              "count": 296
+            },
+            {
+              "value": "lung - upper lobe",
+              "count": 240
+            },
+            {
+              "value": "endometrium",
+              "count": 225
+            },
+            {
+              "value": "brain - cerebrum",
+              "count": 200
+            },
+            {
+              "value": "cervix",
+              "count": 198
+            }
+          ]
+        },
+        {
+          "name": "sample_type",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 3,
+          "top_values": [
+            {
+              "value": "disease tissue",
+              "count": 7164
+            },
+            {
+              "value": "control",
+              "count": 2310
+            },
+            {
+              "value": "adjacent normal",
+              "count": 1367
+            }
+          ]
+        },
+        {
+          "name": "platform",
+          "kind": "categorical",
+          "non_null_rate": 1.0,
+          "n_unique": 1,
+          "top_values": [
+            {
+              "value": "450K",
+              "count": 10841
+            }
+          ]
+        }
+      ],
+      "join_keys": [
+        "sample_id",
+        "project_id"
+      ],
+      "primary_phenotype_column": "disease",
+      "primary_phenotype_stats": {
+        "column": "disease",
+        "kind": "categorical",
+        "non_null_rate": 0.7999,
+        "n_unique": 43,
+        "top_values": [
+          {
+            "value": "acute myeloid leukemia",
+            "count": 657
+          },
+          {
+            "value": "prostate cancer",
+            "count": 613
+          },
+          {
+            "value": "breast cancer",
+            "count": 533
+          },
+          {
+            "value": "glioma",
+            "count": 481
+          },
+          {
+            "value": "head and neck squamous-cell carcinoma",
+            "count": 470
+          },
+          {
+            "value": "stomach cancer",
+            "count": 391
+          },
+          {
+            "value": "clear cell renal cell carcinoma",
+            "count": 331
+          },
+          {
+            "value": "melanoma",
+            "count": 331
+          },
+          {
+            "value": "thyroid cancer",
+            "count": 306
+          },
+          {
+            "value": "hepatocellular carcinoma",
+            "count": 297
+          }
+        ]
+      },
+      "example_rows": [
+        {
+          "sample_id": "GSM1548180",
+          "age": null,
+          "cell_component": null,
+          "disease": "acute myeloid leukemia",
+          "project_id": "GSE63409",
+          "sex": "F",
+          "tissue": "blast cell",
+          "sample_type": "disease tissue",
+          "platform": "450K"
+        },
+        {
+          "sample_id": "GSM1548181",
+          "age": null,
+          "cell_component": null,
+          "disease": "acute myeloid leukemia",
+          "project_id": "GSE63409",
+          "sex": "F",
+          "tissue": "blast cell",
+          "sample_type": "disease tissue",
+          "platform": "450K"
+        }
+      ],
+      "n_sample_id": 10101,
+      "n_project_id": 225
     },
     {
       "family": "disease",
@@ -13367,25 +17261,29 @@
     }
   ],
   "cross_pack": {
-    "n_packs": 6,
-    "n_shared_columns": 13,
+    "n_packs": 9,
+    "n_shared_columns": 10,
     "shared_columns": [
       "age",
       "genotype",
-      "gestational_age",
       "infection",
       "platform",
       "project_id",
       "race",
       "sample_id",
-      "sample_ph",
       "sample_type",
       "sex",
-      "tissue",
-      "viral_load"
+      "tissue"
     ],
-    "n_union_columns": 135,
+    "n_union_columns": 142,
     "pairwise_sample_id_overlap": [
+      {
+        "a": "age",
+        "b": "ancestry",
+        "n_shared_sample_id": 220,
+        "n_a": 8374,
+        "n_b": 1380
+      },
       {
         "a": "age",
         "b": "blood",
@@ -13395,10 +17293,24 @@
       },
       {
         "a": "age",
+        "b": "bmi",
+        "n_shared_sample_id": 854,
+        "n_a": 8374,
+        "n_b": 2070
+      },
+      {
+        "a": "age",
         "b": "brain",
         "n_shared_sample_id": 1071,
         "n_a": 8374,
         "n_b": 1997
+      },
+      {
+        "a": "age",
+        "b": "cancer",
+        "n_shared_sample_id": 897,
+        "n_a": 8374,
+        "n_b": 10101
       },
       {
         "a": "age",
@@ -13422,11 +17334,74 @@
         "n_b": 5323
       },
       {
+        "a": "ancestry",
+        "b": "blood",
+        "n_shared_sample_id": 24,
+        "n_a": 1380,
+        "n_b": 3402
+      },
+      {
+        "a": "ancestry",
+        "b": "bmi",
+        "n_shared_sample_id": 213,
+        "n_a": 1380,
+        "n_b": 2070
+      },
+      {
+        "a": "ancestry",
+        "b": "brain",
+        "n_shared_sample_id": 0,
+        "n_a": 1380,
+        "n_b": 1997
+      },
+      {
+        "a": "ancestry",
+        "b": "cancer",
+        "n_shared_sample_id": 42,
+        "n_a": 1380,
+        "n_b": 10101
+      },
+      {
+        "a": "ancestry",
+        "b": "disease",
+        "n_shared_sample_id": 229,
+        "n_a": 1380,
+        "n_b": 12218
+      },
+      {
+        "a": "ancestry",
+        "b": "sex",
+        "n_shared_sample_id": 14,
+        "n_a": 1380,
+        "n_b": 2978
+      },
+      {
+        "a": "ancestry",
+        "b": "tissue",
+        "n_shared_sample_id": 21,
+        "n_a": 1380,
+        "n_b": 5323
+      },
+      {
+        "a": "blood",
+        "b": "bmi",
+        "n_shared_sample_id": 44,
+        "n_a": 3402,
+        "n_b": 2070
+      },
+      {
         "a": "blood",
         "b": "brain",
         "n_shared_sample_id": 0,
         "n_a": 3402,
         "n_b": 1997
+      },
+      {
+        "a": "blood",
+        "b": "cancer",
+        "n_shared_sample_id": 83,
+        "n_a": 3402,
+        "n_b": 10101
       },
       {
         "a": "blood",
@@ -13450,6 +17425,48 @@
         "n_b": 5323
       },
       {
+        "a": "bmi",
+        "b": "brain",
+        "n_shared_sample_id": 0,
+        "n_a": 2070,
+        "n_b": 1997
+      },
+      {
+        "a": "bmi",
+        "b": "cancer",
+        "n_shared_sample_id": 227,
+        "n_a": 2070,
+        "n_b": 10101
+      },
+      {
+        "a": "bmi",
+        "b": "disease",
+        "n_shared_sample_id": 233,
+        "n_a": 2070,
+        "n_b": 12218
+      },
+      {
+        "a": "bmi",
+        "b": "sex",
+        "n_shared_sample_id": 372,
+        "n_a": 2070,
+        "n_b": 2978
+      },
+      {
+        "a": "bmi",
+        "b": "tissue",
+        "n_shared_sample_id": 612,
+        "n_a": 2070,
+        "n_b": 5323
+      },
+      {
+        "a": "brain",
+        "b": "cancer",
+        "n_shared_sample_id": 84,
+        "n_a": 1997,
+        "n_b": 10101
+      },
+      {
         "a": "brain",
         "b": "disease",
         "n_shared_sample_id": 1041,
@@ -13468,6 +17485,27 @@
         "b": "tissue",
         "n_shared_sample_id": 0,
         "n_a": 1997,
+        "n_b": 5323
+      },
+      {
+        "a": "cancer",
+        "b": "disease",
+        "n_shared_sample_id": 287,
+        "n_a": 10101,
+        "n_b": 12218
+      },
+      {
+        "a": "cancer",
+        "b": "sex",
+        "n_shared_sample_id": 928,
+        "n_a": 10101,
+        "n_b": 2978
+      },
+      {
+        "a": "cancer",
+        "b": "tissue",
+        "n_shared_sample_id": 1422,
+        "n_a": 10101,
         "n_b": 5323
       },
       {
@@ -13495,6 +17533,13 @@
     "pairwise_project_id_overlap": [
       {
         "a": "age",
+        "b": "ancestry",
+        "n_shared_project_id": 13,
+        "n_a": 143,
+        "n_b": 21
+      },
+      {
+        "a": "age",
         "b": "blood",
         "n_shared_project_id": 62,
         "n_a": 143,
@@ -13502,10 +17547,24 @@
       },
       {
         "a": "age",
+        "b": "bmi",
+        "n_shared_project_id": 16,
+        "n_a": 143,
+        "n_b": 25
+      },
+      {
+        "a": "age",
         "b": "brain",
         "n_shared_project_id": 23,
         "n_a": 143,
         "n_b": 40
+      },
+      {
+        "a": "age",
+        "b": "cancer",
+        "n_shared_project_id": 87,
+        "n_a": 143,
+        "n_b": 225
       },
       {
         "a": "age",
@@ -13529,11 +17588,74 @@
         "n_b": 258
       },
       {
+        "a": "ancestry",
+        "b": "blood",
+        "n_shared_project_id": 12,
+        "n_a": 21,
+        "n_b": 161
+      },
+      {
+        "a": "ancestry",
+        "b": "bmi",
+        "n_shared_project_id": 2,
+        "n_a": 21,
+        "n_b": 25
+      },
+      {
+        "a": "ancestry",
+        "b": "brain",
+        "n_shared_project_id": 0,
+        "n_a": 21,
+        "n_b": 40
+      },
+      {
+        "a": "ancestry",
+        "b": "cancer",
+        "n_shared_project_id": 13,
+        "n_a": 21,
+        "n_b": 225
+      },
+      {
+        "a": "ancestry",
+        "b": "disease",
+        "n_shared_project_id": 16,
+        "n_a": 21,
+        "n_b": 209
+      },
+      {
+        "a": "ancestry",
+        "b": "sex",
+        "n_shared_project_id": 12,
+        "n_a": 21,
+        "n_b": 161
+      },
+      {
+        "a": "ancestry",
+        "b": "tissue",
+        "n_shared_project_id": 14,
+        "n_a": 21,
+        "n_b": 258
+      },
+      {
+        "a": "blood",
+        "b": "bmi",
+        "n_shared_project_id": 4,
+        "n_a": 161,
+        "n_b": 25
+      },
+      {
         "a": "blood",
         "b": "brain",
         "n_shared_project_id": 4,
         "n_a": 161,
         "n_b": 40
+      },
+      {
+        "a": "blood",
+        "b": "cancer",
+        "n_shared_project_id": 70,
+        "n_a": 161,
+        "n_b": 225
       },
       {
         "a": "blood",
@@ -13557,6 +17679,48 @@
         "n_b": 258
       },
       {
+        "a": "bmi",
+        "b": "brain",
+        "n_shared_project_id": 0,
+        "n_a": 25,
+        "n_b": 40
+      },
+      {
+        "a": "bmi",
+        "b": "cancer",
+        "n_shared_project_id": 11,
+        "n_a": 25,
+        "n_b": 225
+      },
+      {
+        "a": "bmi",
+        "b": "disease",
+        "n_shared_project_id": 7,
+        "n_a": 25,
+        "n_b": 209
+      },
+      {
+        "a": "bmi",
+        "b": "sex",
+        "n_shared_project_id": 15,
+        "n_a": 25,
+        "n_b": 161
+      },
+      {
+        "a": "bmi",
+        "b": "tissue",
+        "n_shared_project_id": 22,
+        "n_a": 25,
+        "n_b": 258
+      },
+      {
+        "a": "brain",
+        "b": "cancer",
+        "n_shared_project_id": 16,
+        "n_a": 40,
+        "n_b": 225
+      },
+      {
         "a": "brain",
         "b": "disease",
         "n_shared_project_id": 29,
@@ -13575,6 +17739,27 @@
         "b": "tissue",
         "n_shared_project_id": 10,
         "n_a": 40,
+        "n_b": 258
+      },
+      {
+        "a": "cancer",
+        "b": "disease",
+        "n_shared_project_id": 86,
+        "n_a": 225,
+        "n_b": 209
+      },
+      {
+        "a": "cancer",
+        "b": "sex",
+        "n_shared_project_id": 89,
+        "n_a": 225,
+        "n_b": 161
+      },
+      {
+        "a": "cancer",
+        "b": "tissue",
+        "n_shared_project_id": 122,
+        "n_a": 225,
         "n_b": 258
       },
       {
@@ -13602,8 +17787,8 @@
   },
   "atlas_hub_id_overlap": {
     "n_atlas_study_id": 1902,
-    "n_hub_project_id": 418,
-    "n_hub_gse_like": 401,
+    "n_hub_project_id": 470,
+    "n_hub_gse_like": 435,
     "n_exact_study_id_equals_project_id": 0,
     "note": "Atlas study_ID (ES*) and Hub project_id (usually GSE*) are different namespaces; do not join on raw equality. Use PMID / curated maps when needed."
   },

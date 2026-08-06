@@ -1,6 +1,6 @@
 # EWAS metadata structure
 
-Generated at: `2026-08-06T14:27:56.965813+00:00`
+Generated at: `2026-08-06T14:48:43.718354+00:00`
 
 Scope: small EWAS Atlas tables + unpacked DataHub `sample_*.txt` packs.
 Large Atlas associations / probe annotations and matrix zips are out of scope.
@@ -158,6 +158,17 @@ Example rows:
 - Numeric range: [0.0, 114.0] mean=49.9758344284213
 - N sample_id / project_id: 8374 / 143
 
+### Family `ancestry`
+
+- Path: `/data/projects/methyl-burden-score/reports/inspection/ewas_datahub_samples/sample_ancestry_category_methylation_v1/sample_race.txt`
+- Bytes: 224431
+- Shape: 1380 × 23
+- Join keys: `sample_id`, `project_id`
+- Primary phenotype: `race`
+- Primary non-null=1.0, n_unique=16, kind=categorical
+- Top values: African American (237), Hispanic - Mexican (227), Hispanic (168), Chinese (167), white (159)
+- N sample_id / project_id: 1380 / 21
+
 ### Family `blood`
 
 - Path: `/data/projects/methyl-burden-score/reports/inspection/ewas_datahub_samples/sample_blood_methylation_v1/sample_blood.txt`
@@ -169,6 +180,17 @@ Example rows:
 - Top values: CD8 T cell:0, CD4 T cell:0.0583, NK cell:0.0829, B cell:0.01947, monocyte:0.08806, granulocyte:0.76116 (1), CD8 T cell:0.18733, CD4 T cell:0.05062, NK cell:0.03571, B cell:0.04623, monocyte:0.1001, granulocyte:0.59217 (1), CD8 T cell:0.04315, CD4 T cell:0.09799, NK cell:0.03696, B cell:0.02177, monocyte:0.09522, granulocyte:0.70113 (1), CD8 T cell:0.13038, CD4 T cell:0.24836, NK cell:0.13716, B cell:0.07829, monocyte:0.09094, granulocyte:0.34153 (1), CD8 T cell:0.06984, CD4 T cell:0.19197, NK cell:0.06604, B cell:0.07694, monocyte:0.10896, granulocyte:0.51312 (1)
 - N sample_id / project_id: 3402 / 161
 
+### Family `bmi`
+
+- Path: `/data/projects/methyl-burden-score/reports/inspection/ewas_datahub_samples/sample_bmi_methylation_v1/sample_bmi.txt`
+- Bytes: 483837
+- Shape: 2070 × 38
+- Join keys: `sample_id`, `project_id`
+- Primary phenotype: `bmi`
+- Primary non-null=1.0, n_unique=1451, kind=numeric
+- Numeric range: [6.07, 73.617] mean=30.873200966183575
+- N sample_id / project_id: 2070 / 25
+
 ### Family `brain`
 
 - Path: `/data/projects/methyl-burden-score/reports/inspection/ewas_datahub_samples/sample_brain_methylation_v1/sample_brain.txt`
@@ -179,6 +201,17 @@ Example rows:
 - Primary non-null=1.0, n_unique=41, kind=categorical
 - Top values: brain - cerebellum (300), brain - dorsolateral prefrontal cortex (245), brain - superior temporal gyrus (179), brain - frontal lobe (155), brain - frontal cortex (133)
 - N sample_id / project_id: 1997 / 40
+
+### Family `cancer`
+
+- Path: `/data/projects/methyl-burden-score/reports/inspection/ewas_datahub_samples/sample_cancer_methylation_v1/sample_cancer.txt`
+- Bytes: 4005665
+- Shape: 10841 × 73
+- Join keys: `sample_id`, `project_id`
+- Primary phenotype: `disease`
+- Primary non-null=0.7999, n_unique=43, kind=categorical
+- Top values: acute myeloid leukemia (657), prostate cancer (613), breast cancer (533), glioma (481), head and neck squamous-cell carcinoma (470)
+- N sample_id / project_id: 10101 / 225
 
 ### Family `disease`
 
@@ -215,25 +248,46 @@ Example rows:
 
 ## Cross-pack column / ID overlap
 
-- Packs profiled: 6
-- Shared columns (13): `age`, `genotype`, `gestational_age`, `infection`, `platform`, `project_id`, `race`, `sample_id`, `sample_ph`, `sample_type`, `sex`, `tissue`, `viral_load`
+- Packs profiled: 9
+- Shared columns (10): `age`, `genotype`, `infection`, `platform`, `project_id`, `race`, `sample_id`, `sample_type`, `sex`, `tissue`
 
 Pairwise `sample_id` overlap:
 
 | A | B | Shared | N_A | N_B |
 |---|---|-------:|----:|----:|
+| `age` | `ancestry` | 220 | 8374 | 1380 |
 | `age` | `blood` | 955 | 8374 | 3402 |
+| `age` | `bmi` | 854 | 8374 | 2070 |
 | `age` | `brain` | 1071 | 8374 | 1997 |
+| `age` | `cancer` | 897 | 8374 | 10101 |
 | `age` | `disease` | 2879 | 8374 | 12218 |
 | `age` | `sex` | 570 | 8374 | 2978 |
 | `age` | `tissue` | 931 | 8374 | 5323 |
+| `ancestry` | `blood` | 24 | 1380 | 3402 |
+| `ancestry` | `bmi` | 213 | 1380 | 2070 |
+| `ancestry` | `brain` | 0 | 1380 | 1997 |
+| `ancestry` | `cancer` | 42 | 1380 | 10101 |
+| `ancestry` | `disease` | 229 | 1380 | 12218 |
+| `ancestry` | `sex` | 14 | 1380 | 2978 |
+| `ancestry` | `tissue` | 21 | 1380 | 5323 |
+| `blood` | `bmi` | 44 | 3402 | 2070 |
 | `blood` | `brain` | 0 | 3402 | 1997 |
+| `blood` | `cancer` | 83 | 3402 | 10101 |
 | `blood` | `disease` | 1033 | 3402 | 12218 |
 | `blood` | `sex` | 70 | 3402 | 2978 |
 | `blood` | `tissue` | 91 | 3402 | 5323 |
+| `bmi` | `brain` | 0 | 2070 | 1997 |
+| `bmi` | `cancer` | 227 | 2070 | 10101 |
+| `bmi` | `disease` | 233 | 2070 | 12218 |
+| `bmi` | `sex` | 372 | 2070 | 2978 |
+| `bmi` | `tissue` | 612 | 2070 | 5323 |
+| `brain` | `cancer` | 84 | 1997 | 10101 |
 | `brain` | `disease` | 1041 | 1997 | 12218 |
 | `brain` | `sex` | 0 | 1997 | 2978 |
 | `brain` | `tissue` | 0 | 1997 | 5323 |
+| `cancer` | `disease` | 287 | 10101 | 12218 |
+| `cancer` | `sex` | 928 | 10101 | 2978 |
+| `cancer` | `tissue` | 1422 | 10101 | 5323 |
 | `disease` | `sex` | 411 | 12218 | 2978 |
 | `disease` | `tissue` | 523 | 12218 | 5323 |
 | `sex` | `tissue` | 1965 | 2978 | 5323 |
@@ -242,18 +296,39 @@ Pairwise `project_id` overlap:
 
 | A | B | Shared | N_A | N_B |
 |---|---|-------:|----:|----:|
+| `age` | `ancestry` | 13 | 143 | 21 |
 | `age` | `blood` | 62 | 143 | 161 |
+| `age` | `bmi` | 16 | 143 | 25 |
 | `age` | `brain` | 23 | 143 | 40 |
+| `age` | `cancer` | 87 | 143 | 225 |
 | `age` | `disease` | 111 | 143 | 209 |
 | `age` | `sex` | 59 | 143 | 161 |
 | `age` | `tissue` | 80 | 143 | 258 |
+| `ancestry` | `blood` | 12 | 21 | 161 |
+| `ancestry` | `bmi` | 2 | 21 | 25 |
+| `ancestry` | `brain` | 0 | 21 | 40 |
+| `ancestry` | `cancer` | 13 | 21 | 225 |
+| `ancestry` | `disease` | 16 | 21 | 209 |
+| `ancestry` | `sex` | 12 | 21 | 161 |
+| `ancestry` | `tissue` | 14 | 21 | 258 |
+| `blood` | `bmi` | 4 | 161 | 25 |
 | `blood` | `brain` | 4 | 161 | 40 |
+| `blood` | `cancer` | 70 | 161 | 225 |
 | `blood` | `disease` | 108 | 161 | 209 |
 | `blood` | `sex` | 52 | 161 | 161 |
 | `blood` | `tissue` | 72 | 161 | 258 |
+| `bmi` | `brain` | 0 | 25 | 40 |
+| `bmi` | `cancer` | 11 | 25 | 225 |
+| `bmi` | `disease` | 7 | 25 | 209 |
+| `bmi` | `sex` | 15 | 25 | 161 |
+| `bmi` | `tissue` | 22 | 25 | 258 |
+| `brain` | `cancer` | 16 | 40 | 225 |
 | `brain` | `disease` | 29 | 40 | 209 |
 | `brain` | `sex` | 4 | 40 | 161 |
 | `brain` | `tissue` | 10 | 40 | 258 |
+| `cancer` | `disease` | 86 | 225 | 209 |
+| `cancer` | `sex` | 89 | 225 | 161 |
+| `cancer` | `tissue` | 122 | 225 | 258 |
 | `disease` | `sex` | 82 | 209 | 161 |
 | `disease` | `tissue` | 108 | 209 | 258 |
 | `sex` | `tissue` | 153 | 161 | 258 |
@@ -261,8 +336,8 @@ Pairwise `project_id` overlap:
 ## Atlas study_ID vs Hub project_id
 
 - Atlas study_ID count: 1902
-- Hub project_id count (union): 418
-- Hub GSE-like: 401
+- Hub project_id count (union): 470
+- Hub GSE-like: 435
 - Exact string equals: 0
 - Note: Atlas study_ID (ES*) and Hub project_id (usually GSE*) are different namespaces; do not join on raw equality. Use PMID / curated maps when needed.
 

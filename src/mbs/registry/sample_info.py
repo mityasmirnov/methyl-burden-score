@@ -43,7 +43,8 @@ _SAMPLE_TXT_STEM: dict[str, str] = {
     "blood": "sample_blood",
     "brain": "sample_brain",
     "sex": "sample_sex",
-    "ancestry": "sample_ancestry_category",
+    # Ancestry pack archive members are named sample_race.*, not sample_ancestry_*.
+    "ancestry": "sample_race",
     "bmi": "sample_bmi",
 }
 

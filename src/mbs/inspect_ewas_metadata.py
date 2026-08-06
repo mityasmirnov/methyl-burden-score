@@ -9,7 +9,12 @@ from typing import Any
 
 import pandas as pd
 
-from mbs.registry.sample_info import FAMILY_VALUE_COLUMN, read_r_style_table
+from mbs.registry.sample_info import (
+    FAMILY_VALUE_COLUMN,
+    read_r_style_table,
+    sample_txt_filename,
+    unpacked_sample_info_dir,
+)
 
 ATLAS_SMALL_FILES: tuple[tuple[str, str, str], ...] = (
     ("studies", "EWAS_Atlas_studies.tsv", "tsv"),
@@ -19,8 +24,11 @@ ATLAS_SMALL_FILES: tuple[tuple[str, str, str], ...] = (
 
 SAMPLE_FAMILIES_PRESENT: tuple[str, ...] = (
     "age",
+    "ancestry",
     "blood",
+    "bmi",
     "brain",
+    "cancer",
     "disease",
     "sex",
     "tissue",
@@ -287,7 +295,6 @@ def inspect_ewas_metadata(
     data_root = data_root.resolve()
     project_root = project_root.resolve()
     atlas_root = data_root / "raw" / "ewas_atlas"
-    samples_root = project_root / "reports" / "inspection" / "ewas_datahub_samples"
 
     atlas_tables = [
         profile_atlas_table(atlas_root / name, table_id=table_id, fmt=fmt)
@@ -296,12 +303,7 @@ def inspect_ewas_metadata(
 
     sample_packs: list[dict[str, Any]] = []
     for family in sample_families:
-        zip_stem = f"sample_{family}_methylation_v1"
-        # ancestry uses longer stem; keep simple for present packs
-        if family == "ancestry":
-            zip_stem = "sample_ancestry_category_methylation_v1"
-        txt_name = f"sample_{family}.txt" if family != "ancestry" else "sample_ancestry_category.txt"
-        path = samples_root / zip_stem / txt_name
+        path = unpacked_sample_info_dir(project_root, family) / sample_txt_filename(family)
         sample_packs.append(profile_sample_pack(path, family=family))
 
     cross = _cross_pack_analysis(sample_packs)
