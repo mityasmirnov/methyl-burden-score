@@ -1,5 +1,11 @@
 # EWAS Open Platform downloads
 
+**Primary Stage 0 open methylation source.** Per
+[ADR 0002](adr/0002-ewas-datahub-primary-source.md) and
+[`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md), EWAS Data Hub supplies the default
+pilot / open-scale matrices; EWAS Atlas supplies curated associations for later
+validation. CpGCorpus remains optional (see [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.md)).
+
 Stage 0 pulls **both** EWAS Atlas (association knowledge) and EWAS DataHub
 (normalized methylation profiles). Raw files land under `$MBS_DATA_ROOT/raw/`.
 

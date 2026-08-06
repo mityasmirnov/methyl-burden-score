@@ -10,17 +10,23 @@
 
 ## Pilot data
 
-Start with a small, auditable CpGCorpus release:
+Primary open source is **EWAS Data Hub**
+([ADR 0002](adr/0002-ewas-datahub-primary-source.md)):
 
 ```text
-2–3 blood age studies
-2–3 multi-tissue studies
-1–2 EPIC studies
-1 technical-replicate study
+1–few labeling GSEs from EWAS_db/ (per-sample GSM*.txt betas)
+and/or a small baseline subset under download/
+2–3 blood / age-oriented packs or studies when scaling beyond the first pilot
 1 complete study reserved as a final holdout
 ```
 
-Prefer studies with QCDPB processing and clear metadata. Keep study-provided processed matrices out of the first scientific comparison unless QCDPB coverage is insufficient.
+Prefer GMQN-normalized Hub profiles with clear sample info archives. See
+[`EWAS_DATA.md`](EWAS_DATA.md) and the labeling GSE list in
+[`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.md) (those GSEs are present under
+`EWAS_db/` even when absent from CpGCorpus S3).
+
+CpGCorpus Arrow (requester-pays) is an optional alternate if already on disk;
+do not treat it as the default Stage 0 pilot path.
 
 ## Split policy
 

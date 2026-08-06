@@ -6,14 +6,16 @@
 README.md                    project scope and quick start
 AGENTS.md                    authoritative coding-agent rules
 docs/TODO_PIPELINE.md        Stage 0 scientific milestone checklist (agents update)
+docs/STRATEGIC_PLAN.md       long-term data + multimodal vision (post–Stage 0)
 docs/WORKSPACE.md            server and /data layout
-docs/adr/                    architecture decision records
+docs/adr/                    architecture decision records (incl. 0002 EWAS Hub)
 docs/ARCHITECTURE.md         model contracts
 docs/DATA_CONTRACT.md        canonical data contracts
 docs/ANNOTATION_GRAPH.md     biological topology
 docs/STATIC_FEATURES.md      CpGPT and MethylGPT artifacts
 docs/EXPERIMENT_PROTOCOL.md  evaluation and controls
 docs/DATA_INSPECTION.md      source acceptance workflow
+docs/EWAS_DATA.md            primary open Data Hub + Atlas downloads
 ```
 
 ## Source package
@@ -76,8 +78,8 @@ vendor/epicv2_manifest       EPICv2 reannotation code (Zenodo -> data/raw/manife
 vendor/infinium_annotation   Zhou-lab Infinium probe coords/masks (Milestone 2)
 vendor/methylcapsnet         capsule/region taxonomy reference (Milestone 2)
 vendor/*                     read-only submodule pointers after installation
-docs/EWAS_DATA.md            EWAS Atlas + DataHub download inventory
-docs/CPGCORPUS_STAGE0.md     selective CpGCorpus GSE cohort
+docs/EWAS_DATA.md            EWAS Atlas + DataHub download inventory (primary)
+docs/CPGCORPUS_STAGE0.md     optional/historical CpGCorpus + labeling GSE list
 reports/inspection/raw_inventory/  sizes, schemas, top rows for organizing ingest
 ```
 

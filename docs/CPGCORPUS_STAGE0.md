@@ -1,12 +1,22 @@
-# CpGCorpus Stage 0 GSE selection
+# CpGCorpus — optional alternate / historical milestone-1 path
+
+**Primary Stage 0 open data source is EWAS Data Hub**, not CpGCorpus
+([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
+[`EWAS_DATA.md`](EWAS_DATA.md); [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md)).
+Milestone 1 used a CpGCorpus GSE/GPL inspection as historical acceptance
+evidence; milestones 2–7 do **not** require further CpGCorpus sync.
+
+This page keeps the labeling GSE inventory and optional requester-pays
+download commands. Prefer Hub `EWAS_db/{GSE}/` for those studies when building
+the pilot matrix.
 
 Nothing in this repository auto-downloads CpGCorpus. Downloads run only when a
 script below is invoked explicitly. All files land under
 `$MBS_DATA_ROOT/raw/cpgcorpus`; logs under `$MBS_ARTIFACT_ROOT/logs/downloads`.
 
-## Foreground downloads
+## Foreground downloads (optional)
 
-Selective Stage 0 GSE sync:
+Selective CpGCorpus GSE sync:
 
 ```bash
 source scripts/activate_data_environment.sh
@@ -55,7 +65,7 @@ under `$MBS_ARTIFACT_ROOT/logs/downloads/`.
 
 Availability was checked against `s3://cpgpt-lucascamillo-public/data/cpgcorpus/raw/` (requester-pays, `us-east-1`). Studies marked **no** are not present under that prefix.
 
-**Alternate source:** all 18 GSEs above **are** present in EWAS DataHub All Data
+**Preferred source for these GSEs:** all 18 are present in EWAS Data Hub All Data
 (`https://download.cncb.ac.cn/ewas/datahub/EWAS_db/{GSE}/` as per-sample
 `GSM*.txt` beta files). See [`EWAS_DATA.md`](EWAS_DATA.md) and
 [`reports/inspection/raw_data_snapshot/summary.md`](../reports/inspection/raw_data_snapshot/summary.md).

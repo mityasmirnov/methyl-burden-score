@@ -1,5 +1,8 @@
 # Stage 0 architecture
 
+Post–Stage 0 modules (epimutation AE, REGENIE export, ComBat-met) are outlined in
+[`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md); they are not Stage 0 prerequisites.
+
 ## Objective
 
 Learn one scalar methylation burden score for every observed sample–gene pair while sharing the scoring function across genes and training traits.

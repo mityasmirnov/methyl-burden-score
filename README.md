@@ -2,6 +2,8 @@
 
 A research codebase for learning a shared, gene-level DNA methylation burden score from variable sets of CpG measurements.
 
+Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks); the model path remains flat DeepRVAT → hierarchical → study-grouped cross-fitting. See [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md) and [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md).
+
 The Stage 0 implementation follows four design principles:
 
 1. A DeepRVAT-style scoring function is shared across CpGs, regulatory regions, genes, and training traits.
