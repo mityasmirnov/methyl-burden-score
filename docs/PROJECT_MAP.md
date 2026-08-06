@@ -12,7 +12,7 @@ docs/adr/                    architecture decision records (0001 workspace, 0002
 docs/ARCHITECTURE.md         model contracts (public name: deepMAT; package: mbs)
 docs/DATA_CONTRACT.md        canonical data contracts
 docs/ANNOTATION_GRAPH.md     biological topology
-docs/plans/                  milestone build plans (incl. Milestone 5b registry/eval)
+docs/plans/                  milestone build plans (5b registry; 5c multitask)
 docs/STATIC_FEATURES.md      CpGPT and MethylGPT artifacts
 docs/EXPERIMENT_PROTOCOL.md  evaluation and controls
 docs/DATA_INSPECTION.md      source acceptance workflow
@@ -41,6 +41,9 @@ src/mbs/evaluation/      metrics + study-grouped split helpers (Milestone 5b)
 
 Canonical matrix conversion and flat baseline training are implemented.
 Milestone 5b adds the phenotype registry and multi-pack evaluation scaffold.
+Milestone 5c (pending) adds the unified sample phenotype table and joint
+masked multitask training on Hub packs — see
+[`docs/plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md).
 Feature stores for online sampling and full study-grouped cross-fitting remain
 later milestones.
 
@@ -53,6 +56,7 @@ schemas/matrix_manifest.schema.json      canonical matrix manifest
 schemas/graph_manifest.schema.json       annotation graph manifest
 schemas/static_feature_manifest.schema.json static feature manifest
 schemas/phenotype_registry.schema.json   phenotype / source registry (5b)
+schemas/sample_phenotype_table.schema.json unified sample×task table (5c)
 ```
 
 The SQL and JSON schemas are normative interfaces. Python code should validate against them rather than creating undocumented columns.
@@ -64,6 +68,7 @@ configs/experiment/stage0_flat.yaml        exact DeepRVAT-style baseline
 configs/experiment/stage0_flat_pilot.yaml  GSE35069 cell-type pilot train config
 configs/experiment/stage0_flat_age_holdout.yaml   age study-holdout fixture config
 configs/experiment/stage0_flat_tissue_holdout.yaml tissue study-holdout fixture
+configs/experiment/stage0_flat_multitask.yaml     Hub multitask draft (Milestone 5c)
 configs/experiment/stage0_hier_max.yaml    hierarchical reference model
 configs/data/phenotype_registry.yaml     dataset registry (Milestone 5b)
 configs/local/                             machine-specific overrides, ignored

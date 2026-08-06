@@ -10,8 +10,8 @@ Status values: `done` | `in_progress` | `pending` | `deferred`
 True next milestone after bootstrap:
 
 > one source ingested cleanly → one graph built → one canonical matrix written →
-> one baseline trained → phenotype registry + multi-pack eval → hierarchical →
-> one cross-fitted score matrix produced.
+> one baseline trained → phenotype registry + multi-pack eval → multitask shared
+> encoder → hierarchical → one cross-fitted score matrix produced.
 
 Primary open data source going forward: **EWAS Data Hub**
 ([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
@@ -234,7 +234,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `last.pt`, checksums). Unit tests: `tests/unit/test_training_flat.py`. Plan:
   [`plans/milestone-5-flat-deeprvat-baseline.md`](plans/milestone-5-flat-deeprvat-baseline.md).
 - **Depends on:** (4). Model module scaffolding alone is not sufficient.
-- **Next action:** Milestone 6 — hierarchical region model.
+- **Next action:** Milestone 5c — multitask shared encoder (5b already done).
 
 ---
 
@@ -258,7 +258,24 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   [`plans/milestone-5b-phenotype-registry-eval.md`](plans/milestone-5b-phenotype-registry-eval.md);
   [ADR 0003](adr/0003-milestone-5b-phenotype-registry.md).
 - **Depends on:** (5).
-- **Next action:** Milestone 6 — hierarchical region model.
+- **Next action:** Milestone 5c — multitask shared encoder on Hub packs (before hierarchical).
+
+---
+
+## 5c. Multitask shared encoder (Hub packs)
+
+- **Status:** `pending`
+- **Done when:** One shared flat DeepRVAT-style encoder trains with **linear**
+  age + tissue heads (and masked aux disease/cancer as configured) on a unified
+  sample phenotype table; batches use task masks so unlabeled heads do not
+  contribute; study-grouped holdouts; checkpoints + resolved multitask config
+  under `$MBS_ARTIFACT_ROOT`. Not one model per ZIP.
+- **Depends on:** (5b).
+- **Plan:** [`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md);
+  draft config [`../configs/experiment/stage0_flat_multitask.yaml`](../configs/experiment/stage0_flat_multitask.yaml);
+  schema [`../schemas/sample_phenotype_table.schema.json`](../schemas/sample_phenotype_table.schema.json).
+- **Next action:** Build `sample_phenotype_table.parquet` + masked multitask
+  train path; then Milestone 6.
 
 ---
 
@@ -267,8 +284,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Status:** `pending`
 - **Done when:** Region layer is trained after the flat baseline is stable;
   promoter/body (and related roles) can be compared to the flat model on the
-  same pilot folds.
-- **Depends on:** (5b).
+  same multitask / pilot folds.
+- **Depends on:** (5c) preferred; (5b) at minimum if 5c deferred by ADR.
 
 ---
 
@@ -278,7 +295,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Done when:** Out-of-fold MBS scores, age predictions, and tissue predictions
   are generated with leakage controls (no sample/donor/replicate/held-out study
   scored by a model that saw it). Score matrix + fold-assignment hash stored.
-- **Depends on:** (5b) at minimum; (6) preferred for hierarchical OOF scores.
+- **Depends on:** (5c) at minimum; (6) preferred for hierarchical OOF scores.
 
 ---
 

@@ -1,0 +1,121 @@
+# Stage 0 flat multitask experiment (Milestone 5c draft)
+# Shared FlatDeepSet encoder + linear task heads + label masks.
+# Do not treat as fully implemented until TODO_PIPELINE §5c is done.
+
+experiment:
+  name: stage0_flat_multitask_hub
+  stage: 0
+  public_model_name: deepMAT
+  seed: 42
+
+stage0:
+  use_cpgpt_static_features: true
+  use_methylgpt_prior: false
+  use_methylcapsnet_annotations: false
+  use_epicv2_manifest: true
+  use_longread: false
+  use_attention_pooling: false
+
+data:
+  phenotype_registry: configs/data/phenotype_registry.yaml
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology.yaml
+  # Matrices resolved via sample_phenotype_table.matrix_id
+  wave: 1  # age + tissue primary; disease aux
+
+model:
+  type: flat_deepset
+  input_dimension: null
+  phi_layers: 2
+  phi_hidden_dimension: 20
+  rho_layers: 3
+  rho_hidden_dimension: 10
+  activation: leaky_relu
+  pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  dropout: 0.0
+
+heads:
+  age:
+    enabled: true
+    loss: huber  # or mse
+    huber_delta: 1.0
+    target_standardization: train_fold
+    linear: true
+  tissue:
+    enabled: true
+    loss: cross_entropy
+    class_weighting: train_fold_balanced
+    ontology: harmonized  # not raw pack strings
+    linear: true
+  disease:
+    enabled: true
+    loss: bce_with_logits
+    role: auxiliary
+    linear: true
+  cancer:
+    enabled: false
+    loss: bce_with_logits
+    role: auxiliary
+    linear: true
+  blood:
+    enabled: false
+    loss: cross_entropy
+    role: domain_auxiliary
+    linear: true
+  brain:
+    enabled: false
+    loss: cross_entropy
+    role: domain_auxiliary
+    linear: true
+
+loss:
+  # Fixed lambdas first pass; uncertainty weighting deferred
+  lambda_age: 1.0
+  lambda_tissue: 1.0
+  lambda_disease: 0.25
+  lambda_cancer: 0.0
+  lambda_blood: 0.0
+  lambda_brain: 0.0
+  # Samples without a label never contribute (task masks)
+
+training:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_size: 1
+  batch_token_budget: 500000
+  gradient_clip_norm: 2.0
+  max_epochs: 100
+  early_stopping_patience: 10
+  precision: bf16-mixed
+  num_workers: 0
+  require_cuda: true
+
+splits:
+  grouping_columns:
+    - study_id
+    - donor_id
+  # Prefer study-grouped holdouts within each primary family
+  protocol: study_grouped
+  train_fraction: 0.7
+  val_fraction: 0.15
+  test_fraction: 0.15
+
+device:
+  cuda_visible_devices: "0"
+  torch_device: cuda
+
+logging:
+  tensorboard: true
+  jsonl: true
+  wandb: false
+  save_resolved_config: true
+  save_environment: true
+  save_checksums: true
+
+evaluation:
+  age_metrics: [mae, rmse, pearson, spearman]
+  tissue_metrics: [macro_f1, balanced_accuracy, confusion_matrix]
+  report_by: [study_id, platform_id, phenotype_family]

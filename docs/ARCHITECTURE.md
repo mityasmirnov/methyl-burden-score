@@ -170,6 +170,13 @@ Tissue classification:
 
 Heads may include nuisance covariates. Nuisance covariates do not enter the shared MBS encoder.
 
+### Multitask packs (Milestone 5c)
+
+Do not train one model per Hub ZIP. Use one shared encoder and linear heads with
+per-sample task masks (age MSE/Huber, tissue CE, optional disease/cancer aux).
+See [`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md)
+and [`../configs/experiment/stage0_flat_multitask.yaml`](../configs/experiment/stage0_flat_multitask.yaml).
+
 ## Ragged representation
 
 Do not materialize a tensor shaped as samples × genes × annotations × maximum CpGs.

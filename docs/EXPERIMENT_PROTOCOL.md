@@ -28,6 +28,13 @@ Prefer GMQN-normalized Hub profiles with clear sample info archives. See
 CpGCorpus Arrow (requester-pays) is an optional alternate if already on disk;
 do not treat it as the default Stage 0 pilot path.
 
+### Multitask Hub packs (Milestone 5c)
+
+Do **not** train one model per `*_methylation_v1.zip`. Train one shared burden
+encoder with linear age + tissue heads (disease/cancer aux optional) and
+per-sample task masks. Pack roles, folder layout, and config schema:
+[`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md).
+
 ## Split policy
 
 Grouping priority:

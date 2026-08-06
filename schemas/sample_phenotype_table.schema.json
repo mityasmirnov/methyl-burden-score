@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://methyl-burden-score.local/schemas/sample_phenotype_table.schema.json",
+  "title": "MBS unified sample phenotype table",
+  "description": "One row per assay sample for multitask training (Milestone 5c). Null labels + false masks mean the sample does not contribute to that head.",
+  "type": "object",
+  "required": [
+    "sample_id",
+    "source_sample_id",
+    "study_id",
+    "source_system",
+    "phenotype_family",
+    "matrix_id",
+    "row_index",
+    "age_mask",
+    "tissue_mask"
+  ],
+  "properties": {
+    "sample_id": { "type": "string", "minLength": 1 },
+    "source_sample_id": { "type": "string", "minLength": 1 },
+    "study_id": { "type": "string", "minLength": 1 },
+    "source_system": {
+      "type": "string",
+      "enum": ["ewas_datahub", "ewas_datahub_baseline", "cpgcorpus", "other"]
+    },
+    "phenotype_family": {
+      "type": "string",
+      "enum": [
+        "age",
+        "tissue",
+        "disease",
+        "cancer",
+        "blood",
+        "brain",
+        "sex",
+        "bmi",
+        "ancestry",
+        "cell_type",
+        "multi"
+      ]
+    },
+    "platform_id": { "type": ["string", "null"] },
+    "donor_id": { "type": ["string", "null"] },
+    "matrix_id": { "type": "string", "minLength": 1 },
+    "row_index": { "type": "integer", "minimum": 0 },
+    "age_years": { "type": ["number", "null"] },
+    "age_mask": { "type": "boolean" },
+    "tissue_label": { "type": ["string", "null"] },
+    "tissue_class_id": { "type": ["integer", "null"], "minimum": 0 },
+    "tissue_mask": { "type": "boolean" },
+    "disease_label": { "type": ["string", "null"] },
+    "disease_mask": { "type": "boolean", "default": false },
+    "cancer_label": { "type": ["string", "null"] },
+    "cancer_mask": { "type": "boolean", "default": false },
+    "blood_label": { "type": ["string", "null"] },
+    "blood_mask": { "type": "boolean", "default": false },
+    "brain_label": { "type": ["string", "null"] },
+    "brain_mask": { "type": "boolean", "default": false },
+    "sex": { "type": ["string", "null"] },
+    "covariates_json": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true
+}
