@@ -1,0 +1,346 @@
+{
+  "exists": true,
+  "file_count": 55,
+  "files": [
+    {
+      "modified_at": "2025-02-25T00:36:55+00:00",
+      "relative_path": "GSE100184/GPL21145/betas/gse_betas.arrow",
+      "size_bytes": 202035290,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:36:55+00:00",
+      "relative_path": "GSE100184/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 13066,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:36:55+00:00",
+      "relative_path": "GSE100208/GPL21145/betas/gse_betas.arrow",
+      "size_bytes": 181368354,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:36:55+00:00",
+      "relative_path": "GSE100208/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 11898,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:36:55+00:00",
+      "relative_path": "GSE100209/GPL21145/betas/gse_betas.arrow",
+      "size_bytes": 236838570,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:36:55+00:00",
+      "relative_path": "GSE100209/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 13530,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:36:55+00:00",
+      "relative_path": "GSE100779/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 205977802,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:36:55+00:00",
+      "relative_path": "GSE100779/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 13218,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:36:55+00:00",
+      "relative_path": "GSE100780/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 194079370,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:00+00:00",
+      "relative_path": "GSE100780/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 12850,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:00+00:00",
+      "relative_path": "GSE100781/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 194023474,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:00+00:00",
+      "relative_path": "GSE100781/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 12858,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:01+00:00",
+      "relative_path": "GSE100782/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 205870946,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:01+00:00",
+      "relative_path": "GSE100782/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 13218,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:01+00:00",
+      "relative_path": "GSE100783/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 192593986,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:01+00:00",
+      "relative_path": "GSE100783/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 12858,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:01+00:00",
+      "relative_path": "GSE100784/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 311238938,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:01+00:00",
+      "relative_path": "GSE100784/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 16898,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:01+00:00",
+      "relative_path": "GSE100825/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 206238298,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:05+00:00",
+      "relative_path": "GSE100825/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 15018,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:05+00:00",
+      "relative_path": "GSE100850/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 389359386,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:05+00:00",
+      "relative_path": "GSE100850/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 24842,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:06+00:00",
+      "relative_path": "GSE101908/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 414578562,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:06+00:00",
+      "relative_path": "GSE101908/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 20554,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:06+00:00",
+      "relative_path": "GSE102031/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 264569634,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:07+00:00",
+      "relative_path": "GSE102031/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 19826,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:07+00:00",
+      "relative_path": "GSE103189/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 266201730,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:09+00:00",
+      "relative_path": "GSE103189/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 18410,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:09+00:00",
+      "relative_path": "GSE103271/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 209808114,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:13+00:00",
+      "relative_path": "GSE103271/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 43730,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:14+00:00",
+      "relative_path": "GSE103279/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 259829410,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:14+00:00",
+      "relative_path": "GSE103279/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 60890,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:14+00:00",
+      "relative_path": "GSE103280/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 209227370,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:15+00:00",
+      "relative_path": "GSE103280/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 43650,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:15+00:00",
+      "relative_path": "GSE103286/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 506544650,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:15+00:00",
+      "relative_path": "GSE103286/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 47522,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:16+00:00",
+      "relative_path": "GSE103287/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 354926666,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:16+00:00",
+      "relative_path": "GSE103287/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 87626,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:17+00:00",
+      "relative_path": "GSE103328/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 193474802,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:20+00:00",
+      "relative_path": "GSE103328/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 40226,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:20+00:00",
+      "relative_path": "GSE103332/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 366668978,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:21+00:00",
+      "relative_path": "GSE103332/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 129418,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:21+00:00",
+      "relative_path": "GSE103397/GPL23976/betas/gse_betas.arrow",
+      "size_bytes": 361585858,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:22+00:00",
+      "relative_path": "GSE103397/GPL23976/metadata/metadata.arrow",
+      "size_bytes": 17354,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2026-08-05T15:00:02.244963+00:00",
+      "relative_path": "GSE103498/GPL21145/betas/QCDPB.arrow.f3B53870",
+      "size_bytes": 101187584,
+      "suffix": ".f3b53870"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:25+00:00",
+      "relative_path": "GSE103498/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 14178,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:37:28+00:00",
+      "relative_path": "GSE103505/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 14178,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:40:13+00:00",
+      "relative_path": "GSE116992/GPL13534/betas/QCDPB.arrow",
+      "size_bytes": 119137146,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:40:14+00:00",
+      "relative_path": "GSE116992/GPL13534/metadata/metadata.arrow",
+      "size_bytes": 13866,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:40:14+00:00",
+      "relative_path": "GSE116992/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 302698730,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:40:15+00:00",
+      "relative_path": "GSE116992/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 17266,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:44:32+00:00",
+      "relative_path": "GSE125367/GPL21145/betas/QCDPB.arrow",
+      "size_bytes": 435108762,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T00:44:33+00:00",
+      "relative_path": "GSE125367/GPL21145/metadata/metadata.arrow",
+      "size_bytes": 21018,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T02:11:39+00:00",
+      "relative_path": "GSE35069/GPL13534/betas/gse_betas.arrow",
+      "size_bytes": 327582018,
+      "suffix": ".arrow"
+    },
+    {
+      "modified_at": "2025-02-25T02:11:40+00:00",
+      "relative_path": "GSE35069/GPL13534/metadata/metadata.arrow",
+      "size_bytes": 21354,
+      "suffix": ".arrow"
+    }
+  ],
+  "generated_at": "2026-08-05T15:24:07.559063+00:00",
+  "max_entries": 10000,
+  "raw_root": "/data/projects/methyl-burden-score/data/raw/cpgcorpus",
+  "source_id": "cpgcorpus",
+  "suffix_counts": {
+    ".arrow": 54,
+    ".f3b53870": 1
+  },
+  "total_bytes": 7213545748,
+  "truncated": false
+}
