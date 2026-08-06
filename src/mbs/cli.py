@@ -20,6 +20,7 @@ from mbs.annotation.build import DEFAULT_GRAPH_ID, build_annotation_graph
 from mbs.annotation.export_infinium import DEFAULT_PLATFORMS
 from mbs.catalog import build_catalog, init_catalog
 from mbs.inspect_cpgcorpus import inspect_cpgcorpus_gpl, write_cpgcorpus_report
+from mbs.inspect_ewas_metadata import inspect_ewas_metadata, write_ewas_metadata_report
 from mbs.inspect_source import inventory_source, write_inspection_report
 from mbs.matrix.convert import DEFAULT_MATRIX_ID, convert_ewas_db_study
 from mbs.paths import DataPaths, PathPolicyError
@@ -261,6 +262,49 @@ def inspect_cpgcorpus_gpl_cmd(
                 "n_samples": report["value_qc"].get("n_samples"),
                 "n_probes": report["value_qc"].get("n_probes"),
                 "warnings": report["warnings"],
+            }
+        )
+    )
+
+
+@inspect_app.command("ewas-metadata")
+def inspect_ewas_metadata_cmd(
+    report_dir: Annotated[
+        Path | None,
+        typer.Option(
+            help="Report directory (default: reports/inspection/ewas_metadata_structure)"
+        ),
+    ] = None,
+) -> None:
+    """Profile Atlas small tables and unpacked DataHub sample-info .txt packs."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    resolved_report = report_dir or (
+        paths.project_root / "reports" / "inspection" / "ewas_metadata_structure"
+    )
+    if not resolved_report.absolute().is_relative_to(paths.project_root.absolute()):
+        resolved_report = _require_under_data(resolved_report, "report_dir")
+    else:
+        resolved_report = resolved_report.absolute()
+
+    report = inspect_ewas_metadata(
+        data_root=paths.data_root,
+        project_root=paths.project_root,
+    )
+    written = write_ewas_metadata_report(report, resolved_report)
+    present_packs = sum(1 for p in report["sample_packs"] if p.get("exists"))
+    present_atlas = sum(1 for t in report["atlas_tables"] if t.get("exists"))
+    console.print_json(
+        json.dumps(
+            {
+                "report_dir": str(written),
+                "atlas_tables_present": present_atlas,
+                "sample_packs_present": present_packs,
+                "generated_at": report["generated_at"],
             }
         )
     )

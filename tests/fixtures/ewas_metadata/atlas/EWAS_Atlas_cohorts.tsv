@@ -1,0 +1,2 @@
+cohort_ID	study_ID	stage	platform	sample_size	male_percentage	min_age	max_age	mean_age	sd_age	tissue	cohort_name	full_name	description	ancestry
+1	ES1	Initial	450K	10	0.5	20	80	50	10	blood	c1	full	desc	European

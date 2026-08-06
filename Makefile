@@ -1,4 +1,4 @@
-SHELL := /usr/bin/env bash
+SHELL := /bin/bash
 .ONESHELL:
 .SHELLFLAGS := -euo pipefail -c
 
@@ -106,7 +106,7 @@ download-ewas-family:
 	bash scripts/download_ewas_phenotype_family.sh $(FAMILY)
 
 export-ewas-sample-info:
-	uv run python -c "from pathlib import Path; from mbs.paths import DataPaths; from mbs.registry.sample_info import export_family_from_data_root; p=DataPaths.from_environment(); print(export_family_from_data_root(p.data_root, '$(FAMILY)'))"
+	uv run python -c "from pathlib import Path; from mbs.paths import DataPaths; from mbs.registry.sample_info import export_family_from_data_root; p=DataPaths.from_environment(); print(export_family_from_data_root(p.data_root, '$(FAMILY)', project_root=p.project_root))"
 
 download-manifests:
 	bash scripts/download_manifests.sh

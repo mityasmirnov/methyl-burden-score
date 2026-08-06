@@ -1,0 +1,3 @@
+"sample_id" "age" "project_id" "platform" "sex" "sample_type" "tissue"
+"1" "GSM1" 45 "GSE1" "450K" "F" "control" "blood"
+"2" "GSM2" 50 "GSE1" "450K" "M" "control" "blood"

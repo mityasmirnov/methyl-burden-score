@@ -28,6 +28,8 @@ src/mbs/paths.py         /data-only filesystem policy
 src/mbs/catalog.py       DuckDB catalog builder / init
 src/mbs/inspect_source.py shallow source inventory reports
 src/mbs/inspect_cpgcorpus.py CpGCorpus GSE/GPL scientific inspection
+src/mbs/inspect_ewas_metadata.py Atlas small tables + Hub sample-info profiles
+src/mbs/registry/sample_info.py Hub sample-info txt/zip → Parquet export
 src/mbs/batch.py         ragged batch contract
 src/mbs/segment_ops.py   permutation-invariant segment reductions
 src/mbs/models.py        flat/hierarchical scorers and linear heads
@@ -102,8 +104,11 @@ vendor/infinium_annotation   Zhou-lab Infinium probe coords/masks (Milestone 2)
 vendor/methylcapsnet         capsule/region taxonomy reference (Milestone 2)
 vendor/*                     read-only submodule pointers after installation
 docs/EWAS_DATA.md            EWAS Atlas + DataHub download inventory (primary)
+docs/EWAS_METADATA.md        Atlas small tables + Hub sample-info contracts
 docs/CPGCORPUS_STAGE0.md     optional/historical CpGCorpus + labeling GSE list
 reports/inspection/raw_inventory/  sizes, schemas, top rows for organizing ingest
+reports/inspection/ewas_metadata_structure/  Atlas + sample-info structure profiles
+reports/inspection/ewas_datahub_samples/     unpacked Hub sample_*.txt (Cursor-visible)
 ```
 
 Reference code must not become a runtime import path. Downloaded manifests and corpora belong under `$MBS_DATA_ROOT/raw/`.
@@ -140,6 +145,7 @@ mbs catalog init           create dirs + apply sql/*.sql schema
 mbs catalog build          rebuild catalog with explicit paths
 mbs inspect source         shallow raw-source inventory report
 mbs inspect cpgcorpus-gpl  GSE/GPL layout, alignment, beta QC, metadata
+mbs inspect ewas-metadata  Atlas small tables + Hub sample-info structure
 mbs graph build            locus registry + five-role annotation graph
 mbs features export-cpgpt  offline CpGPT2M sequence-adapter static features
 mbs matrix convert         EWAS_db study → canonical matrix store

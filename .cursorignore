@@ -1,14 +1,37 @@
-# Never index raw or generated data
+# Bulk / generated trees — keep out of Cursor index
 external_data/**
-data/**
 cache/**
 scratch/**
 artifacts/**
 runs/**
 checkpoints/**
 outputs/**
+data/scratch/**
+data/staging/**
+data/canonical/catalog/**
+data/canonical/matrices/**
+data/canonical/graphs/**
+data/canonical/static_features/**
+data/canonical/registries/**
+data/canonical/annotations/**
 
-# Never index binary scientific formats
+# Heavy raw downloads (matrices, arrows, zip packs, All Data text)
+data/raw/cpgcorpus/**
+data/raw/ewas_datahub/EWAS_db/**
+data/raw/ewas_datahub/download/**
+data/raw/ewas_datahub/add_ewas_db/**
+data/raw/manifests/epicv2/*.csv.gz
+data/raw/methylgpt/pretrained_models/**
+
+# Large Atlas tables (keep small studies/cohorts/trait matrix indexed)
+data/raw/ewas_atlas/EWAS_Atlas_associations.tsv
+data/raw/ewas_atlas/EWAS_Atlas_probe_annotations.tsv
+
+# Parquet phenotype extracts are binary; .txt under reports/ is preferred
+data/canonical/phenotypes/**/*.parquet
+data/canonical/phenotypes/.extract_*/**
+
+# Never index binary scientific formats anywhere
 **/*.idat
 **/*.IDAT
 **/*.bam
@@ -37,8 +60,10 @@ outputs/**
 **/*.safetensors
 **/*.pkl
 **/*.pickle
+**/*.RData
+**/*.zip
 
-# Reference repositories are available for targeted inspection only
+# Reference repositories — targeted inspection only
 vendor/**/.git/**
 vendor/**/data/**
 vendor/**/dependencies/**
@@ -60,4 +85,5 @@ reports/inspection/private/**
 .ruff_cache/**
 .ipynb_checkpoints/**
 
-# Keep source, tests, configs, schemas, SQL, docs, and sanitized fixtures indexed
+# Indexed by default (enrichment): small Atlas TSVs, SOURCE.txt, methylgpt vocab,
+# reports/inspection/ewas_datahub_samples/*.txt, configs, docs, sql, src, tests

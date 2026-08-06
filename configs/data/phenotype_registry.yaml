@@ -42,7 +42,7 @@ entries:
     split_role: registered
     download_path: raw/ewas_datahub/download/sample_age_methylation_v1.zip
     checksum: null
-    notes: Wave-1 sample-info; export to canonical/phenotypes/age_sample_info.parquet.
+    notes: Unpacked txt under reports/inspection/ewas_datahub_samples/ preferred when zip absent. Wave-1 sample-info; export to canonical/phenotypes/age_sample_info.parquet.
 
   - entry_id: hub-tissue-profile-v1
     source_system: ewas_datahub
@@ -66,7 +66,7 @@ entries:
     split_role: registered
     download_path: raw/ewas_datahub/download/sample_tissue_methylation_v1.zip
     checksum: null
-    notes: Wave-1 sample-info; export to canonical/phenotypes/tissue_sample_info.parquet.
+    notes: Unpacked txt under reports/inspection/ewas_datahub_samples/ preferred when zip absent. Wave-1 sample-info; export to canonical/phenotypes/tissue_sample_info.parquet.
 
   - entry_id: hub-disease-profile-v1
     source_system: ewas_datahub
@@ -90,7 +90,7 @@ entries:
     split_role: registered
     download_path: raw/ewas_datahub/download/sample_disease_methylation_v1.zip
     checksum: null
-    notes: Wave-1 sample-info; export to canonical/phenotypes/disease_sample_info.parquet.
+    notes: Unpacked txt under reports/inspection/ewas_datahub_samples/ preferred when zip absent. Wave-1 sample-info; export to canonical/phenotypes/disease_sample_info.parquet.
 
   - entry_id: hub-cancer-profile-v1
     source_system: ewas_datahub
@@ -114,7 +114,7 @@ entries:
     split_role: secondary
     download_path: raw/ewas_datahub/download/sample_cancer_methylation_v1.zip
     checksum: null
-    notes: Wave-2 sample-info.
+    notes: Unpacked txt under reports/inspection/ewas_datahub_samples/ preferred when zip absent. Wave-2 sample-info.
 
   - entry_id: hub-blood-profile-v1
     source_system: ewas_datahub
@@ -138,7 +138,7 @@ entries:
     split_role: secondary
     download_path: raw/ewas_datahub/download/sample_blood_methylation_v1.zip
     checksum: null
-    notes: Wave-2 sample-info.
+    notes: Unpacked txt under reports/inspection/ewas_datahub_samples/ preferred when zip absent. Wave-2 sample-info.
 
   - entry_id: hub-brain-profile-v1
     source_system: ewas_datahub
@@ -162,7 +162,7 @@ entries:
     split_role: secondary
     download_path: raw/ewas_datahub/download/sample_brain_methylation_v1.zip
     checksum: null
-    notes: Wave-2 sample-info.
+    notes: Unpacked txt under reports/inspection/ewas_datahub_samples/ preferred when zip absent. Wave-2 sample-info.
 
   - entry_id: hub-sex-profile-v1
     source_system: ewas_datahub
@@ -186,7 +186,7 @@ entries:
     split_role: secondary
     download_path: raw/ewas_datahub/download/sample_sex_methylation_v1.zip
     checksum: null
-    notes: Nuisance sample-info.
+    notes: Unpacked txt under reports/inspection/ewas_datahub_samples/ preferred when zip absent. Nuisance sample-info.
 
   - entry_id: hub-ancestry-profile-v1
     source_system: ewas_datahub
@@ -210,7 +210,7 @@ entries:
     split_role: secondary
     download_path: raw/ewas_datahub/download/sample_ancestry_category_methylation_v1.zip
     checksum: null
-    notes: Nuisance sample-info.
+    notes: Unpacked txt under reports/inspection/ewas_datahub_samples/ preferred when zip absent. Nuisance sample-info.
 
   - entry_id: hub-bmi-profile-v1
     source_system: ewas_datahub
@@ -234,4 +234,4 @@ entries:
     split_role: secondary
     download_path: raw/ewas_datahub/download/sample_bmi_methylation_v1.zip
     checksum: null
-    notes: Nuisance sample-info.
+    notes: Unpacked txt under reports/inspection/ewas_datahub_samples/ preferred when zip absent. Nuisance sample-info.

@@ -64,6 +64,11 @@ Inspection snapshot (hosts, layouts, local examples):
 **Full size / schema / top-row inventory (for organizing ingest):**
 [`reports/inspection/raw_inventory/summary.md`](../reports/inspection/raw_inventory/summary.md).
 
+**Atlas small tables + Hub sample-info structure contracts:**
+[`docs/EWAS_METADATA.md`](EWAS_METADATA.md) and
+[`reports/inspection/ewas_metadata_structure/`](../reports/inspection/ewas_metadata_structure/)
+(`mbs inspect ewas-metadata`).
+
 Local layout after mirror:
 
 ```text
@@ -158,8 +163,10 @@ make download-ewas-family FAMILY=disease
 # nohup make download-ewas-family FAMILY=age \
 #   > "$MBS_ARTIFACT_ROOT/logs/downloads/ewas_family_age.log" 2>&1 &
 
-# Export sample-info zip → canonical Parquet (prefers .txt member)
+# Export sample-info → canonical Parquet (prefers unpacked .txt, else zip)
 make export-ewas-sample-info FAMILY=tissue
+# Structure profile for Atlas small tables + sample packs:
+uv run mbs inspect ewas-metadata
 # R fallback when only .RData is present:
 # Rscript scripts/export_ewas_sample_info.R tissue \
 #   "$MBS_DATA_ROOT/raw/ewas_datahub/download/sample_tissue_methylation_v1.zip" \
