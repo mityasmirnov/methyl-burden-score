@@ -130,7 +130,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Note:** Primary ongoing open source is EWAS Data Hub (ADR 0002). This
   milestone’s CpGCorpus evidence stands; do not re-open milestone 1 to switch
   sources.
-- **Next action:** Milestone 5 — train the flat DeepRVAT-style baseline.
+- **Next action:** Milestone 6 — hierarchical region model.
 
 ---
 
@@ -164,7 +164,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
     Stage 0 region taxonomy (not the full CapsNet model).
   Convert or export needed tables into `$MBS_DATA_ROOT/canonical/annotations`
   (or graphs); keep bulky vendor blobs out of the Python runtime path.
-- **Next action:** Milestone 5 — train the flat DeepRVAT-style baseline.
+- **Next action:** Milestone 6 — hierarchical region model.
 
 ---
 
@@ -186,7 +186,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `tests/unit/test_static_features.py`. Build plan:
   [`plans/milestone-3-static-locus-features.md`](plans/milestone-3-static-locus-features.md).
 - **Depends on:** (2) locus registry.
-- **Next action:** Milestone 5 — train the flat DeepRVAT-style baseline.
+- **Next action:** Milestone 6 — hierarchical region model.
 
 ---
 
@@ -211,17 +211,29 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `make download-ewas-study STUDY=GSE35069`. Unit tests:
   `tests/unit/test_matrix_store.py`.
 - **Depends on:** (1), (2).
-- **Next action:** Milestone 5 — train the flat DeepRVAT-style baseline.
+- **Next action:** Milestone 6 — hierarchical region model.
 
 ---
 
 ## 5. Train the flat DeepRVAT-style baseline
 
-- **Status:** `pending`
+- **Status:** `done`
 - **Done when:** Exact CpG-to-gene max-pooling baseline runs end to end: overfits
   a tiny fixture, then trains on the pilot source. Checkpoints + resolved config
   under `$MBS_ARTIFACT_ROOT`.
+- **Evidence:** `mbs train flat --overfit-fixture` reaches accuracy 1.0
+  (`artifacts/runs/stage0-flat-overfit-fixture/`). Pilot cell-type CE on
+  GSE35069 (`matrix-gse35069-ewasdb-v1` + CpGCorpus metadata labels, 10 classes,
+  donor-grouped 4/2 split) via `CUDA_VISIBLE_DEVICES=0 mbs train flat --config
+  configs/experiment/stage0_flat_pilot.yaml --run-id stage0-flat-gse35069-v1`
+  on a single Ada GPU (`cuda:0`). Artifacts:
+  `$MBS_ARTIFACT_ROOT/runs/stage0-flat-gse35069-v1/` (resolved config, metrics,
+  split, environment) and
+  `$MBS_ARTIFACT_ROOT/checkpoints/stage0-flat-gse35069-v1/` (`best.pt`,
+  `last.pt`, checksums). Unit tests: `tests/unit/test_training_flat.py`. Plan:
+  [`plans/milestone-5-flat-deeprvat-baseline.md`](plans/milestone-5-flat-deeprvat-baseline.md).
 - **Depends on:** (4). Model module scaffolding alone is not sufficient.
+- **Next action:** Milestone 6 — hierarchical region model.
 
 ---
 

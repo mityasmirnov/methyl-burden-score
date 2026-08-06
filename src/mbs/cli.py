@@ -8,7 +8,7 @@ import re
 import shutil
 import sys
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import torch
 import typer
@@ -24,6 +24,7 @@ from mbs.inspect_source import inventory_source, write_inspection_report
 from mbs.matrix.convert import DEFAULT_MATRIX_ID, convert_ewas_db_study
 from mbs.paths import DataPaths, PathPolicyError
 from mbs.static_features.export_cpgpt import DEFAULT_FEATURE_SET_ID, export_cpgpt_adapter
+from mbs.training.loop import load_experiment_config, train_flat_baseline
 
 app = typer.Typer(no_args_is_help=True, help="Methylation Burden Score tooling")
 catalog_app = typer.Typer(no_args_is_help=True, help="DuckDB catalog operations")
@@ -31,11 +32,13 @@ inspect_app = typer.Typer(no_args_is_help=True, help="Source inspection reports"
 graph_app = typer.Typer(no_args_is_help=True, help="Annotation graph builds")
 matrix_app = typer.Typer(no_args_is_help=True, help="Canonical matrix conversion")
 features_app = typer.Typer(no_args_is_help=True, help="Static locus feature export")
+train_app = typer.Typer(no_args_is_help=True, help="Model training")
 app.add_typer(catalog_app, name="catalog")
 app.add_typer(inspect_app, name="inspect")
 app.add_typer(graph_app, name="graph")
 app.add_typer(matrix_app, name="matrix")
 app.add_typer(features_app, name="features")
+app.add_typer(train_app, name="train")
 console = Console()
 
 _SOURCE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
@@ -536,6 +539,117 @@ def features_export_cpgpt_cmd(  # noqa: PLR0917
                 "mapping_rate": result.stats["mapping_rate"],
                 "checkpoint_sha256": result.manifest["checkpoint_sha256"],
                 "locus_table_sha256": result.manifest["locus_table_sha256"],
+            }
+        )
+    )
+
+
+@train_app.command("flat")
+def train_flat_cmd(  # noqa: PLR0917
+    config: Annotated[
+        Path | None,
+        typer.Option(help="Experiment YAML (default: configs/experiment/stage0_flat_pilot.yaml)"),
+    ] = None,
+    run_id: Annotated[
+        str,
+        typer.Option(help="Artifact run id under $MBS_ARTIFACT_ROOT/runs/"),
+    ] = "stage0-flat-gse35069-v1",
+    device: Annotated[
+        str,
+        typer.Option(
+            help="Torch device (cuda or cpu); cuda uses logical cuda:0 after CUDA_VISIBLE_DEVICES"
+        ),
+    ] = "cuda",
+    overfit_fixture: Annotated[
+        bool,
+        typer.Option(
+            "--overfit-fixture",
+            help="Overfit the tiny synthetic fixture instead of the pilot matrix",
+        ),
+    ] = False,
+    max_epochs: Annotated[
+        int | None,
+        typer.Option(help="Override training.max_epochs"),
+    ] = None,
+    max_loci: Annotated[
+        int | None,
+        typer.Option(help="Optional study-column cap for smoke runs"),
+    ] = None,
+) -> None:
+    """Train the exact flat DeepRVAT-style CpG→gene max-pooling baseline."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    paths.ensure_directories()
+    default_config = paths.project_root / "configs" / "experiment" / "stage0_flat_pilot.yaml"
+    config_path = (config or default_config).resolve()
+    if not overfit_fixture and not config_path.is_file():
+        raise typer.BadParameter(f"config not found: {config_path}")
+    if max_epochs is not None and max_epochs < 1:
+        raise typer.BadParameter("max_epochs must be >= 1")
+    if max_loci is not None and max_loci < 1:
+        raise typer.BadParameter("max_loci must be >= 1")
+    if not run_id.strip() or "/" in run_id or ".." in run_id:
+        raise typer.BadParameter("run_id must be a single path segment")
+
+    if overfit_fixture and not config_path.is_file():
+        cfg: dict[str, Any] = {
+            "experiment": {"name": "flat_overfit_fixture", "stage": 0, "seed": 42},
+            "model": {
+                "phi_layers": 2,
+                "phi_hidden_dimension": 20,
+                "rho_layers": 3,
+                "rho_hidden_dimension": 10,
+                "pooling": "max",
+                "neutral_score": 0.5,
+                "dropout": 0.0,
+            },
+            "training": {
+                "optimizer": "adam",
+                "learning_rate": 0.05,
+                "weight_decay": 0.0,
+                "max_epochs": max_epochs or 200,
+                "early_stopping_patience": 50,
+                "gradient_clip_norm": 2.0,
+                "precision": "bf16-mixed",
+                "require_cuda": False,
+            },
+            "heads": {"age": {"enabled": True}, "tissue": {"enabled": True}},
+        }
+        run_name = run_id if run_id != "stage0-flat-gse35069-v1" else "stage0-flat-overfit-fixture"
+    else:
+        cfg = load_experiment_config(config_path)
+        run_name = run_id
+
+    try:
+        result = train_flat_baseline(
+            project_root=paths.project_root,
+            data_root=paths.data_root,
+            artifact_root=paths.artifact_root,
+            config=cfg,
+            run_id=run_name,
+            device_str=device,
+            overfit_fixture=overfit_fixture,
+            max_epochs=max_epochs,
+            max_loci=max_loci,
+        )
+    except RuntimeError as error:
+        console.print(f"[bold red]Training failed:[/bold red] {error}")
+        raise typer.Exit(code=1) from error
+
+    console.print_json(
+        json.dumps(
+            {
+                "run_id": result.run_id,
+                "run_dir": str(result.run_dir),
+                "checkpoint_dir": str(result.checkpoint_dir),
+                "best_epoch": result.best_epoch,
+                "final": result.metrics.get("final"),
+                "overfit_ok": result.metrics.get("overfit_ok"),
+                "device": result.metrics.get("device"),
             }
         )
     )

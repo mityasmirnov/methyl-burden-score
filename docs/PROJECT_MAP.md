@@ -34,12 +34,12 @@ src/mbs/models.py        flat/hierarchical scorers and linear heads
 src/mbs/annotation/      Stage 0 locus registry + five-role graph builder
 src/mbs/static_features/ offline CpGPT sequence-adapter export + artifact I/O
 src/mbs/matrix/          canonical matrix conversion (EWAS_db pilot)
+src/mbs/training/        flat DeepRVAT-style baseline train loop + CLI wiring
 ```
 
-These files form the current executable Stage 0 scaffold. Feature stores for
-online sampling, cross-fitting, and training orchestration are intentionally
-not represented as finished modules yet (canonical matrix conversion for the
-EWAS_db pilot is implemented under `src/mbs/matrix/`).
+Canonical matrix conversion and flat baseline training are implemented. Feature
+stores for online sampling and study-grouped cross-fitting remain later
+milestones.
 
 ## SQL and schemas
 
@@ -56,9 +56,10 @@ The SQL and JSON schemas are normative interfaces. Python code should validate a
 ## Configurations
 
 ```text
-configs/experiment/stage0_flat.yaml      exact DeepRVAT-style baseline
-configs/experiment/stage0_hier_max.yaml  hierarchical reference model
-configs/local/                           machine-specific overrides, ignored
+configs/experiment/stage0_flat.yaml        exact DeepRVAT-style baseline
+configs/experiment/stage0_flat_pilot.yaml  GSE35069 cell-type pilot train config
+configs/experiment/stage0_hier_max.yaml    hierarchical reference model
+configs/local/                             machine-specific overrides, ignored
 ```
 
 A training run copies its fully resolved configuration into the run artifact directory.
@@ -71,6 +72,7 @@ tests/unit/test_catalog_schema.py  real SQL schema init
 tests/unit/test_cli.py             doctor / catalog / inspect CLI
 tests/unit/test_segment_ops.py     reductions and permutation invariance
 tests/unit/test_models.py          model and missing-gene invariants
+tests/unit/test_training_flat.py   flat baseline phenotypes / overfit / CLI
 tests/integration/test_smoke.py    catalog plus model smoke test
 ```
 
@@ -127,6 +129,7 @@ mbs inspect cpgcorpus-gpl  GSE/GPL layout, alignment, beta QC, metadata
 mbs graph build            locus registry + five-role annotation graph
 mbs features export-cpgpt  offline CpGPT2M sequence-adapter static features
 mbs matrix convert         EWAS_db study → canonical matrix store
+mbs train flat             flat DeepRVAT-style baseline (fixture or pilot)
 ```
 
 ## Planned next modules
@@ -137,7 +140,6 @@ Recommended implementation order:
 src/mbs/ingest/
 src/mbs/stores/
 src/mbs/data/
-src/mbs/training/
 src/mbs/evaluation/
 tools/methylgpt_export/   # ablation-only; after core pipeline if needed
 ```

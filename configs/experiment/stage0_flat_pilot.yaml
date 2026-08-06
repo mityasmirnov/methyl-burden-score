@@ -1,0 +1,86 @@
+experiment:
+  name: stage0_flat_gse35069_celltype
+  stage: 0
+  seed: 42
+
+stage0:
+  use_cpgpt_static_features: true
+  use_methylgpt_prior: false
+  use_methylcapsnet_annotations: false
+  use_epicv2_manifest: true
+  use_longread: false
+  use_attention_pooling: false
+
+pilot:
+  matrix_id: matrix-gse35069-ewasdb-v1
+  graph_id: graph-grch38-gencode38-five-role-v1
+  static_feature_set: cpgpt2m_adapter_128_v1
+  study_id: GSE35069
+  platform_id: GPL13534
+  phenotype_metadata: raw/cpgcorpus/GSE35069/GPL13534/metadata/metadata.arrow
+  # Donor-grouped split (title suffix); full crossfit is Milestone 7
+  train_donors: ["1", "2", "3", "4"]
+  val_donors: ["5", "6"]
+
+paths:
+  data_release: canonical/release=stage0-v1
+  artifact_root: .
+  scratch_root: .
+
+features:
+  methylation:
+    beta: true
+    m_value: true
+    robust_deviation: false
+    epsilon: 0.001
+  static_feature_set: cpgpt2m_adapter_128_v1
+  structured_annotations: true
+  feature_source_dropout: 0.0
+
+model:
+  type: flat_deepset
+  input_dimension: null  # resolved at runtime: 2 + static_dim
+  phi_layers: 2
+  phi_hidden_dimension: 20
+  rho_layers: 3
+  rho_hidden_dimension: 10
+  activation: leaky_relu
+  pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  dropout: 0.0
+
+heads:
+  age:
+    enabled: false
+    loss: mse
+    target_standardization: train_fold
+  tissue:
+    enabled: true
+    loss: cross_entropy
+    class_weighting: train_fold_balanced
+
+training:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_size: 1
+  batch_token_budget: 500000
+  gradient_clip_norm: 2.0
+  max_epochs: 50
+  early_stopping_patience: 10
+  precision: bf16-mixed
+  num_workers: 0
+  # Single-GPU policy: export CUDA_VISIBLE_DEVICES=0 before launch
+  require_cuda: true
+
+device:
+  cuda_visible_devices: "0"
+  torch_device: cuda
+
+logging:
+  tensorboard: false
+  wandb: false
+  save_resolved_config: true
+  save_environment: true
+  save_checksums: true
