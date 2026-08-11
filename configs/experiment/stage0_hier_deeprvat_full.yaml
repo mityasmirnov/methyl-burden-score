@@ -50,12 +50,13 @@ model:
     - five_prime
     - three_prime
     - gene_body
-    - unassigned
+  residual_path: true
   cpg_hidden_dimension: 64
   region_hidden_dimension: 32
   region_type_dimension: 8
   cpg_pooling: max
   region_pooling: max
+  residual_pooling: max
   output_activation: sigmoid
   neutral_score: 0.5
   dropout: 0.1
@@ -141,6 +142,8 @@ evaluation:
   ablation_max_samples: 512
   ablations:
     - full
-    - drop_unassigned
+    - mapped_only
+    - residual_only
     - promoters_only
     - gene_body_only
+  compare_flat_run_id: stage0-flat-deeprvat-age-tissue-sex-full-v1

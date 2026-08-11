@@ -132,11 +132,12 @@ def compute_annotation_coverage(
         },
         "definitions": {
             "unmapped_probe": (
-                "Illumina probe with no GRCh38 cytosine coordinate; excluded from matrices"
+                "Illumina probe with no GRCh38 cytosine coordinate; "
+                "retained as residual matrix column"
             ),
             "unassigned_locus": (
                 "Mapped locus with no five-role GENCODE region edge; "
-                "hier train uses singleton unassigned"
+                "hierarchical residual DeepSet path (no __unassigned__ gene)"
             ),
             "atlas_probe_annotations": (
                 "EWAS Atlas probe TSV is a separate unused layer; not counted here"

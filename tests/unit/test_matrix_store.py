@@ -142,15 +142,16 @@ def test_convert_roundtrip_fixture(isolated_workspace: Path) -> None:
     assert result.roundtrip is not None
     assert result.roundtrip.ok
     assert result.stats["n_samples"] == 3
-    assert result.stats["n_study_loci"] == 3
+    assert result.stats["n_study_loci"] == 4  # 3 mapped + 1 residual unmapped
     assert result.stats["n_unmapped_probes"] == 1
+    assert result.stats["n_residual_probes"] == 1
     assert result.stats["n_out_of_range"] == 1  # 1.50 in GSM000002
     assert (report / "summary.md").is_file()
 
     paths = matrix_store_paths(output)
     manifest = json.loads(paths.manifest_path.read_text(encoding="utf-8"))
     validate_matrix_manifest(manifest)
-    assert manifest["shape"] == [3, 3]
+    assert manifest["shape"] == [3, 4]
     assert manifest["dtype"] == "float32"
     assert len(manifest["source_files"]) == 3
 
@@ -158,10 +159,16 @@ def test_convert_roundtrip_fixture(isolated_workspace: Path) -> None:
     locus_index = read_locus_index(paths.locus_index_path)
     betas = open_betas_zarr(paths.betas_path)
     assert list(sample_index["sample_id"]) == ["GSM000001", "GSM000002", "GSM000003"]
-    assert list(locus_index["probe_id"]) == ["cg00000001", "cg00000002", "cg00000003"]
+    assert list(locus_index["probe_id"]) == [
+        "cg00000001",
+        "cg00000002",
+        "cg00000003",
+        "cg99999999",
+    ]
     assert np.asarray(betas[0, 0]) == pytest.approx(np.float32(0.10))
     assert np.asarray(betas[1, 1]) == pytest.approx(np.float32(1.50))  # not clipped
     assert np.isnan(np.asarray(betas[2, 2]))
+    assert np.asarray(betas[0, 3]) == pytest.approx(np.float32(0.50))  # residual probe
 
     rt = verify_roundtrip(source, output, max_probes=None)
     assert rt.ok

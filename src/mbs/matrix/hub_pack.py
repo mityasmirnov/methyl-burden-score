@@ -352,6 +352,7 @@ def convert_hub_pack_subset(
         locus_ids=locus_map.locus_ids,
         canonical_keys=locus_map.canonical_keys,
         probe_ids=locus_map.probe_ids,
+        annotation_status=locus_map.annotation_status,
     )
     chunks = (min(64, max(1, n_samples)), min(4096, max(1, n_loci)))
     write_betas_zarr(paths.betas_path, betas, chunks=chunks)
@@ -373,6 +374,7 @@ def convert_hub_pack_subset(
     notes = (
         f"EWAS Data Hub baseline pack {family}; studies={','.join(study_list)}; "
         f"platform={platform_id}; unmapped_probes={len(locus_map.unmapped_probe_ids)}; "
+        f"residual_probes={locus_map.n_residual_probes}; "
         f"collapsed_probes={locus_map.n_collapsed_probes}; pack={zip_path.name}"
     )
     # Manifest study_id: multi-study packs use matrix_id as the cohort token.
@@ -429,6 +431,7 @@ def convert_hub_pack_subset(
         "n_observed_probes": locus_map.n_observed_probes,
         "n_mapped_probes": locus_map.n_mapped_probes,
         "n_unmapped_probes": len(locus_map.unmapped_probe_ids),
+        "n_residual_probes": locus_map.n_residual_probes,
         "n_collapsed_probes": locus_map.n_collapsed_probes,
         "n_finite_betas": n_finite,
         "n_missing_cells": n_missing_cells,

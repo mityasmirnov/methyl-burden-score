@@ -1,10 +1,14 @@
-"""Unit tests for hierarchical locus→region→gene index and packing."""
+"""Unit tests for hierarchical locus→region→gene index and residual path."""
 
 from __future__ import annotations
 
 import pandas as pd
 import torch
 
+from mbs.batch import (
+    ANNOTATION_STATUS_MAPPED,
+    ANNOTATION_STATUS_UNMAPPED,
+)
 from mbs.models import HierarchicalDeepSet
 from mbs.training.hier_dataset import (
     make_synthetic_hier_overfit_bundle,
@@ -12,18 +16,18 @@ from mbs.training.hier_dataset import (
 )
 from mbs.training.locus_region_gene import (
     REGION_TYPE_TO_ID,
-    UNASSIGNED_GENE_ID,
-    UNASSIGNED_REGION_TYPE,
+    RESIDUAL_PANEL_ID,
     build_locus_region_gene_index,
 )
 from mbs.training.multitask import MultitaskHeads, masked_multitask_loss
 
 
-def test_build_locus_region_gene_index_retains_unassigned_singletons() -> None:
+def test_build_locus_region_gene_index_routes_orphans_to_residual() -> None:
     locus_index = pd.DataFrame(
         {
             "col_index": [0, 1, 2],
             "locus_id": [10, 20, 30],
+            "canonical_key": ["chr1:10", "chr1:20", "chr1:30"],
         }
     )
     locus_region_edges = pd.DataFrame(
@@ -45,23 +49,18 @@ def test_build_locus_region_gene_index_retains_unassigned_singletons() -> None:
         regions=regions,
     )
     assert index.n_typed_edges == 2
-    assert index.n_unassigned_regions == 1
-    assert UNASSIGNED_GENE_ID in index.gene_ids
-    assert index.gene_ids[-1] == UNASSIGNED_GENE_ID
-    orphan_region = f"unassigned:{30}"
-    assert orphan_region in index.region_ids
-    orphan_idx = index.region_ids.index(orphan_region)
-    assert int(index.region_type_id[orphan_idx]) == REGION_TYPE_TO_ID[UNASSIGNED_REGION_TYPE]
-    assert int(index.region_to_gene[orphan_idx]) == index.unassigned_gene_index
-    # Typed roles preserved (not collapsed).
+    assert index.n_residual_cols == 1
+    assert RESIDUAL_PANEL_ID not in index.gene_ids
+    assert int(index.residual_col_index[0]) == 2
+    assert int(index.column_annotation_status[0]) == ANNOTATION_STATUS_MAPPED
+    assert int(index.column_annotation_status[2]) == ANNOTATION_STATUS_UNMAPPED
     assert set(index.region_type_id.tolist()) >= {
         REGION_TYPE_TO_ID["promoter_core"],
         REGION_TYPE_TO_ID["gene_body"],
-        REGION_TYPE_TO_ID[UNASSIGNED_REGION_TYPE],
     }
 
 
-def test_hier_pack_and_ablation_zeroes_disallowed_region_features() -> None:
+def test_hier_pack_mapped_only_drops_residual() -> None:
     bundle = make_synthetic_hier_overfit_bundle(n_samples=4, seed=3)
     locus_region = bundle["locus_region"]
     records = bundle["records"][:2]
@@ -75,7 +74,9 @@ def test_hier_pack_and_ablation_zeroes_disallowed_region_features() -> None:
         sex_enabled=[True, False],
         sex_class_indices=[0, 1],
         allowed_region_type_ids=body_only,
+        include_residual=False,
     )
+    assert batch.residual_features.shape[0] == 0
     model = HierarchicalDeepSet(
         int(bundle["input_dim"]),
         n_region_types=len(bundle["region_types"]),
@@ -89,10 +90,17 @@ def test_hier_pack_and_ablation_zeroes_disallowed_region_features() -> None:
         region_to_gene=batch.region_to_gene,
         n_regions=len(records) * batch.n_regions,
         n_gene_instances=len(records) * batch.n_genes,
+        residual_features=batch.residual_features,
+        residual_sample_index=batch.residual_sample_index,
+        n_samples=len(records),
     )
-    mbs = out["mbs"].view(len(records), batch.n_genes)
-    present = out["present"].view(len(records), batch.n_genes)
-    heads = MultitaskHeads(batch.n_genes, n_tissue_classes=3, sex_enabled=True)
+    gene_mbs = out["mbs"].view(len(records), batch.n_genes)
+    gene_present = out["present"].view(len(records), batch.n_genes)
+    residual_mbs = out["residual_mbs"].view(len(records), 1)
+    residual_present = out["residual_present"].view(len(records), 1)
+    mbs = torch.cat([gene_mbs, residual_mbs], dim=1)
+    present = torch.cat([gene_present, residual_present], dim=1)
+    heads = MultitaskHeads(batch.n_genes + 1, n_tissue_classes=3, sex_enabled=True)
     result = masked_multitask_loss(
         mbs=mbs,
         present=present,
@@ -100,13 +108,10 @@ def test_hier_pack_and_ablation_zeroes_disallowed_region_features() -> None:
         batch=batch,
     )
     assert torch.isfinite(result.loss)
-    # Unassigned gene may be absent when only gene_body edges keep signal.
-    if locus_region.unassigned_gene_index is not None:
-        u = locus_region.unassigned_gene_index
-        assert bool(present[:, u].eq(False).all())
+    assert bool(residual_present.eq(False).all())
 
 
-def test_synthetic_hier_overfit_forward_shapes() -> None:
+def test_synthetic_hier_overfit_forward_shapes_with_residual() -> None:
     bundle = make_synthetic_hier_overfit_bundle(n_samples=3, seed=1)
     locus_region = bundle["locus_region"]
     batch = pack_hier_records_to_batch(
@@ -120,7 +125,7 @@ def test_synthetic_hier_overfit_forward_shapes() -> None:
     )
     model = HierarchicalDeepSet(
         int(bundle["input_dim"]),
-        n_region_types=6,
+        n_region_types=5,
         dropout=0.0,
     )
     out = model(
@@ -130,6 +135,12 @@ def test_synthetic_hier_overfit_forward_shapes() -> None:
         region_to_gene=batch.region_to_gene,
         n_regions=3 * batch.n_regions,
         n_gene_instances=3 * batch.n_genes,
+        residual_features=batch.residual_features,
+        residual_sample_index=batch.residual_sample_index,
+        n_samples=3,
     )
     assert out["mbs"].shape == (3 * batch.n_genes,)
     assert out["region_present"].shape == (3 * batch.n_regions,)
+    assert out["residual_mbs"].shape == (3,)
+    assert out["residual_present"].shape == (3,)
+    assert batch.annotation_status.numel() == batch.cpg_features.shape[0]

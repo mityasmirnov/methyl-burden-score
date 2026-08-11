@@ -127,16 +127,24 @@ def write_locus_index(
     locus_ids: np.ndarray,
     canonical_keys: np.ndarray,
     probe_ids: np.ndarray,
+    annotation_status: np.ndarray | None = None,
 ) -> pd.DataFrame:
     n = len(locus_ids)
     if len(canonical_keys) != n or len(probe_ids) != n:
         raise ValueError("locus index arrays must have equal length")
+    if annotation_status is None:
+        status = np.zeros(n, dtype=np.int8)
+    else:
+        if len(annotation_status) != n:
+            raise ValueError("annotation_status length must match locus_ids")
+        status = np.asarray(annotation_status, dtype=np.int8)
     frame = pd.DataFrame(
         {
             "col_index": np.arange(n, dtype=np.int64),
             "locus_id": locus_ids.astype(np.uint64, copy=False),
             "canonical_key": canonical_keys.astype(str),
             "probe_id": probe_ids.astype(str),
+            "annotation_status": status,
         }
     )
     path.parent.mkdir(parents=True, exist_ok=True)

@@ -41,6 +41,8 @@ def test_hierarchical_model_is_permutation_invariant() -> None:
     region_type = torch.tensor([0, 1, 3, 4])
     region_to_gene = torch.tensor([0, 0, 1, 2])
     permutation = torch.tensor([4, 1, 5, 0, 3, 2])
+    residual = torch.randn(2, 3)
+    residual_sample = torch.tensor([0, 0])
 
     output = model(
         cpg_features=features,
@@ -49,6 +51,9 @@ def test_hierarchical_model_is_permutation_invariant() -> None:
         region_to_gene=region_to_gene,
         n_regions=4,
         n_gene_instances=3,
+        residual_features=residual,
+        residual_sample_index=residual_sample,
+        n_samples=1,
     )
     permuted = model(
         cpg_features=features[permutation],
@@ -57,12 +62,17 @@ def test_hierarchical_model_is_permutation_invariant() -> None:
         region_to_gene=region_to_gene,
         n_regions=4,
         n_gene_instances=3,
+        residual_features=residual,
+        residual_sample_index=residual_sample,
+        n_samples=1,
     )
 
     assert torch.allclose(output["mbs"], permuted["mbs"], atol=1e-6)
     assert output["region_present"].tolist() == [True, True, True, False]
     assert output["present"].tolist() == [True, True, False]
     assert torch.allclose(output["mbs"][2], torch.tensor(0.5))
+    assert output["residual_mbs"].shape == (1,)
+    assert bool(output["residual_present"][0])
 
 
 def test_seed_mask_and_presence_control_linear_head() -> None:

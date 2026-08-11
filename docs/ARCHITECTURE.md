@@ -118,6 +118,31 @@ The initial gene-region roles are:
 
 CpG-island relation and regulatory annotations are orthogonal features rather than a combinatorial explosion of region types.
 
+### Residual / unmapped path (Milestone 6)
+
+Every observed probe is retained. Loci with typed regulatory edges follow the
+hierarchy above. Loci (or Illumina-coordinate-unmapped residual columns) without
+a clean regulatory assignment do **not** enter nearest-gene or
+``__unassigned__`` gene pooling. They use a separate residual DeepSet:
+
+```math
+h_{s,c}^{\mathrm{res}} = \phi_{cpg}(x_{s,c})
+```
+
+```math
+r_s = \max_{c \in U_s} h_{s,c}^{\mathrm{res}}
+```
+
+```math
+\mathrm{residual}_s = \sigma(\rho_{\mathrm{res}}(r_s))
+```
+
+The phenotype panel is ``[MBS_{s,g}]_g`` plus one residual score slot.
+Batch tensors expose annotation-status masks
+``mapped`` / ``unmapped`` / ``ambiguous`` / ``multi_mapped``. Evaluation reports
+full, mapped-only, and residual-only slices on the same folds as the flat
+baseline.
+
 ## Optional gated pooling ablation
 
 MethylSPWNet motivates learned CpG weighting, but Stage 0 does not assign a free parameter to every locus. Instead, a shared gate may generate within-region weights:
@@ -188,6 +213,9 @@ cpg_features          [N_cpg, D]
 cpg_locus_row         [N_cpg]
 cpg_sample_index      [N_cpg]
 cpg_to_region         [N_edges]
+annotation_status     [N_cpg]   # mapped / unmapped / ambiguous / multi_mapped
+residual_features     [N_residual, D]
+residual_sample_index [N_residual]
 region_type            [N_regions]
 region_to_gene         [N_regions]
 gene_to_sample         [N_gene_instances]

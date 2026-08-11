@@ -34,7 +34,7 @@ InfiniumAnnotation HM450 / EPIC / EPICv2 → GRCh38).
 | Term | Meaning | Model consequence |
 |------|---------|-------------------|
 | **Unmapped probe** | No GRCh38 cytosine coordinate in InfiniumAnnotation | Excluded from matrix columns; counted only |
-| **Unassigned locus** | Mapped locus overlaps no five-role gene region | Left unassigned in the immutable graph; hierarchical train mints singleton `unassigned` regions under `__unassigned__` (no nearest-gene) |
+| **Unassigned locus** | Mapped locus overlaps no five-role gene region | Left unassigned in the immutable graph; hierarchical train routes these to the **residual path** (no nearest-gene, no `__unassigned__` gene pooling) |
 
 Do **not** confuse either with EWAS Atlas `EWAS_Atlas_probe_annotations.tsv`
 (~900k rows: transcripts, TSS offsets, islands). That table is association /

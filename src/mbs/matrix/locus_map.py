@@ -2,24 +2,54 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from mbs.batch import (
+    ANNOTATION_STATUS_NAMES,
+    ANNOTATION_STATUS_UNMAPPED,
+)
+
+RESIDUAL_CANONICAL_PREFIX = "residual:"
+
+
+def residual_canonical_key(probe_id: str) -> str:
+    return f"{RESIDUAL_CANONICAL_PREFIX}{probe_id}"
+
+
+def is_residual_canonical_key(canonical_key: str) -> bool:
+    return str(canonical_key).startswith(RESIDUAL_CANONICAL_PREFIX)
+
+
+def synthetic_residual_locus_id(probe_id: str) -> np.uint64:
+    """Deterministic uint64 locus id for Illumina-unmapped residual columns."""
+    digest = hashlib.sha256(f"mbs-residual:{probe_id}".encode()).digest()
+    # Keep out of the low Illumina-mapped id space used by the locus registry.
+    value = int.from_bytes(digest[:8], "big") | (1 << 63)
+    return np.uint64(value)
+
 
 @dataclass(frozen=True, slots=True)
 class ProbeLocusMap:
-    """Ordered study locus columns derived from observed Hub probes."""
+    """Ordered study locus columns derived from observed Hub probes.
+
+    Mapped GRCh38 loci come first (one column per locus). Illumina-coordinate-
+    unmapped probes are retained as residual columns afterward (never dropped).
+    """
 
     locus_ids: np.ndarray  # uint64
     canonical_keys: np.ndarray  # object str
     probe_ids: np.ndarray  # object str — probe used for this column
+    annotation_status: np.ndarray  # int8 — batch status ids (residual cols = unmapped)
     unmapped_probe_ids: tuple[str, ...]
     n_observed_probes: int
     n_mapped_probes: int
     n_collapsed_probes: int
+    n_residual_probes: int
     platform_id: str
 
 
@@ -63,11 +93,12 @@ def build_probe_locus_map(
     edges: pd.DataFrame,
     *,
     platform_id: str,
+    retain_unmapped: bool = True,
 ) -> ProbeLocusMap:
     """Select one primary probe per locus among observed Hub probes.
 
-    Unmapped probes are reported and excluded from matrix columns. Samples are
-    never dropped here.
+    Illumina-coordinate-unmapped probes are retained as residual columns when
+    ``retain_unmapped`` is True (Milestone 6 default). Samples are never dropped.
     """
     observed = pd.Series(pd.unique(pd.Series(observed_probe_ids).astype(str)), dtype="string")
     n_observed = len(observed)
@@ -75,26 +106,60 @@ def build_probe_locus_map(
     mapped_probes = set(hit["probe_id"].astype(str))
     unmapped = tuple(sorted(p for p in observed if p not in mapped_probes))
 
-    if hit.empty:
+    if hit.empty and not (retain_unmapped and unmapped):
         raise ValueError(
             f"none of {n_observed} observed probes map to loci for platform {platform_id}"
         )
 
-    # One column per locus: prefer lexicographically first probe_id when several
-    # observed probes map to the same locus.
-    hit = hit.sort_values(["locus_id", "probe_id"], kind="mergesort")
-    before = len(hit)
-    hit = hit.drop_duplicates(subset=["locus_id"], keep="first").reset_index(drop=True)
-    n_collapsed = before - len(hit)
-    hit = hit.sort_values(["locus_id"], kind="mergesort").reset_index(drop=True)
+    locus_ids: list[np.uint64] = []
+    canonical_keys: list[str] = []
+    probe_ids: list[str] = []
+    statuses: list[int] = []
+    n_collapsed = 0
+
+    if not hit.empty:
+        # One column per locus: prefer lexicographically first probe_id when several
+        # observed probes map to the same locus.
+        hit = hit.sort_values(["locus_id", "probe_id"], kind="mergesort")
+        before = len(hit)
+        hit = hit.drop_duplicates(subset=["locus_id"], keep="first").reset_index(drop=True)
+        n_collapsed = before - len(hit)
+        hit = hit.sort_values(["locus_id"], kind="mergesort").reset_index(drop=True)
+        for _, row in hit.iterrows():
+            locus_ids.append(np.uint64(row["locus_id"]))
+            canonical_keys.append(str(row["canonical_key"]))
+            probe_ids.append(str(row["probe_id"]))
+            # Regulatory status is finalized at train time; Illumina-mapped columns
+            # start as mapped placeholders until graph join.
+            statuses.append(0)  # ANNOTATION_STATUS_MAPPED placeholder
+
+    n_residual = 0
+    if retain_unmapped and unmapped:
+        for probe_id in unmapped:
+            locus_ids.append(synthetic_residual_locus_id(probe_id))
+            canonical_keys.append(residual_canonical_key(probe_id))
+            probe_ids.append(probe_id)
+            statuses.append(ANNOTATION_STATUS_UNMAPPED)
+            n_residual += 1
+
+    if not locus_ids:
+        raise ValueError(f"no matrix columns for platform {platform_id}")
 
     return ProbeLocusMap(
-        locus_ids=hit["locus_id"].to_numpy(dtype=np.uint64, copy=True),
-        canonical_keys=hit["canonical_key"].astype(str).to_numpy(dtype=object, copy=True),
-        probe_ids=hit["probe_id"].astype(str).to_numpy(dtype=object, copy=True),
+        locus_ids=np.asarray(locus_ids, dtype=np.uint64),
+        canonical_keys=np.asarray(canonical_keys, dtype=object),
+        probe_ids=np.asarray(probe_ids, dtype=object),
+        annotation_status=np.asarray(statuses, dtype=np.int8),
         unmapped_probe_ids=unmapped,
         n_observed_probes=n_observed,
         n_mapped_probes=len(mapped_probes),
         n_collapsed_probes=int(n_collapsed),
+        n_residual_probes=n_residual,
         platform_id=platform_id,
     )
+
+
+def annotation_status_name(status_id: int) -> str:
+    if status_id < 0 or status_id >= len(ANNOTATION_STATUS_NAMES):
+        raise ValueError(f"unknown annotation status id {status_id}")
+    return ANNOTATION_STATUS_NAMES[status_id]

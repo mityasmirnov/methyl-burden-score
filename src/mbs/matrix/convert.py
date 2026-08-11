@@ -116,6 +116,7 @@ def convert_ewas_db_study(
         locus_ids=locus_map.locus_ids,
         canonical_keys=locus_map.canonical_keys,
         probe_ids=locus_map.probe_ids,
+        annotation_status=locus_map.annotation_status,
     )
     chunks = (min(64, max(1, n_samples)), min(4096, max(1, n_loci)))
     write_betas_zarr(paths.betas_path, betas, chunks=chunks)
@@ -139,6 +140,7 @@ def convert_ewas_db_study(
     notes = (
         f"EWAS Data Hub EWAS_db/{study_id}; platform={platform_id}; "
         f"unmapped_probes={len(locus_map.unmapped_probe_ids)}; "
+        f"residual_probes={locus_map.n_residual_probes}; "
         f"collapsed_probes={locus_map.n_collapsed_probes}"
     )
     manifest: dict[str, Any] = {
@@ -172,6 +174,7 @@ def convert_ewas_db_study(
         "n_observed_probes": locus_map.n_observed_probes,
         "n_mapped_probes": locus_map.n_mapped_probes,
         "n_unmapped_probes": len(locus_map.unmapped_probe_ids),
+        "n_residual_probes": locus_map.n_residual_probes,
         "n_collapsed_probes": locus_map.n_collapsed_probes,
         "n_finite_betas": n_finite,
         "n_missing_cells": n_missing_cells,

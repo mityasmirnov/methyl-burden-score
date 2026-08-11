@@ -403,17 +403,17 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Status:** `in_progress`
 - **Done when:** Region layer is trained after the flat baseline is stable;
   promoter/body (and related roles) can be compared to the flat model on the
-  same multitask / pilot folds.
+  same multitask / pilot folds; unmapped loci are retained on a residual path
+  (not `__unassigned__` gene pooling) with mapped vs residual eval slices.
 - **Depends on:** (5d) preferred; (5c) at minimum if 5d deferred by ADR.
 - **Plan:** [`plans/milestone-6-hierarchical-region-model.md`](plans/milestone-6-hierarchical-region-model.md).
-- **Evidence (partial):** `mbs train hierarchical` wired; gene-unassigned loci
-  retained as singleton `unassigned` → `__unassigned__`; smoke
-  `stage0-hier-smoke-maxloci` (max_loci=2000, reused 5d split, role/unassigned
-  ablations) → `reports/inspection/stage0_6_hierarchical/`; uncapped full run
-  `stage0-hier-deeprvat-age-tissue-sex-full-v1` in progress
-  (`scratch/logs/hier_full.log`).
-- **Next action:** Finish uncapped full-matrix hierarchical train; refresh
-  inspection report; then mark `done`.
+- **Evidence (partial):** residual/unmapped retention policy landed in batch,
+  matrix, models, and hier train path; mapped vs residual ablations wired;
+  vectorized locus→region index + pack path; uncapped 5d train running as
+  `stage0-hier-deeprvat-age-tissue-sex-full-v1` (log: `scratch/logs/hier_full.log`).
+- **Next action:** Wait for uncapped train metrics; refresh
+  `reports/inspection/stage0_6_hierarchical/` via
+  `uv run python scripts/write_stage0_6_report.py`; then mark `done`.
 
 ---
 

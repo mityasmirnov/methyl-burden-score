@@ -23,6 +23,9 @@ class HierarchicalModelOutput(ModelOutput):
     region_hidden: Tensor
     region_present: Tensor
     gene_hidden: Tensor
+    residual_mbs: Tensor
+    residual_present: Tensor
+    residual_logits: Tensor
 
 
 class SharedMLP(nn.Module):
@@ -131,7 +134,11 @@ class FlatDeepSet(nn.Module):
 
 
 class HierarchicalDeepSet(nn.Module):
-    """Shared CpG-to-region-to-gene methylation burden model."""
+    """CpG→region→gene hierarchy for annotated loci + residual path for unmapped.
+
+    Unmapped / ambiguous loci are **not** pooled into genes. They use a separate
+    residual DeepSet (shared CpG encoder → per-sample max pool → residual score).
+    """
 
     def __init__(
         self,
@@ -143,6 +150,7 @@ class HierarchicalDeepSet(nn.Module):
         region_type_dim: int = 8,
         cpg_pool: PoolName = "max",
         region_pool: PoolName = "max",
+        residual_pool: PoolName = "max",
         neutral_score: float = 0.5,
         dropout: float = 0.1,
     ) -> None:
@@ -151,7 +159,10 @@ class HierarchicalDeepSet(nn.Module):
             raise ValueError("n_region_types must be positive")
         self.cpg_pool: PoolName = cpg_pool
         self.region_pool: PoolName = region_pool
+        self.residual_pool: PoolName = residual_pool
         self.neutral_score = neutral_score
+        self.cpg_hidden_dim = cpg_hidden_dim
+        self.region_hidden_dim = region_hidden_dim
 
         self.cpg_encoder = SharedMLP(
             input_dim,
@@ -177,6 +188,13 @@ class HierarchicalDeepSet(nn.Module):
             dropout=dropout,
             activation="leaky_relu",
         )
+        self.residual_rho = SharedMLP(
+            cpg_hidden_dim,
+            [16, 8],
+            1,
+            dropout=dropout,
+            activation="leaky_relu",
+        )
 
     def forward(
         self,
@@ -187,6 +205,9 @@ class HierarchicalDeepSet(nn.Module):
         region_to_gene: Tensor,
         n_regions: int,
         n_gene_instances: int,
+        residual_features: Tensor | None = None,
+        residual_sample_index: Tensor | None = None,
+        n_samples: int | None = None,
     ) -> HierarchicalModelOutput:
         if region_type.shape != (n_regions,):
             raise ValueError(
@@ -198,34 +219,56 @@ class HierarchicalDeepSet(nn.Module):
                 f"expected {n_regions}, found {region_to_gene.shape[0]}"
             )
 
-        cpg_hidden = self.cpg_encoder(cpg_features)
-        region_pooled, region_present = segment_pool(
-            cpg_hidden,
-            cpg_to_region,
-            n_regions,
-            self.cpg_pool,
-        )
-        type_hidden = self.region_type_embedding(region_type.to(torch.long))
-        region_hidden = self.region_encoder(torch.cat([region_pooled, type_hidden], dim=-1))
-        region_hidden = region_hidden * region_present.unsqueeze(-1)
+        device = cpg_features.device if cpg_features.numel() else region_type.device
+        if cpg_features.shape[0] == 0:
+            region_hidden = torch.zeros(
+                n_regions, self.region_hidden_dim, device=device, dtype=torch.float32
+            )
+            region_present = torch.zeros(n_regions, dtype=torch.bool, device=device)
+            gene_hidden = torch.zeros(
+                n_gene_instances, self.region_hidden_dim, device=device, dtype=torch.float32
+            )
+            gene_present = torch.zeros(n_gene_instances, dtype=torch.bool, device=device)
+            logits = torch.zeros(n_gene_instances, device=device, dtype=torch.float32)
+            mbs = torch.full_like(logits, self.neutral_score)
+            centered = torch.zeros_like(mbs)
+        else:
+            cpg_hidden = self.cpg_encoder(cpg_features)
+            region_pooled, region_present = segment_pool(
+                cpg_hidden,
+                cpg_to_region,
+                n_regions,
+                self.cpg_pool,
+            )
+            type_hidden = self.region_type_embedding(region_type.to(torch.long))
+            region_hidden = self.region_encoder(torch.cat([region_pooled, type_hidden], dim=-1))
+            region_hidden = region_hidden * region_present.unsqueeze(-1)
 
-        active_region_hidden = region_hidden[region_present]
-        active_region_to_gene = region_to_gene[region_present]
-        gene_hidden, gene_present = segment_pool(
-            active_region_hidden,
-            active_region_to_gene,
-            n_gene_instances,
-            self.region_pool,
-        )
+            active_region_hidden = region_hidden[region_present]
+            active_region_to_gene = region_to_gene[region_present]
+            gene_hidden, gene_present = segment_pool(
+                active_region_hidden,
+                active_region_to_gene,
+                n_gene_instances,
+                self.region_pool,
+            )
 
-        logits = self.rho(gene_hidden).squeeze(-1)
-        raw_score = torch.sigmoid(logits)
-        neutral = torch.full_like(raw_score, self.neutral_score)
-        mbs = torch.where(gene_present, raw_score, neutral)
-        centered = torch.where(
-            gene_present,
-            mbs - self.neutral_score,
-            torch.zeros_like(mbs),
+            logits = self.rho(gene_hidden).squeeze(-1)
+            raw_score = torch.sigmoid(logits)
+            neutral = torch.full_like(raw_score, self.neutral_score)
+            mbs = torch.where(gene_present, raw_score, neutral)
+            centered = torch.where(
+                gene_present,
+                mbs - self.neutral_score,
+                torch.zeros_like(mbs),
+            )
+
+        residual_mbs, residual_present, residual_logits = self._forward_residual(
+            residual_features=residual_features,
+            residual_sample_index=residual_sample_index,
+            n_samples=n_samples,
+            device=mbs.device,
+            dtype=mbs.dtype,
         )
 
         return {
@@ -236,7 +279,45 @@ class HierarchicalDeepSet(nn.Module):
             "region_hidden": region_hidden,
             "region_present": region_present,
             "gene_hidden": gene_hidden,
+            "residual_mbs": residual_mbs,
+            "residual_present": residual_present,
+            "residual_logits": residual_logits,
         }
+
+    def _forward_residual(
+        self,
+        *,
+        residual_features: Tensor | None,
+        residual_sample_index: Tensor | None,
+        n_samples: int | None,
+        device: torch.device,
+        dtype: torch.dtype,
+    ) -> tuple[Tensor, Tensor, Tensor]:
+        if n_samples is None:
+            n_samples = 0
+        if residual_features is None or residual_sample_index is None or n_samples <= 0:
+            zeros = torch.zeros(n_samples, device=device, dtype=dtype)
+            present = torch.zeros(n_samples, dtype=torch.bool, device=device)
+            return zeros, present, zeros
+        if residual_features.shape[0] != residual_sample_index.shape[0]:
+            raise ValueError("residual_features and residual_sample_index length mismatch")
+        if residual_features.shape[0] == 0:
+            zeros = torch.zeros(n_samples, device=device, dtype=dtype)
+            present = torch.zeros(n_samples, dtype=torch.bool, device=device)
+            return zeros, present, zeros
+
+        residual_hidden = self.cpg_encoder(residual_features)
+        pooled, present = segment_pool(
+            residual_hidden,
+            residual_sample_index,
+            n_samples,
+            self.residual_pool,
+        )
+        logits = self.residual_rho(pooled).squeeze(-1)
+        raw = torch.sigmoid(logits)
+        neutral = torch.full_like(raw, self.neutral_score)
+        mbs = torch.where(present, raw, neutral)
+        return mbs, present, logits
 
 
 class SeedMaskedLinearHead(nn.Module):

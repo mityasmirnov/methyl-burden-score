@@ -80,27 +80,30 @@ This is the DeepRVAT-style reference retained for every comparison.
 
 ```text
 CpG → max within typed region → φ_region(+ region-type emb) → max within gene → ρ → MBS
+unmapped / residual CpGs → shared φ_cpg → max per sample → ρ_res → residual slot
 ```
 
 Roles: `promoter_core`, `promoter_proximal`, `five_prime`, `gene_body`,
-`three_prime`. At train time, loci with no graph edge become singleton
-`region_type=unassigned` under synthetic gene `__unassigned__` (not written into
-the immutable graph). Illumina-coordinate-**unmapped** probes stay matrix-excluded.
+`three_prime`. Loci with no graph edge (and Illumina-coordinate-unmapped probes
+retained as residual matrix columns) stay on the **residual path** — they are
+not nearest-gene assigned and not pooled under `__unassigned__`. Eval reports
+`full` / `mapped_only` / `residual_only` on the same folds as flat.
 
 See [`plans/milestone-6-hierarchical-region-model.md`](plans/milestone-6-hierarchical-region-model.md).
 
 ```mermaid
 flowchart TD
-  Probe["Observed probe"] --> Mapped{"GRCh38 mapped?"}
-  Mapped -->|no| Drop["Exclude from matrix"]
-  Mapped -->|yes| Locus["Matrix locus column"]
+  Probe["Observed probe"] --> Illumina{"GRCh38 cytosine?"}
+  Illumina -->|no| ResidualCol["Retain residual column"]
+  Illumina -->|yes| Locus["Matrix locus column"]
   Locus --> Edge{"locus_region_edges?"}
   Edge -->|yes| Typed["Typed region role"]
-  Typed --> Gene["Biological gene"]
-  Edge -->|no| Single["Singleton unassigned"]
-  Single --> Orphan["__unassigned__"]
-  Gene --> Panel["Gene MBS panel"]
-  Orphan --> Panel
+  Typed --> Gene["Biological gene MBS"]
+  Edge -->|no| ResidualPath["Residual DeepSet path"]
+  ResidualCol --> ResidualPath
+  ResidualPath --> ResSlot["Residual score slot"]
+  Gene --> Panel["Phenotype panel"]
+  ResSlot --> Panel
 ```
 
 ## Changing phenotypes (architecture stays fixed)

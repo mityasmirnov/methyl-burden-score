@@ -178,11 +178,17 @@ def merge_age_tissue_matrices(
         sample_ids=ordered_ids,
         source_sample_ids=ordered_ids,
     )
+    status = (
+        age_locus["annotation_status"].to_numpy(dtype=np.int8)
+        if "annotation_status" in age_locus.columns
+        else None
+    )
     write_locus_index(
         paths.locus_index_path,
         locus_ids=age_locus["locus_id"].to_numpy(),
         canonical_keys=age_locus["canonical_key"].to_numpy(),
         probe_ids=age_locus["probe_id"].to_numpy(),
+        annotation_status=status,
     )
     chunks = (min(64, max(1, n_samples)), min(4096, max(1, n_loci)))
     write_betas_zarr(paths.betas_path, betas, chunks=chunks)

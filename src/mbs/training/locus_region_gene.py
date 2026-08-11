@@ -1,8 +1,8 @@
 """Build CpG→region→gene indices for HierarchicalDeepSet training.
 
-Preserves typed regulatory roles. Gene-unassigned study loci become singleton
-``unassigned`` regions under synthetic gene ``__unassigned__``. Illumina
-coordinate-unmapped probes are out of scope (never enter matrix columns).
+Preserves typed regulatory roles for annotated loci. Loci / residual probes
+without a clean regulatory assignment stay on the residual path — they are
+never nearest-gene assigned and never pooled under ``__unassigned__``.
 """
 
 from __future__ import annotations
@@ -13,31 +13,39 @@ import numpy as np
 import pandas as pd
 
 from mbs.annotation.gencode_regions import REGION_TYPES as _GENCODE_REGION_TYPES
+from mbs.batch import (
+    ANNOTATION_STATUS_AMBIGUOUS,
+    ANNOTATION_STATUS_MAPPED,
+    ANNOTATION_STATUS_MULTI_MAPPED,
+    ANNOTATION_STATUS_UNMAPPED,
+)
+from mbs.matrix.locus_map import is_residual_canonical_key
 
-UNASSIGNED_GENE_ID = "__unassigned__"
-UNASSIGNED_REGION_TYPE = "unassigned"
-
-HIER_REGION_TYPES: tuple[str, ...] = (*_GENCODE_REGION_TYPES, UNASSIGNED_REGION_TYPE)
+# Five GENCODE roles only — residual loci are not a region type.
+HIER_REGION_TYPES: tuple[str, ...] = _GENCODE_REGION_TYPES
 REGION_TYPE_TO_ID: dict[str, int] = {name: i for i, name in enumerate(HIER_REGION_TYPES)}
+
+RESIDUAL_PANEL_ID = "__residual__"
 
 
 @dataclass(frozen=True, slots=True)
 class LocusRegionGeneIndex:
-    """Study-column aligned locus→region→gene expansion for hierarchy.
+    """Study-column aligned locus→region→gene expansion + residual columns.
 
-    Multi-gene / multi-region loci produce multiple edges (duplicate feature
-    rows at train time), matching the flat multi-gene pattern.
+    Multi-gene / multi-region loci produce multiple typed edges (duplicate
+    feature rows at train time). Residual columns never enter typed edges.
     """
 
     gene_ids: list[str]
-    edge_col_index: np.ndarray  # int64 [n_edges]
+    edge_col_index: np.ndarray  # int64 [n_edges] — mapped / multi_mapped only
     edge_region_index: np.ndarray  # int64 [n_edges]
     region_type_id: np.ndarray  # int64 [n_regions]
     region_to_gene: np.ndarray  # int64 [n_regions]
     region_ids: list[str]
+    residual_col_index: np.ndarray  # int64 [n_residual_cols]
+    column_annotation_status: np.ndarray  # int8 [n_study_loci]
     n_study_loci: int
     n_typed_edges: int
-    n_unassigned_regions: int
 
     @property
     def n_genes(self) -> int:
@@ -52,10 +60,17 @@ class LocusRegionGeneIndex:
         return int(self.edge_col_index.shape[0])
 
     @property
-    def unassigned_gene_index(self) -> int | None:
-        if UNASSIGNED_GENE_ID not in self.gene_ids:
-            return None
-        return self.gene_ids.index(UNASSIGNED_GENE_ID)
+    def n_residual_cols(self) -> int:
+        return int(self.residual_col_index.shape[0])
+
+    @property
+    def n_panel(self) -> int:
+        """Gene panel size plus one residual score slot."""
+        return self.n_genes + 1
+
+    @property
+    def residual_panel_index(self) -> int:
+        return self.n_genes
 
 
 def build_locus_region_gene_index(
@@ -65,7 +80,7 @@ def build_locus_region_gene_index(
     regions: pd.DataFrame,
     max_loci: int | None = None,
 ) -> LocusRegionGeneIndex:
-    """Join study loci to typed regions; mint singleton orphans for unassigned."""
+    """Join study loci to typed regions; route orphans to the residual path."""
     required_locus = {"col_index", "locus_id"}
     missing_locus = required_locus - set(locus_index.columns)
     if missing_locus:
@@ -79,6 +94,14 @@ def build_locus_region_gene_index(
             raise ValueError(f"regions requires {col}")
 
     study = locus_index.loc[:, ["col_index", "locus_id"]].sort_values("col_index").copy()
+    if "canonical_key" in locus_index.columns:
+        study = study.merge(
+            locus_index.loc[:, ["col_index", "canonical_key"]],
+            on="col_index",
+            how="left",
+        )
+    else:
+        study["canonical_key"] = ""
     if max_loci is not None:
         if max_loci < 1:
             raise ValueError("max_loci must be >= 1")
@@ -113,36 +136,80 @@ def build_locus_region_gene_index(
     is_typed = (
         merged["region_id"].notna() & merged["gene_id"].notna() & merged["region_type"].notna()
     )
-    assigned_loci = set(merged.loc[is_typed, "locus_id"].tolist())
+    is_ambiguous_edge = merged["region_id"].notna() & ~is_typed
+
     typed = merged.loc[is_typed, ["col_index", "region_id", "gene_id", "region_type"]].copy()
-    orphan_study = study.loc[~study["locus_id"].isin(assigned_loci)].copy()
+    typed_cols = set(typed["col_index"].astype(int).tolist()) if not typed.empty else set()
+    ambiguous_cols = (
+        set(merged.loc[is_ambiguous_edge, "col_index"].astype(int).tolist()) - typed_cols
+    )
 
-    frames: list[pd.DataFrame] = []
+    # Per-column gene counts among typed edges (vectorized; no iterrows).
+    col_gene_n = np.zeros(n_study_loci, dtype=np.int32)
     if not typed.empty:
-        typed = typed.copy()
-        typed["region_id"] = typed["region_id"].astype(str)
-        typed["gene_id"] = typed["gene_id"].astype(str)
-        typed["region_type"] = typed["region_type"].astype(str)
-        frames.append(typed.loc[:, ["col_index", "region_id", "gene_id", "region_type"]])
+        gene_counts = typed.groupby("col_index")["gene_id"].nunique().astype(int)
+        idx = gene_counts.index.to_numpy(dtype=np.int64)
+        vals = gene_counts.to_numpy(dtype=np.int32)
+        keep = (idx >= 0) & (idx < n_study_loci)
+        col_gene_n[idx[keep]] = vals[keep]
 
-    n_unassigned = 0
-    if not orphan_study.empty:
-        orphan = pd.DataFrame(
-            {
-                "col_index": orphan_study["col_index"].to_numpy(dtype=np.int64),
-                "region_id": [f"unassigned:{lid}" for lid in orphan_study["locus_id"].tolist()],
-                "gene_id": UNASSIGNED_GENE_ID,
-                "region_type": UNASSIGNED_REGION_TYPE,
-            }
+    status = np.full(n_study_loci, ANNOTATION_STATUS_UNMAPPED, dtype=np.int8)
+    cols = study["col_index"].to_numpy(dtype=np.int64, copy=False)
+    keys = study["canonical_key"].astype(str).fillna("").to_numpy()
+    in_range = (cols >= 0) & (cols < n_study_loci)
+    cols_ok = cols[in_range]
+    keys_ok = keys[in_range]
+
+    residual_key = np.fromiter(
+        (is_residual_canonical_key(str(k)) for k in keys_ok),
+        dtype=np.bool_,
+        count=int(keys_ok.shape[0]),
+    )
+    residual_col_mask = np.zeros(n_study_loci, dtype=np.bool_)
+    residual_col_mask[cols_ok[residual_key]] = True
+
+    ambiguous_mask = np.zeros(n_study_loci, dtype=np.bool_)
+    if ambiguous_cols:
+        amb = np.fromiter(
+            (c for c in ambiguous_cols if 0 <= c < n_study_loci and c not in typed_cols),
+            dtype=np.int64,
         )
-        n_unassigned = len(orphan)
-        frames.append(orphan)
+        if amb.size:
+            ambiguous_mask[amb] = True
 
-    if not frames:
-        raise ValueError("no locus→region edges for study loci")
+    mapped_mask = (col_gene_n == 1) & ~residual_col_mask & ~ambiguous_mask
+    multi_mask = (col_gene_n >= 2) & ~residual_col_mask & ~ambiguous_mask
+    status[mapped_mask] = ANNOTATION_STATUS_MAPPED
+    status[multi_mask] = ANNOTATION_STATUS_MULTI_MAPPED
+    status[ambiguous_mask] = ANNOTATION_STATUS_AMBIGUOUS
+    # residual keys + gene-orphans + ambiguous stay on residual path
+    status[residual_col_mask & ~ambiguous_mask] = ANNOTATION_STATUS_UNMAPPED
 
-    edges = pd.concat(frames, ignore_index=True)
-    # Unique regions in first-seen order.
+    residual_path_mask = residual_col_mask | ambiguous_mask | (col_gene_n == 0)
+    residual_col_index = np.flatnonzero(residual_path_mask).astype(np.int64)
+
+    if typed.empty and residual_col_index.size == 0:
+        raise ValueError("no locus→region edges and no residual columns for study loci")
+
+    if typed.empty:
+        return LocusRegionGeneIndex(
+            gene_ids=[],
+            edge_col_index=np.zeros(0, dtype=np.int64),
+            edge_region_index=np.zeros(0, dtype=np.int64),
+            region_type_id=np.zeros(0, dtype=np.int64),
+            region_to_gene=np.zeros(0, dtype=np.int64),
+            region_ids=[],
+            residual_col_index=residual_col_index,
+            column_annotation_status=status,
+            n_study_loci=n_study_loci,
+            n_typed_edges=0,
+        )
+
+    typed["region_id"] = typed["region_id"].astype(str)
+    typed["gene_id"] = typed["gene_id"].astype(str)
+    typed["region_type"] = typed["region_type"].astype(str)
+    edges = typed.loc[:, ["col_index", "region_id", "gene_id", "region_type"]]
+
     region_table = edges.loc[:, ["region_id", "gene_id", "region_type"]].drop_duplicates(
         subset=["region_id"],
         keep="first",
@@ -154,11 +221,7 @@ def build_locus_region_gene_index(
         dtype=np.int64,
     )
     region_gene_ids = region_table["gene_id"].astype(str).tolist()
-
-    bio_genes = sorted({g for g in region_gene_ids if g != UNASSIGNED_GENE_ID})
-    gene_ids = list(bio_genes)
-    if UNASSIGNED_GENE_ID in region_gene_ids:
-        gene_ids.append(UNASSIGNED_GENE_ID)
+    gene_ids = sorted(set(region_gene_ids))
     gene_to_idx = {gid: i for i, gid in enumerate(gene_ids)}
     region_to_gene = np.asarray([gene_to_idx[g] for g in region_gene_ids], dtype=np.int64)
 
@@ -167,7 +230,6 @@ def build_locus_region_gene_index(
         [region_key_to_idx[str(r)] for r in edges["region_id"].tolist()],
         dtype=np.int64,
     )
-    n_typed_edges = int((edges["region_type"] != UNASSIGNED_REGION_TYPE).sum())
 
     return LocusRegionGeneIndex(
         gene_ids=gene_ids,
@@ -176,7 +238,8 @@ def build_locus_region_gene_index(
         region_type_id=region_type_id,
         region_to_gene=region_to_gene,
         region_ids=region_ids,
+        residual_col_index=residual_col_index,
+        column_annotation_status=status,
         n_study_loci=n_study_loci,
-        n_typed_edges=n_typed_edges,
-        n_unassigned_regions=n_unassigned,
+        n_typed_edges=int(edge_col_index.shape[0]),
     )

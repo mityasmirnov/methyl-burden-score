@@ -35,13 +35,15 @@ model:
     - promoter_core
     - promoter_proximal
     - five_prime
-    - gene_body
     - three_prime
+    - gene_body
+  residual_path: true
   cpg_hidden_dimension: 64
   region_hidden_dimension: 32
   region_type_dimension: 8
   cpg_pooling: max
   region_pooling: max
+  residual_pooling: max
   output_activation: sigmoid
   neutral_score: 0.5
   dropout: 0.1
@@ -88,6 +90,15 @@ controls:
   label_permutation: true
   shuffled_graph: true
   manifest_downsampling: true
+
+evaluation:
+  ablations:
+    - full
+    - mapped_only
+    - residual_only
+    - promoters_only
+    - gene_body_only
+  compare_flat_run_id: stage0-flat-deeprvat-age-tissue-sex-full-v1
 
 logging:
   tensorboard: true

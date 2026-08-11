@@ -11,6 +11,11 @@ DEFAULT_RUN_ID = "stage0-hier-deeprvat-age-tissue-sex-full-v1"
 FALLBACK_RUN_ID = "stage0-hier-smoke-maxloci"
 FLAT_RUN_ID = "stage0-flat-deeprvat-age-tissue-sex-full-v1"
 MATRIX_ID = "matrix-hub-age-tissue-sex-full-v1"
+RESIDUAL_POLICY = (
+    "mapped loci → typed CpG→region→gene; unmapped/ambiguous → residual path "
+    "(no __unassigned__ gene pooling); Illumina-coordinate-unmapped probes retained "
+    "as residual matrix columns on reconvert"
+)
 
 
 def _load_json(path: Path) -> dict:
@@ -52,9 +57,17 @@ def main() -> None:
     final = metrics.get("final") or {}
     external = metrics.get("external_test") or {}
     ablations = metrics.get("ablations") or {}
+    annotation_slices = metrics.get("annotation_slices") or {
+        name: ablations[name]
+        for name in ("full", "mapped_only", "residual_only")
+        if name in ablations
+    }
+    vs_flat = metrics.get("vs_flat") or {}
     flat_external = (flat_metrics or {}).get("external_test") or {}
     if not flat_external and flat_report:
         flat_external = flat_report.get("external_test") or {}
+    if not flat_external and isinstance(vs_flat.get("flat"), dict):
+        flat_external = vs_flat["flat"]
 
     payload = {
         "milestone": "6",
@@ -76,14 +89,13 @@ def main() -> None:
         },
         "topology": {
             "n_genes": metrics.get("n_genes"),
+            "n_panel": metrics.get("n_panel"),
             "n_regions": metrics.get("n_regions"),
             "n_typed_edges": metrics.get("n_typed_edges"),
-            "n_unassigned_regions": metrics.get("n_unassigned_regions"),
+            "n_residual_cols": metrics.get("n_residual_cols"),
+            "annotation_summary": metrics.get("annotation_summary"),
             "region_types": metrics.get("region_types"),
-            "unassigned_policy": (
-                "singleton region_type=unassigned → synthetic gene __unassigned__; "
-                "Illumina-coordinate-unmapped probes remain matrix-excluded"
-            ),
+            "residual_policy": RESIDUAL_POLICY,
         },
         "task": metrics.get("task"),
         "n_classes": metrics.get("n_classes"),
@@ -92,9 +104,12 @@ def main() -> None:
         "final": final,
         "external_test": external,
         "ablations": ablations,
+        "annotation_slices": annotation_slices,
+        "vs_flat": vs_flat,
         "comparison_to_flat_5d": {
             "flat_external_test": flat_external,
             "hier_external_test": external,
+            "hierarchical_minus_flat": vs_flat.get("hierarchical_minus_flat"),
             "note": (
                 "Same preferred split when reused_flat_split=true; "
                 "compare tissue accuracy / age MAE / sex accuracy"
@@ -133,11 +148,12 @@ def main() -> None:
         "## Topology",
         "",
         f"- genes: `{payload['topology']['n_genes']}`",
+        f"- panel (genes + residual slot): `{payload['topology']['n_panel']}`",
         f"- regions: `{payload['topology']['n_regions']}`",
         f"- typed edges: `{payload['topology']['n_typed_edges']}`",
-        f"- unassigned singleton regions: `{payload['topology']['n_unassigned_regions']}`",
+        f"- residual columns: `{payload['topology']['n_residual_cols']}`",
         f"- region types: `{payload['topology']['region_types']}`",
-        f"- policy: {payload['topology']['unassigned_policy']}",
+        f"- policy: {RESIDUAL_POLICY}",
         "",
         "## Split",
         "",
@@ -153,10 +169,23 @@ def main() -> None:
         f"sex_accuracy={external.get('sex_accuracy')}",
         f"- flat 5d: accuracy={flat_acc}, mae={flat_mae}, "
         f"sex_accuracy={flat_external.get('sex_accuracy')}",
+        f"- vs_flat delta: `{vs_flat.get('hierarchical_minus_flat')}`",
         "",
-        "## Ablations (holdout subset)",
+        "## Annotation slices (mapped vs residual)",
         "",
     ]
+    for name, row in annotation_slices.items():
+        lines.append(
+            f"- **{name}:** accuracy={row.get('accuracy')}, mae={row.get('mae')}, "
+            f"sex_accuracy={row.get('sex_accuracy')}, n={row.get('n_samples')}"
+        )
+    lines.extend(
+        [
+            "",
+            "## Ablations (holdout subset)",
+            "",
+        ]
+    )
     for name, row in ablations.items():
         lines.append(
             f"- **{name}:** accuracy={row.get('accuracy')}, mae={row.get('mae')}, "

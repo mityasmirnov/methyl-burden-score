@@ -57,3 +57,5 @@ def test_catalog_build_and_model_forward(tmp_path: Path) -> None:
     assert output["mbs"].shape == (1,)
     assert output["present"].tolist() == [True]
     assert torch.isfinite(output["mbs"]).all()
+    assert output["residual_mbs"].shape == (0,) or output["residual_mbs"].numel() >= 0
+    assert "residual_present" in output

@@ -10,8 +10,11 @@ from typing import Any
 
 import numpy as np
 import torch
-from torch import nn
 
+from mbs.evaluation.annotation_slices import (
+    compare_hierarchical_vs_flat,
+    index_annotation_summary,
+)
 from mbs.evaluation.splits import build_study_grouped_split, partition_studies_by_sample_count
 from mbs.matrix.store import (
     matrix_store_paths,
@@ -38,6 +41,7 @@ from mbs.training.locus_gene import load_graph_tables
 from mbs.training.locus_region_gene import (
     HIER_REGION_TYPES,
     REGION_TYPE_TO_ID,
+    RESIDUAL_PANEL_ID,
     LocusRegionGeneIndex,
     build_locus_region_gene_index,
 )
@@ -105,37 +109,48 @@ class _HierPilotStore:
 def _packed_hier_mbs(
     model: HierarchicalDeepSet,
     batch: HierBatch,
+    *,
+    include_mapped: bool = True,
+    include_residual: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return panel MBS = [gene_mbs…, residual_slot] and presence masks."""
     batch_size = len(batch.sample_ids)
-    n_regions = batch_size * int(batch.n_regions)
-    n_genes = batch_size * int(batch.n_genes)
+    n_regions = batch_size * max(int(batch.n_regions), 1)
+    n_genes = batch_size * max(int(batch.n_genes), 1)
+    residual_features = batch.residual_features if include_residual else batch.residual_features[:0]
+    residual_sample_index = (
+        batch.residual_sample_index if include_residual else batch.residual_sample_index[:0]
+    )
+    cpg_features = batch.cpg_features if include_mapped else batch.cpg_features[:0]
+    cpg_to_region = batch.cpg_to_region if include_mapped else batch.cpg_to_region[:0]
     output = model(
-        cpg_features=batch.cpg_features,
-        cpg_to_region=batch.cpg_to_region,
+        cpg_features=cpg_features,
+        cpg_to_region=cpg_to_region,
         region_type=batch.region_type,
         region_to_gene=batch.region_to_gene,
-        n_regions=n_regions,
-        n_gene_instances=n_genes,
+        n_regions=n_regions if batch.n_regions > 0 else 0,
+        n_gene_instances=n_genes if batch.n_genes > 0 else 0,
+        residual_features=residual_features,
+        residual_sample_index=residual_sample_index,
+        n_samples=batch_size,
     )
-    mbs = output["mbs"].view(batch_size, batch.n_genes)
-    present = output["present"].view(batch_size, batch.n_genes)
+    if batch.n_genes > 0:
+        gene_mbs = output["mbs"].view(batch_size, batch.n_genes)
+        gene_present = output["present"].view(batch_size, batch.n_genes)
+    else:
+        gene_mbs = torch.zeros(batch_size, 0, device=output["residual_mbs"].device)
+        gene_present = torch.zeros(batch_size, 0, dtype=torch.bool, device=gene_mbs.device)
+    if not include_mapped and batch.n_genes > 0:
+        gene_mbs = torch.full_like(gene_mbs, float(model.neutral_score))
+        gene_present = torch.zeros_like(gene_present)
+    residual_mbs = output["residual_mbs"].view(batch_size, 1)
+    residual_present = output["residual_present"].view(batch_size, 1)
+    if not include_residual:
+        residual_mbs = torch.full_like(residual_mbs, float(model.neutral_score))
+        residual_present = torch.zeros_like(residual_present)
+    mbs = torch.cat([gene_mbs, residual_mbs], dim=1)
+    present = torch.cat([gene_present, residual_present], dim=1)
     return mbs, present
-
-
-def _materialize_hier_record(
-    phenotype: SamplePhenotype,
-    store: _HierPilotStore,
-) -> HierSampleRecord:
-    row = store.sample_row_by_id[phenotype.sample_id]
-    beta_row = np.asarray(store.betas[row, : store.n_cols], dtype=np.float32)
-    return build_hier_sample(
-        phenotype=phenotype,
-        beta_row=beta_row,
-        static_by_col=store.static_by_col,
-        static_valid=store.static_valid,
-        locus_region=store.locus_region,
-        epsilon=store.epsilon,
-    )
 
 
 def _run_hier_epoch(
@@ -161,7 +176,8 @@ def _run_hier_epoch(
     age_loss_name: str,
     batch_size: int,
     allowed_region_type_ids: set[int] | None = None,
-    drop_unassigned_gene: bool = False,
+    include_residual: bool = True,
+    include_mapped: bool = True,
 ) -> dict[str, float]:
     if train:
         model.train()
@@ -192,8 +208,6 @@ def _run_hier_epoch(
             raise RuntimeError("pilot phenotypes and store are required when records is None")
         all_phenotypes = phenotypes
     n_items = len(all_records) if all_records is not None else len(all_phenotypes or [])
-    unassigned_idx = locus_region.unassigned_gene_index
-    neutral = float(model.neutral_score)
 
     with context:
         for start in range(0, n_items, step):
@@ -233,17 +247,18 @@ def _run_hier_epoch(
                 sex_enabled=sex_flags,
                 sex_class_indices=sex_idxs,
                 allowed_region_type_ids=allowed_region_type_ids,
+                include_residual=include_residual,
             ).to(device)
 
             if train and optimizer is not None:
                 optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device_type=device.type, dtype=amp_dtype, enabled=use_amp):
-                mbs, present = _packed_hier_mbs(model, batch)
-                if drop_unassigned_gene and unassigned_idx is not None:
-                    mbs = mbs.clone()
-                    present = present.clone()
-                    mbs[:, unassigned_idx] = neutral
-                    present[:, unassigned_idx] = False
+                mbs, present = _packed_hier_mbs(
+                    model,
+                    batch,
+                    include_mapped=include_mapped,
+                    include_residual=include_residual,
+                )
                 result = masked_multitask_loss(
                     mbs=mbs,
                     present=present,
@@ -257,37 +272,59 @@ def _run_hier_epoch(
                     class_weights=class_weights,
                 )
                 loss = result.loss
-                metrics = result.metrics
+            if start == 0:
+                print(  # noqa: T201
+                    f"[hier] first batch packed "
+                    f"cpg={tuple(batch.cpg_features.shape)} "
+                    f"residual={tuple(batch.residual_features.shape)} "
+                    f"regions={batch.n_regions} genes={batch.n_genes}",
+                    flush=True,
+                )
             if train and optimizer is not None:
                 loss.backward()
                 if grad_clip > 0:
-                    nn.utils.clip_grad_norm_(
+                    torch.nn.utils.clip_grad_norm_(
                         list(model.parameters()) + list(head.parameters()),
                         grad_clip,
                     )
                 optimizer.step()
-            batch_n = float(len(chunk))
-            total_loss += metrics["loss"] * batch_n
-            step_age_n = float(metrics.get("age_n", 0.0))
-            step_tissue_n = float(metrics.get("tissue_n", 0.0))
-            total_correct += metrics["tissue_correct"]
-            total_mae_sum += metrics["mae"] * step_age_n
+
+            total_loss += float(loss.detach().item()) * len(chunk)
+            total_correct += float(result.metrics.get("tissue_correct", 0.0))
+            tissue_n += float(result.metrics.get("tissue_n", 0.0))
+            step_age_n = float(result.metrics.get("age_n", 0.0))
+            total_mae_sum += float(result.metrics.get("mae", 0.0)) * step_age_n
             age_n += step_age_n
-            tissue_n += step_tissue_n
-            sex_n += float(metrics.get("sex_n", 0.0))
-            sex_correct += float(metrics.get("sex_correct", 0.0))
-            n += int(batch_n)
+            sex_n += float(result.metrics.get("sex_n", 0.0))
+            sex_correct += float(result.metrics.get("sex_correct", 0.0))
+            n += len(chunk)
 
     return {
         "loss": total_loss / max(n, 1),
         "accuracy": total_correct / max(tissue_n, 1.0),
-        "sex_accuracy": sex_correct / max(sex_n, 1.0),
         "mae": total_mae_sum / max(age_n, 1.0),
+        "sex_accuracy": sex_correct / max(sex_n, 1.0),
         "n_samples": float(n),
         "age_n": age_n,
         "tissue_n": tissue_n,
         "sex_n": sex_n,
     }
+
+
+def _materialize_hier_record(
+    phenotype: SamplePhenotype,
+    store: _HierPilotStore,
+) -> HierSampleRecord:
+    row = store.sample_row_by_id[phenotype.sample_id]
+    beta_row = np.asarray(store.betas[row, : store.n_cols], dtype=np.float32)
+    return build_hier_sample(
+        phenotype=phenotype,
+        beta_row=beta_row,
+        static_by_col=store.static_by_col,
+        static_valid=store.static_valid,
+        locus_region=store.locus_region,
+        epsilon=store.epsilon,
+    )
 
 
 def _load_reuse_flat_split(
@@ -358,6 +395,7 @@ def train_hierarchical_baseline(
         class_names = list(bundle["class_names"])
         gene_ids = list(bundle["gene_ids"])
         n_genes = int(bundle["n_genes"])
+        n_panel = int(bundle["n_panel"])
         input_dim = int(bundle["input_dim"])
         n_classes = int(bundle["n_classes"])
         split = {
@@ -488,6 +526,10 @@ def train_hierarchical_baseline(
             age_std = 1.0
 
         lr_edges, regions = load_graph_tables(data_root / "canonical" / "graphs" / graph_id)
+        print(  # noqa: T201
+            f"[hier] building locus→region index (max_loci={max_loci})",
+            flush=True,
+        )
         locus_region = build_locus_region_gene_index(
             locus_index=locus_index,
             locus_region_edges=lr_edges,
@@ -496,17 +538,31 @@ def train_hierarchical_baseline(
         )
         gene_ids = locus_region.gene_ids
         n_genes = locus_region.n_genes
+        n_panel = locus_region.n_panel
         n_classes = len(class_names)
         n_cols = locus_region.n_study_loci if max_loci is None else int(max_loci)
+        print(  # noqa: T201
+            "[hier] index ready: "
+            f"genes={n_genes} regions={locus_region.n_regions} "
+            f"typed_edges={locus_region.n_typed_edges} "
+            f"residual_cols={locus_region.n_residual_cols} study_loci={n_cols}",
+            flush=True,
+        )
 
         static_paths = static_feature_store_paths(
             data_root / "canonical" / "static_features" / feature_set
         )
+        print("[hier] aligning static features…", flush=True)  # noqa: T201
         static_by_col, static_valid, static_dim = build_static_column_table(
             locus_index_locus_ids=locus_index["locus_id"].to_numpy(),
             static_loci=read_loci_index(static_paths.loci_path),
             embeddings=open_embeddings_zarr(static_paths.embeddings_path),
             n_study_loci=n_cols,
+        )
+        print(  # noqa: T201
+            f"[hier] static ready dim={static_dim} "
+            f"valid_cols={int(static_valid.sum())}/{n_cols}",
+            flush=True,
         )
         epsilon = float(config.get("features", {}).get("methylation", {}).get("epsilon", 0.001))
         input_dim = 2 + static_dim
@@ -539,6 +595,7 @@ def train_hierarchical_baseline(
         split.update(
             {
                 "n_genes": n_genes,
+                "n_panel": n_panel,
                 "n_regions": locus_region.n_regions,
                 "n_classes": n_classes,
                 "class_names": class_names,
@@ -548,7 +605,8 @@ def train_hierarchical_baseline(
                 "age_mean": age_mean,
                 "age_std": age_std,
                 "n_typed_edges": locus_region.n_typed_edges,
-                "n_unassigned_regions": locus_region.n_unassigned_regions,
+                "n_residual_cols": locus_region.n_residual_cols,
+                "annotation_summary": index_annotation_summary(locus_region),
                 "region_types": list(HIER_REGION_TYPES),
             }
         )
@@ -576,7 +634,7 @@ def train_hierarchical_baseline(
     heads_cfg = config.get("heads", {})
     sex_cfg = heads_cfg.get("sex", {}) if isinstance(heads_cfg, dict) else {}
     sex_on = bool(sex_cfg.get("enabled", True))
-    head = MultitaskHeads(n_genes, n_classes, sex_enabled=sex_on).to(device)
+    head = MultitaskHeads(n_panel, n_classes, sex_enabled=sex_on).to(device)
 
     loss_cfg = config.get("loss", {})
     lambda_age = float(loss_cfg.get("lambda_age", 1.0))
@@ -639,7 +697,8 @@ def train_hierarchical_baseline(
         optimizer: torch.optim.Optimizer | None,
         train: bool,
         allowed_region_type_ids: set[int] | None = None,
-        drop_unassigned_gene: bool = False,
+        include_residual: bool = True,
+        include_mapped: bool = True,
     ) -> dict[str, float]:
         return _run_hier_epoch(
             records=records,
@@ -663,10 +722,18 @@ def train_hierarchical_baseline(
             age_loss_name=age_loss_name,
             batch_size=batch_size,
             allowed_region_type_ids=allowed_region_type_ids,
-            drop_unassigned_gene=drop_unassigned_gene,
+            include_residual=include_residual,
+            include_mapped=include_mapped,
         )
 
+    print(  # noqa: T201
+        f"[hier] training start epochs={epochs} batch_size={batch_size} "
+        f"n_train={len(train_phenotypes or train_records or [])} "
+        f"n_val={len(val_phenotypes or val_records or [])} device={device}",
+        flush=True,
+    )
     for epoch in range(1, epochs + 1):
+        print(f"[hier] epoch {epoch}/{epochs} train…", flush=True)  # noqa: T201
         train_metrics = run_epoch(
             records=train_records,
             phenotypes=train_phenotypes,
@@ -756,11 +823,11 @@ def train_hierarchical_baseline(
     eval_phenotypes = test_phenotypes if test_phenotypes else val_phenotypes
     eval_records = None if pilot_store is not None else val_records
     ablation_cap = int(config.get("evaluation", {}).get("ablation_max_samples", 512))
-    if eval_phenotypes is not None and ablation_cap > 0:
+    if ablation_cap > 0 and eval_phenotypes:
         ablation_phenotypes = eval_phenotypes[:ablation_cap]
     else:
         ablation_phenotypes = eval_phenotypes
-    if eval_records is not None and ablation_cap > 0:
+    if ablation_cap > 0 and eval_records:
         ablation_records = eval_records[:ablation_cap]
     else:
         ablation_records = eval_records
@@ -787,9 +854,16 @@ def train_hierarchical_baseline(
         body_id = REGION_TYPE_TO_ID["gene_body"]
         ablation_specs: dict[str, dict[str, Any]] = {
             "full": {},
-            "drop_unassigned": {"drop_unassigned_gene": True},
-            "promoters_only": {"allowed_region_type_ids": _promoter_type_ids()},
-            "gene_body_only": {"allowed_region_type_ids": {body_id}},
+            "mapped_only": {"include_residual": False},
+            "residual_only": {"include_mapped": False, "include_residual": True},
+            "promoters_only": {
+                "allowed_region_type_ids": _promoter_type_ids(),
+                "include_residual": False,
+            },
+            "gene_body_only": {
+                "allowed_region_type_ids": {body_id},
+                "include_residual": False,
+            },
         }
         for name, extra in ablation_specs.items():
             try:
@@ -801,7 +875,8 @@ def train_hierarchical_baseline(
                     optimizer=None,
                     train=False,
                     allowed_region_type_ids=extra.get("allowed_region_type_ids"),
-                    drop_unassigned_gene=bool(extra.get("drop_unassigned_gene", False)),
+                    include_residual=bool(extra.get("include_residual", True)),
+                    include_mapped=bool(extra.get("include_mapped", True)),
                 )
             except ValueError as ablation_error:
                 ablations[name] = {"skipped": True, "error": str(ablation_error)}
@@ -813,7 +888,23 @@ def train_hierarchical_baseline(
                 "sex_accuracy": m.get("sex_accuracy"),
                 "n_samples": int(m["n_samples"]),
                 "ablation_max_samples": ablation_cap,
+                "slice": name,
             }
+
+    flat_metrics = None
+    flat_run_id = str(
+        config.get("pilot", {}).get(
+            "flat_split_run_id",
+            "stage0-flat-deeprvat-age-tissue-sex-full-v1",
+        )
+    )
+    flat_metrics_path = artifact_root / "runs" / flat_run_id / "metrics.json"
+    if flat_metrics_path.is_file():
+        try:
+            flat_payload = json.loads(flat_metrics_path.read_text(encoding="utf-8"))
+            flat_metrics = flat_payload.get("external_test") or flat_payload.get("final")
+        except (OSError, json.JSONDecodeError):
+            flat_metrics = None
 
     metrics_out: dict[str, Any] = {
         "history": history,
@@ -821,12 +912,15 @@ def train_hierarchical_baseline(
         "best_val_loss": best_val,
         "final": history[-1] if history else {},
         "n_genes": n_genes,
+        "n_panel": n_panel,
         "n_regions": locus_region.n_regions,
         "n_typed_edges": locus_region.n_typed_edges,
-        "n_unassigned_regions": locus_region.n_unassigned_regions,
+        "n_residual_cols": locus_region.n_residual_cols,
+        "annotation_summary": index_annotation_summary(locus_region),
         "n_classes": n_classes,
         "class_names": class_names,
         "gene_panel_size": len(gene_ids),
+        "panel_ids": [*gene_ids, RESIDUAL_PANEL_ID],
         "region_types": list(HIER_REGION_TYPES),
         "overfit_fixture": overfit_fixture,
         "device": str(device),
@@ -834,6 +928,15 @@ def train_hierarchical_baseline(
         "task": "multitask",
         "external_test": holdout_metrics,
         "ablations": ablations,
+        "annotation_slices": {
+            name: ablations[name]
+            for name in ("full", "mapped_only", "residual_only")
+            if name in ablations
+        },
+        "vs_flat": compare_hierarchical_vs_flat(
+            hierarchical_metrics=holdout_metrics or {},
+            flat_metrics=flat_metrics if isinstance(flat_metrics, dict) else None,
+        ),
         "age_standardization": {"mean": age_mean, "std": age_std},
     }
     if overfit_fixture and history:
@@ -850,6 +953,7 @@ def train_hierarchical_baseline(
         "device": str(device),
         "input_dim": input_dim,
         "n_genes": n_genes,
+        "n_panel": n_panel,
         "n_regions": locus_region.n_regions,
         "n_classes": n_classes,
         "overfit_fixture": overfit_fixture,
