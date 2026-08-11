@@ -24,7 +24,7 @@ MBS scoring function.
 flowchart LR
   probes[ArrayProbes] --> locusMap[ProbeToLocus]
   locusMap --> matrix[CanonicalMatrix]
-  graph[FiveRoleGraph] --> pack[RaggedPack]
+  fiveRoleGraph[FiveRoleGraph] --> pack[RaggedPack]
   matrix --> pack
   static[CpGPTStatic] --> pack
   pack --> encoder[SharedDeepSet]
@@ -53,17 +53,17 @@ genes score `MBS=0.5` with `present=False` (missing ≠ low burden).
 ```mermaid
 flowchart TB
   subgraph flatPath [FlatDeepSet]
-    F1[CpG features] --> F2[phi]
-    F2 --> F3[max by gene]
-    F3 --> F4[rho sigmoid]
-    F4 --> F5[MBS s g]
+    F1["CpG features"] --> F2[phi]
+    F2 --> F3["max by gene"]
+    F3 --> F4["rho sigmoid"]
+    F4 --> F5["MBS s g"]
   end
   subgraph hierPath [HierarchicalDeepSet]
-    H1[CpG features] --> H2[max by region]
-    H2 --> H3[phi_region + type emb]
-    H3 --> H4[max by gene]
-    H4 --> H5[rho sigmoid]
-    H5 --> H6[MBS s g]
+    H1["CpG features"] --> H2["max by region"]
+    H2 --> H3["phi_region + type emb"]
+    H3 --> H4["max by gene"]
+    H4 --> H5["rho sigmoid"]
+    H5 --> H6["MBS s g"]
   end
 ```
 
@@ -91,10 +91,10 @@ See [`plans/milestone-6-hierarchical-region-model.md`](plans/milestone-6-hierarc
 
 ```mermaid
 flowchart TD
-  Probe["Observed probe"] --> Mapped{GRCh38 mapped?}
+  Probe["Observed probe"] --> Mapped{"GRCh38 mapped?"}
   Mapped -->|no| Drop["Exclude from matrix"]
   Mapped -->|yes| Locus["Matrix locus column"]
-  Locus --> Edge{locus_region_edges?}
+  Locus --> Edge{"locus_region_edges?"}
   Edge -->|yes| Typed["Typed region role"]
   Typed --> Gene["Biological gene"]
   Edge -->|no| Single["Singleton unassigned"]
@@ -108,9 +108,9 @@ flowchart TD
 ```mermaid
 flowchart LR
   Reg[phenotype_registry.yaml] --> Table[sample_phenotype_table]
-  Table --> Masks[age_mask tissue_mask sex_mask]
-  Masks --> Batch[FlatBatch or HierBatch]
-  Batch --> Enc[Shared encoder MBS]
+  Table --> Masks["age_mask tissue_mask sex_mask"]
+  Masks --> Batch["FlatBatch or HierBatch"]
+  Batch --> Enc["Shared encoder MBS"]
   Enc --> Heads[MultitaskHeads]
   Masks --> Loss[masked_multitask_loss]
   Heads --> Loss

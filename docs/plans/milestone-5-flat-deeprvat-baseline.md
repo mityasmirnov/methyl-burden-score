@@ -36,7 +36,7 @@ matrix. Checkpoints + resolved config under `$MBS_ARTIFACT_ROOT`.
 flowchart LR
   Matrix["matrix-gse35069"] --> Features
   Static["cpgpt2m_adapter_128_v1"] --> Features
-  Graph["locus_region_edges"] --> LocusGene
+  GraphEdges["locus_region_edges"] --> LocusGene
   Meta["metadata.arrow"] --> Labels
   Features --> FlatDS["FlatDeepSet"]
   LocusGene --> FlatDS

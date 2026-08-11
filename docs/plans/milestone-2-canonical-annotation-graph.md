@@ -63,7 +63,7 @@ flowchart LR
   end
   subgraph out [Outputs]
     Ann["canonical/annotations"]
-    Graph["canonical/graphs/graph-grch38-gencode38-five-role-v1"]
+    GraphOut["canonical/graphs/graph-grch38-gencode38-five-role-v1"]
     Man[graph_manifest.json]
   end
   Inf --> Loci
@@ -73,7 +73,7 @@ flowchart LR
   Loci --> Map
   Reg --> Map
   Loci --> Ann
-  Map --> Graph
+  Map --> GraphOut
   Map --> Man
 ```
 

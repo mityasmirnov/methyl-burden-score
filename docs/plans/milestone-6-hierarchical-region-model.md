@@ -45,10 +45,10 @@ the model; compare to flat on the same multitask metrics.
 
 ```mermaid
 flowchart TD
-  Probe["Observed probe"] --> Mapped{GRCh38 mapped?}
+  Probe["Observed probe"] --> Mapped{"GRCh38 mapped?"}
   Mapped -->|no| Drop["Exclude from matrix; count only"]
   Mapped -->|yes| Locus["Matrix locus column"]
-  Locus --> Edge{locus_region_edges?}
+  Locus --> Edge{"locus_region_edges?"}
   Edge -->|yes| Typed["Typed region role retained"]
   Typed --> Gene["Biological gene"]
   Edge -->|no| Single["Singleton region type=unassigned"]
@@ -84,7 +84,7 @@ immutable graph release).
 ```mermaid
 flowchart LR
   Mat["matrix-hub-age-tissue-sex-full-v1"] --> Feat["gather_hier_sample_features"]
-  Graph["five-role graph"] --> HierIdx["build_locus_region_gene_index"]
+  fiveRoleGraph["five-role graph"] --> HierIdx["build_locus_region_gene_index"]
   Mat --> HierIdx
   HierIdx --> Batch["packed HierBatch"]
   Feat --> Batch

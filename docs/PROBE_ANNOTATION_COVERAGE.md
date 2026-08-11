@@ -43,11 +43,11 @@ knowledge metadata and is **not** used to build the MBS graph
 
 ```mermaid
 flowchart LR
-  Atlas["Atlas probe_annotations"] -.->|unused for topology| Graph
+  Atlas["Atlas probe_annotations"] -.->|unused for topology| regionGraph
   Inf["Infinium HM450 EPIC EPICv2"] --> Locus["Canonical loci"]
-  G38["GENCODE v38 five roles"] --> Graph["locus_region_edges"]
-  Locus --> Graph
-  Graph --> Assigned["Assigned 70.3%"]
+  G38["GENCODE v38 five roles"] --> regionGraph["locus_region_edges"]
+  Locus --> regionGraph
+  regionGraph --> Assigned["Assigned 70.3%"]
   Locus --> Unass["Unassigned 29.7%"]
 ```
 

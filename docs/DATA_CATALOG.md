@@ -41,7 +41,7 @@ flowchart TB
   HubPacks["Hub baseline packs zip"] --> Train["Training matrices"]
   EwasDb["EWAS_db per-GSE text"] --> Pilot["Pilot convert GSE35069"]
   Atlas["EWAS Atlas TSVs"] --> Val["Validation only"]
-  Manifests["EPICv2 manifests"] --> Graph["Annotation graph rebuild"]
+  Manifests["EPICv2 manifests"] --> annotGraph["Annotation graph rebuild"]
   Cpg["CpGCorpus Arrow optional"] --> Alt["Alternate matrices"]
 ```
 
