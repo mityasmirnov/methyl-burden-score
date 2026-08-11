@@ -66,6 +66,19 @@ The repository does not contain research data, pretrained weights, or copies of 
 
 ## Architecture
 
+End-to-end CpG processing, flat vs hierarchical aggregation, phenotype-masked
+training, and what “producing MBS” means today:
+[`docs/SCORING_PIPELINE.md`](docs/SCORING_PIPELINE.md).
+
+Probe / array annotation coverage (HM450, EPIC, EPICv2; assigned vs unassigned
+shares): [`docs/PROBE_ANNOTATION_COVERAGE.md`](docs/PROBE_ANNOTATION_COVERAGE.md).
+
+Datasets, on-disk sizes, sample counts, and trait harmonization:
+[`docs/DATA_CATALOG.md`](docs/DATA_CATALOG.md).
+
+Normative contracts: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md),
+[`docs/ANNOTATION_GRAPH.md`](docs/ANNOTATION_GRAPH.md).
+
 For sample `s`, CpG `c`, regulatory region `r`, and gene `g`:
 
 ```text
@@ -148,6 +161,9 @@ Details: [`docs/EXPERIMENT_PROTOCOL.md`](docs/EXPERIMENT_PROTOCOL.md).
 
 Hub/Atlas metadata contracts: [`docs/EWAS_METADATA.md`](docs/EWAS_METADATA.md).
 Hub downloads: [`docs/EWAS_DATA.md`](docs/EWAS_DATA.md).
+Data catalog (GB / samples / traits): [`docs/DATA_CATALOG.md`](docs/DATA_CATALOG.md).
+Probe annotation coverage: [`docs/PROBE_ANNOTATION_COVERAGE.md`](docs/PROBE_ANNOTATION_COVERAGE.md).
+Scoring pipeline schema: [`docs/SCORING_PIPELINE.md`](docs/SCORING_PIPELINE.md).
 Inspection guide: [`docs/DATA_INSPECTION.md`](docs/DATA_INSPECTION.md).
 Machine-specific paths belong in `.env` or `configs/local/`; neither is committed.
 
