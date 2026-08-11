@@ -142,7 +142,7 @@ def partition_studies_by_sample_count(
     val_budget = int(total * val_fraction)
     # Ensure non-empty roles when enough studies exist.
     studies = sorted(counts.keys(), key=lambda s: (-counts[s], s))
-    rng = Random(seed)
+    rng = Random(seed)  # noqa: S311 — deterministic split seed, not crypto
     rng.shuffle(studies)
 
     train: list[str] = []

@@ -173,7 +173,7 @@ Never committed:
 
 ## Status
 
-Stage 0 is past bootstrap. Milestones **1–5b″** are done (see
+Stage 0 milestones **1–5d** are done (see
 [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md)):
 
 | Done | What shipped |
@@ -183,21 +183,14 @@ Stage 0 is past bootstrap. Milestones **1–5b″** are done (see
 | Flat deepMAT baseline | Overfit fixture + GSE35069 cell-type pilot train path |
 | Phenotype registry (5b) | Versioned Hub packs, sample-info Parquet, study-grouped eval helpers |
 | Hub metadata (5b′) | Atlas/Hub column contracts ([`docs/EWAS_METADATA.md`](docs/EWAS_METADATA.md)) |
-| Real Hub packs (5b″) | `mbs matrix convert-pack`; age/tissue/blood/brain study-holdout matrices + reports under `reports/inspection/stage0_hub_real_benchmark/` |
-| Multitask deepMAT (5c) | Merged age+tissue matrix; masked dual heads; run `stage0-flat-multitask-age-tissue-v1` |
+| Real Hub packs (5b″) | `mbs matrix convert-pack`; study-holdout matrices + `stage0_hub_real_benchmark/` |
+| Multitask deepMAT (5c) | Masked age+tissue heads on shared flat encoder |
+| Max-N DeepRVAT flat (5d) | Uncapped age/tissue/sex GSM-union (`matrix-hub-age-tissue-sex-full-v1`, 13548 samples); run `stage0-flat-deeprvat-age-tissue-sex-full-v1`; report `reports/inspection/stage0_5d_max_n/` |
 
-**Current gate — Milestone 5d:** max-N flat DeepRVAT-style baseline on full Hub
-age/tissue/sex packs (shared MBS + masked phenotype modules). Scale-up bridge:
-`matrix-hub-*-studyholdout-v2` (`max_per_study=100`) →
-`matrix-hub-age-tissue-multitask-v2` (852 samples) with packed `batch_size=4`
-(`stage0-flat-multitask-age-tissue-v2`). Plan:
-[`docs/plans/milestone-5d-max-n-flat-baseline.md`](docs/plans/milestone-5d-max-n-flat-baseline.md).
-Disease/cancer aux heads remain optional 5c follow-ons; hierarchical is Milestone 6.
-
-**Matrix convert** means streaming Hub profile ZIPs (or a single EWAS_db study)
-into a canonical sample×locus Zarr store + Parquet indices under
-`$MBS_DATA_ROOT/canonical/matrices/` — not training. Commands:
-`mbs matrix convert` (GSE35069-style) and `mbs matrix convert-pack` (Hub packs).
+**Current gate — Milestone 6:** hierarchical CpG→region→gene model, compared to
+the flat 5d baseline on the same multitask folds. Plan path follows
+[`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). Disease profile zip is being
+re-downloaded (corrupt local copy quarantined); not required for 6.
 
 Public model name remains **deepMAT**; package/CLI stay `mbs` /
 `methyl-burden-score`.

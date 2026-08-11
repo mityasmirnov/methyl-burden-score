@@ -279,6 +279,25 @@ Do not invent Hub column names; use `FAMILY_VALUE_COLUMN` in
 
 Shallow download layout / sizes: `reports/inspection/raw_inventory/`.
 
+## Model performance reports (Stage 0)
+
+Sanitized train/eval summaries (no sample-level betas):
+
+| Report | Milestone |
+|--------|-----------|
+| `reports/inspection/stage0_5b_benchmark/` | 5b fixture holdouts |
+| `reports/inspection/stage0_hub_real_benchmark/` | 5b″ Hub study-holdout packs |
+| `reports/inspection/stage0_5d_max_n/` | 5d max-N age/tissue/sex DeepRVAT flat |
+
+Regenerate the 5d report after a finished run:
+
+```bash
+uv run python scripts/write_stage0_5d_report.py
+```
+
+Raw `metrics.jsonl` / checkpoints stay under `$MBS_ARTIFACT_ROOT` and are not
+committed.
+
 ## EWAS Atlas
 
 Atlas is an association evidence source, not a sample matrix. Freeze and

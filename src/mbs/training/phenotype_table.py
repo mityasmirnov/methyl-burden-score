@@ -146,9 +146,7 @@ def write_sex_ontology(path: Path, ontology: SexOntology | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "version": "sex-ontology-v1",
-        "classes": [
-            {"class_id": ont.label_to_id[lab], "label": lab} for lab in ont.labels
-        ],
+        "classes": [{"class_id": ont.label_to_id[lab], "label": lab} for lab in ont.labels],
     }
     path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
 
@@ -304,9 +302,8 @@ def build_sample_phenotype_rows(
         if not age_mask and not tissue_mask and not sex_mask:
             raise ValueError(f"sample {sid} has neither age, tissue, nor sex label")
 
-        if age_mask and tissue_mask and sex_mask:
-            family = "multi"
-        elif sum(bool(x) for x in (age_mask, tissue_mask, sex_mask)) > 1:
+        n_traits = sum(bool(x) for x in (age_mask, tissue_mask, sex_mask))
+        if n_traits > 1:
             family = "multi"
         elif age_mask:
             family = "age"

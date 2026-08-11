@@ -132,9 +132,7 @@ def merge_age_tissue_matrices(
     age_pheno = pd.read_parquet(age_root / "sample_phenotypes.parquet")
     tissue_pheno = pd.read_parquet(tissue_root / "sample_phenotypes.parquet")
     sex_pheno = (
-        pd.read_parquet(sex_root / "sample_phenotypes.parquet")
-        if sex_root is not None
-        else None
+        pd.read_parquet(sex_root / "sample_phenotypes.parquet") if sex_root is not None else None
     )
 
     age_betas = open_betas_zarr(age_paths.betas_path)
@@ -161,7 +159,8 @@ def merge_age_tissue_matrices(
         elif sid in tissue_rows:
             betas[out_i, :] = np.asarray(tissue_betas[tissue_rows[sid], :], dtype=np.float32)
         else:
-            assert sex_betas is not None
+            if sex_betas is None:
+                raise RuntimeError(f"sample {sid} not in age/tissue and sex betas missing")
             betas[out_i, :] = np.asarray(sex_betas[sex_rows[sid], :], dtype=np.float32)
 
     out_dir = (
@@ -191,9 +190,7 @@ def merge_age_tissue_matrices(
     pheno_frames = [("age", age_pheno), ("tissue", tissue_pheno)]
     if sex_pheno is not None:
         pheno_frames.append(("sex", sex_pheno))
-    by_frames = {
-        name: frame.set_index("sample_id", drop=False) for name, frame in pheno_frames
-    }
+    by_frames = {name: frame.set_index("sample_id", drop=False) for name, frame in pheno_frames}
     sidecar_rows: list[dict[str, Any]] = []
     for sid in ordered_ids:
         row = None

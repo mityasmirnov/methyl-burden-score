@@ -313,7 +313,7 @@ entries:
     platform: HM450
     sample_count: 8374
     label_type: regression
-    split_role: training
+    split_role: registered
     download_path: raw/ewas_datahub/download/age_methylation_v1.zip
     matrix_path: canonical/matrices/matrix-hub-age-full-v1
     checksum: null
@@ -328,7 +328,7 @@ entries:
     platform: HM450
     sample_count: 5323
     label_type: multiclass
-    split_role: training
+    split_role: registered
     download_path: raw/ewas_datahub/download/tissue_methylation_v1.zip
     matrix_path: canonical/matrices/matrix-hub-tissue-full-v1
     checksum: null
@@ -343,7 +343,7 @@ entries:
     platform: HM450
     sample_count: 2978
     label_type: multiclass
-    split_role: training
+    split_role: registered
     download_path: raw/ewas_datahub/download/sex_methylation_v1.zip
     matrix_path: canonical/matrices/matrix-hub-sex-full-v1
     checksum: null
@@ -358,7 +358,7 @@ entries:
     platform: HM450
     sample_count: null
     label_type: multiclass
-    split_role: training
+    split_role: registered
     download_path: raw/ewas_datahub/download/age_methylation_v1.zip
     matrix_path: canonical/matrices/matrix-hub-age-tissue-sex-full-v1
     checksum: null

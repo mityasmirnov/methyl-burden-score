@@ -90,10 +90,12 @@ flowchart LR
 
 ## Progress notes
 
-- Studyholdout **v2** (`max_per_study=100`) and packed `batch_size>1` training
-  are a scale bridge toward uncapped full packs; they do **not** complete 5d.
-- Full-pack convert scripts: `scripts/convert_hub_full_packs.sh` (+ background
-  wrapper). Convert = ZIP → canonical Zarr matrix (see `docs/EWAS_DATA.md`).
+- Studyholdout **v2** was a scale bridge only; 5d completed on uncapped packs.
+- Full-pack convert: `scripts/convert_hub_full_packs.sh` (+ background wrapper).
+- Train: `stage0-flat-deeprvat-age-tissue-sex-full-v1` + inspection
+  `reports/inspection/stage0_5d_max_n/` (`scripts/write_stage0_5d_report.py`).
+- **Status:** acceptance met → [`TODO_PIPELINE.md`](../TODO_PIPELINE.md) §5d
+  `done` (2026-08-11).
 
 ## Non-goals
 
