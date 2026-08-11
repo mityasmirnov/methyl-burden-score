@@ -10,6 +10,7 @@ from torch import Tensor, nn
 
 from mbs.models import SeedMaskedLinearHead
 from mbs.training.dataset import FlatBatch
+from mbs.training.hier_dataset import HierBatch
 
 
 class MultitaskHeads(nn.Module):
@@ -75,7 +76,7 @@ def masked_multitask_loss(
     mbs: Tensor,
     present: Tensor,
     heads: MultitaskHeads,
-    batch: FlatBatch,
+    batch: FlatBatch | HierBatch,
     lambda_age: float = 1.0,
     lambda_tissue: float = 1.0,
     lambda_sex: float = 1.0,

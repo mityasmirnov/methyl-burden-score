@@ -13,7 +13,7 @@ True next milestone after bootstrap:
 > one baseline trained → phenotype registry + multi-pack eval → Hub metadata
 > contracts → real Hub pack matrices + study-grouped eval → multitask shared
 > encoder (5c) → max-N flat age/tissue/sex (5d — **done**) → **hierarchical
-> (6 — start now)** → one cross-fitted score matrix.
+> (6 — in progress)** → one cross-fitted score matrix.
 
 **Current gate:** Milestone **6**. Prerequisites through 5d are `done`.
 Disease pack re-download is in progress (corrupt local zip quarantined); not a
@@ -400,14 +400,20 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 6. Add the hierarchical model
 
-- **Status:** `pending`
+- **Status:** `in_progress`
 - **Done when:** Region layer is trained after the flat baseline is stable;
   promoter/body (and related roles) can be compared to the flat model on the
   same multitask / pilot folds.
 - **Depends on:** (5d) preferred; (5c) at minimum if 5d deferred by ADR.
-- **Next action:** Write `docs/plans/milestone-6-hierarchical-region-model.md`,
-  then wire `HierarchicalDeepSet` train path against the 5d
-  age/tissue/sex cohort (reuse masked phenotype modules).
+- **Plan:** [`plans/milestone-6-hierarchical-region-model.md`](plans/milestone-6-hierarchical-region-model.md).
+- **Evidence (partial):** `mbs train hierarchical` wired; gene-unassigned loci
+  retained as singleton `unassigned` → `__unassigned__`; smoke
+  `stage0-hier-smoke-maxloci` (max_loci=2000, reused 5d split, role/unassigned
+  ablations) → `reports/inspection/stage0_6_hierarchical/`; uncapped full run
+  `stage0-hier-deeprvat-age-tissue-sex-full-v1` in progress
+  (`scratch/logs/hier_full.log`).
+- **Next action:** Finish uncapped full-matrix hierarchical train; refresh
+  inspection report; then mark `done`.
 
 ---
 

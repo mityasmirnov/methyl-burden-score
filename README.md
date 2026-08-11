@@ -6,7 +6,7 @@ The public model name is **deepMAT** (deep Methylation Aggregation Transformer /
 Deep Set family). The Python package remains `methyl-burden-score` with the
 `mbs` CLI entry point; do not treat a package rename as required for Stage 0.
 
-Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks). The model path is flat DeepRVAT-style **deepMAT** baseline → phenotype registry / multi-pack eval → real Hub pack matrices → multitask shared encoder (**5c done**) → **max-N flat age/tissue/sex (5d — in progress)** → hierarchical (6) → study-grouped cross-fitting. Authoritative progress: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). See also [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), and [`docs/adr/0003-milestone-5b-phenotype-registry.md`](docs/adr/0003-milestone-5b-phenotype-registry.md).
+Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks). The model path is flat DeepRVAT-style **deepMAT** baseline → phenotype registry / multi-pack eval → real Hub pack matrices → multitask shared encoder (**5c done**) → **max-N flat age/tissue/sex (5d — done)** → hierarchical (**6 — in progress**) → study-grouped cross-fitting. Authoritative progress: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). See also [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), and [`docs/adr/0003-milestone-5b-phenotype-registry.md`](docs/adr/0003-milestone-5b-phenotype-registry.md).
 
 The Stage 0 implementation follows four design principles:
 
@@ -187,10 +187,12 @@ Stage 0 milestones **1–5d** are done (see
 | Multitask deepMAT (5c) | Masked age+tissue heads on shared flat encoder |
 | Max-N DeepRVAT flat (5d) | Uncapped age/tissue/sex GSM-union (`matrix-hub-age-tissue-sex-full-v1`, 13548 samples); run `stage0-flat-deeprvat-age-tissue-sex-full-v1`; report `reports/inspection/stage0_5d_max_n/` |
 
-**Current gate — Milestone 6:** hierarchical CpG→region→gene model, compared to
-the flat 5d baseline on the same multitask folds. Plan path follows
-[`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). Disease profile zip is being
-re-downloaded (corrupt local copy quarantined); not required for 6.
+**Current gate — Milestone 6:** hierarchical CpG→region→gene model (`mbs train
+hierarchical`), gene-unassigned loci retained as singleton `unassigned` regions,
+compared to flat 5d on the same folds. Plan:
+[`docs/plans/milestone-6-hierarchical-region-model.md`](docs/plans/milestone-6-hierarchical-region-model.md);
+inspection: `reports/inspection/stage0_6_hierarchical/`. Uncapped full-matrix
+train is in progress. Disease profile zip re-download is not required for 6.
 
 Public model name remains **deepMAT**; package/CLI stay `mbs` /
 `methyl-burden-score`.

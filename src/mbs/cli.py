@@ -28,6 +28,7 @@ from mbs.matrix.hub_pack import convert_hub_pack_subset, study_ids_from_sample_i
 from mbs.matrix.multitask_merge import merge_age_tissue_matrices
 from mbs.paths import DataPaths, PathPolicyError
 from mbs.static_features.export_cpgpt import DEFAULT_FEATURE_SET_ID, export_cpgpt_adapter
+from mbs.training.hier_loop import train_hierarchical_baseline
 from mbs.training.loop import load_experiment_config, train_flat_baseline
 from mbs.training.monitor import run_monitor, ssh_tunnel_hint, validate_run_id
 
@@ -944,6 +945,157 @@ def train_flat_cmd(  # noqa: PLR0917
         console.print(
             f"[green]TensorBoard[/green] {result.tensorboard_url}  "
             f"({ssh_tunnel_hint(int(result.tensorboard_port or 6006))})"
+        )
+    if result.monitor_hint:
+        console.print(f"[cyan]TUI monitor[/cyan] {result.monitor_hint}")
+
+
+@train_app.command("hierarchical")
+def train_hierarchical_cmd(  # noqa: PLR0917
+    config: Annotated[
+        Path | None,
+        typer.Option(
+            help="Experiment YAML (default: configs/experiment/stage0_hier_deeprvat_full.yaml)"
+        ),
+    ] = None,
+    run_id: Annotated[
+        str,
+        typer.Option(help="Artifact run id under $MBS_ARTIFACT_ROOT/runs/"),
+    ] = "stage0-hier-deeprvat-age-tissue-sex-full-v1",
+    device: Annotated[
+        str,
+        typer.Option(
+            help="Torch device (cuda or cpu); cuda uses logical cuda:0 after CUDA_VISIBLE_DEVICES"
+        ),
+    ] = "cuda",
+    overfit_fixture: Annotated[
+        bool,
+        typer.Option(
+            "--overfit-fixture",
+            help="Overfit the tiny synthetic hierarchical fixture instead of the Hub matrix",
+        ),
+    ] = False,
+    max_epochs: Annotated[
+        int | None,
+        typer.Option(help="Override training.max_epochs"),
+    ] = None,
+    max_loci: Annotated[
+        int | None,
+        typer.Option(help="Optional study-column cap for smoke runs"),
+    ] = None,
+) -> None:
+    """Train HierarchicalDeepSet on the 5d age/tissue/sex cohort (Milestone 6)."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    paths.ensure_directories()
+    default_config = (
+        paths.project_root / "configs" / "experiment" / "stage0_hier_deeprvat_full.yaml"
+    )
+    config_path = (config or default_config).resolve()
+    if not overfit_fixture and not config_path.is_file():
+        raise typer.BadParameter(f"config not found: {config_path}")
+    if max_epochs is not None and max_epochs < 1:
+        raise typer.BadParameter("max_epochs must be >= 1")
+    if max_loci is not None and max_loci < 1:
+        raise typer.BadParameter("max_loci must be >= 1")
+    if not run_id.strip() or "/" in run_id or ".." in run_id:
+        raise typer.BadParameter("run_id must be a single path segment")
+
+    if overfit_fixture and not config_path.is_file():
+        cfg: dict[str, Any] = {
+            "experiment": {"name": "hier_overfit_fixture", "stage": 0, "seed": 42},
+            "model": {
+                "type": "hierarchical_deepset",
+                "region_types": [
+                    "promoter_core",
+                    "promoter_proximal",
+                    "five_prime",
+                    "three_prime",
+                    "gene_body",
+                    "unassigned",
+                ],
+                "cpg_hidden_dimension": 32,
+                "region_hidden_dimension": 16,
+                "region_type_dimension": 4,
+                "cpg_pooling": "max",
+                "region_pooling": "max",
+                "neutral_score": 0.5,
+                "dropout": 0.0,
+            },
+            "training": {
+                "optimizer": "adam",
+                "learning_rate": 0.05,
+                "weight_decay": 0.0,
+                "max_epochs": max_epochs or 200,
+                "early_stopping_patience": 50,
+                "gradient_clip_norm": 2.0,
+                "batch_size": 4,
+                "precision": "bf16-mixed",
+                "require_cuda": False,
+            },
+            "logging": {"tensorboard": False, "auto_tensorboard": False},
+            "heads": {
+                "age": {"enabled": True, "loss": "huber", "huber_delta": 1.0},
+                "tissue": {"enabled": True},
+                "sex": {"enabled": True},
+            },
+            "loss": {"lambda_age": 1.0, "lambda_tissue": 1.0, "lambda_sex": 1.0},
+        }
+    elif overfit_fixture:
+        cfg = load_experiment_config(config_path)
+        log = cfg.setdefault("logging", {})
+        log.setdefault("auto_tensorboard", False)
+    else:
+        cfg = load_experiment_config(config_path)
+
+    run_name = run_id
+    if overfit_fixture and run_id == "stage0-hier-deeprvat-age-tissue-sex-full-v1":
+        run_name = "stage0-hier-overfit-fixture"
+
+    try:
+        result = train_hierarchical_baseline(
+            project_root=paths.project_root,
+            data_root=paths.data_root,
+            artifact_root=paths.artifact_root,
+            config=cfg,
+            run_id=run_name,
+            device_str=device,
+            overfit_fixture=overfit_fixture,
+            max_epochs=max_epochs,
+            max_loci=max_loci,
+        )
+    except RuntimeError as error:
+        console.print(f"[bold red]Training failed:[/bold red] {error}")
+        raise typer.Exit(code=1) from error
+
+    console.print_json(
+        json.dumps(
+            {
+                "run_id": result.run_id,
+                "run_dir": str(result.run_dir),
+                "checkpoint_dir": str(result.checkpoint_dir),
+                "best_epoch": result.best_epoch,
+                "final": result.metrics.get("final"),
+                "external_test": result.metrics.get("external_test"),
+                "ablations": result.metrics.get("ablations"),
+                "n_unassigned_regions": result.metrics.get("n_unassigned_regions"),
+                "overfit_ok": result.metrics.get("overfit_ok"),
+                "device": result.metrics.get("device"),
+                "tensorboard_url": result.tensorboard_url,
+                "tensorboard_port": result.tensorboard_port,
+                "monitor_hint": result.monitor_hint,
+            },
+            default=str,
+        )
+    )
+    if result.tensorboard_url:
+        console.print(
+            f"[green]TensorBoard[/green] {result.tensorboard_url}  "
+            f"({ssh_tunnel_hint(int(result.tensorboard_port or 6008))})"
         )
     if result.monitor_hint:
         console.print(f"[cyan]TUI monitor[/cyan] {result.monitor_hint}")

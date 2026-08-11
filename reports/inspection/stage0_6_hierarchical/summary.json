@@ -1,0 +1,130 @@
+{
+  "milestone": "6",
+  "model_public_name": "deepMAT-hierarchical",
+  "run_id": "stage0-hier-smoke-maxloci",
+  "preferred_run_id": "stage0-hier-deeprvat-age-tissue-sex-full-v1",
+  "config": "configs/experiment/stage0_hier_deeprvat_full.yaml",
+  "plan": "docs/plans/milestone-6-hierarchical-region-model.md",
+  "matrix_id": "matrix-hub-age-tissue-sex-full-v1",
+  "flat_baseline_run_id": "stage0-flat-deeprvat-age-tissue-sex-full-v1",
+  "max_loci": 2000,
+  "split": {
+    "split_id": "hub-age-tissue-sex-full-auto-v1",
+    "reused_flat_split": true,
+    "flat_split_run_id": "stage0-flat-deeprvat-age-tissue-sex-full-v1",
+    "n_train": 9489,
+    "n_validation": 2074,
+    "n_external_test": 1985
+  },
+  "topology": {
+    "n_genes": 51,
+    "n_regions": 791,
+    "n_typed_edges": 1634,
+    "n_unassigned_regions": 434,
+    "region_types": [
+      "promoter_core",
+      "promoter_proximal",
+      "five_prime",
+      "three_prime",
+      "gene_body",
+      "unassigned"
+    ],
+    "unassigned_policy": "singleton region_type=unassigned \u2192 synthetic gene __unassigned__; Illumina-coordinate-unmapped probes remain matrix-excluded"
+  },
+  "task": "multitask",
+  "n_classes": 47,
+  "best_epoch": 2,
+  "best_val_loss": 3.567699563997576,
+  "final": {
+    "epoch": 3,
+    "train_loss": 2.5902556386608535,
+    "train_accuracy": 0.27243346007604563,
+    "train_mae": 0.8009951215753124,
+    "train_sex_accuracy": 0.5262665262665263,
+    "val_loss": 4.342929820430428,
+    "val_accuracy": 0.020014295925661188,
+    "val_mae": 0.7805216336171097,
+    "val_sex_accuracy": 0.5042183622828784,
+    "learning_rate": 0.001,
+    "task": "multitask"
+  },
+  "external_test": {
+    "n_samples": 1985,
+    "loss": 3.3813504674272514,
+    "accuracy": 0.013256006628003313,
+    "mae": 22.50695684984937,
+    "mae_note": "years (destandardized)",
+    "age_n": 1375.0,
+    "tissue_n": 1207.0,
+    "sex_n": 1883.0,
+    "sex_accuracy": 0.49389272437599574,
+    "split": "external_test"
+  },
+  "ablations": {
+    "full": {
+      "loss": 2.6070854580029845,
+      "accuracy": 0.0,
+      "mae": 24.758179014351725,
+      "sex_accuracy": 0.4360587002096436,
+      "n_samples": 512,
+      "ablation_max_samples": 512
+    },
+    "drop_unassigned": {
+      "loss": 2.609000999480486,
+      "accuracy": 0.0,
+      "mae": 24.86836194296756,
+      "sex_accuracy": 0.4360587002096436,
+      "n_samples": 512,
+      "ablation_max_samples": 512
+    },
+    "promoters_only": {
+      "loss": 2.617593393661082,
+      "accuracy": 0.0,
+      "mae": 24.96955034679843,
+      "sex_accuracy": 0.5828092243186582,
+      "n_samples": 512,
+      "ablation_max_samples": 512
+    },
+    "gene_body_only": {
+      "loss": 2.7276220927014947,
+      "accuracy": 0.0,
+      "mae": 24.386780095105824,
+      "sex_accuracy": 0.4171907756813417,
+      "n_samples": 512,
+      "ablation_max_samples": 512
+    }
+  },
+  "comparison_to_flat_5d": {
+    "flat_external_test": {
+      "accuracy": 0.6661143330571665,
+      "age_n": 1375.0,
+      "loss": 4.443896544842937,
+      "mae": 21.976888244485455,
+      "mae_note": "years (destandardized)",
+      "n_samples": 1985,
+      "sex_accuracy": 0.9314922995220393,
+      "sex_n": 1883.0,
+      "tissue_n": 1207.0
+    },
+    "hier_external_test": {
+      "n_samples": 1985,
+      "loss": 3.3813504674272514,
+      "accuracy": 0.013256006628003313,
+      "mae": 22.50695684984937,
+      "mae_note": "years (destandardized)",
+      "age_n": 1375.0,
+      "tissue_n": 1207.0,
+      "sex_n": 1883.0,
+      "sex_accuracy": 0.49389272437599574,
+      "split": "external_test"
+    },
+    "note": "Same preferred split when reused_flat_split=true; compare tissue accuracy / age MAE / sex accuracy"
+  },
+  "checkpoints": {
+    "best": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-hier-smoke-maxloci/best.pt",
+    "last": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-hier-smoke-maxloci/last.pt",
+    "manifest": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-hier-smoke-maxloci/checkpoint_manifest.json"
+  },
+  "tensorboard_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-hier-smoke-maxloci/tb",
+  "metrics_jsonl": "/data/projects/methyl-burden-score/artifacts/runs/stage0-hier-smoke-maxloci/metrics.jsonl"
+}
