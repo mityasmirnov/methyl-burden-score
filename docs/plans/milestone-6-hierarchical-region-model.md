@@ -1,7 +1,9 @@
 # Milestone 6 build plan: Hierarchical region model
 
-Status: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md) §6.
+Status: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md) §6 — **done**.
 Prerequisite: Milestone 5d max-N flat DeepRVAT baseline (done).
+Evidence: `reports/inspection/stage0_6_hierarchical/`; run
+`stage0-hier-deeprvat-age-tissue-sex-full-v1`.
 Normative topology: [`ARCHITECTURE.md`](../ARCHITECTURE.md), [`ANNOTATION_GRAPH.md`](../ANNOTATION_GRAPH.md).
 
 Historical config sketch (not the runnable 5d cohort path):

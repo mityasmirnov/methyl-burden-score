@@ -1,13 +1,13 @@
 {
   "milestone": "6",
   "model_public_name": "deepMAT-hierarchical",
-  "run_id": "stage0-hier-smoke-maxloci",
+  "run_id": "stage0-hier-deeprvat-age-tissue-sex-full-v1",
   "preferred_run_id": "stage0-hier-deeprvat-age-tissue-sex-full-v1",
   "config": "configs/experiment/stage0_hier_deeprvat_full.yaml",
   "plan": "docs/plans/milestone-6-hierarchical-region-model.md",
   "matrix_id": "matrix-hub-age-tissue-sex-full-v1",
   "flat_baseline_run_id": "stage0-flat-deeprvat-age-tissue-sex-full-v1",
-  "max_loci": 2000,
+  "max_loci": null,
   "split": {
     "split_id": "hub-age-tissue-sex-full-auto-v1",
     "reused_flat_split": true,
@@ -17,81 +17,168 @@
     "n_external_test": 1985
   },
   "topology": {
-    "n_genes": 51,
-    "n_regions": 791,
-    "n_typed_edges": 1634,
-    "n_unassigned_regions": 434,
+    "n_genes": 19554,
+    "n_panel": 19555,
+    "n_regions": 100453,
+    "n_typed_edges": 440903,
+    "n_residual_cols": 108070,
+    "annotation_summary": {
+      "n_study_loci": 482379,
+      "n_genes": 19554,
+      "n_regions": 100453,
+      "n_typed_edges": 440903,
+      "n_residual_cols": 108070,
+      "n_panel": 19555,
+      "annotation_status_counts": {
+        "mapped": 318965,
+        "unmapped": 108070,
+        "ambiguous": 0,
+        "multi_mapped": 55344
+      }
+    },
     "region_types": [
       "promoter_core",
       "promoter_proximal",
       "five_prime",
       "three_prime",
-      "gene_body",
-      "unassigned"
+      "gene_body"
     ],
-    "unassigned_policy": "singleton region_type=unassigned \u2192 synthetic gene __unassigned__; Illumina-coordinate-unmapped probes remain matrix-excluded"
+    "residual_policy": "mapped loci \u2192 typed CpG\u2192region\u2192gene; unmapped/ambiguous \u2192 residual path (no __unassigned__ gene pooling); Illumina-coordinate-unmapped probes retained as residual matrix columns on reconvert"
   },
   "task": "multitask",
   "n_classes": 47,
-  "best_epoch": 2,
-  "best_val_loss": 3.567699563997576,
+  "best_epoch": 13,
+  "best_val_loss": 3.298678525521944,
   "final": {
-    "epoch": 3,
-    "train_loss": 2.5902556386608535,
-    "train_accuracy": 0.27243346007604563,
-    "train_mae": 0.8009951215753124,
-    "train_sex_accuracy": 0.5262665262665263,
-    "val_loss": 4.342929820430428,
-    "val_accuracy": 0.020014295925661188,
-    "val_mae": 0.7805216336171097,
-    "val_sex_accuracy": 0.5042183622828784,
+    "epoch": 21,
+    "train_loss": 2.4767564141779106,
+    "train_accuracy": 0.9444866920152091,
+    "train_mae": 1.692589725279065,
+    "train_sex_accuracy": 0.8873288873288874,
+    "val_loss": 6.464847536997663,
+    "val_accuracy": 0.7133666904932094,
+    "val_mae": 1.9922575789036545,
+    "val_sex_accuracy": 0.963771712158809,
     "learning_rate": 0.001,
     "task": "multitask"
   },
   "external_test": {
     "n_samples": 1985,
-    "loss": 3.3813504674272514,
-    "accuracy": 0.013256006628003313,
-    "mae": 22.50695684984937,
+    "loss": 3.671771312280277,
+    "accuracy": 0.5981772990886496,
+    "mae": 27.774534330316442,
     "mae_note": "years (destandardized)",
     "age_n": 1375.0,
     "tissue_n": 1207.0,
     "sex_n": 1883.0,
-    "sex_accuracy": 0.49389272437599574,
+    "sex_accuracy": 0.9341476367498672,
     "split": "external_test"
   },
   "ablations": {
     "full": {
-      "loss": 2.6070854580029845,
-      "accuracy": 0.0,
-      "mae": 24.758179014351725,
-      "sex_accuracy": 0.4360587002096436,
+      "loss": 1.2727329256595112,
+      "accuracy": 0.9022222222222223,
+      "mae": 33.88574781176228,
+      "sex_accuracy": 0.9853249475890985,
       "n_samples": 512,
-      "ablation_max_samples": 512
+      "ablation_max_samples": 512,
+      "slice": "full"
     },
-    "drop_unassigned": {
-      "loss": 2.609000999480486,
-      "accuracy": 0.0,
-      "mae": 24.86836194296756,
-      "sex_accuracy": 0.4360587002096436,
+    "mapped_only": {
+      "loss": 1.2257614074042067,
+      "accuracy": 0.8977777777777778,
+      "mae": 32.7679907212972,
+      "sex_accuracy": 0.9853249475890985,
       "n_samples": 512,
-      "ablation_max_samples": 512
+      "ablation_max_samples": 512,
+      "slice": "mapped_only"
     },
-    "promoters_only": {
-      "loss": 2.617593393661082,
+    "residual_only": {
+      "loss": 2.7157854167744517,
       "accuracy": 0.0,
-      "mae": 24.96955034679843,
-      "sex_accuracy": 0.5828092243186582,
-      "n_samples": 512,
-      "ablation_max_samples": 512
-    },
-    "gene_body_only": {
-      "loss": 2.7276220927014947,
-      "accuracy": 0.0,
-      "mae": 24.386780095105824,
+      "mae": 27.45203918744912,
       "sex_accuracy": 0.4171907756813417,
       "n_samples": 512,
-      "ablation_max_samples": 512
+      "ablation_max_samples": 512,
+      "slice": "residual_only"
+    },
+    "promoters_only": {
+      "loss": 1.9933157574851066,
+      "accuracy": 0.8577777777777778,
+      "mae": 51.19289997143456,
+      "sex_accuracy": 0.9790356394129979,
+      "n_samples": 512,
+      "ablation_max_samples": 512,
+      "slice": "promoters_only"
+    },
+    "gene_body_only": {
+      "loss": 1.8329086404992267,
+      "accuracy": 0.07111111111111111,
+      "mae": 31.766975067103665,
+      "sex_accuracy": 0.9832285115303984,
+      "n_samples": 512,
+      "ablation_max_samples": 512,
+      "slice": "gene_body_only"
+    }
+  },
+  "annotation_slices": {
+    "full": {
+      "loss": 1.2727329256595112,
+      "accuracy": 0.9022222222222223,
+      "mae": 33.88574781176228,
+      "sex_accuracy": 0.9853249475890985,
+      "n_samples": 512,
+      "ablation_max_samples": 512,
+      "slice": "full"
+    },
+    "mapped_only": {
+      "loss": 1.2257614074042067,
+      "accuracy": 0.8977777777777778,
+      "mae": 32.7679907212972,
+      "sex_accuracy": 0.9853249475890985,
+      "n_samples": 512,
+      "ablation_max_samples": 512,
+      "slice": "mapped_only"
+    },
+    "residual_only": {
+      "loss": 2.7157854167744517,
+      "accuracy": 0.0,
+      "mae": 27.45203918744912,
+      "sex_accuracy": 0.4171907756813417,
+      "n_samples": 512,
+      "ablation_max_samples": 512,
+      "slice": "residual_only"
+    }
+  },
+  "vs_flat": {
+    "hierarchical": {
+      "n_samples": 1985,
+      "loss": 3.671771312280277,
+      "accuracy": 0.5981772990886496,
+      "mae": 27.774534330316442,
+      "mae_note": "years (destandardized)",
+      "age_n": 1375.0,
+      "tissue_n": 1207.0,
+      "sex_n": 1883.0,
+      "sex_accuracy": 0.9341476367498672,
+      "split": "external_test"
+    },
+    "flat": {
+      "accuracy": 0.6661143330571665,
+      "age_n": 1375.0,
+      "loss": 4.443896544842937,
+      "mae": 21.976888244485455,
+      "mae_note": "years (destandardized)",
+      "n_samples": 1985,
+      "sex_accuracy": 0.9314922995220393,
+      "sex_n": 1883.0,
+      "tissue_n": 1207.0
+    },
+    "hierarchical_minus_flat": {
+      "mae": 5.797646085830987,
+      "accuracy": -0.06793703396851691,
+      "sex_accuracy": 0.0026553372278279586,
+      "loss": -0.7721252325626597
     }
   },
   "comparison_to_flat_5d": {
@@ -108,23 +195,48 @@
     },
     "hier_external_test": {
       "n_samples": 1985,
-      "loss": 3.3813504674272514,
-      "accuracy": 0.013256006628003313,
-      "mae": 22.50695684984937,
+      "loss": 3.671771312280277,
+      "accuracy": 0.5981772990886496,
+      "mae": 27.774534330316442,
       "mae_note": "years (destandardized)",
       "age_n": 1375.0,
       "tissue_n": 1207.0,
       "sex_n": 1883.0,
-      "sex_accuracy": 0.49389272437599574,
+      "sex_accuracy": 0.9341476367498672,
       "split": "external_test"
+    },
+    "hierarchical_minus_flat": {
+      "mae": 5.797646085830987,
+      "accuracy": -0.06793703396851691,
+      "sex_accuracy": 0.0026553372278279586,
+      "loss": -0.7721252325626597
     },
     "note": "Same preferred split when reused_flat_split=true; compare tissue accuracy / age MAE / sex accuracy"
   },
   "checkpoints": {
-    "best": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-hier-smoke-maxloci/best.pt",
-    "last": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-hier-smoke-maxloci/last.pt",
-    "manifest": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-hier-smoke-maxloci/checkpoint_manifest.json"
+    "best": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-hier-deeprvat-age-tissue-sex-full-v1/best.pt",
+    "last": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-hier-deeprvat-age-tissue-sex-full-v1/last.pt",
+    "manifest": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-hier-deeprvat-age-tissue-sex-full-v1/checkpoint_manifest.json"
   },
-  "tensorboard_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-hier-smoke-maxloci/tb",
-  "metrics_jsonl": "/data/projects/methyl-burden-score/artifacts/runs/stage0-hier-smoke-maxloci/metrics.jsonl"
+  "tensorboard_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-hier-deeprvat-age-tissue-sex-full-v1/tb",
+  "metrics_jsonl": "/data/projects/methyl-burden-score/artifacts/runs/stage0-hier-deeprvat-age-tissue-sex-full-v1/metrics.jsonl",
+  "analysis": {
+    "best_epoch": 13,
+    "best_val_loss": 3.298678525521944,
+    "n_epochs_logged": 21,
+    "verdict": "Hierarchical residual-path baseline trained on uncapped 5d cohort/folds. Flat remains stronger on tissue accuracy and age MAE; sex tied. Mapped path carries signal; residual_only alone is near chance for tissue/sex.",
+    "vs_flat": {
+      "mae": 5.797646085830987,
+      "accuracy": -0.06793703396851691,
+      "sex_accuracy": 0.0026553372278279586,
+      "loss": -0.7721252325626597
+    },
+    "annotation_status_counts": {
+      "mapped": 318965,
+      "unmapped": 108070,
+      "ambiguous": 0,
+      "multi_mapped": 55344
+    },
+    "caveat": "Current Hub matrix residual cols are gene-unassigned orphans; Illumina-coordinate residual probes appear after matrix reconvert."
+  }
 }

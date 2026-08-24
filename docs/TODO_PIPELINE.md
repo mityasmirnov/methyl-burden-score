@@ -12,12 +12,12 @@ True next milestone after bootstrap:
 > one source ingested cleanly → one graph built → one canonical matrix written →
 > one baseline trained → phenotype registry + multi-pack eval → Hub metadata
 > contracts → real Hub pack matrices + study-grouped eval → multitask shared
-> encoder (5c) → max-N flat age/tissue/sex (5d — **done**) → **hierarchical
-> (6 — in progress)** → one cross-fitted score matrix.
+> encoder (5c) → max-N flat age/tissue/sex (5d — **done**) → hierarchical
+> (6 — **done**) → **cross-fitting (7)** → one score matrix.
 
-**Current gate:** Milestone **6**. Prerequisites through 5d are `done`.
+**Current gate:** Milestone **7**. Prerequisites through 6 are `done`.
 Disease pack re-download is in progress (corrupt local zip quarantined); not a
-gate for hierarchical work.
+gate for cross-fitting work.
 
 Primary open data source going forward: **EWAS Data Hub**
 ([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
@@ -152,7 +152,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Note:** Primary ongoing open source is EWAS Data Hub (ADR 0002). This
   milestone’s CpGCorpus evidence stands; do not re-open milestone 1 to switch
   sources.
-- **Next action:** Milestone 6 — hierarchical region model.
+- **Next action:** Milestone 7 — study-grouped cross-fitting.
 
 ---
 
@@ -186,7 +186,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
     Stage 0 region taxonomy (not the full CapsNet model).
   Convert or export needed tables into `$MBS_DATA_ROOT/canonical/annotations`
   (or graphs); keep bulky vendor blobs out of the Python runtime path.
-- **Next action:** Milestone 6 — hierarchical region model.
+- **Next action:** Milestone 7 — study-grouped cross-fitting.
 
 ---
 
@@ -208,7 +208,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `tests/unit/test_static_features.py`. Build plan:
   [`plans/milestone-3-static-locus-features.md`](plans/milestone-3-static-locus-features.md).
 - **Depends on:** (2) locus registry.
-- **Next action:** Milestone 6 — hierarchical region model.
+- **Next action:** Milestone 7 — study-grouped cross-fitting.
 
 ---
 
@@ -233,7 +233,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `make download-ewas-study STUDY=GSE35069`. Unit tests:
   `tests/unit/test_matrix_store.py`.
 - **Depends on:** (1), (2).
-- **Next action:** Milestone 6 — hierarchical region model.
+- **Next action:** Milestone 7 — study-grouped cross-fitting.
 
 ---
 
@@ -255,7 +255,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `last.pt`, checksums). Unit tests: `tests/unit/test_training_flat.py`. Plan:
   [`plans/milestone-5-flat-deeprvat-baseline.md`](plans/milestone-5-flat-deeprvat-baseline.md).
 - **Depends on:** (4). Model module scaffolding alone is not sufficient.
-- **Next action:** Milestone 6 — hierarchical region model.
+- **Next action:** Milestone 7 — study-grouped cross-fitting.
 
 ---
 
@@ -279,7 +279,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   [`plans/milestone-5b-phenotype-registry-eval.md`](plans/milestone-5b-phenotype-registry-eval.md);
   [ADR 0003](adr/0003-milestone-5b-phenotype-registry.md).
 - **Depends on:** (5).
-- **Next action:** Milestone 6 (5c done).
+- **Next action:** Milestone 7 — study-grouped cross-fitting.
 
 ---
 
@@ -367,7 +367,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Optional follow-ons:** masked disease/cancer aux heads; blood/brain as
   **domain aux** after ontology; shared-class tissue holdouts.
 - **Depends on:** (5b), (5b′), (5b″) — all `done`.
-- **Next action:** Milestone 6 — hierarchical region model.
+- **Next action:** Milestone 7 — study-grouped cross-fitting.
 
 ---
 
@@ -394,26 +394,30 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `scripts/write_stage0_5d_report.py`.
 - **Depends on:** (5c).
 - **Plan:** [`plans/milestone-5d-max-n-flat-baseline.md`](plans/milestone-5d-max-n-flat-baseline.md).
-- **Next action:** Milestone 6 — hierarchical region model.
+- **Next action:** Milestone 7 — study-grouped cross-fitting.
 
 ---
 
 ## 6. Add the hierarchical model
 
-- **Status:** `in_progress`
+- **Status:** `done`
 - **Done when:** Region layer is trained after the flat baseline is stable;
   promoter/body (and related roles) can be compared to the flat model on the
   same multitask / pilot folds; unmapped loci are retained on a residual path
   (not `__unassigned__` gene pooling) with mapped vs residual eval slices.
 - **Depends on:** (5d) preferred; (5c) at minimum if 5d deferred by ADR.
 - **Plan:** [`plans/milestone-6-hierarchical-region-model.md`](plans/milestone-6-hierarchical-region-model.md).
-- **Evidence (partial):** residual/unmapped retention policy landed in batch,
-  matrix, models, and hier train path; mapped vs residual ablations wired;
-  vectorized locus→region index + pack path; uncapped 5d train running as
-  `stage0-hier-deeprvat-age-tissue-sex-full-v1` (log: `scratch/logs/hier_full.log`).
-- **Next action:** Wait for uncapped train metrics; refresh
+- **Evidence:** Residual retention policy in batch/matrix/models/hier train
+  (ADR 0004); annotation-status masks; mapped vs residual eval slices.
+  Uncapped run `stage0-hier-deeprvat-age-tissue-sex-full-v1` on
+  `matrix-hub-age-tissue-sex-full-v1` with reused 5d split (9489/2074/1985);
+  best epoch 13; topology 19554 genes + residual slot, 108070 residual cols,
+  five GENCODE roles only. External vs flat 5d: tissue acc 0.598 vs 0.666,
+  age MAE 27.8 vs 22.0 y, sex 0.934 vs 0.931. Ablations show mapped≈full and
+  residual_only near chance for tissue/sex. Report:
   `reports/inspection/stage0_6_hierarchical/` via
-  `uv run python scripts/write_stage0_6_report.py`; then mark `done`.
+  `scripts/write_stage0_6_report.py`.
+- **Next action:** Milestone 7 — study-grouped cross-fitting.
 
 ---
 
