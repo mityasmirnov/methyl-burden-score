@@ -16,8 +16,9 @@ True next milestone after bootstrap:
 > (6 — **done**) → **cross-fitting (7)** → one score matrix.
 
 **Current gate:** Milestone **7**. Prerequisites through 6 are `done`.
-Disease pack re-download is in progress (corrupt local zip quarantined); not a
-gate for cross-fitting work.
+Hub **disease** profile zip is complete (2026-08-11). `EWAS_db` All-Data
+mirror remains in progress (~53% of study dirs) and is not a gate for
+cross-fitting.
 
 Primary open data source going forward: **EWAS Data Hub**
 ([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
@@ -78,11 +79,13 @@ historical CpGCorpus inspection and is not re-opened.
   into catalog tables; committing the shallow whole-corpus inventory under
   `reports/inspection/cpgcorpus/` (GSE/GPL report for milestone 1 is enough).
   MethylGPT token-prior export remains ablation-only (not Stage 0 default).
-- **Hub disease profile zip:** local copy lacked EOCD (corrupt / truncated past
-  expected ~20 GB). Quarantined as
-  `disease_methylation_v1.zip.corrupt_no_eocd_*` and restarted
-  `scripts/download_ewas_phenotype_family.sh disease` (2026-08-11). Cancer pack
-  EOCD OK. Not a Milestone 6 blocker.
+- **Hub disease profile zip:** completed 2026-08-11 via
+  `scripts/download_disease_pack_resilient.sh` (exact remote size + EOCD).
+  Earlier failures were CNCB connection drops / bogus HTTP 416, not disk
+  space. Cancer pack was already OK. **EWAS_db** All-Data download still
+  running (`download_ewas_datahub.sh EWAS_db`; ~1049/1989 studies). Inventory:
+  [`EWAS_DATA.md`](EWAS_DATA.md), [`DATA_CATALOG.md`](DATA_CATALOG.md),
+  `reports/inspection/raw_inventory/`.
 
 ### Useful commands (already safe to re-run)
 

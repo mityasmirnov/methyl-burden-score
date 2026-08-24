@@ -209,7 +209,7 @@ Stage 0 milestones **1–5d** are done (see
 vs flat on the same 5d folds; mapped path carries signal; residual_only alone
 is near chance for tissue/sex. Flat 5d remains the stronger phenotype
 reference on holdout tissue accuracy and age MAE. Disease profile zip
-re-download is not required for 7.
+disease profile zip is complete; EWAS_db All-Data mirror is still in progress (not required for 7). See docs/DATA_CATALOG.md.
 
 Public model name remains **deepMAT**; package/CLI stay `mbs` /
 `methyl-burden-score`.

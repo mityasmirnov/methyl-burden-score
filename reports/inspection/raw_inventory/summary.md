@@ -1,6 +1,6 @@
 # Raw data inventory (refreshed)
 
-Inspected: **2026-08-11T14:38:46.237445+00:00**. Machine-readable: [`summary.json`](summary.json).
+Inspected: **2026-08-24T10:32:27.865942+00:00**. Machine-readable: [`summary.json`](summary.json).
 
 Shallow sizes for Hub profile packs, Atlas, EPICv2 manifests, and Stage 0 CpGCorpus GSEs. Does not recurse into every `EWAS_db` GSM file.
 
@@ -8,13 +8,13 @@ Shallow sizes for Hub profile packs, Atlas, EPICv2 manifests, and Stage 0 CpGCor
 
 | Tree | Bytes (approx.) |
 |------|----------------:|
-| `ewas_datahub/` | 428.45 GiB |
+| `ewas_datahub/` | 990.03 GiB |
 | `cpgcorpus/` | 6.72 GiB |
-| `manifests/` | 0.43 GiB |
-| `ewas_atlas/` | 0.26 GiB |
-| `raw_total/` | 435.93 GiB |
+| `manifests/` | 445.1 MiB |
+| `ewas_atlas/` | 268.7 MiB |
+| `raw_total/` | 997.51 GiB |
 
-EWAS_db study directories: **457**
+EWAS_db study directories: **1049**
 
 ## Figures
 
@@ -36,9 +36,44 @@ EWAS_db study directories: **457**
 | bmi | `bmi_methylation_v1.zip` | 3.06 | 3.06 GiB | True | `ok` |
 | ancestry | `ancestry_category_methylation_v1.zip` | 1.96 | 1.96 GiB | True | `ok` |
 | cancer | `cancer_methylation_v1.zip` | 16.07 | 16.07 GiB | True | `ok` |
-| disease | `disease_methylation_v1.zip` | 20.11 | 4.27 GiB | False | `bad_zip` |
+| disease | `disease_methylation_v1.zip` | 20.11 | 20.11 GiB | True | `ok` |
 
-GMQN.zip: 0.04 GiB status=`ok`
+GMQN.zip: 40.1 MiB status=`ok`
+
+## Hub sample-info zips (phenotypes, not betas)
+
+| Family | File | On-disk |
+|--------|------|--------:|
+| age | `sample_age_methylation_v1.zip` | 227 KiB |
+| tissue | `sample_tissue_methylation_v1.zip` | 191 KiB |
+| sex | `sample_sex_methylation_v1.zip` | 112 KiB |
+| blood | `sample_blood_methylation_v1.zip` | 91 KiB |
+| brain | `sample_brain_methylation_v1.zip` | 48 KiB |
+| bmi | `sample_bmi_methylation_v1.zip` | 103 KiB |
+| ancestry | `sample_ancestry_category_methylation_v1.zip` | 44 KiB |
+| cancer | `sample_cancer_methylation_v1.zip` | 485 KiB |
+| disease | `sample_disease_methylation_v1.zip` | 394 KiB |
+
+## Hub sample-info Parquet (`canonical/phenotypes/*_sample_info.parquet`)
+
+Row counts can exceed unique GSM (duplicate rows in Hub R tables). Use **unique `sample_id`** as training N.
+
+| Family | Rows | Unique GSM | Unique studies |
+|--------|-----:|-----------:|---------------:|
+| age | 8,374 | 8,374 | 143 |
+| tissue | 5,323 | 5,323 | 258 |
+| sex | 2,978 | 2,978 | 161 |
+| blood | 3,402 | 3,402 | 161 |
+| brain | 1,997 | 1,997 | 40 |
+| bmi | 2,070 | 2,070 | 25 |
+| ancestry | 1,380 | 1,380 | 21 |
+| cancer | 10,841 | 10,101 | 225 |
+| disease | 14,501 | 12,218 | 209 |
+
+## EWAS_db All-Data tree (in progress)
+
+Local study directories: **1049** / advertised remote **1989** (52.7% of study folders if the remote count is stable).
+Per-GSM text files under `raw/ewas_datahub/EWAS_db/{GSE}/`. Resume: `bash scripts/download_ewas_datahub.sh EWAS_db`.
 
 ## EWAS Atlas files
 
@@ -61,10 +96,10 @@ GMQN.zip: 0.04 GiB status=`ok`
 
 | GSE | GPL | On-disk |
 |-----|-----|--------:|
-| GSE116992 | GPL13534 | 0.11 GiB |
-| GSE116992 | GPL21145 | 0.28 GiB |
-| GSE125367 | GPL21145 | 0.41 GiB |
-| GSE35069 | GPL13534 | 0.31 GiB |
+| GSE116992 | GPL13534 | 113.6 MiB |
+| GSE116992 | GPL21145 | 288.7 MiB |
+| GSE125367 | GPL21145 | 415.0 MiB |
+| GSE35069 | GPL13534 | 312.4 MiB |
 
 ## Regenerate
 

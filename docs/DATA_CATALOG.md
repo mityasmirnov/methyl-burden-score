@@ -6,15 +6,14 @@ harmonization used by Stage 0. Download policy:
 [`EWAS_METADATA.md`](EWAS_METADATA.md). Registry:
 [`configs/data/phenotype_registry.yaml`](../configs/data/phenotype_registry.yaml).
 
-**Last refreshed (Hub zip sizes):** 2026-08-11 via
-[`reports/inspection/raw_inventory/`](../reports/inspection/raw_inventory/).
-**Sample-info Ns:** 2026-08-06 via
-[`reports/inspection/ewas_metadata_structure/`](../reports/inspection/ewas_metadata_structure/)
-(`mbs inspect ewas-metadata`).
+**Last refreshed:** 2026-08-24 via
+[`reports/inspection/raw_inventory/`](../reports/inspection/raw_inventory/)
+(`scripts/write_raw_inventory_refresh.py`). Sample-info Ns from
+`canonical/phenotypes/*_sample_info.parquet` (same refresh). Host disk at
+refresh: **~2.0 T free** on `/data` (~92% used) — not a download blocker.
 
 ```bash
 uv run python scripts/write_raw_inventory_refresh.py
-uv run mbs inspect ewas-metadata
 uv sync --extra analysis   # matplotlib, once
 uv run python scripts/write_pipeline_doc_figures.py
 ```
@@ -25,14 +24,13 @@ Do not recursively dump `$MBS_DATA_ROOT` into chat; use these reports.
 
 | Topic | Status |
 |-------|--------|
-| Source lanes + raw GiB | Present (+ figure) |
-| Hub pack advertised vs on-disk | Present (+ figure); disease marked `bad_zip` |
+| Source lanes + raw GiB | Present (+ figure); refreshed 2026-08-24 |
+| Hub pack advertised vs on-disk | Present (+ figure); **all nine packs `ok`** including disease |
 | Unique GSM / studies / primary column | Present (+ sample-count figure) |
 | Converted matrices + multitask masks | Present (5d evidence) |
 | Trait harmonization rules | Present |
-| EWAS_db per-study byte breakdown | Shallow study-dir count only (455) |
-| Disease full matrix convert | Blocked until zip OK |
-| Live download progress % for disease | Not instrumented in inventory |
+| EWAS_db per-study progress | **In progress** (~53% of remote study folders) |
+| Disease full matrix convert | Unblocked (zip OK); convert not yet registered |
 
 ## Source lanes
 
@@ -55,25 +53,30 @@ flowchart TB
 
 ADR: [`adr/0002-ewas-datahub-primary-source.md`](adr/0002-ewas-datahub-primary-source.md).
 
-### Raw tree sizes (2026-08-11)
+### Raw tree sizes (2026-08-24)
 
 ![Raw tree sizes](../reports/inspection/raw_inventory/figures/raw_tree_sizes.png)
 
 | Tree | Approx. size |
 |------|-------------:|
-| `ewas_datahub/` | 428.45 GiB |
+| `ewas_datahub/` | 989.82 GiB |
 | `cpgcorpus/` | 6.72 GiB |
 | `manifests/` | 0.43 GiB |
 | `ewas_atlas/` | 0.26 GiB |
-| **all `raw/`** | **435.93 GiB** |
+| **all `raw/`** | **997.30 GiB** |
 
-`EWAS_db` study directories present: **457** (shallow count). Hub profile zips are
-a small slice of `ewas_datahub/`; most bytes are per-study `EWAS_db` text.
+`EWAS_db` study directories present: **1049 / 1989** advertised remote (~52.7%).
+Most of `ewas_datahub/` is per-study `EWAS_db` text (~917 GiB); Hub profile
+zips are ~73 GiB total. Download still running:
+`bash scripts/download_ewas_datahub.sh EWAS_db` (log
+`$MBS_ARTIFACT_ROOT/logs/downloads/ewas_datahub_EWAS_db.log`). Some GSM
+`wget` attempts fail transiently (`WARN: failed`); the script continues and
+resume re-tries.
 
 ## Hub phenotype packs
 
-Advertised GB from NGDC / [`EWAS_DATA.md`](EWAS_DATA.md). On-disk from
-`raw_inventory` 2026-08-11. Sample-info from `ewas_metadata_structure` 2026-08-06.
+Advertised GB from NGDC / [`EWAS_DATA.md`](EWAS_DATA.md). On-disk + Zip OK from
+`raw_inventory` 2026-08-24. Unique GSM / studies from sample-info Parquet.
 
 ![Hub pack sizes](../reports/inspection/raw_inventory/figures/hub_pack_sizes.png)
 
@@ -89,15 +92,21 @@ Advertised GB from NGDC / [`EWAS_DATA.md`](EWAS_DATA.md). On-disk from
 | bmi | `bmi_methylation_v1.zip` | 3.06 | 3.06 GiB | OK | 2,070 | 25 | `bmi` |
 | ancestry | `ancestry_category_methylation_v1.zip` | 1.96 | 1.96 GiB | OK | 1,380 | 21 | `race` |
 | cancer | `cancer_methylation_v1.zip` | 16.07 | 16.07 GiB | OK | 10,101 | 225 | `disease` |
-| disease | `disease_methylation_v1.zip` | 20.11 | 4.27 GiB | **bad_zip** | 12,218 | 209 | `disease` |
+| disease | `disease_methylation_v1.zip` | 20.11 | 20.11 GiB | OK | 12,218 | 209 | `disease` |
 
-Disease/cancer sample-info row counts exceed unique GSM (duplicate rows in the
-R tables); use **unique `sample_id`** for training N. Disease profile zip is
-incomplete / corrupt on disk (re-download in progress per
-[`TODO_PIPELINE.md`](TODO_PIPELINE.md)); cancer EOCD is OK as of this refresh.
+Disease/cancer **row** counts in sample-info exceed unique GSM (duplicate rows
+in Hub R tables): cancer 10,841 rows / 10,101 GSM; disease 14,501 rows /
+12,218 GSM. Use **unique `sample_id`** for training N.
 
-Sample-info extracts live under
-`reports/inspection/ewas_datahub_samples/` (ancestry file is `sample_race.txt`).
+**Disease pack history:** earlier incomplete local copies lacked EOCD and were
+quarantined; resilient resume finished 2026-08-11
+(`scripts/download_disease_pack_resilient.sh`) at exact remote
+`Content-Length` 21 589 344 448 bytes. Failures were CNCB connection drops /
+bogus `416`, **not** disk space.
+
+Sample-info extracts: `reports/inspection/ewas_datahub_samples/` (ancestry
+file is `sample_race.txt`). Parquet exports:
+`$MBS_DATA_ROOT/canonical/phenotypes/{family}_sample_info.parquet`.
 
 ## Canonical matrices in use
 
@@ -129,16 +138,16 @@ benchmarks; see registry + `stage0_hub_real_benchmark/`.
 
 | Concern | How Stage 0 handles it |
 |---------|------------------------|
-| Join keys | Hub `sample_id` (GSM) + `project_id` (GSE). Do **not** equate Atlas `study_ID` (ES…) to GSE |
+| Join keys | Hub `sample_id` (GSM) + `project_id`/`study_id` (GSE). Do **not** equate Atlas `study_ID` (ES…) to GSE |
 | Family → column | Fixed map in [`EWAS_METADATA.md`](EWAS_METADATA.md) / `FAMILY_VALUE_COLUMN` |
 | Tissue labels | Ontology / class ids via `tissue_ontology.yaml` for CE head |
 | Blood pack | Primary `cell_component` is mostly null; benchmarks often use `tissue` instead |
-| Disease / cancer | Both use `disease` column; empty → control rules planned at convert; disease matrix blocked until zip OK |
+| Disease / cancer | Both use `disease` column; empty → control rules at convert; profile zips now OK |
 | Multitask | One shared encoder; per-sample masks gate loss ([`SCORING_PIPELINE.md`](SCORING_PIPELINE.md)) |
 | Atlas traits | 878 study traits / associations — **validation only**, not training labels |
 
-Wave-1 training focus: age, tissue, disease (disease pending). Wave-2 /
-secondary: cancer, blood, brain, sex, ancestry, BMI.
+Wave-1 training focus: age, tissue (+ sex in 5d). Disease/cancer aux heads
+remain optional follow-ons once matrices are converted.
 
 ## EWAS Atlas (knowledge, not training)
 
@@ -152,19 +161,21 @@ secondary: cancer, blood, brain, sex, ancestry, BMI.
 
 ## Known gaps
 
-- **Disease profile zip** incomplete (`bad_zip`, ~4.3 GiB of ~20 GB expected).
+- **EWAS_db mirror incomplete** (~1049/1989 study dirs; still downloading).
 - Blood primary phenotype sparsity; do not treat as pack-wide cell-type labels
   without another column strategy.
 - Registry `sample_count: null` on most pack entries until convert registers N.
-- Sample-info structure report not re-run on 2026-08-11 (extracts unchanged).
-- Uncapped hierarchical train on the 13,548 union is Milestone 6 (in progress).
+- Disease/cancer **profile → matrix convert** not yet added to the matrices
+  table (zips are ready).
+- Cross-fitting (Milestone 7) is the current pipeline gate.
 
 ## Proposed improvements
 
-1. After disease EOCD is healthy: refresh inventory + add `matrix-hub-disease-*` row to the matrices table.
-2. Populate registry `sample_count` from unique GSM when exporting sample-info Parquet (one write, many docs).
+1. Convert disease/cancer packs → `matrix-hub-disease-*` / `matrix-hub-cancer-*` and register Ns.
+2. Populate registry `sample_count` from unique GSM when exporting sample-info Parquet.
 3. Optional Venn / upset of GSM overlap across age∩tissue∩sex (already implied by 13,548 union + 3,127 dedupe note).
 4. Do not commit Hub `.RData` sample blobs; keep `.txt` / Parquet only under inspection.
+5. Let EWAS_db finish (or pause if disk approaches capacity); re-run inventory.
 
 ## Related
 

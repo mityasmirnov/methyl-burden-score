@@ -123,11 +123,44 @@ after extract). Prefer the unpacked `.txt` for export; see
 | Sample information (cancer) | `sample_cancer_methylation_v1.zip` → `…/sample_cancer.txt` | 117 KB |
 | Profiles of 28 diseases | `disease_methylation_v1.zip` | 20.11 GB |
 | Sample information (disease) | `sample_disease_methylation_v1.zip` → `…/sample_disease.txt` | 154 KB |
-| GMQN reference materials | `GMQN.zip` | (see remote) |
+| GMQN reference materials | `GMQN.zip` | ~40 MB |
 
 All nine sample-info families above are unpacked and covered by
-`mbs inspect ewas-metadata` (as of 2026-08-06).
+`mbs inspect ewas-metadata` (as of 2026-08-06). Canonical Parquet exports live
+under `$MBS_DATA_ROOT/canonical/phenotypes/{family}_sample_info.parquet`.
 
+### Local download status (refresh via inventory)
+
+Authoritative on-disk snapshot:
+[`reports/inspection/raw_inventory/summary.md`](../reports/inspection/raw_inventory/summary.md)
+(+ narrative in [`DATA_CATALOG.md`](DATA_CATALOG.md)).
+
+| Asset | Status (2026-08-24) |
+|-------|---------------------|
+| All nine Hub **profile** zips (age…disease) | **Complete** (Zip OK; disease finished 2026-08-11 after CNCB drop/416 failures) |
+| All nine Hub **sample-info** zips + Parquet | **Complete** |
+| Atlas batch TSVs | **Complete** (~0.26 GiB) |
+| EPICv2 manifests | **Complete** |
+| `EWAS_db/` All Data | **In progress** — ~1049 / 1989 study dirs (~990 GiB under `ewas_datahub/`) |
+| Host disk | `/data` ~2 T free at last check — packs are fine; watch space as `EWAS_db` grows |
+
+Disease resume helper (size + EOCD gate; survives refused / bogus 416):
+
+```bash
+nohup bash scripts/download_disease_pack_resilient.sh \
+  > "$MBS_ARTIFACT_ROOT/logs/downloads/disease_resilient_nohup.log" 2>&1 &
+```
+
+EWAS_db resume:
+
+```bash
+nohup bash scripts/download_ewas_datahub.sh EWAS_db \
+  > "$MBS_ARTIFACT_ROOT/logs/downloads/ewas_datahub_EWAS_db.log" 2>&1 &
+```
+
+Phenotype sample counts (unique GSM): age 8,374; tissue 5,323; sex 2,978;
+blood 3,402; brain 1,997; BMI 2,070; ancestry 1,380; cancer 10,101;
+disease 12,218. See catalog for study Ns and matrix conversions.
 ## Matrix convert (what it means)
 
 **Convert** turns downloaded Hub **profile packs** (large ZIP of per-sample

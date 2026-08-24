@@ -47,8 +47,14 @@
       "gse": "GSE35069"
     }
   ],
-  "ewas_db_n_study_dirs": 457,
-  "generated_at": "2026-08-11T14:38:46.237445+00:00",
+  "download_notes": {
+    "disease_profile_zip": "complete_2026-08-11 (size+EOCD match remote)",
+    "ewas_db": "in_progress via scripts/download_ewas_datahub.sh EWAS_db",
+    "host_disk_free_note": "check df -h /data; Hub packs alone ~73 GiB"
+  },
+  "ewas_db_n_study_dirs": 1049,
+  "ewas_db_remote_study_count": 1989,
+  "generated_at": "2026-08-24T10:32:27.865942+00:00",
   "gmqn": {
     "bytes": 42008375,
     "exists": true,
@@ -148,13 +154,144 @@
     },
     {
       "advertised_gb": 20.11,
-      "bytes": 4583816965,
+      "bytes": 21589344448,
       "exists": true,
       "family": "disease",
       "filename": "disease_methylation_v1.zip",
+      "n_members": 2,
       "path": "/data/projects/methyl-burden-score/data/raw/ewas_datahub/download/disease_methylation_v1.zip",
-      "status": "bad_zip",
-      "zip_readable": false
+      "status": "ok",
+      "zip_readable": true
+    }
+  ],
+  "hub_sample_info_parquet": [
+    {
+      "exists": true,
+      "family": "age",
+      "n_rows": 8374,
+      "n_unique_sample_id": 8374,
+      "n_unique_study_id": 143,
+      "path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/age_sample_info.parquet"
+    },
+    {
+      "exists": true,
+      "family": "tissue",
+      "n_rows": 5323,
+      "n_unique_sample_id": 5323,
+      "n_unique_study_id": 258,
+      "path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/tissue_sample_info.parquet"
+    },
+    {
+      "exists": true,
+      "family": "sex",
+      "n_rows": 2978,
+      "n_unique_sample_id": 2978,
+      "n_unique_study_id": 161,
+      "path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/sex_sample_info.parquet"
+    },
+    {
+      "exists": true,
+      "family": "blood",
+      "n_rows": 3402,
+      "n_unique_sample_id": 3402,
+      "n_unique_study_id": 161,
+      "path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/blood_sample_info.parquet"
+    },
+    {
+      "exists": true,
+      "family": "brain",
+      "n_rows": 1997,
+      "n_unique_sample_id": 1997,
+      "n_unique_study_id": 40,
+      "path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/brain_sample_info.parquet"
+    },
+    {
+      "exists": true,
+      "family": "bmi",
+      "n_rows": 2070,
+      "n_unique_sample_id": 2070,
+      "n_unique_study_id": 25,
+      "path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/bmi_sample_info.parquet"
+    },
+    {
+      "exists": true,
+      "family": "ancestry",
+      "n_rows": 1380,
+      "n_unique_sample_id": 1380,
+      "n_unique_study_id": 21,
+      "path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/ancestry_sample_info.parquet"
+    },
+    {
+      "exists": true,
+      "family": "cancer",
+      "n_rows": 10841,
+      "n_unique_sample_id": 10101,
+      "n_unique_study_id": 225,
+      "path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/cancer_sample_info.parquet"
+    },
+    {
+      "exists": true,
+      "family": "disease",
+      "n_rows": 14501,
+      "n_unique_sample_id": 12218,
+      "n_unique_study_id": 209,
+      "path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/disease_sample_info.parquet"
+    }
+  ],
+  "hub_sample_info_zips": [
+    {
+      "bytes": 232572,
+      "exists": true,
+      "family": "age",
+      "filename": "sample_age_methylation_v1.zip"
+    },
+    {
+      "bytes": 195615,
+      "exists": true,
+      "family": "tissue",
+      "filename": "sample_tissue_methylation_v1.zip"
+    },
+    {
+      "bytes": 115018,
+      "exists": true,
+      "family": "sex",
+      "filename": "sample_sex_methylation_v1.zip"
+    },
+    {
+      "bytes": 92815,
+      "exists": true,
+      "family": "blood",
+      "filename": "sample_blood_methylation_v1.zip"
+    },
+    {
+      "bytes": 48705,
+      "exists": true,
+      "family": "brain",
+      "filename": "sample_brain_methylation_v1.zip"
+    },
+    {
+      "bytes": 105705,
+      "exists": true,
+      "family": "bmi",
+      "filename": "sample_bmi_methylation_v1.zip"
+    },
+    {
+      "bytes": 44566,
+      "exists": true,
+      "family": "ancestry",
+      "filename": "sample_ancestry_category_methylation_v1.zip"
+    },
+    {
+      "bytes": 496635,
+      "exists": true,
+      "family": "cancer",
+      "filename": "sample_cancer_methylation_v1.zip"
+    },
+    {
+      "bytes": 403171,
+      "exists": true,
+      "family": "disease",
+      "filename": "sample_disease_methylation_v1.zip"
     }
   ],
   "manifest_files": [
@@ -179,7 +316,7 @@
       "path": "/data/projects/methyl-burden-score/data/raw/ewas_atlas"
     },
     "ewas_datahub": {
-      "bytes": 460039401104,
+      "bytes": 1063033461344,
       "exists": true,
       "path": "/data/projects/methyl-burden-score/data/raw/ewas_datahub"
     },
@@ -189,7 +326,7 @@
       "path": "/data/projects/methyl-burden-score/data/raw/manifests"
     },
     "raw_total": {
-      "bytes": 468079618915,
+      "bytes": 1071072925491,
       "exists": true,
       "path": "/data/projects/methyl-burden-score/data/raw"
     }

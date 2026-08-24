@@ -5,9 +5,12 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
+
+import pyarrow.parquet as pq
 
 HUB_PACKS = (
     ("age", "age_methylation_v1.zip", 11.73),
@@ -28,18 +31,78 @@ STAGE0_CPGCORPUS = (
     ("GSE35069", "GPL13534"),
 )
 
+SAMPLE_INFO_ZIPS = (
+    ("age", "sample_age_methylation_v1.zip"),
+    ("tissue", "sample_tissue_methylation_v1.zip"),
+    ("sex", "sample_sex_methylation_v1.zip"),
+    ("blood", "sample_blood_methylation_v1.zip"),
+    ("brain", "sample_brain_methylation_v1.zip"),
+    ("bmi", "sample_bmi_methylation_v1.zip"),
+    ("ancestry", "sample_ancestry_category_methylation_v1.zip"),
+    ("cancer", "sample_cancer_methylation_v1.zip"),
+    ("disease", "sample_disease_methylation_v1.zip"),
+)
+
+
+def _sample_zip_sizes(hub_dl: Path) -> list[dict]:
+    rows: list[dict] = []
+    for family, fname in SAMPLE_INFO_ZIPS:
+        path = hub_dl / fname
+        rows.append(
+            {
+                "family": family,
+                "filename": fname,
+                "bytes": int(path.stat().st_size) if path.is_file() else None,
+                "exists": path.is_file(),
+            }
+        )
+    return rows
+
+
+def _sample_info_stats(data_root: Path) -> list[dict]:
+    """Unique GSM / study counts from canonical sample-info Parquet."""
+    ph_dir = data_root / "canonical" / "phenotypes"
+    rows: list[dict] = []
+    for family, _fname in SAMPLE_INFO_ZIPS:
+        path = ph_dir / f"{family}_sample_info.parquet"
+        if not path.is_file():
+            rows.append({"family": family, "exists": False})
+            continue
+        df = pq.read_table(path).to_pandas()
+        sid = "sample_id" if "sample_id" in df.columns else None
+        study = "study_id" if "study_id" in df.columns else None
+        rows.append(
+            {
+                "family": family,
+                "exists": True,
+                "n_rows": len(df),
+                "n_unique_sample_id": int(df[sid].nunique()) if sid else None,
+                "n_unique_study_id": int(df[study].nunique()) if study else None,
+                "path": str(path),
+            }
+        )
+    return rows
+
 
 def _bytes(path: Path) -> int | None:
+    """File size, or directory total via `du -sb` (avoids slow Python walks)."""
     if not path.is_file() and not path.is_dir():
         return None
     if path.is_file():
         return int(path.stat().st_size)
-    total = 0
-    for root, _dirs, files in os.walk(path):
-        for name in files:
-            total += (Path(root) / name).stat().st_size
-    return total
-
+    try:
+        out = subprocess.check_output(  # noqa: S603
+            ["/usr/bin/du", "-sb", str(path)],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+        return int(out.split()[0])
+    except (OSError, subprocess.CalledProcessError, ValueError, IndexError):
+        total = 0
+        for root, _dirs, files in os.walk(path):
+            for name in files:
+                total += (Path(root) / name).stat().st_size
+        return total
 
 def _zip_status(path: Path) -> dict:
     if not path.is_file():
@@ -147,22 +210,41 @@ def build_inventory(data_root: Path) -> dict:
     if ewas_db.is_dir():
         n_studies = sum(1 for p in ewas_db.iterdir() if p.is_dir())
 
+    sample_info = _sample_info_stats(data_root)
+    sample_zips = _sample_zip_sizes(data_root / "raw" / "ewas_datahub" / "download")
+
     return {
         "generated_at": datetime.now(UTC).isoformat(),
         "hub_profile_packs": packs,
+        "hub_sample_info_zips": sample_zips,
+        "hub_sample_info_parquet": sample_info,
         "atlas_files": atlas_files,
         "manifest_files": manifest_files,
         "cpgcorpus_stage0": cpg,
         "trees": trees,
         "ewas_db_n_study_dirs": n_studies,
+        "ewas_db_remote_study_count": 1989,
         "gmqn": _zip_status(hub_dl / "GMQN.zip"),
+        "download_notes": {
+            "disease_profile_zip": "complete_2026-08-11 (size+EOCD match remote)",
+            "ewas_db": "in_progress via scripts/download_ewas_datahub.sh EWAS_db",
+            "host_disk_free_note": "check df -h /data; Hub packs alone ~73 GiB",
+        },
     }
 
 
-def _gib(n: int | None) -> str:
+def _fmt_size(n: int | None) -> str:
     if n is None:
         return "—"
+    if n < 1024**2:
+        return f"{n / 1024:.0f} KiB"
+    if n < 1024**3:
+        return f"{n / (1024**2):.1f} MiB"
     return f"{n / (1024**3):.2f} GiB"
+
+
+def _gib(n: int | None) -> str:
+    return _fmt_size(n)
 
 
 def markdown(payload: dict) -> str:
@@ -216,6 +298,48 @@ def markdown(payload: dict) -> str:
         [
             "",
             f"GMQN.zip: {_gib(g.get('bytes'))} status=`{g.get('status')}`",
+            "",
+            "## Hub sample-info zips (phenotypes, not betas)",
+            "",
+            "| Family | File | On-disk |",
+            "|--------|------|--------:|",
+        ]
+    )
+    lines.extend(
+        f"| {z['family']} | `{z['filename']}` | {_gib(z.get('bytes'))} |"
+        for z in payload.get("hub_sample_info_zips") or []
+    )
+    lines.extend(
+        [
+            "",
+            "## Hub sample-info Parquet (`canonical/phenotypes/*_sample_info.parquet`)",
+            "",
+            "Row counts can exceed unique GSM (duplicate rows in Hub R tables). "
+            "Use **unique `sample_id`** as training N.",
+            "",
+            "| Family | Rows | Unique GSM | Unique studies |",
+            "|--------|-----:|-----------:|---------------:|",
+        ]
+    )
+    for row in payload.get("hub_sample_info_parquet") or []:
+        if not row.get("exists"):
+            lines.append(f"| {row['family']} | — | — | — |")
+            continue
+        lines.append(
+            f"| {row['family']} | {row['n_rows']:,} | "
+            f"{row['n_unique_sample_id']:,} | {row['n_unique_study_id']:,} |"
+        )
+    n_loc = payload["ewas_db_n_study_dirs"]
+    n_rem = payload.get("ewas_db_remote_study_count")
+    lines.extend(
+        [
+            "",
+            "## EWAS_db All-Data tree (in progress)",
+            "",
+            f"Local study directories: **{n_loc}** / advertised remote **{n_rem}** "
+            f"({100.0 * n_loc / n_rem:.1f}% of study folders if the remote count is stable).",
+            "Per-GSM text files under `raw/ewas_datahub/EWAS_db/{GSE}/`. "
+            "Resume: `bash scripts/download_ewas_datahub.sh EWAS_db`.",
             "",
             "## EWAS Atlas files",
             "",

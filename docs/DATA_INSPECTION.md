@@ -277,8 +277,10 @@ Do not invent Hub column names; use `FAMILY_VALUE_COLUMN` in
 `mbs.registry.sample_info`. Each zip also contains RData (`RDX3`); prefer the
 `.txt` member.
 
-Shallow download layout / sizes: `reports/inspection/raw_inventory/`.
-
+Shallow download layout / sizes / sample Ns:
+[`reports/inspection/raw_inventory/`](../reports/inspection/raw_inventory/) and
+[`DATA_CATALOG.md`](DATA_CATALOG.md) (refresh with
+`uv run python scripts/write_raw_inventory_refresh.py`).
 ## Model performance reports (Stage 0)
 
 Sanitized train/eval summaries (no sample-level betas):
