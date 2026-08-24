@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn.functional as F
 import yaml
@@ -31,7 +32,12 @@ from mbs.matrix.store import (
     read_sample_index,
 )
 from mbs.models import FlatDeepSet, SeedMaskedLinearHead, center_mask_scores
-from mbs.scoring.orientation import score_manifest
+from mbs.scoring.orientation import (
+    accumulate_signed_gene_mean_m,
+    flip_phenotype_head_weights_,
+    orient_run_scores,
+    score_manifest,
+)
 from mbs.segment_ops import PoolName
 from mbs.static_features.store import (
     open_embeddings_zarr,
@@ -58,10 +64,13 @@ from mbs.training.locus_gene import LocusGeneIndex, build_locus_gene_index, load
 from mbs.training.multitask import MultitaskHeads, masked_multitask_loss
 from mbs.training.phenotype_table import load_tissue_ontology
 from mbs.training.phenotypes import (
+    MultilabelMaps,
     SamplePhenotype,
+    hub_longform_ready,
     load_gse35069_phenotypes,
     load_hub_regression_phenotypes,
     load_hub_sample_info_phenotypes,
+    load_longform_multilabel,
     load_multitask_phenotypes,
 )
 from mbs.training.run_artifacts import (
@@ -307,6 +316,100 @@ def _label_flags_for_record(
     return None, False, True, False, 0
 
 
+def _m_column_index(include_m_value: bool) -> int | None:
+    """Feature layout: beta, [M], static..., static_present."""
+    return 1 if include_m_value else None
+
+
+def _orient_and_write_score_manifest(
+    *,
+    model: FlatDeepSet,
+    head: nn.Module,
+    train_records: list[FlatSampleRecord] | None,
+    train_phenotypes: list[SamplePhenotype] | None,
+    pilot_store: _PilotStore | None,
+    device: torch.device,
+    n_genes: int,
+    include_m_value: bool,
+    run_root: Path,
+    ckpt_root: Path,
+    run_id: str,
+    optimizer: torch.optim.Optimizer,
+    cfg_hash: str,
+    checkpoint_hashes: dict[str, str],
+    control_mode: str,
+) -> dict[str, Any]:
+    """Compute ADR 0008 polarity on train fold; flip heads and rewrite checkpoints if needed."""
+    polarity = "hyper_aligned"
+    if control_mode == "metadata_only" or (train_records is None and pilot_store is None):
+        manifest = score_manifest(score_polarity=polarity, fold_id=None, restart_id=run_id)
+        (run_root / "score_manifest.json").write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        return manifest
+
+    model.eval()
+    head.eval()
+    mbs_rows: list[np.ndarray] = []
+    present_rows: list[np.ndarray] = []
+    m_batches: list[np.ndarray] = []
+    gene_batches: list[np.ndarray] = []
+    m_col = _m_column_index(include_m_value)
+
+    def _consume(record: FlatSampleRecord) -> None:
+        batch = record_to_batch(record, n_genes=n_genes, tissue_enabled=True).to(device)
+        with torch.no_grad():
+            mbs, present = _packed_mbs(model, batch)
+        mbs_rows.append(mbs.detach().cpu().numpy()[0])
+        present_rows.append(present.detach().cpu().numpy()[0])
+        feats = record.features.cpg_features
+        if m_col is not None and feats.shape[1] > m_col:
+            m_batches.append(np.asarray(feats[:, m_col], dtype=np.float64))
+            gene_batches.append(np.asarray(record.features.cpg_to_gene, dtype=np.int64))
+
+    if train_records is not None:
+        for rec in train_records:
+            _consume(rec)
+    elif train_phenotypes is not None and pilot_store is not None:
+        for ph in train_phenotypes:
+            _consume(_materialize_record(ph, pilot_store, control_mode=control_mode))
+
+    if mbs_rows and m_batches:
+        mbs_arr = np.stack(mbs_rows, axis=0)
+        present_arr = np.stack(present_rows, axis=0)
+        signed_m = accumulate_signed_gene_mean_m(
+            n_genes=n_genes,
+            cpg_m_batches=m_batches,
+            cpg_to_gene_batches=gene_batches,
+        )
+        oriented = orient_run_scores(mbs_arr, signed_m=signed_m, present=present_arr)
+        polarity = str(oriented["score_polarity"])
+        if polarity == "flipped":
+            flip_phenotype_head_weights_(head)
+            for name in ("best.pt", "last.pt"):
+                path = ckpt_root / name
+                if not path.is_file():
+                    continue
+                payload = torch.load(path, map_location="cpu", weights_only=False)
+                checkpoint_hashes[name] = save_checkpoint(
+                    path,
+                    model_state=model.state_dict(),
+                    head_state=head.state_dict(),
+                    optimizer_state=payload.get("optimizer_state", optimizer.state_dict()),
+                    epoch=int(payload.get("epoch", 0)),
+                    metrics={**payload.get("metrics", {}), "score_polarity": polarity},
+                    config_hash=cfg_hash,
+                )
+
+    manifest = score_manifest(score_polarity=polarity, fold_id=None, restart_id=run_id)
+    (run_root / "score_manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return manifest
+
+
 def _run_epoch(
     *,
     records: list[FlatSampleRecord] | None,
@@ -327,6 +430,8 @@ def _run_epoch(
     lambda_age: float = 1.0,
     lambda_tissue: float = 1.0,
     lambda_sex: float = 1.0,
+    lambda_disease: float = 1.0,
+    lambda_cancer: float = 1.0,
     huber_delta: float = 1.0,
     age_loss_name: str = "huber",
     batch_size: int = 1,
@@ -334,6 +439,8 @@ def _run_epoch(
     epoch: int = 0,
     batch_token_budget: int | None = None,
     control_mode: str = "none",
+    disease_maps: MultilabelMaps | None = None,
+    cancer_maps: MultilabelMaps | None = None,
 ) -> dict[str, float]:
     if train:
         model.train()
@@ -410,6 +517,10 @@ def _run_epoch(
             tissue_flags: list[bool] = []
             sex_flags: list[bool] = []
             sex_idxs: list[int] = []
+            dis_targets: list[np.ndarray | None] = []
+            dis_masks: list[np.ndarray | None] = []
+            can_targets: list[np.ndarray | None] = []
+            can_masks: list[np.ndarray | None] = []
             for record in chunk:
                 ph = ph_by_id.get(record.sample_id)
                 age_value, age_on, tissue_on, sex_on, sex_cls = _label_flags_for_record(
@@ -424,6 +535,20 @@ def _run_epoch(
                 tissue_flags.append(tissue_on)
                 sex_flags.append(sex_on)
                 sex_idxs.append(sex_cls)
+                if disease_maps is not None:
+                    dis_targets.append(disease_maps.targets.get(record.sample_id))
+                    dis_masks.append(disease_maps.masks.get(record.sample_id))
+                else:
+                    dis_targets.append(None)
+                    dis_masks.append(None)
+                if cancer_maps is not None:
+                    can_targets.append(cancer_maps.targets.get(record.sample_id))
+                    can_masks.append(cancer_maps.masks.get(record.sample_id))
+                else:
+                    can_targets.append(None)
+                    can_masks.append(None)
+            use_disease = disease_maps is not None and any(m is not None for m in dis_masks)
+            use_cancer = cancer_maps is not None and any(m is not None for m in can_masks)
             if len(chunk) == 1:
                 batch = record_to_batch(
                     chunk[0],
@@ -433,6 +558,10 @@ def _run_epoch(
                     tissue_enabled=tissue_flags[0],
                     sex_enabled=sex_flags[0],
                     sex_class_index=sex_idxs[0],
+                    disease_target=dis_targets[0] if use_disease else None,
+                    disease_mask=dis_masks[0] if use_disease else None,
+                    cancer_target=can_targets[0] if use_cancer else None,
+                    cancer_mask=can_masks[0] if use_cancer else None,
                 ).to(device)
             else:
                 batch = pack_records_to_batch(
@@ -443,6 +572,10 @@ def _run_epoch(
                     tissue_enabled=tissue_flags,
                     sex_enabled=sex_flags,
                     sex_class_indices=sex_idxs,
+                    disease_targets=dis_targets if use_disease else None,
+                    disease_masks=dis_masks if use_disease else None,
+                    cancer_targets=can_targets if use_cancer else None,
+                    cancer_masks=can_masks if use_cancer else None,
                 ).to(device)
             if train and optimizer is not None:
                 optimizer.zero_grad(set_to_none=True)
@@ -459,6 +592,8 @@ def _run_epoch(
                         lambda_age=lambda_age,
                         lambda_tissue=lambda_tissue,
                         lambda_sex=lambda_sex,
+                        lambda_disease=lambda_disease,
+                        lambda_cancer=lambda_cancer,
                         huber_delta=huber_delta,
                         age_loss=age_loss_name,
                         class_weights=class_weights,
@@ -780,7 +915,36 @@ def train_flat_baseline(
                 )
             value_column = str(pilot.get("label_column", "phenotype_value"))
             empty_as_control = bool(pilot.get("empty_as_control", False))
-            if task_kind == "regression":
+            if task_kind == "multitask":
+                # Long-form multi-label path: stub phenotypes for splits; masks come later.
+                side = pd.read_parquet(pheno_path)
+                if "sample_id" not in side.columns:
+                    raise ValueError("sample_phenotypes.parquet missing sample_id")
+                uniq = side.drop_duplicates(subset=["sample_id"], keep="first")
+                by_sid = {str(r["sample_id"]): r for r in uniq.to_dict(orient="records")}
+                phenotypes = []
+                for sid in sample_ids:
+                    row = by_sid.get(sid, {})
+                    study = row.get("study_id")
+                    platform = row.get("platform")
+                    phenotypes.append(
+                        SamplePhenotype(
+                            sample_id=sid,
+                            cell_type="_none",
+                            donor_id=None,
+                            title=sid,
+                            class_index=0,
+                            study_id=None if study is None or pd.isna(study) else str(study),
+                            platform=(
+                                None if platform is None or pd.isna(platform) else str(platform)
+                            ),
+                            age_mask=False,
+                            tissue_mask=False,
+                            sex_mask=False,
+                        )
+                    )
+                class_names = ["_none"]
+            elif task_kind == "regression":
                 phenotypes, class_names = load_hub_regression_phenotypes(
                     pheno_path, sample_ids=sample_ids
                 )
@@ -909,6 +1073,56 @@ def train_flat_baseline(
     if control_mode == "metadata_only":
         epochs = 0
 
+    include_m_value = bool(config.get("features", {}).get("methylation", {}).get("m_value", True))
+    disease_maps: MultilabelMaps | None = None
+    cancer_maps: MultilabelMaps | None = None
+    _heads_early = config.get("heads", {}) if isinstance(config.get("heads"), dict) else {}
+    dis_cfg_early = _heads_early.get("disease", {}) if isinstance(_heads_early, dict) else {}
+    can_cfg_early = _heads_early.get("cancer", {}) if isinstance(_heads_early, dict) else {}
+    want_disease = (
+        bool(dis_cfg_early.get("enabled", False)) or int(dis_cfg_early.get("n_labels", 0) or 0) > 0
+    )
+    want_cancer = (
+        bool(can_cfg_early.get("enabled", False)) or int(can_cfg_early.get("n_labels", 0) or 0) > 0
+    )
+    matrix_id_cfg = str(config.get("pilot", {}).get("matrix_id", "") or "")
+    if (
+        (want_disease or want_cancer)
+        and matrix_id_cfg
+        and hub_longform_ready(data_root, matrix_id_cfg)
+    ):
+        sidecar = data_root / "canonical" / "matrices" / matrix_id_cfg / "sample_phenotypes.parquet"
+        if sidecar.is_file():
+            all_ph = [
+                *(train_phenotypes or []),
+                *(val_phenotypes or []),
+                *(test_phenotypes or []),
+            ]
+            # Fixture paths may only have records.
+            sid_list = (
+                [p.sample_id for p in all_ph]
+                if all_ph
+                else [r.sample_id for r in (train_records or [])]
+            )
+            if want_disease and sid_list:
+                disease_maps = load_longform_multilabel(
+                    sidecar,
+                    sample_ids=sid_list,
+                    value_column=str(dis_cfg_early.get("value_column") or "phenotype_value"),
+                    min_count=int(dis_cfg_early.get("min_count", 1) or 1),
+                )
+            if want_cancer and sid_list:
+                cancer_maps = load_longform_multilabel(
+                    sidecar,
+                    sample_ids=sid_list,
+                    value_column=str(can_cfg_early.get("value_column") or "cancer"),
+                    min_count=int(can_cfg_early.get("min_count", 1) or 1),
+                )
+            if (disease_maps and disease_maps.label_names) or (
+                cancer_maps and cancer_maps.label_names
+            ):
+                task_kind = "multitask"
+
     pool_name: PoolName = str(model_cfg.get("pooling", "max"))  # type: ignore[assignment]
     enc = resolve_encoder(model_cfg)
     model = FlatDeepSet(
@@ -934,12 +1148,22 @@ def train_flat_baseline(
         sex_on = bool(sex_cfg.get("enabled", False))
         dis_cfg = _heads.get("disease", {}) if isinstance(_heads, dict) else {}
         can_cfg = _heads.get("cancer", {}) if isinstance(_heads, dict) else {}
+        n_dis = (
+            len(disease_maps.label_names)
+            if disease_maps is not None and disease_maps.label_names
+            else int(dis_cfg.get("n_labels", 0) or 0)
+        )
+        n_can = (
+            len(cancer_maps.label_names)
+            if cancer_maps is not None and cancer_maps.label_names
+            else int(can_cfg.get("n_labels", 0) or 0)
+        )
         head = MultitaskHeads(
             n_genes,
             n_classes,
             sex_enabled=sex_on,
-            n_disease_labels=int(dis_cfg.get("n_labels", 0) or 0),
-            n_cancer_labels=int(can_cfg.get("n_labels", 0) or 0),
+            n_disease_labels=n_dis,
+            n_cancer_labels=n_can,
         ).to(device)
     else:
         seed_mask = torch.ones(n_classes, n_genes, dtype=torch.float32, device=device)
@@ -952,6 +1176,8 @@ def train_flat_baseline(
     lambda_age = float(loss_cfg.get("lambda_age", 1.0))
     lambda_tissue = float(loss_cfg.get("lambda_tissue", 1.0))
     lambda_sex = float(loss_cfg.get("lambda_sex", 1.0))
+    lambda_disease = float(loss_cfg.get("lambda_disease", 1.0))
+    lambda_cancer = float(loss_cfg.get("lambda_cancer", 1.0))
     heads_cfg = config.get("heads", {})
     age_head_cfg = heads_cfg.get("age", {}) if isinstance(heads_cfg, dict) else {}
     huber_delta = float(age_head_cfg.get("huber_delta", 1.0))
@@ -1035,6 +1261,8 @@ def train_flat_baseline(
             lambda_age=lambda_age,
             lambda_tissue=lambda_tissue,
             lambda_sex=lambda_sex,
+            lambda_disease=lambda_disease,
+            lambda_cancer=lambda_cancer,
             huber_delta=huber_delta,
             age_loss_name=age_loss_name,
             batch_size=batch_size,
@@ -1042,6 +1270,8 @@ def train_flat_baseline(
             epoch=epoch,
             batch_token_budget=batch_token_budget,
             control_mode=control_mode,
+            disease_maps=disease_maps,
+            cancer_maps=cancer_maps,
         )
         val_metrics = _run_epoch(
             records=val_records,
@@ -1062,6 +1292,8 @@ def train_flat_baseline(
             lambda_age=lambda_age,
             lambda_tissue=lambda_tissue,
             lambda_sex=lambda_sex,
+            lambda_disease=lambda_disease,
+            lambda_cancer=lambda_cancer,
             huber_delta=huber_delta,
             age_loss_name=age_loss_name,
             batch_size=batch_size,
@@ -1069,6 +1301,8 @@ def train_flat_baseline(
             epoch=epoch,
             batch_token_budget=batch_token_budget,
             control_mode=control_mode,
+            disease_maps=disease_maps,
+            cancer_maps=cancer_maps,
         )
         row = {
             "epoch": epoch,
@@ -1179,6 +1413,8 @@ def train_flat_baseline(
             lambda_age=lambda_age,
             lambda_tissue=lambda_tissue,
             lambda_sex=lambda_sex,
+            lambda_disease=lambda_disease,
+            lambda_cancer=lambda_cancer,
             huber_delta=huber_delta,
             age_loss_name=age_loss_name,
             batch_size=batch_size,
@@ -1186,6 +1422,8 @@ def train_flat_baseline(
             epoch=best_epoch,
             batch_token_budget=batch_token_budget,
             control_mode=control_mode,
+            disease_maps=disease_maps,
+            cancer_maps=cancer_maps,
         )
         test_mae = test_metrics["mae"]
         if task_kind in {"regression", "multitask"}:
@@ -1245,12 +1483,28 @@ def train_flat_baseline(
             y=y,
             task=meta_task,
         )
-    manifest = score_manifest(score_polarity="hyper_aligned", fold_id=None, restart_id=run_id)
-    (run_root / "score_manifest.json").write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    manifest = _orient_and_write_score_manifest(
+        model=model,
+        head=head,
+        train_records=train_records,
+        train_phenotypes=train_phenotypes,
+        pilot_store=pilot_store,
+        device=device,
+        n_genes=n_genes,
+        include_m_value=include_m_value,
+        run_root=run_root,
+        ckpt_root=ckpt_root,
+        run_id=run_id,
+        optimizer=optimizer,
+        cfg_hash=cfg_hash,
+        checkpoint_hashes=checkpoint_hashes,
+        control_mode=control_mode,
     )
     metrics_out["score_manifest"] = manifest
+    if disease_maps is not None:
+        metrics_out["disease_labels"] = list(disease_maps.label_names)
+    if cancer_maps is not None:
+        metrics_out["cancer_labels"] = list(cancer_maps.label_names)
     if overfit_fixture and history:
         metrics_out["overfit_train_accuracy"] = history[-1]["train_accuracy"]
         metrics_out["overfit_ok"] = bool(history[-1]["train_accuracy"] >= 0.999)

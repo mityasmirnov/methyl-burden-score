@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from uuid import uuid4
 
@@ -13,14 +14,20 @@ import torch
 from mbs.annotation.build import attach_cgi_tile_systems
 from mbs.evaluation.splits import partition_studies_constrained
 from mbs.models import FlatDeepSet, HierarchicalDeepSet, SharedMLP, center_mask_scores
-from mbs.scoring.orientation import apply_orientation, polarity_from_correlation
+from mbs.scoring.orientation import (
+    apply_orientation,
+    orient_run_scores,
+    polarity_from_correlation,
+    signed_gene_mean_m,
+)
 from mbs.training.branch import hub_longform_ready, train_branch_arm
 from mbs.training.controls import apply_feature_control, permute_labels_within_study
 from mbs.training.dataset import FlatBatch
 from mbs.training.direct_cpg import fit_direct_elasticnet
 from mbs.training.encoder_config import resolve_encoder
+from mbs.training.loop import train_flat_baseline
 from mbs.training.multitask import MultitaskHeads, masked_multitask_loss
-from mbs.training.phenotypes import SamplePhenotype
+from mbs.training.phenotypes import SamplePhenotype, load_longform_multilabel
 from mbs.training.sampler import iter_epoch_batches
 
 
@@ -246,3 +253,63 @@ def test_disease_masked_bce_unknown_not_control() -> None:
     result = masked_multitask_loss(mbs=mbs, present=present, heads=heads, batch=batch)
     assert result.metrics["disease_n"] == 2.0
     assert hub_longform_ready(Path("/data/no-such-root"), "matrix-hub-disease-full-v1") is False
+
+
+def test_signed_gene_mean_m_and_orient_helper() -> None:
+    signed = signed_gene_mean_m(
+        np.array([1.0, 3.0, 5.0]),
+        np.array([0, 0, 1]),
+        n_genes=2,
+    )
+    np.testing.assert_allclose(signed, [2.0, 5.0])
+    mbs = np.array([[0.1, 0.9], [0.2, 0.8]])
+    out = orient_run_scores(mbs, signed_m=np.array([0.9, 0.1]))
+    assert out["score_polarity"] == "flipped"
+
+
+def test_longform_multilabel_unknown_not_control(tmp_path: Path) -> None:
+    frame = pd.DataFrame(
+        {
+            "sample_id": ["s1", "s1", "s2"],
+            "phenotype_value": ["T2D", "CAD", "T2D"],
+        }
+    )
+    path = tmp_path / "sample_phenotypes.parquet"
+    frame.to_parquet(path, index=False)
+    maps = load_longform_multilabel(path, sample_ids=["s1", "s2", "s3"])
+    assert maps.label_names == ("CAD", "T2D")
+    np.testing.assert_array_equal(maps.targets["s1"], [1.0, 1.0])
+    assert maps.masks["s1"].tolist() == [True, True]
+    assert maps.masks["s3"].tolist() == [False, False]
+    assert float(maps.targets["s3"].sum()) == 0.0
+
+
+def test_overfit_writes_score_manifest(monkeypatch: pytest.MonkeyPatch) -> None:
+    repo = Path(__file__).resolve().parents[2]
+    workspace = repo / "scratch" / "pytest" / f"7c-orient-{uuid4().hex}"
+    workspace.mkdir(parents=True)
+    monkeypatch.setenv("MBS_ROOT", str(repo))
+    monkeypatch.setenv("MBS_DATA_ROOT", str(workspace / "data"))
+    monkeypatch.setenv("MBS_ARTIFACT_ROOT", str(workspace / "artifacts"))
+    (workspace / "data").mkdir()
+    (workspace / "artifacts").mkdir()
+    result = train_flat_baseline(
+        project_root=repo,
+        data_root=workspace / "data",
+        artifact_root=workspace / "artifacts",
+        config={
+            "experiment": {"seed": 2, "name": "orient"},
+            "training": {"max_epochs": 1, "batch_size": 4},
+            "logging": {"tensorboard": False},
+            "features": {"methylation": {"m_value": True}},
+        },
+        run_id="7c-orient-fixture",
+        device_str="cpu",
+        overfit_fixture=True,
+    )
+    manifest_path = result.run_dir / "score_manifest.json"
+    assert manifest_path.is_file()
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert payload["score_family"] == "predictive_mbs"
+    assert payload["score_polarity"] in {"hyper_aligned", "flipped"}
+    assert "anchor_recipe" in payload

@@ -23,6 +23,12 @@ from mbs.matrix.store import (
     read_sample_index,
 )
 from mbs.models import HierarchicalDeepSet
+from mbs.scoring.orientation import (
+    accumulate_signed_gene_mean_m,
+    flip_phenotype_head_weights_,
+    orient_run_scores,
+    score_manifest,
+)
 from mbs.segment_ops import PoolName
 from mbs.static_features.store import (
     open_embeddings_zarr,
@@ -984,6 +990,71 @@ def train_hierarchical_baseline(
         ),
         "age_standardization": {"mean": age_mean, "std": age_std},
     }
+    # ADR 0008: orient gene-panel MBS (exclude residual slot) vs signed gene-mean M.
+    polarity = "hyper_aligned"
+    if train_records:
+        model.eval()
+        head.eval()
+        mbs_rows: list[np.ndarray] = []
+        present_rows: list[np.ndarray] = []
+        m_batches: list[np.ndarray] = []
+        gene_batches: list[np.ndarray] = []
+        for rec in train_records:
+            batch = pack_hier_records_to_batch(
+                [rec],
+                locus_region=locus_region,
+                age_values=[None],
+                age_enabled=[False],
+                tissue_enabled=[True],
+            ).to(device)
+            with torch.no_grad():
+                mbs, present = _packed_hier_mbs(model, batch)
+            gene_mbs = mbs[:, :n_genes].detach().cpu().numpy()[0]
+            gene_present = present[:, :n_genes].detach().cpu().numpy()[0]
+            mbs_rows.append(gene_mbs)
+            present_rows.append(gene_present)
+            feats = rec.features.cpg_features
+            regions = rec.features.cpg_to_region
+            if feats.shape[0] and feats.shape[1] > 1 and regions.size:
+                m_batches.append(np.asarray(feats[:, 1], dtype=np.float64))
+                gene_batches.append(
+                    np.asarray(
+                        locus_region.region_to_gene[regions.astype(np.int64)],
+                        dtype=np.int64,
+                    )
+                )
+        if mbs_rows and m_batches:
+            oriented = orient_run_scores(
+                np.stack(mbs_rows, axis=0),
+                signed_m=accumulate_signed_gene_mean_m(
+                    n_genes=n_genes,
+                    cpg_m_batches=m_batches,
+                    cpg_to_gene_batches=gene_batches,
+                ),
+                present=np.stack(present_rows, axis=0),
+            )
+            polarity = str(oriented["score_polarity"])
+            if polarity == "flipped":
+                flip_phenotype_head_weights_(head)
+                for name in ("best.pt", "last.pt"):
+                    path = ckpt_root / name
+                    if path.is_file():
+                        payload = torch.load(path, map_location="cpu", weights_only=False)
+                        checkpoint_hashes[name] = save_checkpoint(
+                            path,
+                            model_state=model.state_dict(),
+                            head_state=head.state_dict(),
+                            optimizer_state=payload.get("optimizer_state", {}),
+                            epoch=int(payload.get("epoch", 0)),
+                            metrics={**payload.get("metrics", {}), "score_polarity": polarity},
+                            config_hash=cfg_hash,
+                        )
+    manifest = score_manifest(score_polarity=polarity, fold_id=None, restart_id=run_id)
+    (run_root / "score_manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    metrics_out["score_manifest"] = manifest
     if overfit_fixture and history:
         metrics_out["overfit_train_accuracy"] = history[-1]["train_accuracy"]
         metrics_out["overfit_ok"] = bool(history[-1]["train_accuracy"] >= 0.999)

@@ -40,4 +40,16 @@ Fixture-only report. No Hub-scale retraining. Graph id target: `graph-grch38-gen
 
 ## Tests
 
-See `tests/unit/test_stage0_7c.py` (sampler, heads, splits, controls, graph-v2, arms, disease masked BCE, matched encoder).
+See `tests/unit/test_stage0_7c.py` (sampler, heads, splits, controls, graph-v2, arms, disease masked BCE, matched encoder, orientation train-path, long-form multi-hot).
+
+## Residual polish (orientation + long-form)
+
+- Overfit flat train writes `score_manifest.json` with ADR 0008 polarity from train-fold gene-mean MBS vs signed gene-mean M (`hyper_aligned` or `flipped`).
+- `load_longform_multilabel`: multi-hot from repeated `sample_id`; unknown sample → all-False mask (not control).
+- Config: `configs/experiment/stage0_flat_hub_disease_multilabel.yaml` (Hub smoke when `matrix-hub-disease-full-v1` exists).
+
+## Still waiting on 7B
+
+- Hub disease/cancer full matrices (`sample_index.parquet` + long-form sidecar) for real multilabel BCE smoke.
+- Do not use `matrix-hub-disease-from-agepack-v1` as the multi-label path.
+- Other 7C leftovers (AUROC trainer emission, full-genome graph-v2, multi-system hier, true RBS/TBS arms): see `docs/plans/milestone-7c-supervised-architecture.md`.

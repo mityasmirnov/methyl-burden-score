@@ -16,7 +16,9 @@ True next milestone after bootstrap:
 > **final OOF cross-fitting (7)** → one score matrix.
 
 **Current gate:** Milestone **7B** (pack conversions + inspection report).
-**7C** fixture acceptance is `done` (residual wiring listed under 7C).
+**7C** fixture acceptance is `done`. Residual polish that needs Hub matrices
+waits on **7B** (disease/cancer full convert still running); other 7C
+follow-ons are listed under 7C and do not reopen Done when.
 **Do not retrain v0.1** or start **7E**/Milestone **7** until 7B–7D land
 ([ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
@@ -507,7 +509,11 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Code landed (not Done when):** stream-to-Zarr converter, probe-collapse
   columns, long-form phenotypes, virtual `hub_pack_matrix_index`, unit tests,
   `scripts/convert_hub_full_packs.sh` / `scripts/write_stage0_7b_report.py`.
-  Remaining: run conversions for the six packs and write the inspection report.
+  Remaining: finish conversions for disease/cancer (and any unfinished packs),
+  then write `reports/inspection/stage0_7b_hub_matrices/`.
+  As of residual-7C polish: ancestry/blood/bmi/brain full matrices present;
+  `matrix-hub-cancer-full-v1` convert in progress; `matrix-hub-disease-full-v1`
+  not yet ready (no `sample_index.parquet`).
 - **Depends on:** (7A).
 - **Plan:** [`plans/milestone-7b-complete-hub-matrices.md`](plans/milestone-7b-complete-hub-matrices.md);
   [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
@@ -537,11 +543,25 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `reports/inspection/stage0_7c_architecture/`.
 - **Residual follow-ons** (do not reopen Done when; track in
   [`plans/milestone-7c-supervised-architecture.md`](plans/milestone-7c-supervised-architecture.md)):
-  emit AUROC/AUPRC/ECE from trainer; call `apply_orientation` on real gene-mean M;
-  build full-genome graph-v2 artifact; multi-system hier RBS/TBS index;
-  true region-system branch arms; disease/cancer Hub long-form join after 7B.
-- **Depends on:** (7B) for disease/cancer *data* join; trainer/head/split already
-  closed on age/tissue/sex fixtures (still **before 7E**).
+
+  **Blocked on 7B (Hub data still converting):**
+  - Hub smoke: `stage0_flat_hub_disease_multilabel.yaml` (and cancer analogue)
+    once `matrix-hub-disease-full-v1` / `matrix-hub-cancer-full-v1` have
+    `sample_index.parquet` + long-form `sample_phenotypes.parquet`
+    (`hub_longform_ready`). Code path + fixture tests already landed.
+  - Optional: emit AUROC/AUPRC/ECE from trainer holdout JSON when disease/cancer
+    (or binary sex) Hub eval is exercised.
+
+  **Not blocked on 7B (ops / later topology):**
+  - Build full-genome `graph-grch38-gencode38-cgi-tile-v2` artifact under `$MBS_*`
+  - Multi-system hier RBS/TBS index (beyond gene-only `locus_region_gene`)
+  - True region-system feature masks for `rbs`/`tbs` branch arms
+
+  **Landed in residual polish (fixtures):** train-path `apply_orientation` +
+  honest `score_manifest.json`; `load_longform_multilabel` + masked BCE +
+  `lambda_disease`/`lambda_cancer`.
+- **Depends on:** (7B) only for Hub-scale disease/cancer join smoke; trainer
+  already closed on age/tissue/sex fixtures (still **before 7E**).
 - **ADRs:** [0006](adr/0006-multipath-noncoding-scores.md),
   [0008](adr/0008-score-identifiability.md).
 - **Plan:** [`plans/milestone-7c-supervised-architecture.md`](plans/milestone-7c-supervised-architecture.md);

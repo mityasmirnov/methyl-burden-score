@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pyarrow as pa
 
@@ -344,3 +345,90 @@ def load_hub_regression_phenotypes(
             )
         )
     return phenotypes, ["age"]
+
+
+@dataclass(frozen=True, slots=True)
+class MultilabelMaps:
+    """Per-sample multi-hot targets and observation masks (unknown = all-False mask)."""
+
+    label_names: tuple[str, ...]
+    targets: dict[str, np.ndarray]  # sample_id -> float32 [L]
+    masks: dict[str, np.ndarray]  # sample_id -> bool [L]
+
+
+def hub_longform_ready(data_root: Path, matrix_id: str) -> bool:
+    """True when a 7B matrix dir has a sample index (no zarr walk)."""
+    return (
+        Path(data_root) / "canonical" / "matrices" / matrix_id / "sample_index.parquet"
+    ).is_file()
+
+
+def load_longform_multilabel(
+    parquet_path: Path,
+    *,
+    sample_ids: list[str],
+    value_column: str | None = None,
+    min_count: int = 1,
+    label_names: list[str] | None = None,
+) -> MultilabelMaps:
+    """Build multi-hot labels from a long-form Hub sidecar (repeats ``sample_id``).
+
+    Samples with no rows remain all-False masks (unknown, not control).
+    Does not collapse GSM rows via last-wins.
+    """
+    path = parquet_path.resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"long-form phenotypes not found: {path}")
+    frame = pd.read_parquet(path)
+    if "sample_id" not in frame.columns:
+        raise ValueError("long-form parquet must contain sample_id")
+    col = value_column
+    if col is None:
+        for candidate in ("phenotype_value", "disease", "cancer", "phenotype_value_numeric"):
+            if candidate in frame.columns:
+                col = candidate
+                break
+    if col is None or col not in frame.columns:
+        raise ValueError(
+            "long-form parquet needs phenotype_value, disease, cancer, or value_column"
+        )
+
+    work = frame.copy()
+    work["sample_id"] = work["sample_id"].astype(str)
+    def _as_label(value: object) -> str | None:
+        if value is None:
+            return None
+        missing = pd.isna(value)
+        if isinstance(missing, bool) and missing:
+            return None
+        text = str(value).strip()
+        return text if text else None
+
+    work["_label"] = [_as_label(v) for v in work[col].tolist()]
+    work = work.loc[work["_label"].notna()]
+    if label_names is None:
+        counts = work["_label"].value_counts()
+        names = sorted(str(lab) for lab, n in counts.items() if int(n) >= int(min_count))
+    else:
+        names = list(label_names)
+    if not names:
+        empty_t = {sid: np.zeros(0, dtype=np.float32) for sid in sample_ids}
+        empty_m = {sid: np.zeros(0, dtype=bool) for sid in sample_ids}
+        return MultilabelMaps(label_names=(), targets=empty_t, masks=empty_m)
+
+    name_to_idx = {n: i for i, n in enumerate(names)}
+    n_labels = len(names)
+    targets: dict[str, np.ndarray] = {
+        sid: np.zeros(n_labels, dtype=np.float32) for sid in sample_ids
+    }
+    masks: dict[str, np.ndarray] = {sid: np.zeros(n_labels, dtype=bool) for sid in sample_ids}
+    wanted = set(sample_ids)
+    for sid, lab in zip(work["sample_id"], work["_label"], strict=True):
+        if sid not in wanted:
+            continue
+        idx = name_to_idx.get(str(lab))
+        if idx is None:
+            continue
+        targets[sid][idx] = 1.0
+        masks[sid][idx] = True
+    return MultilabelMaps(label_names=tuple(names), targets=targets, masks=masks)

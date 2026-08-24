@@ -9,15 +9,11 @@ import numpy as np
 
 from mbs.training.direct_cpg import fit_direct_elasticnet
 from mbs.training.loop import TrainResult, train_flat_baseline
+from mbs.training.phenotypes import hub_longform_ready
 
 VALID_ARMS = frozenset({"gene", "rbs", "tbs", "direct"})
 
-
-def hub_longform_ready(data_root: Path, matrix_id: str) -> bool:
-    """True when a 7B matrix dir has a sample index (no zarr walk)."""
-    return (
-        Path(data_root) / "canonical" / "matrices" / matrix_id / "sample_index.parquet"
-    ).is_file()
+__all__ = ("VALID_ARMS", "hub_longform_ready", "train_branch_arm")
 
 
 def train_branch_arm(

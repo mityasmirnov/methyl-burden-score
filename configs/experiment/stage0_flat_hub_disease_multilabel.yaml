@@ -1,0 +1,88 @@
+experiment:
+  name: stage0_flat_hub_disease_multilabel
+  stage: 0
+  seed: 42
+
+# Residual 7C polish: masked multi-label disease BCE on long-form sidecar.
+# Requires matrix-hub-disease-full-v1 (7B convert). Unknown labels stay masked.
+
+pilot:
+  mode: hub_pack
+  task: multitask
+  empty_as_control: false
+  matrix_id: matrix-hub-disease-full-v1
+  graph_id: graph-grch38-gencode38-five-role-v1
+  static_feature_set: cpgpt2m_adapter_128_v1
+  phenotype_family: disease
+  train_studies: []
+  validation_studies: []
+  external_test_studies: []
+  auto_split: true
+  split_id: hub-disease-full-multilabel-v1
+
+features:
+  methylation:
+    beta: true
+    m_value: true
+    epsilon: 0.001
+  static_feature_set: cpgpt2m_adapter_128_v1
+
+model:
+  type: flat_deepset
+  phi_layers: 2
+  phi_hidden_dimension: 20
+  rho_layers: 3
+  rho_hidden_dimension: 10
+  activation: leaky_relu
+  pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  dropout: 0.0
+
+heads:
+  age:
+    enabled: false
+  tissue:
+    enabled: false
+  sex:
+    enabled: false
+  disease:
+    enabled: true
+    value_column: phenotype_value
+    min_count: 5
+  cancer:
+    enabled: false
+
+loss:
+  lambda_age: 0.0
+  lambda_tissue: 0.0
+  lambda_sex: 0.0
+  lambda_disease: 1.0
+  lambda_cancer: 0.0
+
+training:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_size: 4
+  batch_token_budget: 200000
+  gradient_clip_norm: 2.0
+  max_epochs: 20
+  early_stopping_patience: 5
+  precision: bf16-mixed
+  require_cuda: true
+
+device:
+  cuda_visible_devices: "0"
+  torch_device: cuda
+
+logging:
+  tensorboard: true
+  wandb: false
+  save_resolved_config: true
+  save_environment: true
+  save_checksums: true
+
+splits:
+  train_fraction: 0.7
+  val_fraction: 0.15

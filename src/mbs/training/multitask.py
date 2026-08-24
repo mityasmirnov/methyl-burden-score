@@ -111,6 +111,8 @@ def masked_multitask_loss(
     lambda_age: float = 1.0,
     lambda_tissue: float = 1.0,
     lambda_sex: float = 1.0,
+    lambda_disease: float = 1.0,
+    lambda_cancer: float = 1.0,
     huber_delta: float = 1.0,
     age_loss: str = "huber",
     class_weights: Tensor | None = None,
@@ -215,27 +217,29 @@ def masked_multitask_loss(
 
     disease_n = 0
     cancer_n = 0
-    if getattr(batch, "disease_mask", None) is not None and heads.disease_head is not None:
-        dmask = batch.disease_mask.to(device=device, dtype=torch.bool)
+    disease_mask = batch.disease_mask
+    if disease_mask is not None and heads.disease_head is not None:
+        dmask = disease_mask.to(device=device, dtype=torch.bool)
         if dmask.any():
             if batch.disease_target is None:
                 raise RuntimeError("disease_mask set but disease_target is None")
             logits = heads.forward_disease(mbs_b, present_b)
             target = batch.disease_target.to(device=device, dtype=logits.dtype)
             disease_term = F.binary_cross_entropy_with_logits(logits[dmask], target[dmask])
-            total = total + disease_term
+            total = total + float(lambda_disease) * disease_term
             metrics["disease_loss"] = float(disease_term.detach().item())
             disease_n = int(dmask.sum().item())
             metrics["disease_n"] = float(disease_n)
-    if getattr(batch, "cancer_mask", None) is not None and heads.cancer_head is not None:
-        cmask = batch.cancer_mask.to(device=device, dtype=torch.bool)
+    cancer_mask = batch.cancer_mask
+    if cancer_mask is not None and heads.cancer_head is not None:
+        cmask = cancer_mask.to(device=device, dtype=torch.bool)
         if cmask.any():
             if batch.cancer_target is None:
                 raise RuntimeError("cancer_mask set but cancer_target is None")
             logits = heads.forward_cancer(mbs_b, present_b)
             target = batch.cancer_target.to(device=device, dtype=logits.dtype)
             cancer_term = F.binary_cross_entropy_with_logits(logits[cmask], target[cmask])
-            total = total + cancer_term
+            total = total + float(lambda_cancer) * cancer_term
             metrics["cancer_loss"] = float(cancer_term.detach().item())
             cancer_n = int(cmask.sum().item())
             metrics["cancer_n"] = float(cancer_n)

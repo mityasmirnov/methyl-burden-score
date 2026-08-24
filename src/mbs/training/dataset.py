@@ -126,6 +126,10 @@ def record_to_batch(
     tissue_enabled: bool = True,
     sex_enabled: bool = False,
     sex_class_index: int = 0,
+    disease_target: np.ndarray | None = None,
+    disease_mask: np.ndarray | None = None,
+    cancer_target: np.ndarray | None = None,
+    cancer_mask: np.ndarray | None = None,
 ) -> FlatBatch:
     feats = record.features
     tissue_on = bool(tissue_enabled)
@@ -136,6 +140,24 @@ def record_to_batch(
         if age_value is None:
             raise RuntimeError("age_enabled set but age_value is None")
         age_target = torch.tensor([float(age_value)], dtype=torch.float32)
+    dis_t = (
+        None
+        if disease_target is None
+        else torch.as_tensor(disease_target, dtype=torch.float32).unsqueeze(0)
+    )
+    dis_m = (
+        None
+        if disease_mask is None
+        else torch.as_tensor(disease_mask, dtype=torch.bool).unsqueeze(0)
+    )
+    can_t = (
+        None
+        if cancer_target is None
+        else torch.as_tensor(cancer_target, dtype=torch.float32).unsqueeze(0)
+    )
+    can_m = (
+        None if cancer_mask is None else torch.as_tensor(cancer_mask, dtype=torch.bool).unsqueeze(0)
+    )
     return FlatBatch(
         sample_ids=[record.sample_id],
         cpg_features=torch.from_numpy(feats.cpg_features),
@@ -147,6 +169,10 @@ def record_to_batch(
         age_mask=torch.tensor([age_on]),
         sex_target=torch.tensor([int(sex_class_index)], dtype=torch.long),
         sex_mask=torch.tensor([sex_on]),
+        disease_target=dis_t,
+        disease_mask=dis_m,
+        cancer_target=can_t,
+        cancer_mask=can_m,
     )
 
 
@@ -159,6 +185,10 @@ def pack_records_to_batch(
     tissue_enabled: list[bool],
     sex_enabled: list[bool] | None = None,
     sex_class_indices: list[int] | None = None,
+    disease_targets: list[np.ndarray | None] | None = None,
+    disease_masks: list[np.ndarray | None] | None = None,
+    cancer_targets: list[np.ndarray | None] | None = None,
+    cancer_masks: list[np.ndarray | None] | None = None,
 ) -> FlatBatch:
     """Pack ragged samples into one FlatDeepSet forward via gene-index offsets.
 
@@ -200,6 +230,18 @@ def pack_records_to_batch(
         sex_targets.append(int(sex_idxs[i]))
         sample_ids.append(record.sample_id)
 
+    def _stack_optional(
+        rows: list[np.ndarray | None] | None,
+        *,
+        dtype: torch.dtype,
+    ) -> Tensor | None:
+        if rows is None or all(r is None for r in rows):
+            return None
+        if any(r is None for r in rows):
+            raise ValueError("optional multilabel rows must be all-or-none for a batch")
+        stacked = np.stack([np.asarray(r) for r in rows if r is not None], axis=0)
+        return torch.as_tensor(stacked, dtype=dtype)
+
     return FlatBatch(
         sample_ids=sample_ids,
         cpg_features=torch.cat(feat_parts, dim=0),
@@ -211,6 +253,10 @@ def pack_records_to_batch(
         age_mask=torch.tensor(age_masks, dtype=torch.bool),
         sex_target=torch.tensor(sex_targets, dtype=torch.long),
         sex_mask=torch.tensor(sex_masks, dtype=torch.bool),
+        disease_target=_stack_optional(disease_targets, dtype=torch.float32),
+        disease_mask=_stack_optional(disease_masks, dtype=torch.bool),
+        cancer_target=_stack_optional(cancer_targets, dtype=torch.float32),
+        cancer_mask=_stack_optional(cancer_masks, dtype=torch.bool),
     )
 
 
