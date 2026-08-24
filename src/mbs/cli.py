@@ -797,11 +797,13 @@ def matrix_index_hub_packs_cmd(
     paths.ensure_directories()
     index = build_hub_pack_matrix_index(paths.data_root)
     index_path = paths.data_root / "canonical" / "matrices" / "hub_pack_matrix_index.parquet"
+    n_families = 0 if index.empty else len({str(x) for x in index["family"].tolist()})
+    n_unique = 0 if index.empty else len({str(x) for x in index["sample_id"].tolist()})
     payload: dict[str, Any] = {
         "index_path": str(index_path),
         "n_rows": int(len(index)),
-        "n_families": 0 if index.empty else len(index["family"].drop_duplicates()),
-        "n_unique_gsm": 0 if index.empty else len(index["sample_id"].drop_duplicates()),
+        "n_families": n_families,
+        "n_unique_gsm": n_unique,
     }
     if check_overlap:
         resolved_report = None

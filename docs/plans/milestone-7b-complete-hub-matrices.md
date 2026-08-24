@@ -7,6 +7,65 @@ Normative ADRs: [0005](../adr/0005-catalog-matrix-independence.md),
 Checklist: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md).
 Programme context: [`post-v0-scientific-programme.md`](post-v0-scientific-programme.md).
 
+## Background convert + tracking
+
+```bash
+# Start/restart progress watcher (does not kill in-flight convert-pack)
+bash scripts/convert_hub_full_packs_background.sh
+
+# One-shot status (refreshes progress.md + plan Progress block)
+bash scripts/status_7b_hub_matrices.sh
+
+# Or just read:
+cat reports/inspection/stage0_7b_hub_matrices/progress.md
+```
+
+Watcher polls every 30s (`MBS_7B_PROGRESS_INTERVAL_SEC`), updates
+`progress.{md,json}` and this plan's Progress block, then when all six packs
+finish runs index + inspection report + `catalog refresh-release`.
+Latest watcher log: `$MBS_ARTIFACT_ROOT/logs/matrix_convert/7b_watcher_latest.log`.
+
+## Done so far (code)
+
+- Plan + DATA_CONTRACT / DATA_CATALOG virtual-index docs
+- Probe collapse: mean/median + `contributing_probe_ids` on locus index
+- Chunked stream → compressed Zarr (scratch memmap, not dense RAM stack)
+- BMI/ancestry pack maps; unique GSM + long-form phenotypes; content sha256
+- Virtual index helpers + CLI `mbs matrix index-hub-packs`
+- Unit tests for maps, collapse, checksum, dup GSM, overlap, chunked oracle
+- Full converts **done:** ancestry, bmi, brain, blood, cancer
+- Progress auto-updater + background watcher (disease in flight)
+
+## Left (gate)
+
+- Finish **disease** convert (cancer + other five packs done)
+- Build `hub_pack_matrix_index.parquet` + overlap concordance
+- Write `reports/inspection/stage0_7b_hub_matrices/summary.{md,json}`
+- `mbs catalog refresh-release` (pointers only)
+- Required checks; mark `TODO_PIPELINE.md` 7B `done` only with evidence
+- Refresh DATA_CATALOG known-gaps once matrices land
+
+## Progress
+
+<!-- 7B-PROGRESS-START -->
+
+_Auto-updated `2026-08-24T16:09:28Z` by `scripts/update_7b_convert_progress.py`._
+
+**5/6** 7B packs done. Active: `disease`.
+
+| Family | Status |
+|--------|--------|
+| `ancestry` | done `1380×482387` |
+| `bmi` | done `2070×482387` |
+| `brain` | done `1997×482387` |
+| `blood` | done `3402×482387` |
+| `cancer` | done `10101×482387` |
+| `disease` | pending |
+
+Track live: `reports/inspection/stage0_7b_hub_matrices/progress.md`
+
+<!-- 7B-PROGRESS-END -->
+
 ## Scope and acceptance
 
 | Deliverable | Done when |

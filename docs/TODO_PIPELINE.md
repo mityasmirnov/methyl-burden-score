@@ -509,11 +509,10 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Code landed (not Done when):** stream-to-Zarr converter, probe-collapse
   columns, long-form phenotypes, virtual `hub_pack_matrix_index`, unit tests,
   `scripts/convert_hub_full_packs.sh` / `scripts/write_stage0_7b_report.py`.
-  Remaining: finish conversions for disease/cancer (and any unfinished packs),
-  then write `reports/inspection/stage0_7b_hub_matrices/`.
-  As of residual-7C polish: ancestry/blood/bmi/brain full matrices present;
-  `matrix-hub-cancer-full-v1` convert in progress; `matrix-hub-disease-full-v1`
-  not yet ready (no `sample_index.parquet`).
+  **Track live:** `bash scripts/status_7b_hub_matrices.sh` or
+  `reports/inspection/stage0_7b_hub_matrices/progress.md` (auto-updated by
+  `scripts/convert_hub_full_packs_background.sh`). Remaining: finish disease
+  convert, then index/overlap + inspection summary + refresh-release.
 - **Depends on:** (7A).
 - **Plan:** [`plans/milestone-7b-complete-hub-matrices.md`](plans/milestone-7b-complete-hub-matrices.md);
   [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).

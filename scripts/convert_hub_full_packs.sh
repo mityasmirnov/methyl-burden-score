@@ -38,6 +38,7 @@ run_full() {
     --all-studies \
     --platform-id HM450
   echo "CONVERT_FAMILY_DONE family=${family} matrix_id=${matrix_id}"
+  uv run python scripts/update_7b_convert_progress.py || true
 }
 
 # 5d freezes (skip if present)
@@ -58,6 +59,8 @@ echo "--- build virtual hub pack index + overlap check"
 uv run mbs matrix index-hub-packs \
   --check-overlap \
   --report-dir reports/inspection/stage0_7b_hub_matrices
+uv run python scripts/write_stage0_7b_report.py || true
+uv run python scripts/update_7b_convert_progress.py || true
 
 echo "CONVERT_DONE"
 echo "=== Hub full-pack converts finished ==="

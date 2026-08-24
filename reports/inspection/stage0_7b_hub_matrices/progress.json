@@ -1,0 +1,152 @@
+{
+  "milestone": "7B",
+  "updated_at": "2026-08-24T16:09:28Z",
+  "pid": 3185626,
+  "seven_b_done": 5,
+  "seven_b_total": 6,
+  "seven_b_in_progress": 0,
+  "all_seven_b_done": false,
+  "running_convert_families": [
+    "disease"
+  ],
+  "virtual_index_present": false,
+  "inspection_summary_present": false,
+  "seven_b_matrices": [
+    {
+      "family": "ancestry",
+      "matrix_id": "matrix-hub-ancestry-full-v1",
+      "status": "done",
+      "phase": "done",
+      "n_samples": 1380,
+      "n_phenotype_rows": 1380,
+      "n_loci": 482387,
+      "platform_id": "450K",
+      "has_scratch": false,
+      "has_betas": true,
+      "betas_bytes": 1277726567,
+      "scratch_bytes": null
+    },
+    {
+      "family": "bmi",
+      "matrix_id": "matrix-hub-bmi-full-v1",
+      "status": "done",
+      "phase": "done",
+      "n_samples": 2070,
+      "n_phenotype_rows": 2070,
+      "n_loci": 482387,
+      "platform_id": "450K",
+      "has_scratch": false,
+      "has_betas": true,
+      "betas_bytes": 1977505807,
+      "scratch_bytes": null
+    },
+    {
+      "family": "brain",
+      "matrix_id": "matrix-hub-brain-full-v1",
+      "status": "done",
+      "phase": "done",
+      "n_samples": 1997,
+      "n_phenotype_rows": 1997,
+      "n_loci": 482387,
+      "platform_id": "450K",
+      "has_scratch": false,
+      "has_betas": true,
+      "betas_bytes": 1820049522,
+      "scratch_bytes": null
+    },
+    {
+      "family": "blood",
+      "matrix_id": "matrix-hub-blood-full-v1",
+      "status": "done",
+      "phase": "done",
+      "n_samples": 3402,
+      "n_phenotype_rows": 3402,
+      "n_loci": 482387,
+      "platform_id": "450K",
+      "has_scratch": false,
+      "has_betas": true,
+      "betas_bytes": 3150098633,
+      "scratch_bytes": null
+    },
+    {
+      "family": "cancer",
+      "matrix_id": "matrix-hub-cancer-full-v1",
+      "status": "done",
+      "phase": "done",
+      "n_samples": 10101,
+      "n_phenotype_rows": 10841,
+      "n_loci": 482387,
+      "platform_id": "450K",
+      "has_scratch": false,
+      "has_betas": true,
+      "betas_bytes": 9791842980,
+      "scratch_bytes": null
+    },
+    {
+      "family": "disease",
+      "matrix_id": "matrix-hub-disease-full-v1",
+      "status": "pending",
+      "phase": "pending",
+      "n_samples": null,
+      "n_phenotype_rows": null,
+      "n_loci": null,
+      "platform_id": null,
+      "has_scratch": false,
+      "has_betas": false,
+      "betas_bytes": null,
+      "scratch_bytes": null
+    }
+  ],
+  "frozen_matrices": [
+    {
+      "family": "age",
+      "matrix_id": "matrix-hub-age-full-v1",
+      "status": "done",
+      "phase": "done",
+      "n_samples": 8374,
+      "n_phenotype_rows": null,
+      "n_loci": 482379,
+      "platform_id": "HM450",
+      "has_scratch": false,
+      "has_betas": true,
+      "betas_bytes": 7721572263,
+      "scratch_bytes": null
+    },
+    {
+      "family": "tissue",
+      "matrix_id": "matrix-hub-tissue-full-v1",
+      "status": "done",
+      "phase": "done",
+      "n_samples": 5323,
+      "n_phenotype_rows": null,
+      "n_loci": 482379,
+      "platform_id": "HM450",
+      "has_scratch": false,
+      "has_betas": true,
+      "betas_bytes": 4999035275,
+      "scratch_bytes": null
+    },
+    {
+      "family": "sex",
+      "matrix_id": "matrix-hub-sex-full-v1",
+      "status": "done",
+      "phase": "done",
+      "n_samples": 2978,
+      "n_phenotype_rows": null,
+      "n_loci": 482379,
+      "platform_id": "HM450",
+      "has_scratch": false,
+      "has_betas": true,
+      "betas_bytes": 2793667280,
+      "scratch_bytes": null
+    }
+  ],
+  "next_pending": "disease",
+  "remaining": [
+    "Finish convert for: disease (skip-if-exists resume)",
+    "mbs matrix index-hub-packs --check-overlap",
+    "scripts/write_stage0_7b_report.py",
+    "mbs catalog refresh-release (7A pointers only)",
+    "Required checks; mark TODO_PIPELINE 7B done with evidence"
+  ]
+}

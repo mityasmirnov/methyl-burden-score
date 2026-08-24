@@ -8,7 +8,7 @@ SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
 CACHE_ROOT ?= $(PROJECT_ROOT)/cache
 ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
-.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build catalog-refresh-release agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info
+.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build catalog-refresh-release agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info 7b-status 7b-convert-bg
 
 help:
 	@printf '%s\n' \
@@ -24,6 +24,8 @@ help:
 	  'catalog-init   Create dirs and apply sql/*.sql to the default DuckDB catalog' \
 	  'catalog-build  Build the DuckDB catalog from SQL and Parquet inputs' \
 	  'catalog-refresh-release  Populate deepmat-data-v1 + phenotype census' \
+	  '7b-status      Refresh + print Milestone 7B Hub matrix convert progress' \
+	  '7b-convert-bg  Background 7B convert watcher (progress docs + finalize)' \
 	  'agent-context  Print a concise context summary for coding agents' \
 	  'references     Add pinned reference repositories as submodules' \
 	  'download-cpgcorpus     Sync full CpGCorpus into data/raw/cpgcorpus' \
@@ -85,6 +87,12 @@ catalog-refresh-release:
 	uv run mbs catalog validate-release
 	uv run mbs catalog phenotype-census
 	uv run mbs catalog trait-eligibility
+
+7b-status:
+	bash scripts/status_7b_hub_matrices.sh
+
+7b-convert-bg:
+	bash scripts/convert_hub_full_packs_background.sh
 
 agent-context:
 	bash scripts/agent_context.sh
