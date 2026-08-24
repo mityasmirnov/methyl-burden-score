@@ -1,0 +1,29 @@
+experiment:
+  name: stage0_flat_matched_encoder
+  stage: 0
+  seed: 42
+
+model:
+  type: flat_deepset
+  phi_layers: 2
+  rho_layers: 3
+  rho_hidden_dimension: 10
+  pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  encoder:
+    activation: gelu
+    dropout: 0.1
+    layer_norm: true
+    cpg_hidden_dim: 64
+
+training:
+  batch_size: 8
+  batch_token_budget: 4096
+  max_epochs: 2
+
+controls:
+  mode: none
+  static_only: true
+  coverage_only: true
+  label_permutation: true

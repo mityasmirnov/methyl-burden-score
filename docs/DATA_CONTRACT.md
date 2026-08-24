@@ -239,34 +239,43 @@ Parquet; phenotype labels for training are Parquet (`canonical/phenotypes/`).
 See [ADR 0005](adr/0005-catalog-matrix-independence.md) and Milestone 5c notes
 in [`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md).
 
-### `MethylationStore` protocol (introduce with 7B)
+### Matrix store (Zarr layout; protocol deferred)
 
-Training code should depend on a thin protocol, not import Zarr directly forever:
-
-```python
-class MethylationStore(Protocol):
-    @property
-    def n_samples(self) -> int: ...
-    @property
-    def n_loci(self) -> int: ...
-    def sample_ids(self) -> Sequence[str]: ...
-    def locus_index(self) -> pd.DataFrame: ...
-    def read_dense(
-        self, sample_rows: np.ndarray, locus_rows: np.ndarray
-    ) -> np.ndarray: ...
-```
-
-First implementation wraps the existing Zarr layout. TileDB / Parquet
+Training currently opens the Zarr layout via `mbs.matrix.store`. A thin
+`MethylationStore` protocol remains deferred (YAGNI until a second backend is
+needed; [ADR 0005](adr/0005-catalog-matrix-independence.md)). TileDB / Parquet
 observation stores are future backends only.
 
 Each canonical study matrix has:
 
 ```text
-betas.zarr or betas.h5       [n_samples, n_study_loci]
+betas.zarr                   [n_samples, n_study_loci]  (compressed float32)
 sample_index.parquet         study row -> sample_id
 locus_index.parquet          study column -> canonical locus_id
+sample_phenotypes.parquet    long-form labels (may repeat sample_id)
 matrix_manifest.json         provenance and array metadata
 ```
+
+`locus_index.parquet` may include Milestone **7B** columns:
+
+```text
+contributing_probe_ids       pipe-separated probe IDs collapsed into the column
+collapse_method              identity | mean | median
+```
+
+### Virtual Hub pack index (7B)
+
+Cross-pack GSM membership without a dense nine-pack union:
+
+```text
+canonical/matrices/hub_pack_matrix_index.parquet
+  family, matrix_id, sample_id, row_index, platform, betas_path
+```
+
+Overlapping GSM betas are **verified** across packs (max abs diff on a locus
+subset). Do not silently take the first pack when merging; discordant pairs
+block a claimed merged beta. See
+[`plans/milestone-7b-complete-hub-matrices.md`](plans/milestone-7b-complete-hub-matrices.md).
 
 The matrix manifest contains:
 

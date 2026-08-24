@@ -92,6 +92,10 @@ def build_locus_region_gene_index(
     for col in ("region_id", "gene_id", "region_type"):
         if col not in region_cols:
             raise ValueError(f"regions requires {col}")
+    gene_regions = regions
+    if "region_system" in region_cols:
+        gene_regions = regions.loc[regions["region_system"].fillna("gene").eq("gene")].copy()
+    gene_regions = gene_regions.loc[gene_regions["gene_id"].notna()].copy()
 
     study = locus_index.loc[:, ["col_index", "locus_id"]].sort_values("col_index").copy()
     if "canonical_key" in locus_index.columns:
@@ -110,7 +114,7 @@ def build_locus_region_gene_index(
     else:
         n_study_loci = len(locus_index)
 
-    region_view = regions.loc[:, ["region_id", "gene_id", "region_type"]].copy()
+    region_view = gene_regions.loc[:, ["region_id", "gene_id", "region_type"]].copy()
     region_view["region_id"] = region_view["region_id"].astype(str)
     region_view["gene_id"] = region_view["gene_id"].astype(str)
     region_view["region_type"] = region_view["region_type"].astype(str)

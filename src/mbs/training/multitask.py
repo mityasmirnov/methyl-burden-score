@@ -8,7 +8,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
-from mbs.models import SeedMaskedLinearHead
+from mbs.models import SeedMaskedLinearHead, center_mask_scores
 from mbs.training.dataset import FlatBatch
 from mbs.training.hier_dataset import HierBatch
 
@@ -29,20 +29,34 @@ class MultitaskHeads(nn.Module):
         n_sex_classes: int = 2,
         seed_mask: Tensor | None = None,
         sex_enabled: bool = False,
+        n_disease_labels: int = 0,
+        n_cancer_labels: int = 0,
+        neutral_score: float = 0.5,
     ) -> None:
         super().__init__()
         self.n_genes = n_genes
         self.n_tissue_classes = n_tissue_classes
         self.n_sex_classes = int(n_sex_classes)
         self.sex_enabled = bool(sex_enabled)
+        self.n_disease_labels = int(n_disease_labels)
+        self.n_cancer_labels = int(n_cancer_labels)
+        self.neutral_score = float(neutral_score)
         self.age_head = nn.Linear(n_genes, 1)
         mask = (
             seed_mask
             if seed_mask is not None
             else torch.ones(n_tissue_classes, n_genes, dtype=torch.float32)
         )
-        self.tissue_head = SeedMaskedLinearHead(n_genes, n_tissue_classes, mask)
+        self.tissue_head = SeedMaskedLinearHead(
+            n_genes, n_tissue_classes, mask, neutral_score=self.neutral_score
+        )
         self.sex_head = nn.Linear(n_genes, self.n_sex_classes) if self.sex_enabled else None
+        self.disease_head = (
+            nn.Linear(n_genes, self.n_disease_labels) if self.n_disease_labels > 0 else None
+        )
+        self.cancer_head = (
+            nn.Linear(n_genes, self.n_cancer_labels) if self.n_cancer_labels > 0 else None
+        )
         with torch.no_grad():
             self.age_head.weight.normal_(0.0, 0.05)
             self.age_head.bias.zero_()
@@ -50,10 +64,18 @@ class MultitaskHeads(nn.Module):
             if self.sex_head is not None:
                 self.sex_head.weight.normal_(0.0, 0.05)
                 self.sex_head.bias.zero_()
+            if self.disease_head is not None:
+                self.disease_head.weight.normal_(0.0, 0.05)
+                self.disease_head.bias.zero_()
+            if self.cancer_head is not None:
+                self.cancer_head.weight.normal_(0.0, 0.05)
+                self.cancer_head.bias.zero_()
+
+    def _centered(self, mbs: Tensor, present: Tensor) -> Tensor:
+        return center_mask_scores(mbs, present, neutral_score=self.neutral_score)
 
     def forward_age(self, mbs: Tensor, present: Tensor) -> Tensor:
-        masked = mbs * present.to(dtype=mbs.dtype)
-        return self.age_head(masked).squeeze(-1)
+        return self.age_head(self._centered(mbs, present)).squeeze(-1)
 
     def forward_tissue(self, mbs: Tensor, present: Tensor) -> Tensor:
         return self.tissue_head(mbs, present)
@@ -61,8 +83,17 @@ class MultitaskHeads(nn.Module):
     def forward_sex(self, mbs: Tensor, present: Tensor) -> Tensor:
         if self.sex_head is None:
             raise RuntimeError("sex head is disabled")
-        masked = mbs * present.to(dtype=mbs.dtype)
-        return self.sex_head(masked)
+        return self.sex_head(self._centered(mbs, present))
+
+    def forward_disease(self, mbs: Tensor, present: Tensor) -> Tensor:
+        if self.disease_head is None:
+            raise RuntimeError("disease head is disabled")
+        return self.disease_head(self._centered(mbs, present))
+
+    def forward_cancer(self, mbs: Tensor, present: Tensor) -> Tensor:
+        if self.cancer_head is None:
+            raise RuntimeError("cancer head is disabled")
+        return self.cancer_head(self._centered(mbs, present))
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,6 +157,8 @@ def masked_multitask_loss(
         "age_n": 0.0,
         "tissue_n": 0.0,
         "sex_n": 0.0,
+        "disease_n": 0.0,
+        "cancer_n": 0.0,
     }
 
     age_n = int(age_mask.sum().item())
@@ -180,7 +213,34 @@ def masked_multitask_loss(
         metrics["sex_correct"] = float((pred_cls == targets_on).sum().item())
         metrics["sex_n"] = float(sex_n)
 
-    if age_n == 0 and tissue_n == 0 and sex_n == 0:
+    disease_n = 0
+    cancer_n = 0
+    if getattr(batch, "disease_mask", None) is not None and heads.disease_head is not None:
+        dmask = batch.disease_mask.to(device=device, dtype=torch.bool)
+        if dmask.any():
+            if batch.disease_target is None:
+                raise RuntimeError("disease_mask set but disease_target is None")
+            logits = heads.forward_disease(mbs_b, present_b)
+            target = batch.disease_target.to(device=device, dtype=logits.dtype)
+            disease_term = F.binary_cross_entropy_with_logits(logits[dmask], target[dmask])
+            total = total + disease_term
+            metrics["disease_loss"] = float(disease_term.detach().item())
+            disease_n = int(dmask.sum().item())
+            metrics["disease_n"] = float(disease_n)
+    if getattr(batch, "cancer_mask", None) is not None and heads.cancer_head is not None:
+        cmask = batch.cancer_mask.to(device=device, dtype=torch.bool)
+        if cmask.any():
+            if batch.cancer_target is None:
+                raise RuntimeError("cancer_mask set but cancer_target is None")
+            logits = heads.forward_cancer(mbs_b, present_b)
+            target = batch.cancer_target.to(device=device, dtype=logits.dtype)
+            cancer_term = F.binary_cross_entropy_with_logits(logits[cmask], target[cmask])
+            total = total + cancer_term
+            metrics["cancer_loss"] = float(cancer_term.detach().item())
+            cancer_n = int(cmask.sum().item())
+            metrics["cancer_n"] = float(cancer_n)
+
+    if age_n == 0 and tissue_n == 0 and sex_n == 0 and disease_n == 0 and cancer_n == 0:
         total = total + (mbs_b.sum() * 0.0)
 
     metrics["loss"] = float(total.detach().item())

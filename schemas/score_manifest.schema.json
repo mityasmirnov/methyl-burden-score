@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mityasmirnov/methyl-burden-score/schemas/score_manifest.schema.json",
+  "title": "MBS score orientation manifest",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "artifact_version",
+    "score_family",
+    "score_polarity",
+    "anchor_recipe"
+  ],
+  "properties": {
+    "artifact_version": {"type": "string"},
+    "score_family": {"const": "predictive_mbs"},
+    "score_polarity": {"enum": ["hyper_aligned", "flipped"]},
+    "anchor_recipe": {"type": "string"},
+    "fold_id": {"type": ["string", "null"]},
+    "restart_id": {"type": ["string", "null"]},
+    "notes": {"type": "string"}
+  }
+}

@@ -36,23 +36,26 @@ src/mbs/registry/sample_info.py Hub sample-info txt/zip → Parquet export
 src/mbs/batch.py         ragged batch contract
 src/mbs/segment_ops.py   permutation-invariant segment reductions
 src/mbs/models.py        flat/hierarchical scorers and linear heads
-src/mbs/annotation/      Stage 0 locus registry + five-role graph builder
+src/mbs/annotation/      Stage 0 locus registry + five-role / graph-v2 builder
 src/mbs/static_features/ offline CpGPT sequence-adapter export + artifact I/O
 src/mbs/matrix/          canonical matrix conversion (EWAS_db + Hub packs)
-src/mbs/training/        flat / hierarchical deepMAT train loops
+src/mbs/scoring/         score orientation / score_manifest (ADR 0008)
+src/mbs/training/        flat / hierarchical / branch / controls / sampler
 src/mbs/registry/        phenotype / source dataset registry (Milestone 5b)
 src/mbs/evaluation/      metrics + study-grouped split helpers (Milestone 5b)
 ```
 
-Milestones **1–6** and **7A** are done (flat + hierarchical v0.1 on
-age/tissue/sex union; `deepmat-data-v1` catalog + census).
-**Current gate: 7B** (complete nine-pack canonical matrices). Final OOF
-cross-fitting is Milestone **7**, blocked until 7A–7E — see
+Milestones **1–6**, **7A**, and **7C** (fixture acceptance) are done.
+**Current gate: 7B** (convert remaining Hub packs to canonical matrices +
+inspection report). **7C** trainer/graph-v2/direct/branch fixtures are closed;
+residual wiring listed in
+[`plans/milestone-7c-supervised-architecture.md`](plans/milestone-7c-supervised-architecture.md).
+Final OOF cross-fitting is Milestone **7**, blocked until 7A–7E — see
 [`TODO_PIPELINE.md`](TODO_PIPELINE.md),
 [ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md), and
 [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
-**Do not retrain v0.1**; first coding deliverable after 7A is 7B.
+**Do not retrain v0.1**.
 
 ## SQL and schemas
 
@@ -164,6 +167,7 @@ mbs graph build            locus registry + five-role annotation graph
 mbs features export-cpgpt  offline CpGPT2M sequence-adapter static features
 mbs matrix convert         EWAS_db study → canonical matrix store
 mbs matrix convert-pack    Hub phenotype pack → canonical matrix
+mbs matrix index-hub-packs Virtual multi-store index + GSM overlap check
 mbs train flat             flat DeepRVAT-style baseline
 mbs train hierarchical     hierarchical + residual-slot v0.1
 mbs monitor                live Rich TUI for a run (metrics.jsonl + GPU + ckpts)

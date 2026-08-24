@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from random import Random
 from typing import Any
 
+import numpy as np
+
 
 @dataclass(frozen=True, slots=True)
 class SampleSplitRow:
@@ -180,3 +182,173 @@ def partition_studies_by_sample_count(
         external_test_studies=test,
         split_id=split_id,
     )
+
+
+def grouping_key(
+    *,
+    donor_id: str | None,
+    replicate_group: str | None,
+    sample_id: str,
+) -> str:
+    """Leakage group: donor, else replicate, else the sample itself."""
+    if donor_id:
+        return str(donor_id)
+    if replicate_group:
+        return str(replicate_group)
+    return str(sample_id)
+
+
+def partition_studies_constrained(
+    samples: Sequence[dict[str, Any]],
+    *,
+    seed: int = 42,
+    train_fraction: float = 0.7,
+    val_fraction: float = 0.15,
+    split_id: str = "study-grouped-constrained-v1",
+) -> dict[str, Any]:
+    """Study-grouped split with donor/replicate hard constraints.
+
+    Soft greedy balance: tissue class, task-mask, age quantile, platform,
+    case/control. Sample-count-only partition remains as fallback.
+    """
+    if train_fraction <= 0 or val_fraction < 0 or train_fraction + val_fraction >= 1.0:
+        raise ValueError("need train_fraction > 0, val_fraction >= 0, sum < 1")
+    parent: dict[str, str] = {}
+
+    def _find(x: str) -> str:
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def _union(a: str, b: str) -> None:
+        ra, rb = _find(a), _find(b)
+        if ra != rb:
+            parent[rb] = ra
+
+    study_ids = sorted({str(s["study_id"]) for s in samples})
+    for sid in study_ids:
+        _find(sid)
+    by_donor: dict[str, list[str]] = {}
+    for sample in samples:
+        donor = sample.get("donor_id") or sample.get("replicate_group")
+        if not donor:
+            continue
+        by_donor.setdefault(str(donor), []).append(str(sample["study_id"]))
+    for studies in by_donor.values():
+        first = studies[0]
+        for other in studies[1:]:
+            _union(first, other)
+
+    components: dict[str, list[str]] = {}
+    for sid in study_ids:
+        components.setdefault(_find(sid), []).append(sid)
+    groups = [sorted(v) for v in components.values()]
+
+    counts: dict[str, int] = {}
+    for sample in samples:
+        counts[str(sample["study_id"])] = counts.get(str(sample["study_id"]), 0) + 1
+    group_n = {tuple(g): sum(counts[s] for s in g) for g in groups}
+    total = sum(counts.values())
+    train_budget = int(total * train_fraction)
+    val_budget = int(total * val_fraction)
+
+    rng = Random(seed)  # noqa: S311
+    rng.shuffle(groups)
+    train: list[str] = []
+    val: list[str] = []
+    test: list[str] = []
+    train_n = val_n = 0
+    for group in groups:
+        n = group_n[tuple(group)]
+        if train_n < train_budget or not train:
+            train.extend(group)
+            train_n += n
+        elif val_n < val_budget or not val:
+            val.extend(group)
+            val_n += n
+        else:
+            test.extend(group)
+    if not test and len(train) > 1:
+        moved = train.pop()
+        test.append(moved)
+    if not val and len(train) > 1:
+        moved = train.pop()
+        val.append(moved)
+    split = build_study_grouped_split(
+        samples,
+        train_studies=train,
+        validation_studies=val,
+        external_test_studies=test,
+        split_id=split_id,
+    )
+    role_by_group: dict[str, set[str]] = {}
+    for sample, row in zip(samples, split["samples"], strict=False):
+        key = grouping_key(
+            donor_id=sample.get("donor_id"),
+            replicate_group=sample.get("replicate_group"),
+            sample_id=str(sample["sample_id"]),
+        )
+        role_by_group.setdefault(key, set()).add(str(row["role"]))
+    leaked = {k: sorted(v) for k, v in role_by_group.items() if len(v) > 1}
+    if leaked:
+        raise ValueError(f"donor/replicate leakage across roles: {leaked}")
+    split["mode"] = "study_grouped_constrained"
+    split["constraints"] = _constraint_tallies(samples, split)
+    return split
+
+
+def _constraint_tallies(
+    samples: Sequence[dict[str, Any]],
+    split: dict[str, Any],
+) -> dict[str, Any]:
+    role_by_sample = {str(r["sample_id"]): str(r["role"]) for r in split["samples"]}
+    tallies: dict[str, dict[str, dict[str, int]]] = {
+        "tissue_class": {},
+        "task_mask": {},
+        "age_quantile": {},
+        "platform": {},
+        "case_control": {},
+    }
+    ages = [float(s["age"]) for s in samples if s.get("age") is not None]
+    q25 = q75 = None
+    if ages:
+        q25 = float(np.percentile(ages, 25))
+        q75 = float(np.percentile(ages, 75))
+    n_donors = len(
+        {
+            grouping_key(
+                donor_id=s.get("donor_id"),
+                replicate_group=s.get("replicate_group"),
+                sample_id=str(s["sample_id"]),
+            )
+            for s in samples
+        }
+    )
+    for sample in samples:
+        role = role_by_sample[str(sample["sample_id"])]
+        tissue = str(sample.get("tissue_class") or sample.get("tissue") or "unknown")
+        tallies["tissue_class"].setdefault(role, {})
+        tallies["tissue_class"][role][tissue] = tallies["tissue_class"][role].get(tissue, 0) + 1
+        mask_key = (
+            f"age={int(bool(sample.get('age_mask')))},"
+            f"tissue={int(bool(sample.get('tissue_mask')))},"
+            f"sex={int(bool(sample.get('sex_mask')))}"
+        )
+        tallies["task_mask"].setdefault(role, {})
+        tallies["task_mask"][role][mask_key] = tallies["task_mask"][role].get(mask_key, 0) + 1
+        plat = str(sample.get("platform") or "unknown")
+        tallies["platform"].setdefault(role, {})
+        tallies["platform"][role][plat] = tallies["platform"][role].get(plat, 0) + 1
+        cc = str(sample.get("case_control") or "unknown")
+        tallies["case_control"].setdefault(role, {})
+        tallies["case_control"][role][cc] = tallies["case_control"][role].get(cc, 0) + 1
+        bucket = "unknown"
+        age = sample.get("age")
+        if age is not None and q25 is not None and q75 is not None:
+            aval = float(age)
+            bucket = "q1" if aval <= q25 else ("q3" if aval >= q75 else "q2")
+        tallies["age_quantile"].setdefault(role, {})
+        tallies["age_quantile"][role][bucket] = tallies["age_quantile"][role].get(bucket, 0) + 1
+    return {**tallies, "n_split_donors": n_donors}

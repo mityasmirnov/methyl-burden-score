@@ -32,3 +32,5 @@ def test_build_probe_locus_map_retains_unmapped_probes() -> None:
     assert is_residual_canonical_key(str(locus_map.canonical_keys[-1]))
     assert str(locus_map.canonical_keys[-1]) == residual_canonical_key("cg999")
     assert int(locus_map.annotation_status[-1]) == ANNOTATION_STATUS_UNMAPPED
+    assert locus_map.contributing_probe_ids[-1] == ("cg999",)
+    assert locus_map.collapse_method[-1] == "identity"

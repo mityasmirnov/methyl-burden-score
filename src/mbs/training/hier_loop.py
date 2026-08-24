@@ -15,7 +15,7 @@ from mbs.evaluation.annotation_slices import (
     compare_hierarchical_vs_flat,
     index_annotation_summary,
 )
-from mbs.evaluation.splits import build_study_grouped_split, partition_studies_by_sample_count
+from mbs.evaluation.splits import build_study_grouped_split
 from mbs.matrix.store import (
     matrix_store_paths,
     open_betas_zarr,
@@ -29,7 +29,8 @@ from mbs.static_features.store import (
     read_loci_index,
     static_feature_store_paths,
 )
-from mbs.training.features import build_static_column_table
+from mbs.training.encoder_config import resolve_encoder
+from mbs.training.features import build_static_column_table, cpg_input_dim
 from mbs.training.hier_dataset import (
     HierBatch,
     HierSampleRecord,
@@ -45,7 +46,14 @@ from mbs.training.locus_region_gene import (
     LocusRegionGeneIndex,
     build_locus_region_gene_index,
 )
-from mbs.training.loop import TrainResult, load_experiment_config, resolve_device
+from mbs.training.loop import (
+    TrainResult,
+    load_experiment_config,
+    maybe_constrained_split,
+    resolve_device,
+    split_sample_rows,
+    task_key,
+)
 from mbs.training.multitask import MultitaskHeads, masked_multitask_loss
 from mbs.training.phenotype_table import load_tissue_ontology
 from mbs.training.phenotypes import SamplePhenotype, load_multitask_phenotypes
@@ -57,6 +65,7 @@ from mbs.training.run_artifacts import (
     save_checkpoint,
     write_run_artifacts,
 )
+from mbs.training.sampler import iter_epoch_batches
 
 # Re-export for CLI convenience
 __all__ = ["load_experiment_config", "train_hierarchical_baseline"]
@@ -175,6 +184,9 @@ def _run_hier_epoch(
     huber_delta: float,
     age_loss_name: str,
     batch_size: int,
+    seed: int = 42,
+    epoch: int = 0,
+    batch_token_budget: int | None = None,
     allowed_region_type_ids: set[int] | None = None,
     include_residual: bool = True,
     include_mapped: bool = True,
@@ -196,7 +208,6 @@ def _run_hier_epoch(
     n = 0
     amp_dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
     context = torch.enable_grad() if train else torch.no_grad()
-    step = max(1, int(batch_size))
     ph_by_id = {p.sample_id: p for p in (phenotypes or [])}
 
     if records is not None:
@@ -208,18 +219,41 @@ def _run_hier_epoch(
             raise RuntimeError("pilot phenotypes and store are required when records is None")
         all_phenotypes = phenotypes
     n_items = len(all_records) if all_records is not None else len(all_phenotypes or [])
+    n_tokens: list[int] = []
+    study_ids: list[str] = []
+    task_keys: list[str] = []
+    if all_records is not None:
+        for rec in all_records:
+            ph = ph_by_id.get(rec.sample_id)
+            n_tokens.append(
+                max(1, rec.features.n_observed_edges + rec.features.n_observed_residual)
+            )
+            study_ids.append(str(ph.study_id if ph and ph.study_id else rec.sample_id))
+            task_keys.append(task_key(ph))
+    else:
+        for ph in all_phenotypes or []:
+            n_tokens.append(1)
+            study_ids.append(str(ph.study_id or ph.sample_id))
+            task_keys.append(task_key(ph))
 
     with context:
-        for start in range(0, n_items, step):
+        first_batch = True
+        for idxs in iter_epoch_batches(
+            n_items,
+            n_tokens=n_tokens,
+            study_ids=study_ids,
+            task_keys=task_keys,
+            batch_token_budget=batch_token_budget,
+            batch_size=batch_size,
+            seed=seed,
+            epoch=epoch,
+        ):
             if all_records is not None:
-                chunk = all_records[start : start + step]
+                chunk = [all_records[i] for i in idxs]
             else:
                 if all_phenotypes is None or pilot_store is None:
                     raise RuntimeError("missing phenotypes/store for materialization")
-                chunk = [
-                    _materialize_hier_record(ph, pilot_store)
-                    for ph in all_phenotypes[start : start + step]
-                ]
+                chunk = [_materialize_hier_record(all_phenotypes[i], pilot_store) for i in idxs]
             age_values: list[float | None] = []
             age_flags: list[bool] = []
             tissue_flags: list[bool] = []
@@ -272,7 +306,8 @@ def _run_hier_epoch(
                     class_weights=class_weights,
                 )
                 loss = result.loss
-            if start == 0:
+            if first_batch:
+                first_batch = False
                 print(  # noqa: T201
                     f"[hier] first batch packed "
                     f"cpg={tuple(batch.cpg_features.shape)} "
@@ -375,6 +410,8 @@ def train_hierarchical_baseline(
     weight_decay = float(train_cfg.get("weight_decay", 1e-4))
     grad_clip = float(train_cfg.get("gradient_clip_norm", 2.0))
     batch_size = max(1, int(train_cfg.get("batch_size", 1)))
+    raw_budget = train_cfg.get("batch_token_budget")
+    batch_token_budget = int(raw_budget) if raw_budget not in (None, "", 0) else None
     model_cfg = config.get("model", {})
 
     train_records: list[HierSampleRecord] | None = None
@@ -470,14 +507,7 @@ def train_hierarchical_baseline(
             sample_ids=sample_ids,
             class_names=ontology.class_names,
         )
-        sample_rows = [
-            {
-                "sample_id": p.sample_id,
-                "study_id": p.study_id or p.donor_id,
-                "platform": p.platform,
-            }
-            for p in phenotypes
-        ]
+        sample_rows = split_sample_rows(phenotypes)
 
         reuse = bool(pilot.get("reuse_flat_split", True))
         flat_run = str(
@@ -488,7 +518,7 @@ def train_hierarchical_baseline(
             auto_split = bool(pilot.get("auto_split", False))
             train_studies = [str(x) for x in pilot.get("train_studies", [])]
             if auto_split or not train_studies:
-                split = partition_studies_by_sample_count(
+                split = maybe_constrained_split(
                     sample_rows,
                     seed=seed,
                     train_fraction=float(config.get("splits", {}).get("train_fraction", 0.7)),
@@ -560,12 +590,11 @@ def train_hierarchical_baseline(
             n_study_loci=n_cols,
         )
         print(  # noqa: T201
-            f"[hier] static ready dim={static_dim} "
-            f"valid_cols={int(static_valid.sum())}/{n_cols}",
+            f"[hier] static ready dim={static_dim} valid_cols={int(static_valid.sum())}/{n_cols}",
             flush=True,
         )
         epsilon = float(config.get("features", {}).get("methylation", {}).get("epsilon", 0.001))
-        input_dim = 2 + static_dim
+        input_dim = cpg_input_dim(static_dim)
         sample_row_by_id = {
             str(sid): int(row)
             for sid, row in zip(
@@ -617,18 +646,28 @@ def train_hierarchical_baseline(
             f"model.region_types must match {list(HIER_REGION_TYPES)}, got {region_types_cfg}"
         )
     n_region_types = len(HIER_REGION_TYPES)
+    enc = resolve_encoder(
+        model_cfg,
+        default_activation="gelu",
+        default_layer_norm=True,
+        default_dropout=0.1,
+        default_cpg_hidden=64,
+    )
     cpg_pool: PoolName = str(model_cfg.get("cpg_pooling", "max"))  # type: ignore[assignment]
     region_pool: PoolName = str(model_cfg.get("region_pooling", "max"))  # type: ignore[assignment]
     model = HierarchicalDeepSet(
         input_dim,
         n_region_types,
-        cpg_hidden_dim=int(model_cfg.get("cpg_hidden_dimension", 64)),
+        cpg_hidden_dim=int(enc["cpg_hidden_dim"]),
         region_hidden_dim=int(model_cfg.get("region_hidden_dimension", 32)),
         region_type_dim=int(model_cfg.get("region_type_dimension", 8)),
         cpg_pool=cpg_pool,
         region_pool=region_pool,
+        residual_pool=str(model_cfg.get("residual_pooling", "max")),  # type: ignore[arg-type]
         neutral_score=float(model_cfg.get("neutral_score", 0.5)),
-        dropout=float(model_cfg.get("dropout", 0.1)),
+        dropout=float(enc["dropout"]),
+        activation=str(enc["activation"]),
+        layer_norm=bool(enc["layer_norm"]),
     ).to(device)
 
     heads_cfg = config.get("heads", {})
@@ -696,6 +735,7 @@ def train_hierarchical_baseline(
         phenotypes: list[SamplePhenotype] | None,
         optimizer: torch.optim.Optimizer | None,
         train: bool,
+        epoch: int = 0,
         allowed_region_type_ids: set[int] | None = None,
         include_residual: bool = True,
         include_mapped: bool = True,
@@ -721,6 +761,9 @@ def train_hierarchical_baseline(
             huber_delta=huber_delta,
             age_loss_name=age_loss_name,
             batch_size=batch_size,
+            seed=seed,
+            epoch=epoch,
+            batch_token_budget=batch_token_budget,
             allowed_region_type_ids=allowed_region_type_ids,
             include_residual=include_residual,
             include_mapped=include_mapped,
@@ -739,12 +782,14 @@ def train_hierarchical_baseline(
             phenotypes=train_phenotypes,
             optimizer=optimizer,
             train=True,
+            epoch=epoch,
         )
         val_metrics = run_epoch(
             records=val_records,
             phenotypes=val_phenotypes,
             optimizer=None,
             train=False,
+            epoch=epoch,
         )
         row = {
             "epoch": epoch,

@@ -13,7 +13,7 @@ import pyarrow as pa
 class SamplePhenotype:
     sample_id: str
     cell_type: str
-    donor_id: str
+    donor_id: str | None
     title: str
     class_index: int
     study_id: str | None = None
@@ -128,11 +128,16 @@ def load_multitask_phenotypes(
                 cell = str(row.get("sex_label") or f"sex={sex_class_index}")
         study = row.get("study_id")
         platform = row.get("platform_id") or row.get("platform")
+        raw_donor = row.get("donor_id")
+        donor: str | None = None
+        if raw_donor is not None and not (isinstance(raw_donor, float) and pd.isna(raw_donor)):
+            text = str(raw_donor).strip()
+            donor = text or None
         phenotypes.append(
             SamplePhenotype(
                 sample_id=sid,
                 cell_type=cell,
-                donor_id=str(study or sid),
+                donor_id=donor,
                 title=cell if tissue_mask or sex_mask else f"age={age_f}",
                 class_index=class_index,
                 study_id=None if study is None else str(study),
@@ -280,7 +285,7 @@ def load_hub_sample_info_phenotypes(
             SamplePhenotype(
                 sample_id=sid,
                 cell_type=str(value),
-                donor_id=str(study or sid),
+                donor_id=None,
                 title=str(value),
                 class_index=class_to_idx[str(value)],
                 study_id=None if study is None else str(study),
@@ -330,7 +335,7 @@ def load_hub_regression_phenotypes(
             SamplePhenotype(
                 sample_id=sid,
                 cell_type="age",
-                donor_id=str(study or sid),
+                donor_id=None,
                 title=str(age_f),
                 class_index=0,
                 study_id=None if study is None else str(study),

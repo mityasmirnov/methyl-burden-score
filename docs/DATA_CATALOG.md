@@ -149,9 +149,16 @@ Availability in these packs is not epidemiology. Reasons:
 | `matrix-hub-age-tissue-sex-full-v1` | **13,548 × 482,379** | GSM-union merge; freeze **deepmat-data-age-tissue-sex-v1** |
 | GSE35069 pilot | 60 × … | EWAS_db cell-type smoke |
 
-**Not yet converted as full canonical matrices:** disease, cancer, blood, brain,
-BMI, ancestry (BMI/ancestry also missing from pack converter maps) — Milestone
-**7B**.
+Milestone **7B** adds per-pack full matrices (no dense nine-pack union):
+
+```text
+matrix-hub-{disease,cancer,blood,brain,bmi,ancestry}-full-v1
+```
+
+Cross-pack membership is the virtual index
+`canonical/matrices/hub_pack_matrix_index.parquet` plus GSM beta concordance
+checks (do not silently take the first pack). Plan:
+[`plans/milestone-7b-complete-hub-matrices.md`](plans/milestone-7b-complete-hub-matrices.md).
 
 Multitask phenotype table on the union
 (`sample_phenotype_table_age_tissue_sex_full_v1.parquet`):

@@ -117,6 +117,8 @@ def convert_ewas_db_study(
         canonical_keys=locus_map.canonical_keys,
         probe_ids=locus_map.probe_ids,
         annotation_status=locus_map.annotation_status,
+        contributing_probe_ids=locus_map.contributing_probe_ids,
+        collapse_method=locus_map.collapse_method,
     )
     chunks = (min(64, max(1, n_samples)), min(4096, max(1, n_loci)))
     write_betas_zarr(paths.betas_path, betas, chunks=chunks)

@@ -16,7 +16,7 @@ from mbs.batch import (
     ANNOTATION_STATUS_UNMAPPED,
     annotation_status_masks,
 )
-from mbs.training.features import beta_to_m_value
+from mbs.training.features import assemble_cpg_features, cpg_input_dim
 from mbs.training.locus_region_gene import (
     HIER_REGION_TYPES,
     REGION_TYPE_TO_ID,
@@ -36,12 +36,13 @@ class HierSampleFeatureBundle:
     n_observed_residual: int
     n_dropped_nan_beta: int
     n_dropped_no_static: int
+    n_missing_static: int = 0
 
 
 @dataclass(frozen=True, slots=True)
 class HierSampleRecord:
     sample_id: str
-    donor_id: str
+    donor_id: str | None
     class_index: int
     features: HierSampleFeatureBundle
 
@@ -66,6 +67,10 @@ class HierBatch:
     age_mask: Tensor
     sex_target: Tensor | None = None
     sex_mask: Tensor | None = None
+    disease_target: Tensor | None = None
+    disease_mask: Tensor | None = None
+    cancer_target: Tensor | None = None
+    cancer_mask: Tensor | None = None
 
     def annotation_masks(self) -> dict[str, Tensor]:
         return annotation_status_masks(self.annotation_status)
@@ -98,6 +103,26 @@ class HierBatch:
             age_mask=self.age_mask.to(device, non_blocking=non_blocking),
             sex_target=sex_target.to(device, non_blocking=non_blocking),
             sex_mask=sex_mask.to(device, non_blocking=non_blocking),
+            disease_target=(
+                None
+                if self.disease_target is None
+                else self.disease_target.to(device, non_blocking=non_blocking)
+            ),
+            disease_mask=(
+                None
+                if self.disease_mask is None
+                else self.disease_mask.to(device, non_blocking=non_blocking)
+            ),
+            cancer_target=(
+                None
+                if self.cancer_target is None
+                else self.cancer_target.to(device, non_blocking=non_blocking)
+            ),
+            cancer_mask=(
+                None
+                if self.cancer_mask is None
+                else self.cancer_mask.to(device, non_blocking=non_blocking)
+            ),
         )
 
 
@@ -105,14 +130,17 @@ def _assemble_features(
     *,
     betas: np.ndarray,
     static_rows: np.ndarray,
+    static_present: np.ndarray,
     include_m_value: bool,
     epsilon: float,
 ) -> np.ndarray:
-    parts: list[np.ndarray] = [betas.reshape(-1, 1)]
-    if include_m_value:
-        parts.append(beta_to_m_value(betas, epsilon=epsilon).reshape(-1, 1))
-    parts.append(static_rows.astype(np.float32, copy=False))
-    return np.concatenate(parts, axis=1).astype(np.float32, copy=False)
+    return assemble_cpg_features(
+        betas=betas,
+        static_rows=static_rows,
+        static_present=static_present,
+        include_m_value=include_m_value,
+        epsilon=epsilon,
+    )
 
 
 def gather_hier_sample_features(
@@ -136,25 +164,26 @@ def gather_hier_sample_features(
     cols = locus_region.edge_col_index
     regions = locus_region.edge_region_index
     n_dropped_nan = 0
-    n_dropped_static = 0
+    n_missing_static = 0
+    feat_dim = cpg_input_dim(int(static_by_col.shape[1]), include_m_value=include_m_value)
 
     if cols.size == 0:
-        feat_dim = 2 + static_by_col.shape[1] if include_m_value else 1 + static_by_col.shape[1]
         mapped_features = np.zeros((0, feat_dim), dtype=np.float32)
         mapped_regions = np.zeros(0, dtype=np.int64)
         mapped_cols = np.zeros(0, dtype=np.int64)
     else:
         betas = beta_row[cols]
         finite = np.isfinite(betas)
-        static_ok = static_valid[cols]
-        keep = finite & static_ok
+        static_ok = np.asarray(static_valid[cols], dtype=bool)
+        keep = finite
         n_dropped_nan += int((~finite).sum())
-        n_dropped_static += int((finite & ~static_ok).sum())
+        n_missing_static += int((finite & ~static_ok).sum())
         cols_k = cols[keep]
         regions_k = regions[keep]
         mapped_features = _assemble_features(
             betas=betas[keep],
             static_rows=static_by_col[cols_k],
+            static_present=static_ok[keep],
             include_m_value=include_m_value,
             epsilon=epsilon,
         )
@@ -163,26 +192,19 @@ def gather_hier_sample_features(
 
     res_cols = locus_region.residual_col_index
     if res_cols.size == 0:
-        feat_dim = (
-            mapped_features.shape[1]
-            if mapped_features.size
-            else (2 + static_by_col.shape[1] if include_m_value else 1 + static_by_col.shape[1])
-        )
         residual_features = np.zeros((0, feat_dim), dtype=np.float32)
     else:
         betas_r = beta_row[res_cols]
         finite_r = np.isfinite(betas_r)
-        # Residual may lack CpGPT rows; zero-fill static when missing.
-        static_ok_r = static_valid[res_cols]
+        static_ok_r = np.asarray(static_valid[res_cols], dtype=bool)
         n_dropped_nan += int((~finite_r).sum())
+        n_missing_static += int((finite_r & ~static_ok_r).sum())
         keep_r = finite_r
         cols_r = res_cols[keep_r]
-        betas_rk = betas_r[keep_r]
-        static_r = static_by_col[cols_r].astype(np.float32, copy=True)
-        static_r[~static_ok_r[keep_r]] = 0.0
         residual_features = _assemble_features(
-            betas=betas_rk,
-            static_rows=static_r,
+            betas=betas_r[keep_r],
+            static_rows=static_by_col[cols_r],
+            static_present=static_ok_r[keep_r],
             include_m_value=include_m_value,
             epsilon=epsilon,
         )
@@ -195,7 +217,8 @@ def gather_hier_sample_features(
         n_observed_edges=int(mapped_features.shape[0]),
         n_observed_residual=int(residual_features.shape[0]),
         n_dropped_nan_beta=n_dropped_nan,
-        n_dropped_no_static=n_dropped_static,
+        n_dropped_no_static=0,
+        n_missing_static=n_missing_static,
     )
 
 
@@ -306,9 +329,7 @@ def pack_hier_records_to_batch(
             status_parts.append(torch.from_numpy(np.ascontiguousarray(status_np)))
             feat_parts.append(torch.from_numpy(np.ascontiguousarray(cpg_feat_np)))
             region_parts.append(
-                torch.from_numpy(
-                    np.ascontiguousarray(cpg_to_region_np + i * max(n_regions, 1))
-                )
+                torch.from_numpy(np.ascontiguousarray(cpg_to_region_np + i * max(n_regions, 1)))
             )
         if residual_feat_np.shape[0]:
             residual_parts.append(torch.from_numpy(np.ascontiguousarray(residual_feat_np)))
@@ -463,7 +484,7 @@ def make_synthetic_hier_overfit_bundle(
         "n_genes": len(gene_ids),
         "n_panel": locus_region.n_panel,
         "n_regions": locus_region.n_regions,
-        "input_dim": 2 + static_dim,
+        "input_dim": cpg_input_dim(static_dim),
         "n_classes": n_classes,
         "region_types": list(HIER_REGION_TYPES),
         "annotation_statuses": {

@@ -99,10 +99,11 @@ def test_gather_drops_nan_beta_and_missing_static() -> None:
         static_valid=valid,
         locus_gene=locus_gene,
     )
-    assert bundle.n_observed_edges == 1
+    assert bundle.n_observed_edges == 2
     assert bundle.n_dropped_nan_beta == 1
-    assert bundle.n_dropped_no_static == 1
-    assert bundle.cpg_to_gene.tolist() == [0]
+    assert bundle.n_dropped_no_static == 0
+    assert bundle.n_missing_static == 1
+    assert bundle.cpg_to_gene.tolist() == [0, 0]
 
 
 def test_phenotype_join_requires_gsm() -> None:

@@ -12,6 +12,20 @@ from torch import Tensor, nn
 from mbs.segment_ops import PoolName, segment_pool
 
 
+def center_mask_scores(
+    mbs: Tensor,
+    present: Tensor,
+    *,
+    neutral_score: float = 0.5,
+) -> Tensor:
+    """Absent scores contribute 0 to a linear head; present scores are centered."""
+    return torch.where(
+        present.to(dtype=torch.bool),
+        mbs - neutral_score,
+        torch.zeros_like(mbs),
+    )
+
+
 class ModelOutput(TypedDict):
     mbs: Tensor
     centered_mbs: Tensor
@@ -82,6 +96,8 @@ class FlatDeepSet(nn.Module):
         pool: PoolName = "max",
         neutral_score: float = 0.5,
         dropout: float = 0.0,
+        activation: str = "leaky_relu",
+        layer_norm: bool = False,
     ) -> None:
         super().__init__()
         if phi_layers < 1 or rho_layers < 1:
@@ -93,14 +109,16 @@ class FlatDeepSet(nn.Module):
             [phi_hidden_dim] * (phi_layers - 1),
             phi_hidden_dim,
             dropout=dropout,
-            activation="leaky_relu",
+            layer_norm=layer_norm,
+            activation=activation,
         )
         self.rho = SharedMLP(
             phi_hidden_dim,
             [rho_hidden_dim] * (rho_layers - 1),
             1,
             dropout=dropout,
-            activation="leaky_relu",
+            layer_norm=layer_norm,
+            activation=activation,
         )
 
     def forward(
@@ -120,11 +138,7 @@ class FlatDeepSet(nn.Module):
         raw_score = torch.sigmoid(logits)
         neutral = torch.full_like(raw_score, self.neutral_score)
         mbs = torch.where(present, raw_score, neutral)
-        centered = torch.where(
-            present,
-            mbs - self.neutral_score,
-            torch.zeros_like(mbs),
-        )
+        centered = center_mask_scores(mbs, present, neutral_score=self.neutral_score)
         return {
             "mbs": mbs,
             "centered_mbs": centered,
@@ -153,6 +167,8 @@ class HierarchicalDeepSet(nn.Module):
         residual_pool: PoolName = "max",
         neutral_score: float = 0.5,
         dropout: float = 0.1,
+        activation: str = "gelu",
+        layer_norm: bool = True,
     ) -> None:
         super().__init__()
         if n_region_types <= 0:
@@ -169,8 +185,8 @@ class HierarchicalDeepSet(nn.Module):
             [cpg_hidden_dim],
             cpg_hidden_dim,
             dropout=dropout,
-            layer_norm=True,
-            activation="gelu",
+            layer_norm=layer_norm,
+            activation=activation,
         )
         self.region_type_embedding = nn.Embedding(n_region_types, region_type_dim)
         self.region_encoder = SharedMLP(
@@ -178,8 +194,8 @@ class HierarchicalDeepSet(nn.Module):
             [region_hidden_dim],
             region_hidden_dim,
             dropout=dropout,
-            layer_norm=True,
-            activation="gelu",
+            layer_norm=layer_norm,
+            activation=activation,
         )
         self.rho = SharedMLP(
             region_hidden_dim,
@@ -257,11 +273,7 @@ class HierarchicalDeepSet(nn.Module):
             raw_score = torch.sigmoid(logits)
             neutral = torch.full_like(raw_score, self.neutral_score)
             mbs = torch.where(gene_present, raw_score, neutral)
-            centered = torch.where(
-                gene_present,
-                mbs - self.neutral_score,
-                torch.zeros_like(mbs),
-            )
+            centered = center_mask_scores(mbs, gene_present, neutral_score=self.neutral_score)
 
         residual_mbs, residual_present, residual_logits = self._forward_residual(
             residual_features=residual_features,
@@ -359,11 +371,7 @@ class SeedMaskedLinearHead(nn.Module):
         if present.shape != mbs.shape:
             raise ValueError("present mask must match mbs shape")
 
-        centered = torch.where(
-            present,
-            mbs - self.neutral_score,
-            torch.zeros_like(mbs),
-        )
+        centered = center_mask_scores(mbs, present, neutral_score=self.neutral_score)
         seed_mask = self.get_buffer("seed_mask")
         output = F.linear(
             centered,

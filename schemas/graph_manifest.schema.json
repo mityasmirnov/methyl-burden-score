@@ -56,7 +56,14 @@
           "uniqueItems": true
         },
         "coordinate_convention": {"type": "string"},
-        "intergenic_policy": {"type": "string"}
+        "intergenic_policy": {"type": "string"},
+        "region_systems": {
+          "type": "array",
+          "items": {"type": "string", "enum": ["gene", "rbs", "tbs"]},
+          "uniqueItems": true
+        },
+        "tile_target_n_cpgs": {"type": "integer", "minimum": 1},
+        "rbs_source": {"type": "string"}
       }
     },
     "n_loci": {"type": "integer", "minimum": 0},

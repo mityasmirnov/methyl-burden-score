@@ -9,7 +9,12 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from mbs.training.features import SampleFeatureBundle, beta_to_m_value, gather_sample_features
+from mbs.training.features import (
+    SampleFeatureBundle,
+    assemble_cpg_features,
+    cpg_input_dim,
+    gather_sample_features,
+)
 from mbs.training.locus_gene import LocusGeneIndex
 from mbs.training.phenotypes import SamplePhenotype
 
@@ -17,7 +22,7 @@ from mbs.training.phenotypes import SamplePhenotype
 @dataclass(frozen=True, slots=True)
 class FlatSampleRecord:
     sample_id: str
-    donor_id: str
+    donor_id: str | None
     class_index: int
     features: SampleFeatureBundle
 
@@ -36,6 +41,10 @@ class FlatBatch:
     age_mask: Tensor
     sex_target: Tensor | None = None
     sex_mask: Tensor | None = None
+    disease_target: Tensor | None = None
+    disease_mask: Tensor | None = None
+    cancer_target: Tensor | None = None
+    cancer_mask: Tensor | None = None
 
     def to(self, device: torch.device | str, *, non_blocking: bool = False) -> FlatBatch:
         sex_mask = self.sex_mask
@@ -59,6 +68,26 @@ class FlatBatch:
             age_mask=self.age_mask.to(device, non_blocking=non_blocking),
             sex_target=sex_target.to(device, non_blocking=non_blocking),
             sex_mask=sex_mask.to(device, non_blocking=non_blocking),
+            disease_target=(
+                None
+                if self.disease_target is None
+                else self.disease_target.to(device, non_blocking=non_blocking)
+            ),
+            disease_mask=(
+                None
+                if self.disease_mask is None
+                else self.disease_mask.to(device, non_blocking=non_blocking)
+            ),
+            cancer_target=(
+                None
+                if self.cancer_target is None
+                else self.cancer_target.to(device, non_blocking=non_blocking)
+            ),
+            cancer_mask=(
+                None
+                if self.cancer_mask is None
+                else self.cancer_mask.to(device, non_blocking=non_blocking)
+            ),
         )
 
 
@@ -218,11 +247,11 @@ def make_synthetic_overfit_bundle(
         static = rng.normal(0, 0.01, size=(n_cpgs, static_dim)).astype(np.float32)
         static[active, 0] = 1.0 + float(cls)
 
-        m_vals = beta_to_m_value(betas)
-        features = np.concatenate(
-            [betas.reshape(-1, 1), m_vals.reshape(-1, 1), static],
-            axis=1,
-        ).astype(np.float32)
+        features = assemble_cpg_features(
+            betas=betas,
+            static_rows=static,
+            static_present=np.ones(n_cpgs, dtype=np.float32),
+        )
         bundle = SampleFeatureBundle(
             cpg_features=features,
             cpg_to_gene=cpg_to_gene.copy(),
@@ -246,7 +275,7 @@ def make_synthetic_overfit_bundle(
         "class_names": class_names,
         "ages": ages,
         "n_genes": n_genes,
-        "input_dim": 2 + static_dim,
+        "input_dim": cpg_input_dim(static_dim),
         "n_classes": n_classes,
     }
 

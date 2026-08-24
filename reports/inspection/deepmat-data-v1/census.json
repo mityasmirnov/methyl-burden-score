@@ -1,0 +1,95 @@
+{
+  "ewas_db_ingest": [
+    {
+      "n_assay_files": 0,
+      "n_samples": 0,
+      "n_studies": 0,
+      "source_release_id": "ewas-datahub-db-v1",
+      "source_system": "ewas_datahub_db",
+      "total_bytes": 0.0
+    }
+  ],
+  "generated_at": "2026-08-24T15:05:36Z",
+  "label_conflicts_head": [],
+  "overlap_by_n_families": [
+    {
+      "n_families": 1,
+      "n_samples": 4
+    },
+    {
+      "n_families": 3,
+      "n_samples": 1
+    }
+  ],
+  "pack_membership": [
+    {
+      "n_rows": 2,
+      "n_unique_gsm": 2,
+      "phenotype_family": "age"
+    },
+    {
+      "n_rows": 3,
+      "n_unique_gsm": 3,
+      "phenotype_family": "disease"
+    },
+    {
+      "n_rows": 2,
+      "n_unique_gsm": 2,
+      "phenotype_family": "tissue"
+    }
+  ],
+  "pack_row_sum": 7,
+  "phenotype_prevalence": [
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 2,
+      "n_rows": 2,
+      "n_samples": 2,
+      "phenotype_id": "age",
+      "source_family": "age"
+    },
+    {
+      "n_categorical_levels": 2,
+      "n_observed": 2,
+      "n_rows": 3,
+      "n_samples": 3,
+      "phenotype_id": "disease",
+      "source_family": "disease"
+    },
+    {
+      "n_categorical_levels": 2,
+      "n_observed": 2,
+      "n_rows": 2,
+      "n_samples": 2,
+      "phenotype_id": "sex",
+      "source_family": "age"
+    },
+    {
+      "n_categorical_levels": 2,
+      "n_observed": 2,
+      "n_rows": 2,
+      "n_samples": 2,
+      "phenotype_id": "sex",
+      "source_family": "tissue"
+    },
+    {
+      "n_categorical_levels": 2,
+      "n_observed": 2,
+      "n_rows": 2,
+      "n_samples": 2,
+      "phenotype_id": "tissue",
+      "source_family": "tissue"
+    }
+  ],
+  "release_ewas_db": {
+    "advertised_n": 1989,
+    "mirror_complete": false,
+    "n_local_gsm": 3,
+    "n_local_studies": 2,
+    "refresh_is_idempotent": true,
+    "remote_index_fetched": false,
+    "total_bytes": 45
+  },
+  "unique_gsm": 5,
+  "unique_vs_row_sum_note": "unique GSM must be compared to pack-row sum; overlap makes them unequal"
+}

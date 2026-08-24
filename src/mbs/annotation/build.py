@@ -20,9 +20,12 @@ from mbs.annotation.manifest import (
     write_json,
 )
 from mbs.annotation.map_loci import map_loci_to_regions, write_regions_bed
+from mbs.annotation.regulatory_regions import build_rbs_regions
+from mbs.annotation.tiles import DEFAULT_TILE_N, build_tiles
 from mbs.paths import DataPaths
 
 DEFAULT_GRAPH_ID = "graph-grch38-gencode38-five-role-v1"
+GRAPH_V2_ID = "graph-grch38-gencode38-cgi-tile-v2"
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,6 +125,30 @@ def _validation_report(
     }
 
 
+def attach_cgi_tile_systems(
+    loci: pd.DataFrame,
+    regions: pd.DataFrame,
+    locus_region_edges: pd.DataFrame,
+    *,
+    tile_target_n_cpgs: int = DEFAULT_TILE_N,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Append CGI RBS + CpG-count TBS; gene ∩ RBS empty; unmapped stay off tiles."""
+    gene_regions = regions.copy()
+    if "region_system" not in gene_regions.columns:
+        gene_regions["region_system"] = "gene"
+    assigned = set() if locus_region_edges.empty else set(locus_region_edges["locus_id"].tolist())
+    rbs_r, rbs_e = build_rbs_regions(loci, gene_assigned_locus_ids=assigned)
+    rbs_ids = set() if rbs_e.empty else set(rbs_e["locus_id"].tolist())
+    leftover = set(loci["locus_id"].tolist()) - assigned - rbs_ids
+    if "mapping_status" in loci.columns:
+        mapped = set(loci.loc[loci["mapping_status"].eq("mapped"), "locus_id"].tolist())
+        leftover &= mapped
+    tbs_r, tbs_e = build_tiles(loci, remaining_locus_ids=leftover, target_n_cpgs=tile_target_n_cpgs)
+    out_regions = pd.concat([gene_regions, rbs_r, tbs_r], ignore_index=True)
+    out_edges = pd.concat([locus_region_edges, rbs_e, tbs_e], ignore_index=True)
+    return out_regions, out_edges
+
+
 def build_annotation_graph(
     *,
     project_root: Path,
@@ -160,6 +187,14 @@ def build_annotation_graph(
         "gene_types": ["protein_coding"],
         "gencode_release": 38,
     }
+    if graph_id == GRAPH_V2_ID:
+        region_policy.update(
+            {
+                "region_systems": ["gene", "rbs", "tbs"],
+                "tile_target_n_cpgs": DEFAULT_TILE_N,
+                "rbs_source": "UCSC_cgi_island_shore",
+            }
+        )
 
     source_files: list[dict[str, Any]] = []
     source_stats: dict[str, Any] = {"platforms": list(platforms)}
@@ -235,6 +270,10 @@ def build_annotation_graph(
         )
 
     locus_region_edges, region_gene_edges = map_loci_to_regions(loci, regions)
+    if graph_id == GRAPH_V2_ID:
+        regions, locus_region_edges = attach_cgi_tile_systems(
+            loci, regions, locus_region_edges, tile_target_n_cpgs=DEFAULT_TILE_N
+        )
 
     loci_path = annotations_dir / "loci.parquet"
     probes_path = annotations_dir / "probes.parquet"

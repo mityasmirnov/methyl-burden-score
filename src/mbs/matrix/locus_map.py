@@ -15,6 +15,9 @@ from mbs.batch import (
 )
 
 RESIDUAL_CANONICAL_PREFIX = "residual:"
+COLLAPSE_IDENTITY = "identity"
+COLLAPSE_MEAN = "mean"
+COLLAPSE_MEDIAN = "median"
 
 
 def residual_canonical_key(probe_id: str) -> str:
@@ -33,18 +36,32 @@ def synthetic_residual_locus_id(probe_id: str) -> np.uint64:
     return np.uint64(value)
 
 
+def collapse_method_for_n(n_probes: int) -> str:
+    """Collapse policy: identity (1), mean (2), median (≥3)."""
+    if n_probes <= 1:
+        return COLLAPSE_IDENTITY
+    if n_probes == 2:
+        return COLLAPSE_MEAN
+    return COLLAPSE_MEDIAN
+
+
 @dataclass(frozen=True, slots=True)
 class ProbeLocusMap:
     """Ordered study locus columns derived from observed Hub probes.
 
     Mapped GRCh38 loci come first (one column per locus). Illumina-coordinate-
     unmapped probes are retained as residual columns afterward (never dropped).
+    When several observed probes map to one locus, ``contributing_probe_ids``
+    records all of them and ``collapse_method`` selects mean/median aggregation.
+    ``probe_ids`` is a stable display id (lexicographic first) only.
     """
 
     locus_ids: np.ndarray  # uint64
     canonical_keys: np.ndarray  # object str
-    probe_ids: np.ndarray  # object str — probe used for this column
+    probe_ids: np.ndarray  # object str — display probe for this column
     annotation_status: np.ndarray  # int8 — batch status ids (residual cols = unmapped)
+    contributing_probe_ids: tuple[tuple[str, ...], ...]
+    collapse_method: tuple[str, ...]
     unmapped_probe_ids: tuple[str, ...]
     n_observed_probes: int
     n_mapped_probes: int
@@ -95,10 +112,11 @@ def build_probe_locus_map(
     platform_id: str,
     retain_unmapped: bool = True,
 ) -> ProbeLocusMap:
-    """Select one primary probe per locus among observed Hub probes.
+    """Build one matrix column per locus among observed Hub probes.
 
     Illumina-coordinate-unmapped probes are retained as residual columns when
     ``retain_unmapped`` is True (Milestone 6 default). Samples are never dropped.
+    Multiple observed probes at one locus are collapsed (mean/median), not dropped.
     """
     observed = pd.Series(pd.unique(pd.Series(observed_probe_ids).astype(str)), dtype="string")
     n_observed = len(observed)
@@ -115,20 +133,23 @@ def build_probe_locus_map(
     canonical_keys: list[str] = []
     probe_ids: list[str] = []
     statuses: list[int] = []
+    contributing: list[tuple[str, ...]] = []
+    methods: list[str] = []
     n_collapsed = 0
 
     if not hit.empty:
-        # One column per locus: prefer lexicographically first probe_id when several
-        # observed probes map to the same locus.
         hit = hit.sort_values(["locus_id", "probe_id"], kind="mergesort")
-        before = len(hit)
-        hit = hit.drop_duplicates(subset=["locus_id"], keep="first").reset_index(drop=True)
-        n_collapsed = before - len(hit)
-        hit = hit.sort_values(["locus_id"], kind="mergesort").reset_index(drop=True)
-        for _, row in hit.iterrows():
-            locus_ids.append(np.uint64(row["locus_id"]))
-            canonical_keys.append(str(row["canonical_key"]))
-            probe_ids.append(str(row["probe_id"]))
+        for locus_id, group in hit.groupby("locus_id", sort=True):
+            probes = tuple(sorted(str(p) for p in group["probe_id"].tolist()))
+            method = collapse_method_for_n(len(probes))
+            if len(probes) > 1:
+                n_collapsed += len(probes) - 1
+            canonical = str(group["canonical_key"].iloc[0])
+            locus_ids.append(np.uint64(locus_id))
+            canonical_keys.append(canonical)
+            probe_ids.append(probes[0])  # display id only
+            contributing.append(probes)
+            methods.append(method)
             # Regulatory status is finalized at train time; Illumina-mapped columns
             # start as mapped placeholders until graph join.
             statuses.append(0)  # ANNOTATION_STATUS_MAPPED placeholder
@@ -139,6 +160,8 @@ def build_probe_locus_map(
             locus_ids.append(synthetic_residual_locus_id(probe_id))
             canonical_keys.append(residual_canonical_key(probe_id))
             probe_ids.append(probe_id)
+            contributing.append((probe_id,))
+            methods.append(COLLAPSE_IDENTITY)
             statuses.append(ANNOTATION_STATUS_UNMAPPED)
             n_residual += 1
 
@@ -150,6 +173,8 @@ def build_probe_locus_map(
         canonical_keys=np.asarray(canonical_keys, dtype=object),
         probe_ids=np.asarray(probe_ids, dtype=object),
         annotation_status=np.asarray(statuses, dtype=np.int8),
+        contributing_probe_ids=tuple(contributing),
+        collapse_method=tuple(methods),
         unmapped_probe_ids=unmapped,
         n_observed_probes=n_observed,
         n_mapped_probes=len(mapped_probes),

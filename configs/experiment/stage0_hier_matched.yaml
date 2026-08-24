@@ -1,0 +1,37 @@
+experiment:
+  name: stage0_hier_matched_encoder
+  stage: 0
+  seed: 42
+
+model:
+  type: hierarchical_deepset
+  region_types:
+    - promoter_core
+    - promoter_proximal
+    - five_prime
+    - three_prime
+    - gene_body
+  residual_path: true
+  region_hidden_dimension: 32
+  region_type_dimension: 8
+  cpg_pooling: max
+  region_pooling: max
+  residual_pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  encoder:
+    activation: gelu
+    dropout: 0.1
+    layer_norm: true
+    cpg_hidden_dim: 64
+
+training:
+  batch_size: 8
+  batch_token_budget: 4096
+  max_epochs: 2
+
+controls:
+  mode: none
+  static_only: true
+  coverage_only: true
+  label_permutation: true

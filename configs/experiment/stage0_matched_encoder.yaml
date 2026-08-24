@@ -1,0 +1,7 @@
+# Shared encoder block for parameter-matched flat vs hierarchical CpG encoders.
+# Copy into model.encoder of stage0_flat_matched.yaml / stage0_hier_matched.yaml.
+encoder:
+  activation: gelu
+  dropout: 0.1
+  layer_norm: true
+  cpg_hidden_dim: 64

@@ -19,8 +19,15 @@ def regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, floa
     mae = float(np.mean(np.abs(err)))
     rmse = float(np.sqrt(np.mean(err**2)))
     out: dict[str, float] = {"mae": mae, "rmse": rmse}
-    if yt.size >= 2 and float(np.std(yt)) > 0 and float(np.std(yp)) > 0:
-        out["pearson_r"] = float(np.corrcoef(yt, yp)[0, 1])
+    if yt.size >= 2 and float(np.std(yt)) > 0:
+        ss_tot = float(np.sum((yt - yt.mean()) ** 2))
+        ss_res = float(np.sum(err**2))
+        out["r2"] = 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
+        if float(np.std(yp)) > 0:
+            out["pearson_r"] = float(np.corrcoef(yt, yp)[0, 1])
+            ranks_t = np.argsort(np.argsort(yt))
+            ranks_p = np.argsort(np.argsort(yp))
+            out["spearman_r"] = float(np.corrcoef(ranks_t, ranks_p)[0, 1])
     return out
 
 
@@ -80,6 +87,30 @@ def binary_auroc_auprc(y_true: np.ndarray, y_score: np.ndarray) -> dict[str, flo
         else:
             auprc = float(precisions[0])
         return {"auroc": float(auroc), "auprc": auprc}
+
+
+def expected_calibration_error(
+    y_true: np.ndarray,
+    y_prob: np.ndarray,
+    *,
+    n_bins: int = 10,
+) -> dict[str, float]:
+    """Binary ECE over equal-width probability bins."""
+    yt = np.asarray(y_true).reshape(-1).astype(np.float64)
+    yp = np.asarray(y_prob).reshape(-1).astype(np.float64)
+    if yt.shape != yp.shape or yt.size == 0:
+        raise ValueError("y_true and y_prob length mismatch")
+    bins = np.linspace(0.0, 1.0, n_bins + 1)
+    ece = 0.0
+    for i in range(n_bins):
+        lo, hi = bins[i], bins[i + 1]
+        mask = (yp >= lo) & (yp < hi) if i < n_bins - 1 else (yp >= lo) & (yp <= hi)
+        if not mask.any():
+            continue
+        acc = float(yt[mask].mean())
+        conf = float(yp[mask].mean())
+        ece += (float(mask.mean())) * abs(acc - conf)
+    return {"ece": float(ece)}
 
 
 def multiclass_metrics(

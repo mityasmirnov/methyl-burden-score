@@ -14,19 +14,34 @@ import torch.nn.functional as F
 import yaml
 from torch import nn
 
-from mbs.evaluation.splits import build_study_grouped_split, partition_studies_by_sample_count
+from mbs.evaluation.metrics import (
+    metrics_by_group,
+    multiclass_metrics,
+    regression_metrics,
+)
+from mbs.evaluation.splits import (
+    build_study_grouped_split,
+    partition_studies_by_sample_count,
+    partition_studies_constrained,
+)
 from mbs.matrix.store import (
     matrix_store_paths,
     open_betas_zarr,
     read_locus_index,
     read_sample_index,
 )
-from mbs.models import FlatDeepSet, SeedMaskedLinearHead
+from mbs.models import FlatDeepSet, SeedMaskedLinearHead, center_mask_scores
+from mbs.scoring.orientation import score_manifest
 from mbs.segment_ops import PoolName
 from mbs.static_features.store import (
     open_embeddings_zarr,
     read_loci_index,
     static_feature_store_paths,
+)
+from mbs.training.controls import (
+    apply_feature_control,
+    fit_metadata_only,
+    permute_labels_within_study,
 )
 from mbs.training.dataset import (
     FlatBatch,
@@ -37,7 +52,8 @@ from mbs.training.dataset import (
     pack_records_to_batch,
     record_to_batch,
 )
-from mbs.training.features import build_static_column_table
+from mbs.training.encoder_config import resolve_encoder
+from mbs.training.features import build_static_column_table, cpg_input_dim
 from mbs.training.locus_gene import LocusGeneIndex, build_locus_gene_index, load_graph_tables
 from mbs.training.multitask import MultitaskHeads, masked_multitask_loss
 from mbs.training.phenotype_table import load_tissue_ontology
@@ -56,6 +72,7 @@ from mbs.training.run_artifacts import (
     save_checkpoint,
     write_run_artifacts,
 )
+from mbs.training.sampler import iter_epoch_batches
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,7 +184,7 @@ def _forward_age_loss(
     if batch.age_target is None:
         raise RuntimeError("age_target required for regression task")
     mbs, present = _packed_mbs(model, batch)
-    pred = head(mbs * present.to(dtype=mbs.dtype)).squeeze(-1)
+    pred = head(center_mask_scores(mbs, present)).squeeze(-1)
     target = batch.age_target.reshape(pred.shape)
     loss = F.mse_loss(pred, target)
     mae = float((pred.detach() - target.detach()).abs().mean().item())
@@ -180,13 +197,78 @@ def _forward_age_loss(
     }
 
 
+def _control_mode(config: dict[str, Any]) -> str:
+    raw = config.get("controls")
+    ctrl: dict[str, Any] = raw if isinstance(raw, dict) else {}
+    return str(ctrl.get("mode") or "none")
+
+
+def task_key(ph: SamplePhenotype | None) -> str:
+    if ph is None:
+        return "tissue"
+    return f"a{int(ph.age_mask)}t{int(ph.tissue_mask)}x{int(ph.sex_mask)}"
+
+
+def split_sample_rows(phenotypes: list[SamplePhenotype]) -> list[dict[str, Any]]:
+    return [
+        {
+            "sample_id": p.sample_id,
+            "study_id": p.study_id or p.sample_id,
+            "platform": p.platform,
+            "donor_id": p.donor_id,
+            "tissue_class": p.cell_type,
+            "age": p.age,
+            "age_mask": p.age_mask,
+            "tissue_mask": p.tissue_mask,
+            "sex_mask": p.sex_mask,
+            "case_control": None,
+        }
+        for p in phenotypes
+    ]
+
+
+def maybe_constrained_split(
+    sample_rows: list[dict[str, Any]],
+    *,
+    seed: int,
+    train_fraction: float,
+    val_fraction: float,
+    split_id: str,
+) -> dict[str, Any]:
+    try:
+        return partition_studies_constrained(
+            sample_rows,
+            seed=seed,
+            train_fraction=train_fraction,
+            val_fraction=val_fraction,
+            split_id=split_id,
+        )
+    except ValueError:
+        return partition_studies_by_sample_count(
+            sample_rows,
+            seed=seed,
+            train_fraction=train_fraction,
+            val_fraction=val_fraction,
+            split_id=split_id,
+        )
+
+
+def _apply_feature_control_inplace(record: FlatSampleRecord, mode: str) -> None:
+    if mode in {"none", "off", ""}:
+        return
+    feats = record.features.cpg_features
+    feats[:] = apply_feature_control(feats, mode=mode)
+
+
 def _materialize_record(
     phenotype: SamplePhenotype,
     store: _PilotStore,
+    *,
+    control_mode: str = "none",
 ) -> FlatSampleRecord:
     row = store.sample_row_by_id[phenotype.sample_id]
     beta_row = np.asarray(store.betas[row, : store.n_cols], dtype=np.float32)
-    return build_flat_sample(
+    rec = build_flat_sample(
         phenotype=phenotype,
         beta_row=beta_row,
         static_by_col=store.static_by_col,
@@ -194,6 +276,8 @@ def _materialize_record(
         locus_gene=store.locus_gene,
         epsilon=store.epsilon,
     )
+    _apply_feature_control_inplace(rec, control_mode)
+    return rec
 
 
 def _label_flags_for_record(
@@ -246,6 +330,10 @@ def _run_epoch(
     huber_delta: float = 1.0,
     age_loss_name: str = "huber",
     batch_size: int = 1,
+    seed: int = 42,
+    epoch: int = 0,
+    batch_token_budget: int | None = None,
+    control_mode: str = "none",
 ) -> dict[str, float]:
     if train:
         model.train()
@@ -262,9 +350,15 @@ def _run_epoch(
     sex_n = 0.0
     sex_correct = 0.0
     n = 0
+    pred_tissue: list[int] = []
+    true_tissue: list[int] = []
+    pred_age: list[float] = []
+    true_age: list[float] = []
+    group_study: list[str] = []
+    group_platform: list[str] = []
+    group_tissue: list[str] = []
     amp_dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
     context = torch.enable_grad() if train else torch.no_grad()
-    step = max(1, int(batch_size))
 
     ph_by_id = {p.sample_id: p for p in (phenotypes or [])}
     if records is not None:
@@ -276,17 +370,40 @@ def _run_epoch(
             raise RuntimeError("pilot phenotypes and store are required when records is None")
         all_phenotypes = phenotypes
     n_items = len(all_records) if all_records is not None else len(all_phenotypes or [])
+    n_tokens: list[int] = []
+    study_ids: list[str] = []
+    task_keys: list[str] = []
+    if all_records is not None:
+        for rec in all_records:
+            ph = ph_by_id.get(rec.sample_id)
+            n_tokens.append(max(1, rec.features.n_observed_edges))
+            study_ids.append(str(ph.study_id if ph and ph.study_id else rec.sample_id))
+            task_keys.append(task_key(ph))
+    else:
+        for ph in all_phenotypes or []:
+            n_tokens.append(1)  # ponytail: unknown until materialize; upgrade: cache edge counts
+            study_ids.append(str(ph.study_id or ph.sample_id))
+            task_keys.append(task_key(ph))
 
     with context:
-        for start in range(0, n_items, step):
+        for idxs in iter_epoch_batches(
+            n_items,
+            n_tokens=n_tokens,
+            study_ids=study_ids,
+            task_keys=task_keys,
+            batch_token_budget=batch_token_budget,
+            batch_size=batch_size,
+            seed=seed,
+            epoch=epoch,
+        ):
             if all_records is not None:
-                chunk = all_records[start : start + step]
+                chunk = [all_records[i] for i in idxs]
             else:
                 if all_phenotypes is None or pilot_store is None:
                     raise RuntimeError("missing phenotypes/store for on-the-fly materialization")
                 chunk = [
-                    _materialize_record(ph, pilot_store)
-                    for ph in all_phenotypes[start : start + step]
+                    _materialize_record(all_phenotypes[i], pilot_store, control_mode=control_mode)
+                    for i in idxs
                 ]
             age_values: list[float | None] = []
             age_flags: list[bool] = []
@@ -307,7 +424,7 @@ def _run_epoch(
                 tissue_flags.append(tissue_on)
                 sex_flags.append(sex_on)
                 sex_idxs.append(sex_cls)
-            if step == 1:
+            if len(chunk) == 1:
                 batch = record_to_batch(
                     chunk[0],
                     n_genes=n_genes,
@@ -376,6 +493,59 @@ def _run_epoch(
             sex_n += float(metrics.get("sex_n", 0.0))
             sex_correct += float(metrics.get("sex_correct", 0.0))
             n += int(batch_n)
+            if not train:
+                for record in chunk:
+                    ph = ph_by_id.get(record.sample_id)
+                    group_study.append(str(ph.study_id if ph and ph.study_id else record.sample_id))
+                    group_platform.append(str(ph.platform if ph and ph.platform else "unknown"))
+                    group_tissue.append(str(ph.cell_type if ph else "unknown"))
+                if task != "regression" and bool(batch.tissue_mask.any()):
+                    with torch.no_grad():
+                        mbs_p, present_p = _packed_mbs(model, batch)
+                        if isinstance(head, SeedMaskedLinearHead):
+                            logits = head(mbs_p, present_p)
+                        elif isinstance(head, MultitaskHeads):
+                            logits = head.forward_tissue(mbs_p, present_p)
+                        else:
+                            logits = None
+                    if logits is not None:
+                        pred_tissue.extend(logits.argmax(dim=-1).detach().cpu().tolist())
+                        true_tissue.extend(batch.tissue_target.reshape(-1).detach().cpu().tolist())
+                if task in {"regression", "multitask"} and batch.age_target is not None:
+                    with torch.no_grad():
+                        mbs_p, present_p = _packed_mbs(model, batch)
+                        if isinstance(head, MultitaskHeads):
+                            age_hat = head.forward_age(mbs_p, present_p)
+                        else:
+                            age_hat = head(center_mask_scores(mbs_p, present_p)).squeeze(-1)
+                    pred_age.extend(age_hat.detach().cpu().reshape(-1).tolist())
+                    true_age.extend(batch.age_target.detach().cpu().reshape(-1).tolist())
+
+    extra: dict[str, Any] = {}
+    if true_tissue:
+        extra.update(multiclass_metrics(np.asarray(true_tissue), np.asarray(pred_tissue)))
+        extra["metrics_by_group"] = {
+            "study": metrics_by_group(
+                np.asarray(true_tissue),
+                np.asarray(pred_tissue),
+                np.asarray(group_study),
+                task="multiclass",
+            ),
+            "platform": metrics_by_group(
+                np.asarray(true_tissue),
+                np.asarray(pred_tissue),
+                np.asarray(group_platform),
+                task="multiclass",
+            ),
+            "tissue": metrics_by_group(
+                np.asarray(true_tissue),
+                np.asarray(pred_tissue),
+                np.asarray(group_tissue),
+                task="multiclass",
+            ),
+        }
+    if len(true_age) >= 2:
+        extra.update(regression_metrics(np.asarray(true_age), np.asarray(pred_age)))
 
     return {
         "loss": total_loss / max(n, 1),
@@ -386,6 +556,8 @@ def _run_epoch(
         "age_n": age_n,
         "tissue_n": tissue_n,
         "sex_n": sex_n,
+        **{k: v for k, v in extra.items() if k != "metrics_by_group"},
+        "metrics_by_group": extra.get("metrics_by_group", {}),
     }
 
 
@@ -448,6 +620,9 @@ def train_flat_baseline(
     weight_decay = float(train_cfg.get("weight_decay", 1e-4))
     grad_clip = float(train_cfg.get("gradient_clip_norm", 2.0))
     batch_size = max(1, int(train_cfg.get("batch_size", 1)))
+    raw_budget = train_cfg.get("batch_token_budget")
+    batch_token_budget = int(raw_budget) if raw_budget not in (None, "", 0) else None
+    control_mode = _control_mode(config)
     model_cfg = config.get("model", {})
 
     fixture_records: list[FlatSampleRecord] | None = None
@@ -563,18 +738,11 @@ def train_flat_baseline(
                 sample_ids=sample_ids,
                 class_names=ontology.class_names,
             )
-            sample_rows = [
-                {
-                    "sample_id": p.sample_id,
-                    "study_id": p.study_id or p.donor_id,
-                    "platform": p.platform,
-                }
-                for p in phenotypes
-            ]
+            sample_rows = split_sample_rows(phenotypes)
             auto_split = bool(pilot.get("auto_split", False))
             train_studies = [str(x) for x in pilot.get("train_studies", [])]
             if auto_split or not train_studies:
-                split = partition_studies_by_sample_count(
+                split = maybe_constrained_split(
                     sample_rows,
                     seed=seed,
                     train_fraction=float(config.get("splits", {}).get("train_fraction", 0.7)),
@@ -623,14 +791,7 @@ def train_flat_baseline(
                     value_column=value_column,
                     empty_as_control=empty_as_control,
                 )
-            sample_rows = [
-                {
-                    "sample_id": p.sample_id,
-                    "study_id": p.study_id or p.donor_id,
-                    "platform": p.platform,
-                }
-                for p in phenotypes
-            ]
+            sample_rows = split_sample_rows(phenotypes)
             split = build_study_grouped_split(
                 sample_rows,
                 train_studies=[str(x) for x in pilot["train_studies"]],
@@ -685,7 +846,7 @@ def train_flat_baseline(
             n_study_loci=n_cols,
         )
         epsilon = float(config.get("features", {}).get("methylation", {}).get("epsilon", 0.001))
-        input_dim = 2 + static_dim
+        input_dim = cpg_input_dim(static_dim)
         sample_row_by_id = {
             str(sid): int(row)
             for sid, row in zip(
@@ -737,16 +898,30 @@ def train_flat_baseline(
         age_std = 1.0
         test_phenotypes = None
 
+    if control_mode == "label_permutation" and train_phenotypes is not None:
+        train_phenotypes = permute_labels_within_study(train_phenotypes, seed=seed)
+    if control_mode in {"static_only", "coverage_only"}:
+        for rec_list in (train_records, val_records, fixture_records):
+            if rec_list is None:
+                continue
+            for rec in rec_list:
+                _apply_feature_control_inplace(rec, control_mode)
+    if control_mode == "metadata_only":
+        epochs = 0
+
     pool_name: PoolName = str(model_cfg.get("pooling", "max"))  # type: ignore[assignment]
+    enc = resolve_encoder(model_cfg)
     model = FlatDeepSet(
         input_dim,
-        phi_hidden_dim=int(model_cfg.get("phi_hidden_dimension", 20)),
+        phi_hidden_dim=int(enc["cpg_hidden_dim"]),
         phi_layers=int(model_cfg.get("phi_layers", 2)),
         rho_hidden_dim=int(model_cfg.get("rho_hidden_dimension", 10)),
         rho_layers=int(model_cfg.get("rho_layers", 3)),
         pool=pool_name,
         neutral_score=float(model_cfg.get("neutral_score", 0.5)),
-        dropout=float(model_cfg.get("dropout", 0.0)),
+        dropout=float(enc["dropout"]),
+        activation=str(enc["activation"]),
+        layer_norm=bool(enc["layer_norm"]),
     ).to(device)
     if task_kind == "regression":
         head: nn.Module = nn.Linear(n_genes, 1).to(device)
@@ -757,7 +932,15 @@ def train_flat_baseline(
         _heads = config.get("heads", {})
         sex_cfg = _heads.get("sex", {}) if isinstance(_heads, dict) else {}
         sex_on = bool(sex_cfg.get("enabled", False))
-        head = MultitaskHeads(n_genes, n_classes, sex_enabled=sex_on).to(device)
+        dis_cfg = _heads.get("disease", {}) if isinstance(_heads, dict) else {}
+        can_cfg = _heads.get("cancer", {}) if isinstance(_heads, dict) else {}
+        head = MultitaskHeads(
+            n_genes,
+            n_classes,
+            sex_enabled=sex_on,
+            n_disease_labels=int(dis_cfg.get("n_labels", 0) or 0),
+            n_cancer_labels=int(can_cfg.get("n_labels", 0) or 0),
+        ).to(device)
     else:
         seed_mask = torch.ones(n_classes, n_genes, dtype=torch.float32, device=device)
         head = SeedMaskedLinearHead(n_genes, n_classes, seed_mask).to(device)
@@ -831,6 +1014,7 @@ def train_flat_baseline(
                 )
                 tb_server = None
 
+    epoch = 0
     for epoch in range(1, epochs + 1):
         train_metrics = _run_epoch(
             records=train_records,
@@ -854,6 +1038,10 @@ def train_flat_baseline(
             huber_delta=huber_delta,
             age_loss_name=age_loss_name,
             batch_size=batch_size,
+            seed=seed,
+            epoch=epoch,
+            batch_token_budget=batch_token_budget,
+            control_mode=control_mode,
         )
         val_metrics = _run_epoch(
             records=val_records,
@@ -877,6 +1065,10 @@ def train_flat_baseline(
             huber_delta=huber_delta,
             age_loss_name=age_loss_name,
             batch_size=batch_size,
+            seed=seed,
+            epoch=epoch,
+            batch_token_budget=batch_token_budget,
+            control_mode=control_mode,
         )
         row = {
             "epoch": epoch,
@@ -891,6 +1083,16 @@ def train_flat_baseline(
             "learning_rate": lr,
             "task": task_kind,
         }
+        for key in (
+            "macro_f1",
+            "balanced_accuracy",
+            "rmse",
+            "r2",
+            "pearson_r",
+            "spearman_r",
+        ):
+            if key in val_metrics:
+                row[f"val_{key}"] = val_metrics[key]
         history.append(row)
         with jsonl_path.open("a", encoding="utf-8") as jsonl_handle:
             jsonl_handle.write(json.dumps(row) + "\n")
@@ -980,6 +1182,10 @@ def train_flat_baseline(
             huber_delta=huber_delta,
             age_loss_name=age_loss_name,
             batch_size=batch_size,
+            seed=seed,
+            epoch=best_epoch,
+            batch_token_budget=batch_token_budget,
+            control_mode=control_mode,
         )
         test_mae = test_metrics["mae"]
         if task_kind in {"regression", "multitask"}:
@@ -996,6 +1202,13 @@ def train_flat_baseline(
             "tissue_n": test_metrics.get("tissue_n"),
             "sex_n": test_metrics.get("sex_n"),
             "sex_accuracy": test_metrics.get("sex_accuracy"),
+            "macro_f1": test_metrics.get("macro_f1"),
+            "balanced_accuracy": test_metrics.get("balanced_accuracy"),
+            "rmse": test_metrics.get("rmse"),
+            "r2": test_metrics.get("r2"),
+            "pearson_r": test_metrics.get("pearson_r"),
+            "spearman_r": test_metrics.get("spearman_r"),
+            "metrics_by_group": test_metrics.get("metrics_by_group"),
         }
 
     age_std_meta = None
@@ -1016,7 +1229,28 @@ def train_flat_baseline(
         "task": task_kind,
         "external_test": holdout_metrics,
         "age_standardization": age_std_meta,
+        "control_mode": control_mode,
     }
+    if control_mode == "metadata_only" and train_phenotypes is not None:
+        meta_task = "regression" if task_kind == "regression" else "multiclass"
+        y = (
+            np.array([float(p.age or 0.0) for p in train_phenotypes])
+            if meta_task == "regression"
+            else np.array([p.class_index for p in train_phenotypes])
+        )
+        metrics_out["metadata_only"] = fit_metadata_only(
+            study_ids=[str(p.study_id or p.sample_id) for p in train_phenotypes],
+            platforms=[p.platform for p in train_phenotypes],
+            tissues=[p.cell_type for p in train_phenotypes],
+            y=y,
+            task=meta_task,
+        )
+    manifest = score_manifest(score_polarity="hyper_aligned", fold_id=None, restart_id=run_id)
+    (run_root / "score_manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    metrics_out["score_manifest"] = manifest
     if overfit_fixture and history:
         metrics_out["overfit_train_accuracy"] = history[-1]["train_accuracy"]
         metrics_out["overfit_ok"] = bool(history[-1]["train_accuracy"] >= 0.999)

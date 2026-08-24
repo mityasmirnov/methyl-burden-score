@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from mbs.evaluation.splits import assert_no_study_leakage, partition_studies_by_sample_count
+from mbs.evaluation.splits import (
+    assert_no_study_leakage,
+    partition_studies_by_sample_count,
+    partition_studies_constrained,
+)
 
 
 def test_partition_studies_by_sample_count_no_leakage() -> None:
@@ -23,3 +27,14 @@ def test_partition_studies_by_sample_count_no_leakage() -> None:
     # Deterministic for fixed seed.
     split2 = partition_studies_by_sample_count(samples, seed=7, split_id="auto-test-v1")
     assert split["train_studies"] == split2["train_studies"]
+
+
+def test_partition_studies_constrained_keeps_fallback_helper() -> None:
+    samples: list[dict[str, str]] = []
+    for study, n in [("GSE_A", 50), ("GSE_B", 40), ("GSE_C", 30), ("GSE_D", 20), ("GSE_E", 10)]:
+        samples.extend(
+            {"sample_id": f"{study}_{i}", "study_id": study, "platform": "HM450"} for i in range(n)
+        )
+    split = partition_studies_constrained(samples, seed=7, split_id="constrained-test-v1")
+    assert_no_study_leakage(split)
+    assert split["mode"] == "study_grouped_constrained"

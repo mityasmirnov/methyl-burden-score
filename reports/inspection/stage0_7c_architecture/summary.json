@@ -1,0 +1,138 @@
+{
+  "direct_elasticnet": {
+    "n_loci": 6
+  },
+  "evidence": "tests/unit/test_stage0_7c.py + this fixture report",
+  "graph_id": "graph-grch38-gencode38-cgi-tile-v2",
+  "graph_v2": {
+    "gene_rbs_disjoint": true,
+    "loci_per_system": {
+      "gene": 1,
+      "rbs": 1,
+      "tbs": 3
+    },
+    "region_system_counts": {
+      "gene": 1,
+      "rbs": 1,
+      "tbs": 2
+    },
+    "unmapped_excluded": true
+  },
+  "matched_encoder": {
+    "activation": "gelu",
+    "cpg_hidden_dim": 64,
+    "dropout": 0.1,
+    "layer_norm": true
+  },
+  "metrics_suite_keys": [
+    "macro_f1",
+    "balanced_accuracy",
+    "rmse",
+    "r2",
+    "pearson_r",
+    "spearman_r",
+    "auroc",
+    "auprc",
+    "expected_calibration_error",
+    "metrics_by_group"
+  ],
+  "milestone": "7C",
+  "orientation": {
+    "anchor_recipe": "pearson_vs_signed_gene_mean_mvalue",
+    "score_family": "predictive_mbs",
+    "score_polarity": "flipped"
+  },
+  "sampler": {
+    "batches": [
+      [
+        0
+      ],
+      [
+        5
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        4,
+        2
+      ]
+    ],
+    "budget_ok": true,
+    "n_batches": 4
+  },
+  "split": {
+    "constraints": {
+      "age_quantile": {
+        "external_test": {
+          "unknown": 1
+        },
+        "train": {
+          "unknown": 3
+        },
+        "validation": {
+          "unknown": 1
+        }
+      },
+      "case_control": {
+        "external_test": {
+          "unknown": 1
+        },
+        "train": {
+          "unknown": 3
+        },
+        "validation": {
+          "unknown": 1
+        }
+      },
+      "n_split_donors": 4,
+      "platform": {
+        "external_test": {
+          "EPIC": 1
+        },
+        "train": {
+          "EPIC": 1,
+          "HM450": 2
+        },
+        "validation": {
+          "EPIC": 1
+        }
+      },
+      "task_mask": {
+        "external_test": {
+          "age=0,tissue=0,sex=0": 1
+        },
+        "train": {
+          "age=0,tissue=0,sex=0": 3
+        },
+        "validation": {
+          "age=0,tissue=0,sex=0": 1
+        }
+      },
+      "tissue_class": {
+        "external_test": {
+          "brain": 1
+        },
+        "train": {
+          "blood": 2,
+          "liver": 1
+        },
+        "validation": {
+          "brain": 1
+        }
+      }
+    },
+    "donor_s1_s2_same_role": true,
+    "n_split_donors": 4,
+    "roles": {
+      "s1": "train",
+      "s2": "train",
+      "s3": "external_test",
+      "s4": "validation",
+      "s5": "train"
+    },
+    "split_id": "7c-fixture"
+  },
+  "tile_default_n_cpgs": 50
+}

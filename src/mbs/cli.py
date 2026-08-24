@@ -17,7 +17,7 @@ from rich.console import Console
 from rich.table import Table
 
 from mbs import __version__
-from mbs.annotation.build import DEFAULT_GRAPH_ID, build_annotation_graph
+from mbs.annotation.build import DEFAULT_GRAPH_ID, GRAPH_V2_ID, build_annotation_graph
 from mbs.annotation.export_infinium import DEFAULT_PLATFORMS
 from mbs.catalog import build_catalog, init_catalog
 from mbs.inspect_cpgcorpus import inspect_cpgcorpus_gpl, write_cpgcorpus_report
@@ -25,6 +25,10 @@ from mbs.inspect_ewas_metadata import inspect_ewas_metadata, write_ewas_metadata
 from mbs.inspect_source import inventory_source, write_inspection_report
 from mbs.matrix.convert import DEFAULT_MATRIX_ID, convert_ewas_db_study
 from mbs.matrix.hub_pack import convert_hub_pack_subset, study_ids_from_sample_info
+from mbs.matrix.hub_pack_index import (
+    build_hub_pack_matrix_index,
+    check_overlapping_gsm_betas,
+)
 from mbs.matrix.multitask_merge import merge_age_tissue_matrices
 from mbs.paths import DataPaths, PathPolicyError
 from mbs.release import (
@@ -36,6 +40,7 @@ from mbs.release import (
     write_trait_eligibility_report,
 )
 from mbs.static_features.export_cpgpt import DEFAULT_FEATURE_SET_ID, export_cpgpt_adapter
+from mbs.training.branch import train_branch_arm
 from mbs.training.hier_loop import train_hierarchical_baseline
 from mbs.training.loop import load_experiment_config, train_flat_baseline
 from mbs.training.monitor import run_monitor, ssh_tunnel_hint, validate_run_id
@@ -465,7 +470,7 @@ def inspect_ewas_metadata_cmd(
 def graph_build_cmd(
     graph_id: Annotated[
         str,
-        typer.Option(help="Immutable graph release id"),
+        typer.Option(help=f"Immutable graph release id (default five-role v1; also {GRAPH_V2_ID})"),
     ] = DEFAULT_GRAPH_ID,
     platforms: Annotated[
         str,
@@ -646,7 +651,9 @@ def matrix_convert_cmd(  # noqa: PLR0917
 def matrix_convert_pack_cmd(  # noqa: PLR0917
     phenotype_family: Annotated[
         str,
-        typer.Option(help="Hub pack family: age|tissue|disease|cancer|blood|brain|sex"),
+        typer.Option(
+            help="Hub pack family: age|tissue|disease|cancer|blood|brain|sex|bmi|ancestry"
+        ),
     ],
     matrix_id: Annotated[
         str,
@@ -764,6 +771,51 @@ def matrix_convert_pack_cmd(  # noqa: PLR0917
             }
         )
     )
+
+
+@matrix_app.command("index-hub-packs")
+def matrix_index_hub_packs_cmd(
+    check_overlap: Annotated[
+        bool,
+        typer.Option(
+            "--check-overlap/--no-check-overlap",
+            help="Compare betas for GSMs in ≥2 pack matrices",
+        ),
+    ] = True,
+    report_dir: Annotated[
+        Path | None,
+        typer.Option(help="Optional directory for overlap JSON report"),
+    ] = None,
+) -> None:
+    """Build virtual Hub pack matrix index (+ optional GSM concordance check)."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    paths.ensure_directories()
+    index = build_hub_pack_matrix_index(paths.data_root)
+    index_path = paths.data_root / "canonical" / "matrices" / "hub_pack_matrix_index.parquet"
+    payload: dict[str, Any] = {
+        "index_path": str(index_path),
+        "n_rows": int(len(index)),
+        "n_families": 0 if index.empty else len(index["family"].drop_duplicates()),
+        "n_unique_gsm": 0 if index.empty else len(index["sample_id"].drop_duplicates()),
+    }
+    if check_overlap:
+        resolved_report = None
+        if report_dir is not None:
+            resolved_report_dir = _require_under_data(report_dir.resolve(), "report_dir")
+            resolved_report = resolved_report_dir / "overlap_concordance.json"
+            resolved_report.parent.mkdir(parents=True, exist_ok=True)
+        overlap = check_overlapping_gsm_betas(
+            paths.data_root,
+            index=index,
+            report_path=resolved_report,
+        )
+        payload["overlap"] = overlap.report
+    console.print_json(json.dumps(payload))
 
 
 @features_app.command("export-cpgpt")
@@ -1248,6 +1300,38 @@ def train_hierarchical_cmd(  # noqa: PLR0917
         )
     if result.monitor_hint:
         console.print(f"[cyan]TUI monitor[/cyan] {result.monitor_hint}")
+
+
+@train_app.command("branch")
+def train_branch_cmd(
+    arm: Annotated[str, typer.Option(help="Independent arm: gene, rbs, tbs, or direct")] = "gene",
+    run_id: Annotated[str, typer.Option(help="Artifact run id")] = "stage0-branch-fixture-v1",
+    device: Annotated[str, typer.Option(help="Torch device")] = "cpu",
+    config: Annotated[Path | None, typer.Option(help="Optional experiment YAML")] = None,
+) -> None:
+    """Train one independently fitted branch arm (Milestone 7C)."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+    paths.ensure_directories()
+    if config is not None and config.is_file():
+        cfg = load_experiment_config(config.resolve())
+    else:
+        cfg = {"experiment": {"seed": 42}, "model": {}, "training": {"max_epochs": 2}}
+
+    result = train_branch_arm(
+        arm=arm,
+        project_root=paths.project_root,
+        data_root=paths.data_root,
+        artifact_root=paths.artifact_root,
+        config=cfg,
+        run_id=run_id,
+        device=device,
+        overfit_fixture=True,
+    )
+    console.print_json(json.dumps(result, default=str))
 
 
 @app.command("monitor")

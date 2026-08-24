@@ -320,7 +320,7 @@ def build_sample_phenotype_rows(
                 "source_system": source_system,
                 "phenotype_family": family,
                 "platform_id": platform_id,
-                "donor_id": study_id,
+                "donor_id": None,
                 "matrix_id": matrix_id,
                 "row_index": row_index,
                 "age_years": age_years,

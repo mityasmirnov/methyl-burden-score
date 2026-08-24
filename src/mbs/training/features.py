@@ -20,6 +20,36 @@ class SampleFeatureBundle:
     n_observed_edges: int
     n_dropped_nan_beta: int
     n_dropped_no_static: int
+    n_missing_static: int = 0
+
+
+def cpg_input_dim(static_dim: int, *, include_m_value: bool = True) -> int:
+    """beta [+ M] + static + static_present."""
+    return (2 if include_m_value else 1) + int(static_dim) + 1
+
+
+def assemble_cpg_features(
+    *,
+    betas: np.ndarray,
+    static_rows: np.ndarray,
+    static_present: np.ndarray,
+    include_m_value: bool = True,
+    epsilon: float = 0.001,
+) -> np.ndarray:
+    """Concatenate methylation, static vectors, and a missingness flag."""
+    betas = np.asarray(betas, dtype=np.float32).reshape(-1)
+    static_rows = np.asarray(static_rows, dtype=np.float32)
+    present = np.asarray(static_present, dtype=np.float32).reshape(-1, 1)
+    static = static_rows.copy()
+    missing = present.reshape(-1) < 0.5
+    if missing.any():
+        static[missing] = 0.0
+    parts: list[np.ndarray] = [betas.reshape(-1, 1)]
+    if include_m_value:
+        parts.append(beta_to_m_value(betas, epsilon=epsilon).reshape(-1, 1))
+    parts.append(static)
+    parts.append(present.astype(np.float32, copy=False))
+    return np.concatenate(parts, axis=1).astype(np.float32, copy=False)
 
 
 def beta_to_m_value(beta: np.ndarray, *, epsilon: float = 0.001) -> np.ndarray:
@@ -45,8 +75,9 @@ def gather_sample_features(
     """Build ragged flat features for one sample.
 
     ``static_by_col`` is ``[n_study_loci, static_dim]``; ``static_valid`` is
-    boolean ``[n_study_loci]``. Edges with non-finite beta or invalid static
-    are dropped (no silent zero-fill of missing betas).
+    boolean ``[n_study_loci]``. Edges with non-finite beta are dropped. Mapped
+    loci missing CpGPT are **kept** with ``static_present=False`` (zero-filled
+    static).
     """
     beta_row = np.asarray(beta_row, dtype=np.float32)
     if beta_row.ndim != 1:
@@ -60,29 +91,31 @@ def gather_sample_features(
     genes = locus_gene.edge_gene_index
     betas = beta_row[cols]
     finite = np.isfinite(betas)
-    static_ok = static_valid[cols]
-    keep = finite & static_ok
+    static_ok = np.asarray(static_valid[cols], dtype=bool)
+    keep = finite
     n_dropped_nan = int((~finite).sum())
-    n_dropped_static = int((finite & ~static_ok).sum())
+    n_missing_static = int((finite & ~static_ok).sum())
 
     cols_k = cols[keep]
     genes_k = genes[keep]
     betas_k = betas[keep]
+    present_k = static_ok[keep]
     static_k = static_by_col[cols_k]
-
-    parts: list[np.ndarray] = [betas_k.reshape(-1, 1)]
-    if include_m_value:
-        m_vals = beta_to_m_value(betas_k, epsilon=epsilon).reshape(-1, 1)
-        parts.append(m_vals)
-    parts.append(static_k.astype(np.float32, copy=False))
-    features = np.concatenate(parts, axis=1).astype(np.float32, copy=False)
+    features = assemble_cpg_features(
+        betas=betas_k,
+        static_rows=static_k,
+        static_present=present_k,
+        include_m_value=include_m_value,
+        epsilon=epsilon,
+    )
 
     return SampleFeatureBundle(
         cpg_features=features,
         cpg_to_gene=genes_k.astype(np.int64, copy=False),
         n_observed_edges=int(features.shape[0]),
         n_dropped_nan_beta=n_dropped_nan,
-        n_dropped_no_static=n_dropped_static,
+        n_dropped_no_static=0,
+        n_missing_static=n_missing_static,
     )
 
 

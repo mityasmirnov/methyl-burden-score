@@ -128,6 +128,8 @@ def write_locus_index(
     canonical_keys: np.ndarray,
     probe_ids: np.ndarray,
     annotation_status: np.ndarray | None = None,
+    contributing_probe_ids: tuple[tuple[str, ...], ...] | list[tuple[str, ...]] | None = None,
+    collapse_method: tuple[str, ...] | list[str] | None = None,
 ) -> pd.DataFrame:
     n = len(locus_ids)
     if len(canonical_keys) != n or len(probe_ids) != n:
@@ -147,9 +149,48 @@ def write_locus_index(
             "annotation_status": status,
         }
     )
+    if contributing_probe_ids is not None:
+        if len(contributing_probe_ids) != n:
+            raise ValueError("contributing_probe_ids length must match locus_ids")
+        frame["contributing_probe_ids"] = ["|".join(p) for p in contributing_probe_ids]
+    if collapse_method is not None:
+        if len(collapse_method) != n:
+            raise ValueError("collapse_method length must match locus_ids")
+        frame["collapse_method"] = list(collapse_method)
     path.parent.mkdir(parents=True, exist_ok=True)
     frame.to_parquet(path, index=False)
     return frame
+
+
+DEFAULT_ZARR_COMPRESSION = "zstd"
+
+
+def create_betas_zarr(
+    path: Path,
+    *,
+    n_samples: int,
+    n_loci: int,
+    chunks: tuple[int, int] | None = None,
+    compression: str = DEFAULT_ZARR_COMPRESSION,
+) -> Any:
+    """Create an empty compressed ``[n_samples, n_loci]`` float32 Zarr (NaN fill)."""
+    if n_samples < 0 or n_loci < 0:
+        raise ValueError("n_samples and n_loci must be non-negative")
+    if path.exists():
+        shutil.rmtree(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    resolved_chunks = chunks or (min(64, max(1, n_samples)), min(4096, max(1, n_loci)))
+    # zarr 3: "auto" selects ZstdCodec; keep compression label for the manifest.
+    _ = compression
+    return zarr.create_array(
+        path,
+        shape=(n_samples, n_loci),
+        chunks=resolved_chunks,
+        dtype="float32",
+        fill_value=np.nan,
+        compressors="auto",
+        overwrite=True,
+    )
 
 
 def write_betas_zarr(
@@ -157,23 +198,21 @@ def write_betas_zarr(
     betas: np.ndarray,
     *,
     chunks: tuple[int, int] | None = None,
+    compression: str | None = None,
 ) -> tuple[int, int]:
     """Write ``[n_samples, n_loci]`` float32 betas to Zarr (NaN = missing)."""
     if betas.ndim != 2:
         raise ValueError(f"betas must be 2-D, got shape {betas.shape}")
     if betas.dtype != np.float32:
         betas = betas.astype(np.float32, copy=False)
-    if path.exists():
-        shutil.rmtree(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
     n_samples, n_loci = int(betas.shape[0]), int(betas.shape[1])
     resolved_chunks = chunks or (min(64, max(1, n_samples)), min(4096, max(1, n_loci)))
-    array = zarr.create_array(
+    array = create_betas_zarr(
         path,
-        shape=(n_samples, n_loci),
+        n_samples=n_samples,
+        n_loci=n_loci,
         chunks=resolved_chunks,
-        dtype="float32",
-        fill_value=np.nan,
+        compression=compression or DEFAULT_ZARR_COMPRESSION,
     )
     array[:, :] = betas
     return n_samples, n_loci

@@ -11,11 +11,12 @@ True next milestone after bootstrap:
 
 > … → max-N flat age/tissue/sex (5d — **done**) → hierarchical residual
 > baseline (6 — **done**) → harmonized release + phenotype census (7A — **done**) →
-> **nine-pack matrices (7B)** → architecture corrections (7C) → fold-fitted
-> normalization (7D) → development CV (7E) → **final OOF cross-fitting (7)** →
-> one score matrix.
+> **nine-pack matrices (7B — current gate)** → architecture corrections (7C —
+> **done**, fixture) → fold-fitted normalization (7D) → development CV (7E) →
+> **final OOF cross-fitting (7)** → one score matrix.
 
-**Current gate:** Milestone **7B**. Prerequisites through 7A are `done`.
+**Current gate:** Milestone **7B** (pack conversions + inspection report).
+**7C** fixture acceptance is `done` (residual wiring listed under 7C).
 **Do not retrain v0.1** or start **7E**/Milestone **7** until 7B–7D land
 ([ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
@@ -492,7 +493,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 7B. Complete canonical Hub matrices
 
-- **Status:** `pending`
+- **Status:** `in_progress` (**current coding gate**)
 - **Done when:** Disease, cancer, blood, brain, BMI, and ancestry packs convert
   to canonical full matrices; BMI/ancestry supported in pack converter maps;
   **stream probe chunks directly** to compressed Zarr (no full dense RAM stack);
@@ -501,15 +502,21 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   lexicographic-first); disease/cancer multi-label via long-form (no
   `dict[gsm]=row` overwrite); **content** checksums (not filename/size);
   overlapping GSM betas **verified** (do not silently take the first pack);
-  deduplicated union or virtual multi-store index documented.
+  deduplicated union or virtual multi-store index documented;
+  evidence under `reports/inspection/stage0_7b_hub_matrices/`.
+- **Code landed (not Done when):** stream-to-Zarr converter, probe-collapse
+  columns, long-form phenotypes, virtual `hub_pack_matrix_index`, unit tests,
+  `scripts/convert_hub_full_packs.sh` / `scripts/write_stage0_7b_report.py`.
+  Remaining: run conversions for the six packs and write the inspection report.
 - **Depends on:** (7A).
-- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+- **Plan:** [`plans/milestone-7b-complete-hub-matrices.md`](plans/milestone-7b-complete-hub-matrices.md);
+  [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
 ---
 
 ## 7C. Supervised architecture corrections
 
-- **Status:** `pending`
+- **Status:** `done` (fixture acceptance)
 - **Done when:**
   - Trainer P0: deterministic epoch shuffle; **used** `batch_token_budget`;
     task/study-balanced sampling; real donor/replicate identifiers
@@ -526,11 +533,19 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   - Graph v2: RBS + TBS; first direct branch sparse \(D_k=\sum w_{k,c}z_{s,c}\)
     (elastic-net / group sparsity); independently trained branch ablations
   - Parameter-matched width/activation/dropout/norm when comparing flat vs hier
-- **Depends on:** (7B) for disease/cancer heads; trainer/head/split fixes may
-  start on age/tissue/sex after 7A (still **before 7E**).
+- **Evidence:** `tests/unit/test_stage0_7c.py`;
+  `reports/inspection/stage0_7c_architecture/`.
+- **Residual follow-ons** (do not reopen Done when; track in
+  [`plans/milestone-7c-supervised-architecture.md`](plans/milestone-7c-supervised-architecture.md)):
+  emit AUROC/AUPRC/ECE from trainer; call `apply_orientation` on real gene-mean M;
+  build full-genome graph-v2 artifact; multi-system hier RBS/TBS index;
+  true region-system branch arms; disease/cancer Hub long-form join after 7B.
+- **Depends on:** (7B) for disease/cancer *data* join; trainer/head/split already
+  closed on age/tissue/sex fixtures (still **before 7E**).
 - **ADRs:** [0006](adr/0006-multipath-noncoding-scores.md),
   [0008](adr/0008-score-identifiability.md).
-- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+- **Plan:** [`plans/milestone-7c-supervised-architecture.md`](plans/milestone-7c-supervised-architecture.md);
+  [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
 ---
 

@@ -7,9 +7,10 @@ Normative ADRs: [0005](../adr/0005-catalog-matrix-independence.md),
 [0008](../adr/0008-score-identifiability.md).
 Checklist: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md).
 
-**Do not retrain v0.1.** Freeze those runs. Code **7B–7D** (and remaining 7A
-census follow-ons on refresh) before development training (**7E**). The
-incomplete `EWAS_db` mirror must not block 7B–7E.
+**Do not retrain v0.1.** Freeze those runs. **7A** and **7C** (fixture
+acceptance) are closed. Finish **7B** matrices, then **7D**, before
+development training (**7E**). The incomplete `EWAS_db` mirror must not block
+7B–7E.
 
 This document is the coding brief for **7A–7E**. The expensive Milestone **7**
 OOF cross-fit stays blocked until those gates pass.
@@ -20,8 +21,8 @@ OOF cross-fit stays blocked until those gates pass.
 |-----------|---------------------|
 | Freeze v0 | Named freeze tags in docs; artifacts not overwritten |
 | **7A** | Versioned `deepmat-data-v1/` release; populated DuckDB; phenotype census + trait eligibility reports |
-| **7B** | All nine Hub packs as canonical matrices; chunked Zarr; multi-label long-form; probe-collapse policy |
-| **7C** | Trainer P0/P1 fixes; centered heads; score-orientation anchor; graph v2 (RBS/TBS); direct CpG; constraint-aware splits; metrics wired |
+| **7B** | All nine Hub packs as canonical matrices; chunked Zarr; multi-label long-form; probe-collapse policy (**current gate**; converter code landed) |
+| **7C** | Trainer P0/P1 fixes; centered heads; score-orientation anchor; graph v2 (RBS/TBS); direct CpG; constraint-aware splits; metrics wired (**fixture done**; residual follow-ons in plan) |
 | **7D** | Fold-fitted Level-1 MAD robust-z; persist hashes; novel loci `z=0` + `norm_present=False`; AE not default |
 | **7E** | 3×2 independently trained arms including transparent baselines and CpGPT ablation |
 | **7** | 5×6 OOF MBS (+ RBS/TBS/direct as applicable) with leakage controls |
@@ -206,6 +207,9 @@ Shipped (`deepmat-data-v1/`). Refresh follow-on: remaining census fields above
 Do not wait on EWAS_db completeness.
 
 ### 7B — Complete matrices (current coding gate)
+
+Implementation brief:
+[`milestone-7b-complete-hub-matrices.md`](milestone-7b-complete-hub-matrices.md).
 
 - Convert disease, cancer, blood, brain, BMI, ancestry; add BMI/ancestry maps.
 - Stream probe chunks **directly** to compressed Zarr (no full dense RAM).

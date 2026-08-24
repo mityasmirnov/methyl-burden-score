@@ -5,6 +5,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
+from typer.main import get_command
 from typer.testing import CliRunner
 
 from mbs.cli import app
@@ -42,6 +43,13 @@ def isolated_workspace(monkeypatch: pytest.MonkeyPatch) -> Path:
     workspace.mkdir()
     _point_env_at_scratch(monkeypatch, workspace)
     return workspace
+
+
+def test_convert_pack_help_lists_bmi_ancestry() -> None:
+    convert = get_command(app).commands["matrix"].commands["convert-pack"]
+    family_help = next(p.help or "" for p in convert.params if p.name == "phenotype_family")
+    assert "bmi" in family_help
+    assert "ancestry" in family_help
 
 
 def test_doctor_ok(isolated_workspace: Path) -> None:
