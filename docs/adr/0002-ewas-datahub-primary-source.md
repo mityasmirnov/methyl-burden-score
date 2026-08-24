@@ -31,8 +31,8 @@ are already documented in [`docs/EWAS_DATA.md`](../EWAS_DATA.md).
    annotation graph → static locus features → pilot matrix → flat DeepRVAT
    baseline → **phenotype registry / multi-pack eval (5b)** → hierarchical
    model → **7A–7E prerequisites** → study-grouped cross-fitting.
-   PROTRIDER-style autoencoders, ComBat-met, and REGENIE export remain deferred
-   until after that core path
+   PROTRIDER-style autoencoders and ComBat-met remain deferred until after that
+   core path
    ([`docs/STRATEGIC_PLAN.md`](../STRATEGIC_PLAN.md)).
 
 ## Consequences

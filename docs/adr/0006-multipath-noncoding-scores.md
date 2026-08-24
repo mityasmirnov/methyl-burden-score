@@ -12,6 +12,8 @@ a hierarchical **residual path** that max-pools all residual CpGs into **one
 scalar** (~108k HM450 residual columns on the age/tissue/sex union). Residual-
 only eval-time masking was near chance for tissue/sex; that tests a one-
 dimensional bottleneck, not whether noncoding CpGs carry phenotype signal.
+The v0.1 residual-only slice also used the **first 512 ordered** holdout
+samples, not a stratified subset ([ADR 0008](0008-score-identifiability.md)).
 
 Flat deepMAT drops loci without a locus→region→gene path. Annotation coverage
 shows ~22–30% of mapped probes/loci outside the five gene-region roles.
@@ -41,8 +43,12 @@ CpG term is a deepMAT extension, not an exact DeepRVAT copy.
    Eval-time masking of a jointly trained branch is insufficient evidence that
    a branch is uninformative.
 5. Phenotype prediction may combine MBS + RBS + TBS + optional direct term +
-   covariates. Prefer a transparent sparse per-locus direct branch as baseline;
-   context-generated weights for cross-platform generalization.
+   covariates. The **first** transparent direct baseline is
+   \(D_k(s)=\sum_{c\in\mathrm{observed}(s)} w_{k,c} z_{s,c}\) with elastic-net
+   / group sparsity, minimum cross-study coverage, and centered fold-normalized
+   values. Later \(w_{k,c}\) may be generated from static locus embeddings for
+   novel probes/platforms. MethylCapsNet’s one-network-per-capsule formulation
+   does not scale; shared region encoders are required.
 
 ## Consequences
 

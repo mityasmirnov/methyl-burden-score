@@ -1,6 +1,6 @@
 # Stage 0 architecture
 
-Post–Stage 0 modules (epimutation AE, REGENIE export, ComBat-met) are outlined in
+Post–Stage 0 modules (epimutation AE, ComBat-met) are outlined in
 [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md); they are not Stage 0 prerequisites.
 
 ## Objective
@@ -49,10 +49,11 @@ Initial CpG input:
 ```text
 beta value
 M value
-optional train-fold robust deviation   # Milestone 7D Level-1 required channel
+robust fold-fitted z                   # 7D: median / 1.4826×MAD on train M
 static CpGPT sequence-adapter vector
-static-embedding-present flag          # Milestone 7C
-observed / missingness flag
+static-embedding-present flag          # Milestone 7C; do not drop loci
+observed / missingness / value_valid
+norm_present                           # False for novel loci (z=0, keep)
 structured locus annotations
 region-edge annotations
 ```
@@ -150,8 +151,10 @@ baseline.
 **Target (Milestone 7C, [ADR 0006](adr/0006-multipath-noncoding-scores.md)):**
 replace one-scalar residual compression with **RBS** (non-gene regulatory
 regions), **TBS** (adaptive intergenic tiles), and an optional **direct CpG**
-branch. Eval-time masking of a jointly trained residual slot does **not** show
-that noncoding CpGs are uninformative.
+branch. Eval-time masking of a jointly trained residual slot, or evaluating the
+**first 512 ordered** holdout samples, does **not** show that noncoding CpGs
+are uninformative. Flat vs hierarchical v0.1 (tissue 0.666 vs 0.598; age MAE
+22.0 vs 27.8 y) only shows hierarchical-v0.1 is currently weaker.
 
 ### Target multi-path phenotype model (7C)
 
@@ -170,7 +173,27 @@ X_s\alpha_k
 ```
 
 Direct CpG contribution \(D_k(s)\) is a deepMAT extension (sparse per-locus or
-context-generated weights), not an exact DeepRVAT phenotype module.
+context-generated weights), not an exact DeepRVAT phenotype module. First
+transparent baseline:
+
+```math
+D_k(s)=\sum_{c \in \mathrm{observed}(s)} w_{k,c} z_{s,c}
+```
+
+Elastic-net / group sparsity; minimum cross-study coverage; centered
+fold-normalized \(z\). Later \(w_{k,c}\) from static embeddings.
+
+**Score identifiability ([ADR 0008](adr/0008-score-identifiability.md)):** with
+centered sigmoid MBS and unconstrained linear heads,
+`MBS → 1−MBS` plus flipped head weights yields the same \(\hat y\). Define an
+orientation anchor (hyper/hypo channels or magnitude vs |robust z|) **before**
+averaging OOF scores. deepMAT is a sample×gene **predictive** representation,
+not a LOEUF-like constraint score.
+
+**Implementation gap (fix in Milestone 7C):** mapped CpGs lacking CpGPT
+embeddings must stay in the set with `static_present=False`; residual CpGs that
+receive zero embeddings need a missingness flag. Do not drop loci for missing
+static features.
 
 ## Optional gated pooling ablation
 
@@ -267,6 +290,11 @@ Development protocol (Milestone **7E** architecture selection):
 study-grouped validation
 ```
 
+Minimum independently trained arms: transparent gene/region mean and
+elastic-net; parameter-matched flat gene-only; parameter-matched hierarchical
+gene-only; gene + direct; gene + RBS + TBS + direct; each neural arm with and
+without Level-1 robust-z; CpGPT inclusion as a separate ablation.
+
 Final Stage 0 protocol (Milestone **7**, after 7A–7E):
 
 ```text
@@ -292,6 +320,7 @@ Not part of Stage 0 core:
 - intergenic burden assignment to the nearest gene;
 - episignature and epivariant production models;
 - ClickHouse or default TileDB migration;
-- PROTRIDER / masked AE as the default normalizer (Level-3 ablation only).
+- PROTRIDER / masked AE as the default normalizer (Level-3 ablation only);
+- methylation **constraint** / LOEUF-like scores (post–Stage 0; ADR 0008).
 
 Graph-layer cCRE / tiles for RBS/TBS are Milestone **7C**, not forever-deferred.

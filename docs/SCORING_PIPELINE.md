@@ -126,7 +126,10 @@ flowchart TD
 ```
 
 Train branches independently for ablations; do not rely on eval-time masking
-alone.
+alone. v0.1 residual-only used ~108k loci → one scalar and the **first 512
+ordered** holdout samples — that is not a noncoding biology test. Direct CpG
+v1: \(D_k(s)=\sum w_{k,c} z_{s,c}\) (elastic-net). Score orientation:
+[ADR 0008](adr/0008-score-identifiability.md).
 ## Changing phenotypes (architecture stays fixed)
 
 ```mermaid
@@ -172,8 +175,6 @@ Contracts: [`EWAS_METADATA.md`](EWAS_METADATA.md),
 - Protocol: [`EXPERIMENT_PROTOCOL.md`](EXPERIMENT_PROTOCOL.md) § out-of-fold;
   gates: [`TODO_PIPELINE.md`](TODO_PIPELINE.md) §7A–7E then §7;
   [ADR 0007](adr/0007-crossfit-prerequisites.md).
-
-Further deferred: REGENIE-style MBS×2 export (optional post–Stage 0).
 
 ## Proposed improvements (not blocking)
 

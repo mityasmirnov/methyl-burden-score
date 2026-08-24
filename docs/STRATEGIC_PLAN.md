@@ -49,8 +49,8 @@ in DuckDB.
 
 ## Stage 0 architecture (current order)
 
-Stage 0 does **not** require a PROTRIDER-style autoencoder, ComBat-met, or
-REGENIE as defaults. The critical path is:
+Stage 0 does **not** require a PROTRIDER-style autoencoder or ComBat-met as
+defaults. The critical path is:
 
 1. Inspect one small real source (done; historical CpGCorpus evidence).
 2. Canonical annotation graph (simple regions).
@@ -82,13 +82,27 @@ layers. Do not start these while 7A–7E / 7 are open (see
 
 ### Module A — Normalization and epimutation features
 
-**Stage 0 next (7D):** fold-fitted robust per-CpG M-deviation channels (Level
-1), trained on training studies only. Hub GMQN betas remain the canonical raw
-matrix.
+**Stage 0 next (7D):** fold-fitted robust per-CpG z on **train-fold** M-values:
 
-**Later ablation (not default):** learned ProbeNormalizer (Level 2); masked /
-PROTRIDER-style autoencoder (Level 3) only if Level 1 is insufficient on held-
-out phenotype and stability metrics. Do not select on reconstruction loss alone.
+```math
+\mu_c=\operatorname{median}_{s \in \mathrm{train}}(M_{s,c}),\qquad
+\sigma_c=1.4826\,\operatorname{MAD}_{s \in \mathrm{train}}(M_{s,c})
+```
+
+```math
+z_{s,c}=\frac{M_{s,c}-\mu_c}{\max(\sigma_c,\sigma_{\min})}
+```
+
+Persist \(\mu,\sigma\) hashes. Novel loci: `z=0`, `norm_present=False`. Hub GMQN
+betas remain the canonical raw matrix — do not overwrite them with a global
+neural normalizer.
+
+**Later ablation (not default):** learned ProbeNormalizer (Level 2, bounded
+residual MLP + LayerNorm/RMSNorm); masked / PROTRIDER-style autoencoder (Level
+3) only if trained **inside every training fold**, with explicit missing/platform
+masks, and selected on held-out phenotype, replicate concordance, and
+cross-platform stability — not reconstruction loss. Vanilla AE reconstructs
+study/platform artifacts well and is not the first solution.
 
 ### Module B — Contextual epigenetic embedding
 
@@ -103,13 +117,6 @@ Already the Stage 0 core: shared φ per CpG, permutation-invariant pooling
 (max), shared ρ → sigmoid MBS in `[0, 1]`. Hierarchical CpG→region→gene is the
 Stage 0 upgrade over flat DeepRVAT-style pooling. Milestone **7C** adds RBS /
 TBS / direct CpG paths so ~30% unassigned loci are not compressed to one scalar.
-
-### Association testing — REGENIE
-
-Export gene-level MBS as genetic pseudodosages (scale by 2.0 for diploid-like
-dosage in `[0, 2]`), write BGEN/VCF, then REGENIE Step 1 (polygenic background
-on common SNPs) and Step 2 (test burden scores; Firth for imbalanced binary
-traits). Validation against EWAS Atlas enrichments is deferred with this layer.
 
 ## Engineering concerns (deferred ingest / custom cohorts)
 
@@ -130,7 +137,7 @@ traits). Validation against EWAS Atlas enrichments is deferred with this layer.
 | Conda, Python 3.10, `environment.yml` | `uv`, Python ≥3.11 (`AGENTS.md`) |
 | `src/data_engineering/`, `src/models/` | Package under `src/mbs/` |
 | New FTP-only downloader from scratch | Existing HTTP downloaders + Makefile targets |
-| Implement AE → Deep Set → REGENIE before a pilot matrix | Stage 0 order above; AE/REGENIE deferred |
+| Implement AE → Deep Set before a pilot matrix | Stage 0 order above; AE deferred |
 
 ## Appendix: manuscript agent-prompt phases
 
@@ -138,6 +145,8 @@ An external strategic manuscript listed Cursor-style prompt phases (scaffold,
 FTP, ComBat-met, autoencoder, Deep Set Lightning module, BGEN/REGENIE). Those
 phases are **historical inspiration only**. They must not be executed as a
 greenfield rewrite: they conflict with existing ADRs, package layout, and the
-Stage 0 milestone order. Map useful ideas into deferred todos in
+Stage 0 milestone order. GWAS-style REGENIE / BGEN pseudodosage export is
+**not applicable** to DNA methylation scores (REGENIE models SNP dosages and
+genetic relatedness). Map remaining useful ideas into deferred todos in
 [`TODO_PIPELINE.md`](TODO_PIPELINE.md) section 8 and implement inside `src/mbs/`
 when Stage 0 is complete.

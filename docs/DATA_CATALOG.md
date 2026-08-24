@@ -31,8 +31,8 @@ Do not recursively dump `$MBS_DATA_ROOT` into chat; use these reports.
 | Trait harmonization rules | Present |
 | EWAS_db per-study progress | **In progress** (~53% of remote study folders) |
 | Disease full matrix convert | Unblocked (zip OK); convert not yet registered — **7B** |
-| Harmonized DuckDB release | Schema exists; population is **7A** |
-| Unique GSM vs pack-row sum | Documented below; census report is **7A** |
+| Harmonized DuckDB release | **7A done** (`deepmat-data-v1/`); census refresh follow-ons remain |
+| Unique GSM vs pack-row sum | Memberships ≠ people; 7A census + refresh follow-ons |
 
 ## Source lanes
 
@@ -101,9 +101,17 @@ in Hub R tables): cancer 10,841 rows / 10,101 GSM; disease 14,501 rows /
 12,218 GSM. Use **unique `sample_id`** for training N; represent labels as
 **long-form** observations (Milestone 7A/7B)—do not `dict[gsm]=row` overwrite.
 
-Nine-pack **row** counts sum far above unique GSMs (packs overlap). Age/tissue/
-sex alone: 16,675 pack-level occurrences → 13,548 unique GSMs after dedup.
-Milestone **7A** census reports true unique N, pack overlap, and conflicts.
+Nine unique-GSM counts sum to **pack memberships** (47,843), not independent
+people. Age/tissue/sex alone: 16,675 memberships → 13,548 unique GSMs. The
+inventory spans about **470 Hub projects**. Milestone **7A** census reports
+true unique N, pack overlap, and conflicts; remaining census fields (metadata-
+only predictability, within-study age/BMI ranges, donor/replicate) are
+refresh follow-ons.
+
+**“Prevalence”** here means availability in these selected public packs—not
+epidemiological prevalence. Unlike UK Biobank, these are heterogeneous,
+selectively contributed studies with strong tissue, study, platform, and
+disease confounding.
 
 **Disease pack history:** earlier incomplete local copies lacked EOCD and were
 quarantined; resilient resume finished 2026-08-11
@@ -117,17 +125,19 @@ file is `sample_race.txt`). Parquet exports:
 
 ### Recommended pack roles
 
-| Family | Role |
-|--------|------|
-| Age | Core regression |
-| Tissue | Core coarse multiclass |
-| Sex | Auxiliary biological / QC |
-| BMI | Core or secondary regression |
-| Brain | Fine-grained conditional head given brain |
-| Blood | Fine-grained after label QC |
-| Cancer | Multi-label or within-tissue case/control (avoid pan-cancer≈tissue) |
-| Disease | Multi-label binary; **unknown ≠ control** unless documented |
-| Ancestry | Fairness / domain evaluation; not default burden-training target |
+Availability in these packs is not epidemiology. Reasons:
+
+| Family | Unique GSM / studies | Role | Reason |
+|--------|---------------------:|------|--------|
+| Age | 8,374 / 143 | Core regression | Strongest broadly supported continuous task |
+| Tissue | 5,323 / 258 | Core after ontology | 72 raw labels too fragmented; coarse + conditional fine |
+| BMI | 2,070 / 25 | Secondary core | If age/tissue-adjusted ranges exist in several studies |
+| Sex | 2,978 / 161 | Downweighted aux/QC | Easy; may over-use sex chromosomes vs general burden |
+| Disease | 12,218 / 209 | Later multi-label | ~36.6% of rows labeled; missing is unknown, not control |
+| Cancer | 10,101 / 225 | Within-tissue case/control | Pan-cancer largely learns tissue/study |
+| Brain | 1,997 / 40 | Conditional fine-tissue | Only among brain samples |
+| Blood | 3,402 / 161 | Do not use `cell_component` pack-wide | ~1.1% populated; often compositions |
+| Ancestry | 1,380 / 21 | Fairness / domain eval | Not a default biological burden objective |
 
 ## Canonical matrices in use
 
@@ -190,20 +200,22 @@ Wave-1 training focus: age, tissue (+ sex in 5d). Disease/cancer heads follow
 
 ## Known gaps
 
-- **EWAS_db mirror incomplete** (~1049/1989 study dirs; still downloading; not a 7A gate).
+- **EWAS_db mirror incomplete** (~1049/1989 study dirs; still downloading; not a 7A/7B gate).
 - Blood primary phenotype sparsity; do not treat as pack-wide cell-type labels
   without another column strategy.
 - Registry `sample_count: null` on most pack entries until convert registers N.
 - Disease/cancer/blood/brain/BMI/ancestry **profile → matrix convert** not yet
   in the matrices table (zips ready) — **7B**.
-- DuckDB schema exists but is not a populated harmonized release — **7A**.
-- Final OOF cross-fitting (Milestone 7) is **blocked until 7A–7E**.
+- 7A census refresh follow-ons (metadata-only predictability, donor/replicate,
+  within-study age/BMI ranges) — see programme brief.
+- Final OOF cross-fitting (Milestone 7) is **blocked until 7A–7E**; **do not
+  retrain v0.1**.
 
 ## Proposed improvements
 
-1. Milestone **7A:** `deepmat-data-v1/` + phenotype census + trait eligibility
-   ([`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)).
-2. Milestone **7B:** convert remaining packs; chunked Zarr; multi-label disease.
+1. Milestone **7B:** convert remaining packs; stream-to-Zarr; content checksums;
+   overlapping-GSM beta verify; per-sample platform provenance.
+2. Census refresh follow-ons (7A report fields still missing).
 3. Populate registry `sample_count` from unique GSM when exporting sample-info.
 4. Do not commit Hub `.RData` sample blobs; keep `.txt` / Parquet only under inspection.
 5. Let EWAS_db finish (or pause if disk approaches capacity); re-run inventory.

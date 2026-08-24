@@ -8,7 +8,7 @@ AGENTS.md                    authoritative coding-agent rules
 docs/TODO_PIPELINE.md        Stage 0 scientific milestone checklist (agents update)
 docs/STRATEGIC_PLAN.md       long-term data + multimodal vision
 docs/WORKSPACE.md            server and /data layout
-docs/adr/                    architecture decision records (0001 workspace, 0002 EWAS Hub, 0003 Milestone 5b, 0004 unmapped retention, 0005 catalog/storage, 0006 multi-path scores, 0007 cross-fit prerequisites)
+docs/adr/                    architecture decision records (0001 workspace, 0002 EWAS Hub, 0003 Milestone 5b, 0004 unmapped retention, 0005 catalog/storage, 0006 multi-path scores, 0007 cross-fit prerequisites, 0008 score identifiability)
 docs/ARCHITECTURE.md         model contracts (public name: deepMAT; package: mbs)
 docs/DATA_CONTRACT.md        canonical data contracts
 docs/ANNOTATION_GRAPH.md     biological topology
@@ -49,8 +49,10 @@ age/tissue/sex union; `deepmat-data-v1` catalog + census).
 **Current gate: 7B** (complete nine-pack canonical matrices). Final OOF
 cross-fitting is Milestone **7**, blocked until 7A–7E — see
 [`TODO_PIPELINE.md`](TODO_PIPELINE.md),
-[ADR 0007](adr/0007-crossfit-prerequisites.md), and
+[ADR 0007](adr/0007-crossfit-prerequisites.md),
+[ADR 0008](adr/0008-score-identifiability.md), and
 [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+**Do not retrain v0.1**; first coding deliverable after 7A is 7B.
 
 ## SQL and schemas
 

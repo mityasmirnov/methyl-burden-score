@@ -6,7 +6,7 @@ The public model name is **deepMAT** (deep Methylation Aggregation Transformer /
 Deep Set family). The Python package remains `methyl-burden-score` with the
 `mbs` CLI entry point; do not treat a package rename as required for Stage 0.
 
-Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks). The model path is flat DeepRVAT-style **deepMAT** baseline → phenotype registry / multi-pack eval → real Hub pack matrices → multitask shared encoder (**5c done**) → **max-N flat age/tissue/sex (5d — done)** → hierarchical residual-path (**6 — done**) → **harmonized release + census (7A — current gate)** → nine-pack matrices / architecture / normalization / development CV (**7B–7E**) → study-grouped OOF cross-fitting (**7**, blocked until 7A–7E). Authoritative progress: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). See also [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), [`docs/adr/0005-catalog-matrix-independence.md`](docs/adr/0005-catalog-matrix-independence.md), [`docs/adr/0006-multipath-noncoding-scores.md`](docs/adr/0006-multipath-noncoding-scores.md), and [`docs/adr/0007-crossfit-prerequisites.md`](docs/adr/0007-crossfit-prerequisites.md).
+Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks). The model path is flat DeepRVAT-style **deepMAT** baseline → phenotype registry / multi-pack eval → real Hub pack matrices → multitask shared encoder (**5c done**) → **max-N flat age/tissue/sex (5d — done)** → hierarchical residual-path (**6 — done**) → **harmonized release + census (7A — done)** → **nine-pack matrices (7B — current gate)** → architecture / normalization / development CV (**7C–7E**) → study-grouped OOF cross-fitting (**7**, blocked until 7A–7E). Do **not** retrain v0.1. Authoritative progress: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). See also [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), [`docs/adr/0005-catalog-matrix-independence.md`](docs/adr/0005-catalog-matrix-independence.md), [`docs/adr/0006-multipath-noncoding-scores.md`](docs/adr/0006-multipath-noncoding-scores.md), [`docs/adr/0007-crossfit-prerequisites.md`](docs/adr/0007-crossfit-prerequisites.md), and [`docs/adr/0008-score-identifiability.md`](docs/adr/0008-score-identifiability.md).
 
 The Stage 0 implementation follows four design principles:
 
@@ -205,14 +205,15 @@ Stage 0 milestones **1–6** are done (see
 | Max-N DeepRVAT flat (5d) | Uncapped age/tissue/sex GSM-union (`matrix-hub-age-tissue-sex-full-v1`, 13548 samples); run `stage0-flat-deeprvat-age-tissue-sex-full-v1`; report `reports/inspection/stage0_5d_max_n/` |
 | Hierarchical residual path (6) | `mbs train hierarchical`; typed CpG→region→gene + residual slot (no `__unassigned__`); run `stage0-hier-deeprvat-age-tissue-sex-full-v1` (**deepMAT-hierarchical-v0.1**); report `reports/inspection/stage0_6_hierarchical/` |
 
-**Current gate — Milestone 7A:** harmonized data release + phenotype census
+**Current gate — Milestone 7B:** complete nine-pack canonical matrices
 ([`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md)).
-Final OOF cross-fitting (Milestone **7**) is blocked until 7A–7E. Milestone 6
-closed: hierarchical vs flat on the same 5d folds; mapped path carries signal;
-one-scalar residual_only is near chance for tissue/sex (bottleneck, not
-biology). Flat 5d remains the stronger phenotype reference. Disease profile zip
-is complete; EWAS_db All-Data mirror is still in progress (not required for
-7A). See [`docs/DATA_CATALOG.md`](docs/DATA_CATALOG.md).
+Do **not** retrain frozen **deepMAT-flat-v0.1** / **hierarchical-v0.1**. Final
+OOF (Milestone **7**) is blocked until 7A–7E. Milestone 6 closed: hierarchical
+vs flat on the same 5d folds; mapped path carries signal; one-scalar
+residual_only near chance (bottleneck + ordered 512-sample eval, not biology).
+Flat 5d remains the stronger phenotype reference. Disease profile zip is
+complete; EWAS_db All-Data mirror is still in progress (not required for
+7B–7E). See [`docs/DATA_CATALOG.md`](docs/DATA_CATALOG.md).
 
 Public model name remains **deepMAT**; package/CLI stay `mbs` /
 `methyl-burden-score`.

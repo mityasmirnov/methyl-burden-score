@@ -16,13 +16,16 @@ True next milestone after bootstrap:
 > one score matrix.
 
 **Current gate:** Milestone **7B**. Prerequisites through 7A are `done`.
-Final Milestone **7** (5-fold × ≤6-restart OOF) is **blocked until 7A–7E**
-([ADR 0007](adr/0007-crossfit-prerequisites.md)). Programme brief:
+**Do not retrain v0.1** or start **7E**/Milestone **7** until 7B–7D land
+([ADR 0007](adr/0007-crossfit-prerequisites.md),
+[ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
 [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
 Frozen references (do not overwrite): **deepMAT-flat-v0.1** /
 **deepMAT-hierarchical-v0.1** / **deepmat-data-age-tissue-sex-v1**. Hierarchical
-v0.1 is a valid baseline, not the preferred phenotype model.
+v0.1 is a valid baseline, not the preferred phenotype model. Residual-only
+near-chance on an ordered 512-sample prefix is **not** evidence that noncoding
+CpGs lack signal.
 
 Hub **disease** profile zip is complete (2026-08-11). `EWAS_db` All-Data
 mirror remains in progress (~883 studies with GSM files / 1989 advertised) and is
@@ -462,6 +465,9 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
     [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
   - CLI: `mbs catalog refresh-release`, `validate-release`, `phenotype-census`,
     `trait-eligibility`
+- **Refresh follow-on (does not reopen 7A):** remaining census fields — within-study
+  age/BMI ranges, documented controls, donor/replicate IDs, metadata-only
+  predictability, full platform×tissue support — listed in the programme brief.
 - **Evidence:** Release
   `$MBS_DATA_ROOT/canonical/releases/deepmat-data-v1/` (schema-valid
   `release_manifest.json`, populated `catalog/catalog.duckdb` +
@@ -489,10 +495,13 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Status:** `pending`
 - **Done when:** Disease, cancer, blood, brain, BMI, and ancestry packs convert
   to canonical full matrices; BMI/ancestry supported in pack converter maps;
-  chunked direct-to-Zarr conversion; probe-collapse policy records contributing
-  probe IDs (mean/robust mean, not lexicographic-first only); disease/cancer
-  multi-label via long-form phenotypes (no silent GSM overwrite); true source
-  checksums; deduplicated union or virtual multi-store index documented.
+  **stream probe chunks directly** to compressed Zarr (no full dense RAM stack);
+  **per-sample** platform provenance (not one HM450 map for merged unions);
+  probe-collapse records **all** contributing probe IDs (mean/robust mean, not
+  lexicographic-first); disease/cancer multi-label via long-form (no
+  `dict[gsm]=row` overwrite); **content** checksums (not filename/size);
+  overlapping GSM betas **verified** (do not silently take the first pack);
+  deduplicated union or virtual multi-store index documented.
 - **Depends on:** (7A).
 - **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
@@ -502,18 +511,25 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 - **Status:** `pending`
 - **Done when:**
+  - Trainer P0: deterministic epoch shuffle; **used** `batch_token_budget`;
+    task/study-balanced sampling; real donor/replicate identifiers
   - All phenotype heads center/mask present scores consistently
-  - Graph v2: non-gene regulatory regions (RBS) + adaptive CpG-count tiles (TBS);
-    optional direct CpG branch (no one-scalar residual as the production path)
-  - `static_present` / observation flags in inputs
-  - Constraint-aware study-grouped splits (class coverage, age-quantile /
-    platform / task-mask balance; no study/donor/replicate leakage)
-  - Task-balanced sampling and loss; trait-specific fold-safe seed masks;
-    token-budget sampler; macro-F1 / balanced accuracy / correlations in run
-    reports; parameter-matched topology when comparing flat vs hierarchical
-- **Depends on:** (7B) for disease/cancer heads; head/split fixes may start on
-  age/tissue/sex after 7A.
-- **ADRs:** [0006](adr/0006-multipath-noncoding-scores.md).
+  - Constraint-aware study-grouped splits (tissue-class, task-mask, age quantile,
+    platform, cases/controls, donor/replicate; not sample-count only)
+  - Emit macro-F1, balanced accuracy, RMSE, R², correlations, AUROC/AUPRC,
+    calibration; study/platform/tissue-stratified reports
+  - Controls: static-only, coverage-only, **metadata-only**, label permutation
+  - Mapped loci missing CpGPT kept with `static_present=False` (not dropped);
+    residual zeros carry a missingness flag
+  - **Score orientation anchor** ([ADR 0008](adr/0008-score-identifiability.md))
+    before any OOF average; predictive MBS ≠ constraint/LOEUF score
+  - Graph v2: RBS + TBS; first direct branch sparse \(D_k=\sum w_{k,c}z_{s,c}\)
+    (elastic-net / group sparsity); independently trained branch ablations
+  - Parameter-matched width/activation/dropout/norm when comparing flat vs hier
+- **Depends on:** (7B) for disease/cancer heads; trainer/head/split fixes may
+  start on age/tissue/sex after 7A (still **before 7E**).
+- **ADRs:** [0006](adr/0006-multipath-noncoding-scores.md),
+  [0008](adr/0008-score-identifiability.md).
 - **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
 ---
@@ -521,11 +537,13 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 ## 7D. Fold-fitted normalization ablation
 
 - **Status:** `pending`
-- **Done when:** Level-1 robust per-CpG train-fold M-deviation channels are
-  implemented and fitted only on training studies; A (beta+M) vs B (A + robust z)
-  protocol runnable on identical folds; Levels 2 (ProbeNormalizer) and 3
-  (masked AE) documented as later ablations (§8 until architecture selected).
-  Selection by held-out phenotype + stability, not reconstruction loss alone.
+- **Done when:** Level-1 study-balanced median + **1.4826×MAD** on train-fold
+  M-values; persist \(\mu,\sigma\) and hashes; novel loci `z=0` +
+  `norm_present=False` (not discarded); A (beta+M) vs B (A + robust z) on
+  identical folds. Do **not** overwrite Hub GMQN canonical betas. Levels 2
+  (bounded residual MLP + LayerNorm/RMSNorm) and 3 (fold-isolated masked AE)
+  documented as later ablations; select on phenotype/stability, not
+  reconstruction loss.
 - **Depends on:** (7C) at least for shared train path; Level-1 can land with 7C.
 - **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
@@ -535,9 +553,12 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 - **Status:** `pending`
 - **Done when:** 3 outer study-grouped folds × 2 restarts compare independently
-  trained arms: flat gene-only; hierarchical gene-only; gene + direct; gene +
-  RBS + TBS + direct; each with/without Level-1 robust channels. Report selects
-  architecture for Milestone 7. Eval-time branch masking alone is not sufficient.
+  trained arms: **transparent gene/region mean and elastic-net**;
+  **parameter-matched** flat gene-only; **parameter-matched** hierarchical
+  gene-only; gene + direct CpG; gene + RBS + TBS + direct; each neural arm
+  with/without Level-1 robust-z; **CpGPT inclusion as a separate ablation**.
+  Report selects architecture for Milestone 7. Eval-time branch masking and
+  ordered-prefix holdout eval are not sufficient.
 - **Depends on:** (7C), (7D Level-1).
 - **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
@@ -549,8 +570,9 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Done when:** Out-of-fold MBS scores (and RBS/TBS/direct contributions when
   selected), age predictions, and tissue predictions are generated with leakage
   controls (no sample/donor/replicate/held-out study scored by a model that saw
-  it). Score matrix + fold-assignment hash stored. Protocol: 5 outer folds × up
-  to 6 restarts; fold-specific normalization and seed selection.
+  it). Scores are **orientation-aligned** (ADR 0008) before averaging. Persist
+  fold-specific normalization, presence/count/`norm_present` masks, complete
+  model lineage. Protocol: 5 outer folds × up to 6 restarts.
 - **Depends on:** (7A)–(7E); architecture chosen in 7E.
 - **Note:** A 3-fold / 1-restart smoke of *existing* machinery is allowed for
   plumbing; it does not complete this milestone and must not overwrite v0.1
@@ -574,7 +596,6 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 | ComBat-met (rpy2) | Beta-regression batch correction for user/custom IDAT or uncorrected cohorts; assert corrected betas stay in `[0, 1]`. Not required for Data Hub GMQN baselines |
 | TileDB sparse / Zarr v3 WGBS benchmark | First representative WGBS cohort; catalog stays on DuckDB+Parquet ([ADR 0005](adr/0005-catalog-matrix-independence.md)) |
 | ClickHouse | Only if multi-user OLAP portal needed; not training I/O |
-| REGENIE association | Export MBS×2 as pseudodosages (BGEN/VCF); Step 1 + Step 2; Firth for imbalanced binary traits; QQ / λ near 1 |
 | EWAS Atlas enrichment | Compare significant gene–trait hits to Atlas curated associations / pathway enrichment |
 | MethylGPT priors / richer FM fusion | Ablation after multi-path scores stable |
 | Epivariants / episignatures | Explicit epivariant calling and clinical episignature work |

@@ -17,6 +17,13 @@ Programme context: [`post-v0-scientific-programme.md`](post-v0-scientific-progra
 | CLI | `mbs catalog refresh-release` / `validate-release` / `phenotype-census` / `trait-eligibility` |
 | Incremental EWAS_db | Re-run refresh after new `EWAS_db/{GSE}/` dirs appear; studies upsert |
 
+**Refresh follow-on (7A stays `done`):** for every harmonized phenotype, also
+report unique GSMs/rows/studies/platforms/tissues; label missingness and
+conflicts; cases and documented controls; label support by study and platform;
+age/BMI ranges within each study; cross-pack memberships; donor/replicate
+information; predictability from study/platform/tissue metadata alone;
+eligibility as core, auxiliary, or evaluation-only.
+
 EWAS_db All-Data mirror completeness is **not** required (ADR 0007).
 
 ## Locked decisions
@@ -77,7 +84,7 @@ flowchart LR
 
 - Waiting for 1989 EWAS_db studies; nine-pack Zarr convert (7B); graph v2 (7C);
   Level-1 norm (7D); OOF (7); Zarr copies; sample×CpG DuckDB; download watcher;
-  overwriting v0.1 freezes.
+  overwriting v0.1 freezes; retraining v0.1.
 
 ## Open questions
 

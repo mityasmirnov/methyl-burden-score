@@ -40,8 +40,8 @@ Launching that expensive protocol on the current architecture would lock in:
 2. Milestone **7** remains the OOF score-matrix deliverable. Its status stays
    `pending` and is **blocked until 7A–7E** acceptance criteria are met.
 3. A small 3-fold / 1-restart smoke of *existing* train machinery is allowed
-   for plumbing; it does **not** complete Milestone 7 and must not overwrite
-   frozen v0.1 runs.
+   for plumbing; it does **not** complete Milestone 7, must not overwrite
+   frozen v0.1 runs, and is **not** development CV (7E).
 4. Freeze (do not overwrite) reference artifacts:
    - `deepMAT-flat-v0.1` ← `stage0-flat-deeprvat-age-tissue-sex-full-v1`
    - `deepMAT-hierarchical-v0.1` ← `stage0-hier-deeprvat-age-tissue-sex-full-v1`
@@ -55,7 +55,10 @@ Launching that expensive protocol on the current architecture would lock in:
   [`plans/post-v0-scientific-programme.md`](../plans/post-v0-scientific-programme.md).
 - Storage / catalog: [ADR 0005](0005-catalog-matrix-independence.md).
 - Noncoding paths: [ADR 0006](0006-multipath-noncoding-scores.md).
+- Score orientation / predictive vs constraint: [ADR 0008](0008-score-identifiability.md).
 - EWAS_db All-Data mirror progress is **not** a gate for 7A–7E.
+- **Do not retrain v0.1.** After 7A, the first coding deliverable is **7B**, not
+  another training run. 7E starts only after 7B–7D.
 
 ## Non-goals
 

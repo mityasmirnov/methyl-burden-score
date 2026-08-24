@@ -125,9 +125,13 @@ existing machinery is plumbing only—not Milestone 7.
 | M03 | gene + RBS + TBS + direct | multi-path | — |
 | N01 | M* + Level-1 robust z | selected topology | — |
 
-M* / N* arms are Milestone **7E** (independently trained). Attention-only pooling
-is deferred until this matrix is complete. Report **macro-F1**, **balanced
-accuracy**, correlations, and calibration—not accuracy/MAE alone—for selection.
+M* / N* arms are Milestone **7E** (independently trained). Also required:
+transparent gene/region mean and elastic-net baselines; parameter-matched
+flat vs hierarchical (same width/activation/dropout/norm); CpGPT as a
+**separate** ablation. Attention-only pooling is deferred until this matrix is
+complete. Report **macro-F1**, **balanced accuracy**, RMSE, R², correlations,
+AUROC/AUPRC, and calibration—not accuracy/MAE alone—for selection. Residual
+eval must not use an ordered prefix of holdout samples (v0.1 used first 512).
 
 ## Negative controls
 
@@ -142,6 +146,11 @@ Remove methylation values while retaining static vectors and graph structure. St
 ### Coverage-only
 
 Use gene presence and observed-CpG counts without beta values.
+
+### Metadata-only
+
+Predict from study, platform, and tissue metadata alone (no methylation). Strong
+performance is a confounding ceiling, not a burden-model success.
 
 ### Random locus vectors
 
@@ -206,8 +215,9 @@ Record:
 ## Out-of-fold score generation
 
 For each sample, average only checkpoints from folds and restarts that excluded
-its full group. Store model IDs and weights in the score manifest. This is
-Milestone **7** after architecture selection in **7E**.
+its full group, after **orientation alignment** ([ADR 0008](adr/0008-score-identifiability.md)).
+Store model IDs, weights, and `score_polarity` in the score manifest. This is
+Milestone **7** after architecture selection in **7E**. Do not retrain v0.1.
 
 Independently trained branch ablations (gene-only vs regulatory vs direct, etc.)
 are required before claiming a branch is uninformative; eval-time masking of a

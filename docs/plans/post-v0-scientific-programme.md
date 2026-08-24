@@ -3,8 +3,13 @@
 Status: implementation brief for Stage 0 after Milestone 6.
 Normative ADRs: [0005](../adr/0005-catalog-matrix-independence.md),
 [0006](../adr/0006-multipath-noncoding-scores.md),
-[0007](../adr/0007-crossfit-prerequisites.md).
+[0007](../adr/0007-crossfit-prerequisites.md),
+[0008](../adr/0008-score-identifiability.md).
 Checklist: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md).
+
+**Do not retrain v0.1.** Freeze those runs. Code **7B–7D** (and remaining 7A
+census follow-ons on refresh) before development training (**7E**). The
+incomplete `EWAS_db` mirror must not block 7B–7E.
 
 This document is the coding brief for **7A–7E**. The expensive Milestone **7**
 OOF cross-fit stays blocked until those gates pass.
@@ -16,9 +21,9 @@ OOF cross-fit stays blocked until those gates pass.
 | Freeze v0 | Named freeze tags in docs; artifacts not overwritten |
 | **7A** | Versioned `deepmat-data-v1/` release; populated DuckDB; phenotype census + trait eligibility reports |
 | **7B** | All nine Hub packs as canonical matrices; chunked Zarr; multi-label long-form; probe-collapse policy |
-| **7C** | Centered heads; graph v2 (RBS/TBS); direct CpG path; constraint-aware splits; task balance; seed masks; report metrics wired |
-| **7D** | Fold-fitted Level-1 robust M-channels; A/B(/C/D) protocol documented; AE not default |
-| **7E** | 3×2 independently trained architecture selection on identical folds |
+| **7C** | Trainer P0/P1 fixes; centered heads; score-orientation anchor; graph v2 (RBS/TBS); direct CpG; constraint-aware splits; metrics wired |
+| **7D** | Fold-fitted Level-1 MAD robust-z; persist hashes; novel loci `z=0` + `norm_present=False`; AE not default |
+| **7E** | 3×2 independently trained arms including transparent baselines and CpGPT ablation |
 | **7** | 5×6 OOF MBS (+ RBS/TBS/direct as applicable) with leakage controls |
 
 ## Locked decisions
@@ -34,6 +39,11 @@ OOF cross-fit stays blocked until those gates pass.
 | Normalization | Level-1 fold-fitted robust z required before 7E; AE later | GMQN already on Hub |
 | Final 5×6 | After 7A–7E | ADR 0007 |
 | Flat vs hier compare | Parameter-matched topology in 7E | Width/activation/dropout differed in v0 |
+| Pack “prevalence” | Availability in Hub packs, not epidemiology | Heterogeneous contributed studies |
+| Score orientation | Anchor before OOF average | ADR 0008 |
+| Constraint vs MBS | Predictive representation ≠ LOEUF-like constraint | ADR 0008 |
+| Direct CpG v1 | Sparse elastic-net / group sparsity on fold-normalized z | Transparent baseline |
+| Level-1 z | Study-balanced median / 1.4826×MAD on train M | GMQN betas stay canonical |
 
 ## Schemas / contracts
 
@@ -130,71 +140,150 @@ flowchart LR
   sevenE --> seven[7_OOF_crossfit]
 ```
 
-## Pack roles
+## Pack roles (availability ≠ epidemiology)
 
-| Family | Role |
-|--------|------|
-| Age | Core regression |
-| Tissue | Core coarse multiclass |
-| Sex | Auxiliary biological / QC |
-| BMI | Core or secondary regression |
-| Brain | Fine-grained head given brain |
-| Blood | Fine-grained after label QC |
-| Cancer | Multi-label or within-tissue case/control |
-| Disease | Multi-label binary heads; unknown ≠ control |
-| Ancestry | Fairness / domain; optional nuisance |
+Nine unique-GSM counts sum to **memberships**, not independent people (47,843
+pack memberships; age+tissue+sex 16,675 → 13,548 unique). Inventory spans ~470
+Hub projects. “Prevalence” here is **availability in these contributed packs**,
+not UK-Biobank-style epidemiological prevalence. Tissue, study, platform, and
+disease confounding are expected.
+
+| Family | Unique GSM / studies | Role | Reason |
+|--------|---------------------:|------|--------|
+| Age | 8,374 / 143 | Core regression | Strongest broadly supported continuous task |
+| Tissue | 5,323 / 258 | Core after ontology | 72 raw labels too fragmented; coarse + conditional fine heads |
+| BMI | 2,070 / 25 | Secondary core | If age/tissue-adjusted ranges exist in several studies |
+| Sex | 2,978 / 161 | Downweighted aux/QC | Easy; may over-use sex chromosomes vs general burden |
+| Disease | 12,218 / 209 | Later multi-label | ~36.6% of rows labeled; missing is unknown, not control |
+| Cancer | 10,101 / 225 | Within-tissue case/control | Pan-cancer largely learns tissue/study |
+| Brain | 1,997 / 40 | Conditional fine-tissue | Only among brain samples |
+| Blood | 3,402 / 161 | Do **not** use `cell_component` pack-wide | ~1.1% populated; often compositions |
+| Ancestry | 1,380 / 21 | Fairness / domain eval | Not a default biological burden objective |
+
+### Census fields (7A refresh follow-on)
+
+For every harmonized phenotype:
+
+- unique GSMs, rows, studies, platforms, tissues;
+- label missingness and conflicts;
+- cases and documented controls;
+- label support by study and platform;
+- age/BMI ranges within each study;
+- cross-pack memberships;
+- donor/replicate information;
+- predictability from study/platform/tissue metadata alone;
+- eligibility as core, auxiliary, or evaluation-only.
+
+## Defects still in code (7B/7C — do not retrain v0.1)
+
+| Pri | Problem | Consequence |
+|-----|---------|-------------|
+| P0 | Disease/cancer keyed by GSM; SQL one sample–phenotype row | Silent multi-label overwrite |
+| P0 | One platform map; merged manifests hard-coded HM450 | EPIC/EPICv2 provenance wrong |
+| P0 | Dense RAM then Zarr | Disease/cancer peak memory |
+| P0 | Lexicographic first probe per locus | EPICv2 replicates discarded |
+| P0 | Pack “checksums” = filename/size | Not content hashes (`hub_pack.py`) |
+| P0 | No epoch shuffle; pack/study order | Homogeneous task/study batches |
+| P0 | `batch_token_budget` unused | Ragged CpG counts ignored |
+| P0 | Split balances sample count only | No class/task/age/platform/donor constraints |
+| P1 | Age/sex `MBS × present`; tissue centers 0.5 | Inconsistent missing-gene leakage |
+| P1 | Mapped loci without CpGPT dropped; residual zeros, no flag | Static-feature availability selects |
+| P1 | Configured macro-F1 / balanced acc / correlations not emitted | Accuracy/MAE insufficient for selection |
+| P1 | Flat vs hier different width/GELU/dropout/LN | Not a topology-only comparison |
+| P1 | No CpG normalization channel | Only age-target standardization is fold-fitted |
+
+v0.1 residual-only: ~108k loci → one scalar; eval-time mask of jointly trained
+branch; **first 512 ordered** holdout samples. Near-chance is not evidence
+noncoding CpGs lack signal. Flat vs hier (tissue 0.666 vs 0.598; age MAE 22.0 vs
+27.8 y) only shows hierarchical-v0.1 is currently weaker.
 
 ## Milestone briefs
 
 ### 7A — Harmonized release + census
 
-- Populate DuckDB from existing Parquet / manifests / registry.
-- Cross-pack unique GSM (nine-pack row sum ≠ unique N).
-- Conflict and overlap reports under `reports/inspection/`.
-- Deliver `deepmat-data-v1/` + `release_manifest.json`.
+Shipped (`deepmat-data-v1/`). Refresh follow-on: remaining census fields above
+(metadata-only predictability, within-study age/BMI ranges, donor/replicate).
+Do not wait on EWAS_db completeness.
 
-### 7B — Complete matrices
+### 7B — Complete matrices (current coding gate)
 
-- Convert disease, cancer, blood, brain, BMI, ancestry.
-- Add BMI/ancestry to `_PACK_ZIP_NAME` / `_PACK_TXT_NAME`.
-- Chunked probe-chunk write to Zarr (avoid 18–22 GB dense stack).
-- Probe collapse: mean or robust mean; record contributing probe IDs (replace
-  lexicographic-first policy for EPICv2 duplicates).
-- Multi-label disease/cancer via long-form observations (no `dict[gsm]=row`
-  overwrite).
+- Convert disease, cancer, blood, brain, BMI, ancestry; add BMI/ancestry maps.
+- Stream probe chunks **directly** to compressed Zarr (no full dense RAM).
+- Per-sample platform provenance (not one HM450 map for merged unions).
+- Probe collapse: mean/robust mean; record all contributing probe IDs.
+- True **content** checksums (not filename/size).
+- Multi-label long-form (no `dict[gsm]=row`).
+- Overlapping GSM betas: verify concordance; do not silently take the first pack.
+- Deduplicated union or virtual multi-store index.
 
-### 7C — Architecture
+### 7C — Trainer then graph/model v2
 
-- Center all phenotype-head inputs consistently (contract already in
-  `ARCHITECTURE.md`; age/sex currently diverge).
-- Graph v2: non-gene regulatory regions + adaptive CpG-count tiles.
-- Model paths: gene MBS; RBS; TBS; direct CpG (sparse linear baseline).
-- `static_present` and observation flags in features.
-- Constraint-aware grouped splitter (no study/donor/replicate leakage; class
-  coverage; age-quantile / platform / task-mask balance).
-- Task-balanced sampling and loss weighting; trait-specific fold-safe seed
-  masks; token-budget sampler; wire macro-F1, balanced accuracy, correlations,
-  calibration into run reports.
-- Parameter-matched flat vs hierarchical when comparing topology.
+Fix the trainer **before** expanding topology:
 
-### 7D — Normalization
+- deterministic epoch shuffle; token-budget batch sampler; task/study-balanced
+  sampling;
+- centered age/tissue/sex heads;
+- constraint-aware grouped splits; real donor/replicate identifiers;
+- emit macro-F1, balanced accuracy, RMSE, R², correlations, AUROC/AUPRC,
+  calibration; study/platform/tissue-stratified reports;
+- static-only, coverage-only, **metadata-only**, and label-permutation controls;
+- keep mapped loci missing CpGPT with `static_present=False` (do not drop);
+- residual zeros must carry a missingness flag;
+- **score identifiability** ([ADR 0008](../adr/0008-score-identifiability.md)):
+  orientation anchor (hyper/hypo channels or magnitude vs |robust z|) before
+  any OOF average;
+- graph v2: MBS, RBS, TBS; first direct branch
+  \(D_k(s)=\sum_{c \in \mathrm{obs}(s)} w_{k,c} z_{s,c}\) with elastic-net /
+  group sparsity, minimum cross-study coverage, centered fold-normalized
+  values; later \(w_{k,c}\) from static embeddings;
+- independently trained branch ablations on identical folds;
+- parameter-matched flat vs hierarchical.
 
-Required:
+deepMAT remains a **sample×gene predictive representation**, not a methylation
+constraint / LOEUF analogue (ADR 0008).
 
-```text
-A. beta + M only
-B. beta + M + robust train-fold per-CpG deviation
+### 7D — Normalization (do not overwrite Hub GMQN betas)
+
+Hub profiles are already GMQN-normalized. Canonical betas stay GMQN.
+
+**Required Level 1** — study-balanced robust reference **inside each training
+fold**:
+
+```math
+\mu_c=\operatorname{median}_{s \in \mathrm{train}}(M_{s,c}),\qquad
+\sigma_c=1.4826\,\operatorname{MAD}_{s \in \mathrm{train}}(M_{s,c})
 ```
 
-Document (train later / §8 until architecture selected):
-
-```text
-C. B + learned ProbeNormalizer
-D. C + masked autoencoder pretraining
+```math
+z_{s,c}=\frac{M_{s,c}-\mu_c}{\max(\sigma_c,\sigma_{\min})}
 ```
 
-All fold statistics fitted on training studies only. Select by held-out
-phenotype performance and stability—not reconstruction loss alone.
+CpG input:
+
+```text
+beta
+M-value
+robust fold-fitted z
+static CpGPT features
+static_present
+observed / value_valid
+norm_present
+probe design and regulatory annotations
+```
+
+Persist per-fold \(\mu,\sigma\) and hashes. Novel loci: `z=0` and
+`norm_present=False` — **do not discard**.
+
+**Optional Level 2:** `corrected = input + bounded_shared_MLP(input, static)`;
+LayerNorm or RMSNorm, not BatchNorm; adapter, not canonical overwrite.
+
+**Optional Level 3:** masked set AE only if trained per training fold; explicit
+missing/platform-downsample masks; no val/test studies in reconstruction;
+select on held-out phenotype, replicate concordance, and cross-platform
+stability — **not** reconstruction loss. Vanilla AE reconstructs
+study/platform artifacts well; it is not the first normalizer.
+
+Compare A (beta+M) vs B (A + robust z) on identical folds.
 
 ### 7E — Development CV
 
@@ -203,31 +292,36 @@ phenotype performance and stability—not reconstruction loss alone.
 2 random restarts
 ```
 
-Independently trained arms:
+Independently trained (minimum):
 
 ```text
-flat gene-only
-hierarchical gene-only
-gene + direct noncoding
+gene/region mean and elastic-net baselines
+parameter-matched flat gene-only
+parameter-matched hierarchical gene-only
+gene + direct CpG
 gene + RBS + TBS + direct
-each with / without robust Level-1 channels
+each neural arm with / without Level-1 robust z
+CpGPT inclusion as a separate ablation
 ```
 
-Winner feeds Milestone 7 (5×6).
+Winner feeds Milestone 7 (5×6). Eval-time branch masking is not sufficient.
 
 ### Milestone 7 — Final OOF
 
 After architecture selection: 5 outer folds, up to 6 restarts; fold-specific
-normalization and seed selection; ensemble held-out predictions. Persist
-sample×gene OOF MBS, optional RBS/TBS/direct contributions, phenotype preds,
-fold assignments, presence/coverage masks.
+normalization and seed selection; **orientation-aligned** ensemble (ADR 0008).
+Persist sample×gene OOF MBS, optional RBS/TBS/direct, phenotype preds, fold
+assignments, presence/coverage/norm masks, complete model lineage.
 
 ## Non-goals / deferred (§8)
 
 - ClickHouse; full TileDB migration; PROTRIDER AE as default; ComBat-met for
-  Hub GMQN; REGENIE; episignatures; dynamic foundation-model tokens.
+  Hub GMQN; episignatures; dynamic foundation-model tokens;
+  **methylation constraint / LOEUF-like scores**.
+- GWAS-style REGENIE / BGEN pseudodosage export (not applicable to methylation).
 - Overwriting frozen flat/hier v0.1 runs or `deepmat-data-age-tissue-sex-v1`.
 - Advertising planned catalog CLI before implementation.
+- Retraining v0.1 or launching 7E/7 before 7B–7D.
 
 ## Open questions
 

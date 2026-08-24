@@ -392,9 +392,13 @@ gene_index.parquet
 score_manifest.json
 ```
 
-The score manifest records fold and restart membership. Every sample must be
-traceable to models that excluded its study and replicate group. Milestone **7**
-(after 7A–7E) is the OOF export gate.
+The score manifest records fold and restart membership, **score polarity /
+orientation anchor** ([ADR 0008](adr/0008-score-identifiability.md)), and
+fold-fitted normalizer hashes. Every sample must be traceable to models that
+excluded its study and replicate group. Milestone **7** (after 7A–7E) is the
+OOF export gate. Averaging unaligned `MBS` and `1−MBS` folds is undefined.
+OOF MBS is a **predictive** sample×gene representation, not a constraint or
+LOEUF analogue.
 
 ## Trait eligibility (7A)
 

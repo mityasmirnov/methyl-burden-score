@@ -11,7 +11,7 @@ Adapted from [awesome-cursorrules anti-overengineering](https://github.com/Patri
 - Prefer extending existing modules (`mbs.annotation`, `mbs.matrix`, CLI) over
   new frameworks, services, or abstraction layers.
 - Follow Stage 0 order in `docs/TODO_PIPELINE.md`; do not jump to optional /
-  deferred layers (ComBat, REGENIE, PROTRIDER/AE as default, ClickHouse,
+  deferred layers (ComBat, PROTRIDER/AE as default, ClickHouse,
   TileDB migration, etc.). Graph-layer cCRE/tiles for RBS/TBS are Milestone
   **7C**, not §8 product-surface work.
 - Scaffolding, stubs, or download scripts alone do not complete a milestone.
