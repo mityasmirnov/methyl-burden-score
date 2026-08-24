@@ -141,8 +141,42 @@ Authoritative on-disk snapshot:
 | All nine Hub **sample-info** zips + Parquet | **Complete** |
 | Atlas batch TSVs | **Complete** (~0.26 GiB) |
 | EPICv2 manifests | **Complete** |
-| `EWAS_db/` All Data | **In progress** — ~1049 / 1989 study dirs (~990 GiB under `ewas_datahub/`) |
+| `EWAS_db/` All Data | **In progress** — see ingest counts below (~990 GiB betas under `ewas_datahub/`) |
 | Host disk | `/data` ~2 T free at last check — packs are fine; watch space as `EWAS_db` grows |
+
+### EWAS_db ingest counts (what the release manifest reports)
+
+`mbs catalog refresh-release` does a **shallow directory listing** of
+`$MBS_DATA_ROOT/raw/ewas_datahub/EWAS_db/` (no beta reads, no per-file content
+hashes). Snapshot from the 2026-08-24 `deepmat-data-v1` refresh:
+
+| Field | Value | Meaning |
+|-------|-------|---------|
+| `n_local_studies` | **883** | Study dirs under `EWAS_db/` that contain at least one `*.txt` GSM beta file |
+| `n_local_gsm` | **87 153** | Total `*.txt` GSM files found across those studies |
+| `advertised_n` | **1989** | Study count advertised by the remote EWAS_db index (or the last successful `--fetch-remote-index` fetch; default constant is 1989) |
+| `mirror_complete` | **false** | `n_local_studies < advertised_n` — All-Data mirror is still downloading |
+
+Empty study dirs (wget not started or not finished) are skipped and do **not**
+count toward `n_local_studies`. More study dirs may exist on disk than 883; only
+dirs with `GSM*.txt` are ingested. Hub nine-pack phenotypes are a separate SoT
+and are already complete — EWAS_db completeness is **not** a Milestone 7A/7B gate
+([ADR 0007](adr/0007-crossfit-prerequisites.md)).
+
+After additional `EWAS_db/{GSE}/` study dirs appear (or in-progress downloads finish),
+re-run the versioned catalog release — it rescans the tree and upserts studies
+without rebuilding Hub phenotypes from scratch:
+
+```bash
+uv run mbs catalog refresh-release
+# or: make catalog-refresh-release
+uv run mbs catalog validate-release
+uv run mbs catalog phenotype-census
+```
+
+Release layout: `$MBS_DATA_ROOT/canonical/releases/deepmat-data-v1/`.
+Census reports: `reports/inspection/deepmat_data_v1/`.
+See [`plans/milestone-7a-harmonized-release.md`](plans/milestone-7a-harmonized-release.md).
 
 Disease resume helper (size + EOCD gate; survives refused / bogus 416):
 

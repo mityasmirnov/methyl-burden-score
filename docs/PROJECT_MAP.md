@@ -44,17 +44,22 @@ src/mbs/registry/        phenotype / source dataset registry (Milestone 5b)
 src/mbs/evaluation/      metrics + study-grouped split helpers (Milestone 5b)
 ```
 
-Milestones **1–6** are done (flat + hierarchical v0.1 on age/tissue/sex union).
-**Current gate: 7A** (harmonized release + phenotype census). Final OOF
+Milestones **1–6** and **7A** are done (flat + hierarchical v0.1 on
+age/tissue/sex union; `deepmat-data-v1` catalog + census).
+**Current gate: 7B** (complete nine-pack canonical matrices). Final OOF
 cross-fitting is Milestone **7**, blocked until 7A–7E — see
-[`docs/plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+[`TODO_PIPELINE.md`](TODO_PIPELINE.md),
+[ADR 0007](adr/0007-crossfit-prerequisites.md), and
+[`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
 ## SQL and schemas
 
 ```text
 sql/001_schema.sql                       catalog tables
 sql/002_provenance_lanes.sql             provenance lanes
-sql/010_views.sql                        inspection views (census views in 7A)
+sql/010_views.sql                        inspection views
+sql/011_census_views.sql                 phenotype census / eligibility views (7A)
+schemas/release_manifest.schema.json     versioned data release manifest (7A)
 schemas/matrix_manifest.schema.json      canonical matrix manifest
 schemas/graph_manifest.schema.json       annotation graph manifest
 schemas/static_feature_manifest.schema.json static feature manifest
@@ -146,6 +151,10 @@ The host Docker daemon must already use `/data/docker` before building large ima
 mbs doctor                 validate /data paths and environment
 mbs catalog init           create dirs + apply sql/*.sql schema
 mbs catalog build          rebuild catalog with explicit paths
+mbs catalog refresh-release  populate deepmat-data-v1 (+ EWAS_db upsert)
+mbs catalog validate-release validate release manifest + catalog
+mbs catalog phenotype-census write phenotype census report
+mbs catalog trait-eligibility write trait eligibility report
 mbs inspect source         shallow raw-source inventory report
 mbs inspect cpgcorpus-gpl  GSE/GPL layout, alignment, beta QC, metadata
 mbs inspect ewas-metadata  Atlas small tables + Hub sample-info structure
@@ -159,19 +168,8 @@ mbs monitor                live Rich TUI for a run (metrics.jsonl + GPU + ckpts)
 mbs phenotypes build-multitask-table   Hub age+tissue(+sex) phenotype table
 ```
 
-Planned (Milestone **7A** — not implemented yet; do not advertise as working):
-
-```text
-mbs catalog refresh-release
-mbs catalog validate-release
-mbs catalog phenotype-census
-mbs catalog trait-eligibility
-```
-
-## Planned next modules
-
-Recommended implementation order follows [`TODO_PIPELINE.md`](TODO_PIPELINE.md)
-7A→7E→7. Do not create empty placeholders. Add one module when its contract and
+Milestone **7B+** work follows [`TODO_PIPELINE.md`](TODO_PIPELINE.md)
+(7A→7E→7). Do not create empty placeholders. Add one module when its contract and
 tests are ready.
 
 ## Coding-agent task boundary

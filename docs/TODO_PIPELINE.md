@@ -10,12 +10,12 @@ Status values: `done` | `in_progress` | `pending` | `deferred`
 True next milestone after bootstrap:
 
 > … → max-N flat age/tissue/sex (5d — **done**) → hierarchical residual
-> baseline (6 — **done**) → **harmonized release + phenotype census (7A)** →
-> nine-pack matrices (7B) → architecture corrections (7C) → fold-fitted
+> baseline (6 — **done**) → harmonized release + phenotype census (7A — **done**) →
+> **nine-pack matrices (7B)** → architecture corrections (7C) → fold-fitted
 > normalization (7D) → development CV (7E) → **final OOF cross-fitting (7)** →
 > one score matrix.
 
-**Current gate:** Milestone **7A**. Prerequisites through 6 are `done`.
+**Current gate:** Milestone **7B**. Prerequisites through 7A are `done`.
 Final Milestone **7** (5-fold × ≤6-restart OOF) is **blocked until 7A–7E**
 ([ADR 0007](adr/0007-crossfit-prerequisites.md)). Programme brief:
 [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
@@ -25,8 +25,9 @@ Frozen references (do not overwrite): **deepMAT-flat-v0.1** /
 v0.1 is a valid baseline, not the preferred phenotype model.
 
 Hub **disease** profile zip is complete (2026-08-11). `EWAS_db` All-Data
-mirror remains in progress (~53% of study dirs) and is **not** a gate for
-7A–7E or Milestone 7.
+mirror remains in progress (~883 studies with GSM files / 1989 advertised) and is
+**not** a gate for 7B–7E or Milestone 7; re-run `mbs catalog refresh-release`
+as more `EWAS_db/{GSE}/` dirs arrive.
 
 Primary open data source going forward: **EWAS Data Hub**
 ([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
@@ -103,6 +104,11 @@ cd /data/projects/methyl-burden-score
 source scripts/activate_data_environment.sh
 uv run mbs doctor --create-directories
 uv run mbs catalog init
+uv run mbs catalog refresh-release
+uv run mbs catalog validate-release
+uv run mbs catalog phenotype-census
+uv run mbs catalog trait-eligibility
+# or: make catalog-refresh-release
 uv run mbs inspect source --source-id cpgcorpus
 uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
 uv run mbs inspect ewas-metadata
@@ -164,7 +170,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Note:** Primary ongoing open source is EWAS Data Hub (ADR 0002). This
   milestone’s CpGCorpus evidence stands; do not re-open milestone 1 to switch
   sources.
-- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
+- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
 
 ---
 
@@ -198,7 +204,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
     Stage 0 region taxonomy (not the full CapsNet model).
   Convert or export needed tables into `$MBS_DATA_ROOT/canonical/annotations`
   (or graphs); keep bulky vendor blobs out of the Python runtime path.
-- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
+- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
 
 ---
 
@@ -220,7 +226,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `tests/unit/test_static_features.py`. Build plan:
   [`plans/milestone-3-static-locus-features.md`](plans/milestone-3-static-locus-features.md).
 - **Depends on:** (2) locus registry.
-- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
+- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
 
 ---
 
@@ -245,7 +251,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `make download-ewas-study STUDY=GSE35069`. Unit tests:
   `tests/unit/test_matrix_store.py`.
 - **Depends on:** (1), (2).
-- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
+- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
 
 ---
 
@@ -267,7 +273,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `last.pt`, checksums). Unit tests: `tests/unit/test_training_flat.py`. Plan:
   [`plans/milestone-5-flat-deeprvat-baseline.md`](plans/milestone-5-flat-deeprvat-baseline.md).
 - **Depends on:** (4). Model module scaffolding alone is not sufficient.
-- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
+- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
 
 ---
 
@@ -291,7 +297,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   [`plans/milestone-5b-phenotype-registry-eval.md`](plans/milestone-5b-phenotype-registry-eval.md);
   [ADR 0003](adr/0003-milestone-5b-phenotype-registry.md).
 - **Depends on:** (5).
-- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
+- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
 
 ---
 
@@ -379,7 +385,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Optional follow-ons:** masked disease/cancer aux heads; blood/brain as
   **domain aux** after ontology; shared-class tissue holdouts.
 - **Depends on:** (5b), (5b′), (5b″) — all `done`.
-- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
+- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
 
 ---
 
@@ -406,7 +412,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `scripts/write_stage0_5d_report.py`.
 - **Depends on:** (5c).
 - **Plan:** [`plans/milestone-5d-max-n-flat-baseline.md`](plans/milestone-5d-max-n-flat-baseline.md).
-- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
+- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
 - **Freeze name:** `deepMAT-flat-v0.1` (do not overwrite this run).
 
 ---
@@ -434,13 +440,13 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   ([ADR 0006](adr/0006-multipath-noncoding-scores.md)).
 - **Freeze name:** `deepMAT-hierarchical-v0.1` (do not overwrite; not the
   preferred phenotype model vs flat v0.1).
-- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
+- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
 
 ---
 
 ## 7A. Harmonized data release and phenotype census
 
-- **Status:** `pending` (**current gate**)
+- **Status:** `done`
 - **Done when:**
   - Versioned release `$MBS_DATA_ROOT/canonical/releases/deepmat-data-v1/` with
     `release_manifest.json` (source checksums, retrieval dates, preprocessing,
@@ -454,13 +460,27 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
     platforms, phenotype prevalence, pack overlap, label conflicts, confounding
   - `trait_eligibility` table with initial cutoffs from
     [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
-  - Planned CLI (implement, then document): `mbs catalog refresh-release`,
-    `validate-release`, `phenotype-census`, `trait-eligibility`
+  - CLI: `mbs catalog refresh-release`, `validate-release`, `phenotype-census`,
+    `trait-eligibility`
+- **Evidence:** Release
+  `$MBS_DATA_ROOT/canonical/releases/deepmat-data-v1/` (schema-valid
+  `release_manifest.json`, populated `catalog/catalog.duckdb` +
+  `catalog/tables/*.parquet`, phenotype long-form, matrix pointers, ingested
+  5d `split.json`). Real refresh 2026-08-24: **116 113** unique GSM,
+  **1 284** studies, **216 476** phenotype rows; EWAS_db listing **883** local
+  studies / **87 153** GSM files (`mirror_complete: false`, advertised 1989).
+  Census + eligibility:
+  `reports/inspection/deepmat_data_v1/`. Unit tests:
+  `tests/unit/test_catalog_release.py`. Plan:
+  [`plans/milestone-7a-harmonized-release.md`](plans/milestone-7a-harmonized-release.md).
 - **Depends on:** (6); EWAS_db mirror **not** required.
-- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md);
+- **Plan:** [`plans/milestone-7a-harmonized-release.md`](plans/milestone-7a-harmonized-release.md);
+  [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md);
   [ADR 0005](adr/0005-catalog-matrix-independence.md),
   [ADR 0007](adr/0007-crossfit-prerequisites.md).
-- **Next action:** Start coding 7A while EWAS_db download continues.
+- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
+  Re-run `mbs catalog refresh-release` (or `make catalog-refresh-release`) whenever
+  more `EWAS_db` study dirs finish downloading.
 
 ---
 

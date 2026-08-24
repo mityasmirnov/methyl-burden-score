@@ -54,3 +54,6 @@ INSERT OR REPLACE INTO provenance_lane VALUES
 
 -- Existing catalogs created before source_system existed.
 ALTER TABLE source_release ADD COLUMN IF NOT EXISTS source_system VARCHAR;
+
+-- Milestone 7A columns for catalogs created before retrieved_at existed.
+ALTER TABLE study ADD COLUMN IF NOT EXISTS retrieved_at TIMESTAMPTZ;

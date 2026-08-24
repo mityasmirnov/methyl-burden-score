@@ -1,0 +1,409 @@
+{
+  "ewas_db_ingest": [
+    {
+      "n_assay_files": 78750,
+      "n_samples": 77817,
+      "n_studies": 814,
+      "source_release_id": "ewas-datahub-db-v1",
+      "source_system": "ewas_datahub_db",
+      "total_bytes": 576822281794771.0
+    }
+  ],
+  "generated_at": "2026-08-24T12:49:22Z",
+  "label_conflicts_head": [],
+  "overlap_by_n_families": [
+    {
+      "n_families": 1,
+      "n_samples": 24825
+    },
+    {
+      "n_families": 2,
+      "n_samples": 5729
+    },
+    {
+      "n_families": 3,
+      "n_samples": 3177
+    },
+    {
+      "n_families": 4,
+      "n_samples": 486
+    },
+    {
+      "n_families": 5,
+      "n_samples": 17
+    }
+  ],
+  "pack_membership": [
+    {
+      "n_rows": 8374,
+      "n_unique_gsm": 8374,
+      "phenotype_family": "age"
+    },
+    {
+      "n_rows": 1380,
+      "n_unique_gsm": 1380,
+      "phenotype_family": "ancestry"
+    },
+    {
+      "n_rows": 3402,
+      "n_unique_gsm": 3402,
+      "phenotype_family": "blood"
+    },
+    {
+      "n_rows": 2070,
+      "n_unique_gsm": 2070,
+      "phenotype_family": "bmi"
+    },
+    {
+      "n_rows": 1997,
+      "n_unique_gsm": 1997,
+      "phenotype_family": "brain"
+    },
+    {
+      "n_rows": 10101,
+      "n_unique_gsm": 10101,
+      "phenotype_family": "cancer"
+    },
+    {
+      "n_rows": 12218,
+      "n_unique_gsm": 12218,
+      "phenotype_family": "disease"
+    },
+    {
+      "n_rows": 2978,
+      "n_unique_gsm": 2978,
+      "phenotype_family": "sex"
+    },
+    {
+      "n_rows": 5323,
+      "n_unique_gsm": 5323,
+      "phenotype_family": "tissue"
+    }
+  ],
+  "pack_row_sum": 47843,
+  "phenotype_prevalence": [
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 8374,
+      "n_rows": 8374,
+      "n_samples": 8374,
+      "phenotype_id": "age",
+      "source_family": "age"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 1205,
+      "n_rows": 1380,
+      "n_samples": 1380,
+      "phenotype_id": "age",
+      "source_family": "ancestry"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 1872,
+      "n_rows": 3402,
+      "n_samples": 3402,
+      "phenotype_id": "age",
+      "source_family": "blood"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 2068,
+      "n_rows": 2070,
+      "n_samples": 2070,
+      "phenotype_id": "age",
+      "source_family": "bmi"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 1738,
+      "n_rows": 1997,
+      "n_samples": 1997,
+      "phenotype_id": "age",
+      "source_family": "brain"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 7717,
+      "n_rows": 10101,
+      "n_samples": 10101,
+      "phenotype_id": "age",
+      "source_family": "cancer"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 9373,
+      "n_rows": 12218,
+      "n_samples": 12218,
+      "phenotype_id": "age",
+      "source_family": "disease"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 1617,
+      "n_rows": 2978,
+      "n_samples": 2978,
+      "phenotype_id": "age",
+      "source_family": "sex"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 2376,
+      "n_rows": 5323,
+      "n_samples": 5323,
+      "phenotype_id": "age",
+      "source_family": "tissue"
+    },
+    {
+      "n_categorical_levels": 16,
+      "n_observed": 1380,
+      "n_rows": 1380,
+      "n_samples": 1380,
+      "phenotype_id": "ancestry",
+      "source_family": "ancestry"
+    },
+    {
+      "n_categorical_levels": 38,
+      "n_observed": 38,
+      "n_rows": 3402,
+      "n_samples": 3402,
+      "phenotype_id": "blood",
+      "source_family": "blood"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 879,
+      "n_rows": 8374,
+      "n_samples": 8374,
+      "phenotype_id": "bmi",
+      "source_family": "age"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 213,
+      "n_rows": 1380,
+      "n_samples": 1380,
+      "phenotype_id": "bmi",
+      "source_family": "ancestry"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 44,
+      "n_rows": 3402,
+      "n_samples": 3402,
+      "phenotype_id": "bmi",
+      "source_family": "blood"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 2070,
+      "n_rows": 2070,
+      "n_samples": 2070,
+      "phenotype_id": "bmi",
+      "source_family": "bmi"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 1702,
+      "n_rows": 10101,
+      "n_samples": 10101,
+      "phenotype_id": "bmi",
+      "source_family": "cancer"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 305,
+      "n_rows": 12218,
+      "n_samples": 12218,
+      "phenotype_id": "bmi",
+      "source_family": "disease"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 440,
+      "n_rows": 2978,
+      "n_samples": 2978,
+      "phenotype_id": "bmi",
+      "source_family": "sex"
+    },
+    {
+      "n_categorical_levels": 0,
+      "n_observed": 705,
+      "n_rows": 5323,
+      "n_samples": 5323,
+      "phenotype_id": "bmi",
+      "source_family": "tissue"
+    },
+    {
+      "n_categorical_levels": 41,
+      "n_observed": 1997,
+      "n_rows": 1997,
+      "n_samples": 1997,
+      "phenotype_id": "brain",
+      "source_family": "brain"
+    },
+    {
+      "n_categorical_levels": 43,
+      "n_observed": 8224,
+      "n_rows": 10101,
+      "n_samples": 10101,
+      "phenotype_id": "cancer",
+      "source_family": "cancer"
+    },
+    {
+      "n_categorical_levels": 30,
+      "n_observed": 5288,
+      "n_rows": 12218,
+      "n_samples": 12218,
+      "phenotype_id": "disease",
+      "source_family": "disease"
+    },
+    {
+      "n_categorical_levels": 2,
+      "n_observed": 8271,
+      "n_rows": 8374,
+      "n_samples": 8374,
+      "phenotype_id": "sex",
+      "source_family": "age"
+    },
+    {
+      "n_categorical_levels": 2,
+      "n_observed": 1380,
+      "n_rows": 1380,
+      "n_samples": 1380,
+      "phenotype_id": "sex",
+      "source_family": "ancestry"
+    },
+    {
+      "n_categorical_levels": 3,
+      "n_observed": 2478,
+      "n_rows": 3402,
+      "n_samples": 3402,
+      "phenotype_id": "sex",
+      "source_family": "blood"
+    },
+    {
+      "n_categorical_levels": 2,
+      "n_observed": 2070,
+      "n_rows": 2070,
+      "n_samples": 2070,
+      "phenotype_id": "sex",
+      "source_family": "bmi"
+    },
+    {
+      "n_categorical_levels": 2,
+      "n_observed": 1853,
+      "n_rows": 1997,
+      "n_samples": 1997,
+      "phenotype_id": "sex",
+      "source_family": "brain"
+    },
+    {
+      "n_categorical_levels": 2,
+      "n_observed": 8780,
+      "n_rows": 10101,
+      "n_samples": 10101,
+      "phenotype_id": "sex",
+      "source_family": "cancer"
+    },
+    {
+      "n_categorical_levels": 2,
+      "n_observed": 10968,
+      "n_rows": 12218,
+      "n_samples": 12218,
+      "phenotype_id": "sex",
+      "source_family": "disease"
+    },
+    {
+      "n_categorical_levels": 2,
+      "n_observed": 2978,
+      "n_rows": 2978,
+      "n_samples": 2978,
+      "phenotype_id": "sex",
+      "source_family": "sex"
+    },
+    {
+      "n_categorical_levels": 2,
+      "n_observed": 4293,
+      "n_rows": 5323,
+      "n_samples": 5323,
+      "phenotype_id": "sex",
+      "source_family": "tissue"
+    },
+    {
+      "n_categorical_levels": 21,
+      "n_observed": 8374,
+      "n_rows": 8374,
+      "n_samples": 8374,
+      "phenotype_id": "tissue",
+      "source_family": "age"
+    },
+    {
+      "n_categorical_levels": 1,
+      "n_observed": 1380,
+      "n_rows": 1380,
+      "n_samples": 1380,
+      "phenotype_id": "tissue",
+      "source_family": "ancestry"
+    },
+    {
+      "n_categorical_levels": 33,
+      "n_observed": 3402,
+      "n_rows": 3402,
+      "n_samples": 3402,
+      "phenotype_id": "tissue",
+      "source_family": "blood"
+    },
+    {
+      "n_categorical_levels": 11,
+      "n_observed": 2070,
+      "n_rows": 2070,
+      "n_samples": 2070,
+      "phenotype_id": "tissue",
+      "source_family": "bmi"
+    },
+    {
+      "n_categorical_levels": 101,
+      "n_observed": 10101,
+      "n_rows": 10101,
+      "n_samples": 10101,
+      "phenotype_id": "tissue",
+      "source_family": "cancer"
+    },
+    {
+      "n_categorical_levels": 50,
+      "n_observed": 12218,
+      "n_rows": 12218,
+      "n_samples": 12218,
+      "phenotype_id": "tissue",
+      "source_family": "disease"
+    },
+    {
+      "n_categorical_levels": 58,
+      "n_observed": 2978,
+      "n_rows": 2978,
+      "n_samples": 2978,
+      "phenotype_id": "tissue",
+      "source_family": "sex"
+    },
+    {
+      "n_categorical_levels": 72,
+      "n_observed": 5323,
+      "n_rows": 5323,
+      "n_samples": 5323,
+      "phenotype_id": "tissue",
+      "source_family": "tissue"
+    }
+  ],
+  "release_ewas_db": {
+    "advertised_n": 1989,
+    "mirror_complete": false,
+    "n_local_gsm": 87153,
+    "n_local_studies": 883,
+    "refresh_is_idempotent": true,
+    "remote_index_fetched": false,
+    "total_bytes": 989705136148
+  },
+  "unique_gsm": 116113,
+  "unique_vs_row_sum_note": "unique GSM must be compared to pack-row sum; overlap makes them unequal"
+}

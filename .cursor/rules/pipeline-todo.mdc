@@ -39,8 +39,8 @@ Keep Cursor session todos in sync (complete / cancel / start next).
 5c. Multitask shared encoder
 5d. Max-N flat age/tissue/sex
 6. Hierarchical region model
-7A. Harmonized data release + phenotype census (**current gate**)
-7B. Complete nine-pack canonical matrices
+7A. Harmonized data release + phenotype census (**done**)
+7B. Complete nine-pack canonical matrices (**current gate**)
 7C. Supervised architecture corrections (multi-path scores, splits, heads)
 7D. Fold-fitted Level-1 normalization
 7E. Development CV (architecture selection)
@@ -54,4 +54,5 @@ Programme brief:
 
 Before starting **5c**, read `docs/EWAS_METADATA.md` and
 `reports/inspection/ewas_metadata_structure/summary.md`.
-Before starting **7A**, read ADRs 0005–0007.
+Before starting **7B**, read ADRs 0005–0007 and the 7A release under
+`$MBS_DATA_ROOT/canonical/releases/deepmat-data-v1/`.

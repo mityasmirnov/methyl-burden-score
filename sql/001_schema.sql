@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS study (
     platform_id VARCHAR,
     processing_level VARCHAR,
     genome_build VARCHAR,
+    retrieved_at TIMESTAMPTZ,
     metadata_json JSON,
     FOREIGN KEY (source_release_id) REFERENCES source_release(source_release_id),
     FOREIGN KEY (platform_id) REFERENCES platform(platform_id)
@@ -79,9 +80,69 @@ CREATE TABLE IF NOT EXISTS sample_phenotype (
     phenotype_id VARCHAR NOT NULL,
     numeric_value DOUBLE,
     categorical_value VARCHAR,
+    label_status VARCHAR NOT NULL DEFAULT 'observed',
     is_observed BOOLEAN NOT NULL DEFAULT TRUE,
-    PRIMARY KEY (sample_id, phenotype_id),
+    source_family VARCHAR NOT NULL,
+    source_record_id VARCHAR,
+    ontology_id VARCHAR,
+    PRIMARY KEY (sample_id, phenotype_id, source_family),
     FOREIGN KEY (sample_id) REFERENCES sample(sample_id),
+    FOREIGN KEY (phenotype_id) REFERENCES phenotype(phenotype_id)
+);
+
+CREATE TABLE IF NOT EXISTS sample_source_membership (
+    sample_id VARCHAR NOT NULL,
+    source_release_id VARCHAR NOT NULL,
+    phenotype_family VARCHAR NOT NULL,
+    source_file VARCHAR,
+    source_row BIGINT,
+    matrix_id VARCHAR,
+    row_index INTEGER,
+    PRIMARY KEY (sample_id, source_release_id, phenotype_family),
+    FOREIGN KEY (sample_id) REFERENCES sample(sample_id),
+    FOREIGN KEY (source_release_id) REFERENCES source_release(source_release_id)
+);
+
+CREATE TABLE IF NOT EXISTS matrix_artifact (
+    matrix_id VARCHAR PRIMARY KEY,
+    path VARCHAR NOT NULL,
+    platform_id VARCHAR,
+    processing_level VARCHAR,
+    genome_build VARCHAR,
+    n_samples BIGINT,
+    n_loci BIGINT,
+    manifest_sha256 VARCHAR,
+    phenotype_family VARCHAR,
+    notes VARCHAR
+);
+
+CREATE TABLE IF NOT EXISTS matrix_sample (
+    matrix_id VARCHAR NOT NULL,
+    sample_id VARCHAR NOT NULL,
+    row_index INTEGER NOT NULL,
+    source_sample_id VARCHAR,
+    PRIMARY KEY (matrix_id, sample_id),
+    FOREIGN KEY (matrix_id) REFERENCES matrix_artifact(matrix_id),
+    FOREIGN KEY (sample_id) REFERENCES sample(sample_id)
+);
+
+CREATE TABLE IF NOT EXISTS trait_eligibility (
+    phenotype_id VARCHAR NOT NULL,
+    phenotype_family VARCHAR NOT NULL,
+    task_type VARCHAR NOT NULL,
+    n_samples BIGINT,
+    n_cases BIGINT,
+    n_controls BIGINT,
+    n_unknown BIGINT,
+    prevalence DOUBLE,
+    n_studies BIGINT,
+    n_platforms BIGINT,
+    n_tissues BIGINT,
+    eligible_core_task BOOLEAN NOT NULL DEFAULT FALSE,
+    eligible_auxiliary_task BOOLEAN NOT NULL DEFAULT FALSE,
+    eligible_external_evaluation BOOLEAN NOT NULL DEFAULT FALSE,
+    exclusion_reason VARCHAR,
+    PRIMARY KEY (phenotype_id, phenotype_family),
     FOREIGN KEY (phenotype_id) REFERENCES phenotype(phenotype_id)
 );
 

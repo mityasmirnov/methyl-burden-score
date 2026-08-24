@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://methyl-burden-score.local/schemas/release_manifest.schema.json",
+  "title": "MBS versioned data release manifest",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "artifact_version",
+    "release_id",
+    "genome_build",
+    "created_at",
+    "git_commit",
+    "phenotype_families",
+    "dedup_policy",
+    "preprocessing",
+    "probe_universe",
+    "graph_id",
+    "static_feature_set_id",
+    "source_checksums",
+    "ewas_db"
+  ],
+  "properties": {
+    "artifact_version": {"type": "string", "const": "release-manifest-v1"},
+    "release_id": {"type": "string", "minLength": 1},
+    "genome_build": {"const": "GRCh38"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "git_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "phenotype_families": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "dedup_policy": {"type": "string", "minLength": 1},
+    "preprocessing": {"type": "object"},
+    "probe_universe": {"type": "string", "minLength": 1},
+    "graph_id": {"type": "string", "minLength": 1},
+    "static_feature_set_id": {"type": "string", "minLength": 1},
+    "source_checksums": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {"type": "string"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "role": {"type": "string"},
+          "byte_size": {"type": "integer", "minimum": 0},
+          "sha256_note": {"type": "string"}
+        }
+      }
+    },
+    "ewas_db": {
+      "type": "object",
+      "required": [
+        "n_local_studies",
+        "n_local_gsm",
+        "advertised_n",
+        "mirror_complete",
+        "refresh_is_idempotent"
+      ],
+      "properties": {
+        "n_local_studies": {"type": "integer", "minimum": 0},
+        "n_local_gsm": {"type": "integer", "minimum": 0},
+        "advertised_n": {"type": "integer", "minimum": 0},
+        "mirror_complete": {"type": "boolean"},
+        "refresh_is_idempotent": {"type": "boolean"},
+        "total_bytes": {"type": "integer", "minimum": 0}
+      }
+    },
+    "catalog_path": {"type": "string"},
+    "notes": {"type": "string"}
+  }
+}

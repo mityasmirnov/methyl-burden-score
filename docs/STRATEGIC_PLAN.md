@@ -59,8 +59,8 @@ REGENIE as defaults. The critical path is:
 5. Flat DeepRVAT-style max-pooling baseline.
 5b–5d. Phenotype registry, Hub pack matrices, multitask, max-N age/tissue/sex.
 6. Hierarchical region model (frozen v0.1 residual baseline).
-7A. Harmonized data release + phenotype census (**current gate**).
-7B. Complete nine-pack canonical matrices.
+7A. Harmonized data release + phenotype census (**done**).
+7B. Complete nine-pack canonical matrices (**current gate**).
 7C. Architecture corrections (multi-path scores, splits, heads).
 7D. Fold-fitted Level-1 normalization.
 7E. Development CV (architecture selection).

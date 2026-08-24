@@ -49,7 +49,8 @@ Launching that expensive protocol on the current architecture would lock in:
 
 ## Consequences
 
-- [`TODO_PIPELINE.md`](../TODO_PIPELINE.md) current gate is **7A**.
+- [`TODO_PIPELINE.md`](../TODO_PIPELINE.md) orders **7A → 7B → 7C → 7D → 7E → 7**.
+  After 7A lands, the current gate is **7B**.
 - Build brief:
   [`plans/post-v0-scientific-programme.md`](../plans/post-v0-scientific-programme.md).
 - Storage / catalog: [ADR 0005](0005-catalog-matrix-independence.md).

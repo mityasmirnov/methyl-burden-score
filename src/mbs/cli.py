@@ -27,6 +27,14 @@ from mbs.matrix.convert import DEFAULT_MATRIX_ID, convert_ewas_db_study
 from mbs.matrix.hub_pack import convert_hub_pack_subset, study_ids_from_sample_info
 from mbs.matrix.multitask_merge import merge_age_tissue_matrices
 from mbs.paths import DataPaths, PathPolicyError
+from mbs.release import (
+    RELEASE_ID,
+    refresh_release,
+    release_paths,
+    validate_release,
+    write_phenotype_census_report,
+    write_trait_eligibility_report,
+)
 from mbs.static_features.export_cpgpt import DEFAULT_FEATURE_SET_ID, export_cpgpt_adapter
 from mbs.training.hier_loop import train_hierarchical_baseline
 from mbs.training.loop import load_experiment_config, train_flat_baseline
@@ -165,6 +173,144 @@ def catalog_build(
         read_only=read_only,
     )
     console.print_json(json.dumps(result))
+
+
+@catalog_app.command("refresh-release")
+def catalog_refresh_release(
+    release_id: Annotated[
+        str,
+        typer.Option(help="Versioned release id under canonical/releases/"),
+    ] = RELEASE_ID,
+    fetch_remote_index: Annotated[
+        bool,
+        typer.Option(
+            "--fetch-remote-index/--no-fetch-remote-index",
+            help="Optionally GET EWAS_db HTML index for advertised study count",
+        ),
+    ] = False,
+    report_dir: Annotated[
+        Path | None,
+        typer.Option(
+            help="Optional report dir (default: reports/inspection/{release_id})",
+        ),
+    ] = None,
+) -> None:
+    """Populate deepmat-data-v1 (or another release) from Hub Parquet + EWAS_db listing."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    resolved_report = (
+        report_dir.resolve()
+        if report_dir is not None
+        else paths.project_root / "reports" / "inspection" / release_id
+    )
+    _require_under_data(resolved_report, "report_dir")
+    result = refresh_release(
+        paths=paths,
+        release_id=release_id,
+        fetch_remote_index=fetch_remote_index,
+        report_dir=resolved_report,
+    )
+    console.print_json(
+        json.dumps(
+            {
+                "release_id": result.release_id,
+                "release_root": result.release_root,
+                "catalog_path": result.catalog_path,
+                "n_samples": result.n_samples,
+                "n_studies": result.n_studies,
+                "n_phenotype_rows": result.n_phenotype_rows,
+                "ewas_db_n_local_studies": result.ewas_db_n_local_studies,
+                "ewas_db_n_local_gsm": result.ewas_db_n_local_gsm,
+                "ewas_db_mirror_complete": result.ewas_db_mirror_complete,
+                "report_dir": result.report_dir,
+            }
+        )
+    )
+
+
+@catalog_app.command("validate-release")
+def catalog_validate_release(
+    release_id: Annotated[str, typer.Option(help="Release id")] = RELEASE_ID,
+) -> None:
+    """Validate release_manifest.json and that the release catalog is populated."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+    try:
+        result = validate_release(data_root=paths.data_root, release_id=release_id)
+    except (FileNotFoundError, ValueError) as error:
+        console.print(f"[bold red]validate-release failed:[/bold red] {error}")
+        raise typer.Exit(code=1) from error
+    console.print_json(json.dumps(result))
+
+
+@catalog_app.command("phenotype-census")
+def catalog_phenotype_census(
+    release_id: Annotated[str, typer.Option(help="Release id")] = RELEASE_ID,
+    report_dir: Annotated[
+        Path | None,
+        typer.Option(help="Report directory (default: reports/inspection/{release_id})"),
+    ] = None,
+) -> None:
+    """Write phenotype census markdown/json from the release catalog."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+    rp = release_paths(paths.data_root, release_id)
+    if not rp.catalog_db.is_file():
+        console.print(f"[bold red]Release catalog missing:[/bold red] {rp.catalog_db}")
+        raise typer.Exit(code=1)
+    resolved_report = (
+        report_dir.resolve()
+        if report_dir is not None
+        else paths.project_root / "reports" / "inspection" / release_id
+    )
+    _require_under_data(resolved_report, "report_dir")
+    manifest = None
+    if rp.manifest_path.is_file():
+        manifest = json.loads(rp.manifest_path.read_text(encoding="utf-8"))
+    out = write_phenotype_census_report(
+        database=rp.catalog_db,
+        report_dir=resolved_report,
+        release_manifest=manifest,
+    )
+    console.print_json(json.dumps({"report_dir": str(out)}))
+
+
+@catalog_app.command("trait-eligibility")
+def catalog_trait_eligibility(
+    release_id: Annotated[str, typer.Option(help="Release id")] = RELEASE_ID,
+    report_dir: Annotated[
+        Path | None,
+        typer.Option(help="Report directory (default: reports/inspection/{release_id})"),
+    ] = None,
+) -> None:
+    """Write trait eligibility report from the release catalog."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+    rp = release_paths(paths.data_root, release_id)
+    if not rp.catalog_db.is_file():
+        console.print(f"[bold red]Release catalog missing:[/bold red] {rp.catalog_db}")
+        raise typer.Exit(code=1)
+    resolved_report = (
+        report_dir.resolve()
+        if report_dir is not None
+        else paths.project_root / "reports" / "inspection" / release_id
+    )
+    _require_under_data(resolved_report, "report_dir")
+    out = write_trait_eligibility_report(database=rp.catalog_db, report_dir=resolved_report)
+    console.print_json(json.dumps({"report_dir": str(out)}))
 
 
 @inspect_app.command("source")

@@ -56,8 +56,10 @@ gene_name = display symbol only; never the primary key
 
 DuckDB holds metadata and may query Parquet. Large sample×locus arrays stay in
 Zarr ([ADR 0005](adr/0005-catalog-matrix-independence.md)). Milestone **7A**
-populates these tables into a versioned release; `mbs catalog init` today only
-applies SQL schema.
+populates these tables into a versioned release via
+`mbs catalog refresh-release`. `mbs catalog init` remains schema-only at
+`canonical/catalog/`. See
+[`plans/milestone-7a-harmonized-release.md`](plans/milestone-7a-harmonized-release.md).
 
 ### Versioned release layout (7A)
 
@@ -161,9 +163,9 @@ controls, unless pack documentation establishes controls.
 ```text
 sample_id
 phenotype_id
-value_numeric
-value_categorical
-label_status
+numeric_value          # SQL column name (not value_numeric)
+categorical_value      # SQL column name (not value_categorical)
+label_status           # observed | unknown | control | case
 is_observed
 source_family
 source_record_id
