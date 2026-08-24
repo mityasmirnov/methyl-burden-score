@@ -4,6 +4,8 @@ Project-owned distillation of the methyl-burden-score strategic implementation
 vision. Normative Stage 0 engineering rules remain in [`AGENTS.md`](../AGENTS.md),
 [`ARCHITECTURE.md`](ARCHITECTURE.md), and [`TODO_PIPELINE.md`](TODO_PIPELINE.md).
 Primary open data source decision: [`adr/0002-ewas-datahub-primary-source.md`](adr/0002-ewas-datahub-primary-source.md).
+Post-v0 sequencing: [`adr/0007-crossfit-prerequisites.md`](adr/0007-crossfit-prerequisites.md);
+programme brief: [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
 ## Motivation
 
@@ -12,7 +14,8 @@ variant sets into a gene-level impairment score, reducing multiple-testing
 burden and capturing combined locus effects. Methyl burden scores apply the same
 idea to DNA methylation: map variable observed CpG sets into typed regulatory
 regions, then to one scalar score per sample and gene for downstream association
-and prediction.
+and prediction. deepMAT extends this with optional non-gene regulatory (RBS),
+intergenic tile (TBS), and direct CpG paths ([ADR 0006](adr/0006-multipath-noncoding-scores.md)).
 
 ## Data strategy
 
@@ -32,37 +35,60 @@ archives under `download/` with `_v1` suffixes (for example
 `tissue_methylation_v1.zip`). Prefer HTTP mirrors via
 `make download-ewas-datahub` / `scripts/download_ewas_datahub.sh` on this host.
 
-## Stage 0 architecture (unchanged order)
+### Storage layers ([ADR 0005](adr/0005-catalog-matrix-independence.md))
+
+```text
+DuckDB + Parquet   metadata, phenotypes, provenance, splits, eligibility
+Zarr               dense sample × locus / score matrices
+```
+
+Keep the catalog independent of the matrix-store implementation. Do **not** add
+ClickHouse for Stage 0. Benchmark TileDB sparse (or sharded Zarr v3) only when
+the first representative WGBS cohort arrives. Never materialize sample×CpG longs
+in DuckDB.
+
+## Stage 0 architecture (current order)
 
 Stage 0 does **not** require a PROTRIDER-style autoencoder, ComBat-met, or
-REGENIE. The critical path is:
+REGENIE as defaults. The critical path is:
 
 1. Inspect one small real source (done; historical CpGCorpus evidence).
 2. Canonical annotation graph (simple regions).
 3. Static locus features (CpGPT default).
 4. One pilot canonical matrix from **EWAS Data Hub**.
 5. Flat DeepRVAT-style max-pooling baseline.
-5b–5c. Phenotype registry, Hub pack matrices, multitask shared encoder (see
-   [`TODO_PIPELINE.md`](TODO_PIPELINE.md)).
-6. Hierarchical region model.
-7. Study-grouped cross-fitting.
+5b–5d. Phenotype registry, Hub pack matrices, multitask, max-N age/tissue/sex.
+6. Hierarchical region model (frozen v0.1 residual baseline).
+7A. Harmonized data release + phenotype census (**current gate**).
+7B. Complete nine-pack canonical matrices.
+7C. Architecture corrections (multi-path scores, splits, heads).
+7D. Fold-fitted Level-1 normalization.
+7E. Development CV (architecture selection).
+7. Final study-grouped OOF cross-fitting (blocked until 7A–7E).
 
-Model contracts, flat and hierarchical Deep Sets, and leakage invariants:
-[`ARCHITECTURE.md`](ARCHITECTURE.md). Milestone checklist:
+Model contracts: [`ARCHITECTURE.md`](ARCHITECTURE.md). Milestone checklist:
 [`TODO_PIPELINE.md`](TODO_PIPELINE.md).
+
+Frozen references: **deepMAT-flat-v0.1**, **deepMAT-hierarchical-v0.1**,
+**deepmat-data-age-tissue-sex-v1**. Hierarchical v0.1 underperformed flat on
+tissue accuracy and age MAE; it remains a baseline, not the preferred phenotype
+model.
 
 ## Post–Stage 0 multimodal stack
 
-After milestones 1–7 produce a real pipeline, the longer-term vision adds four
-computational layers. Do not start these while Stage 0 core milestones are open
-(see `.cursor/rules/pipeline-todo.mdc`).
+After Milestone 7 produces OOF scores, the longer-term vision adds further
+layers. Do not start these while 7A–7E / 7 are open (see
+`.cursor/rules/pipeline-todo.mdc`).
 
-### Module A — Epimutation detection (PROTRIDER-inspired)
+### Module A — Normalization and epimutation features
 
-Conditional autoencoder on beta values plus a missingness mask; Student-t
-negative log-likelihood for heavy-tailed residuals; optional BCE on mask
-reconstruction. Inference yields two-sided tail probabilities per CpG as
-epimutation features. Stage 0 may use simpler train-fold robust deviations only.
+**Stage 0 next (7D):** fold-fitted robust per-CpG M-deviation channels (Level
+1), trained on training studies only. Hub GMQN betas remain the canonical raw
+matrix.
+
+**Later ablation (not default):** learned ProbeNormalizer (Level 2); masked /
+PROTRIDER-style autoencoder (Level 3) only if Level 1 is insufficient on held-
+out phenotype and stability metrics. Do not select on reconstruction loss alone.
 
 ### Module B — Contextual epigenetic embedding
 
@@ -75,7 +101,8 @@ fusion and ChromHMM-rich embeddings remain optional later.
 
 Already the Stage 0 core: shared φ per CpG, permutation-invariant pooling
 (max), shared ρ → sigmoid MBS in `[0, 1]`. Hierarchical CpG→region→gene is the
-Stage 0 upgrade over flat DeepRVAT-style pooling.
+Stage 0 upgrade over flat DeepRVAT-style pooling. Milestone **7C** adds RBS /
+TBS / direct CpG paths so ~30% unassigned loci are not compressed to one scalar.
 
 ### Association testing — REGENIE
 
@@ -90,8 +117,8 @@ traits). Validation against EWAS Atlas enrichments is deferred with this layer.
   reference fitting for Hub-ingested matrices.
 - **ComBat-met:** Beta-regression batch correction for user-supplied IDAT /
   uncorrected cohorts via an R bridge later; not required for Hub GMQN data.
-- **EPICv2 IlmnID duplicates:** Strip technical suffixes, group by core CpG ID,
-  mean beta before matrix construction—when EPICv2 custom ingest lands.
+- **EPICv2 IlmnID duplicates:** Explicit mean/robust-mean collapse with recorded
+  probe IDs is Milestone **7B** (not a forever-deferred §8 item).
 - **Array harmonization:** Manifest parsing for 450K / EPIC v1 / EPIC v2 aligns
   with milestone 2 annotation work using vendor references, not a greenfield
   Bioconductor-only stack.

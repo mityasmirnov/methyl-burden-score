@@ -34,7 +34,7 @@ InfiniumAnnotation HM450 / EPIC / EPICv2 → GRCh38).
 | Term | Meaning | Model consequence |
 |------|---------|-------------------|
 | **Unmapped probe** | No GRCh38 cytosine coordinate in InfiniumAnnotation | Excluded from matrix columns; counted only |
-| **Unassigned locus** | Mapped locus overlaps no five-role gene region | Left unassigned in the immutable graph; hierarchical train routes these to the **residual path** (no nearest-gene, no `__unassigned__` gene pooling) |
+| **Unassigned locus** | Mapped locus overlaps no five-role gene region | Left unassigned in the immutable five-role graph; hierarchical-v0.1 routes these to a **one-scalar residual path**. Milestone **7C** replaces that bottleneck with RBS / TBS / direct CpG ([ADR 0006](adr/0006-multipath-noncoding-scores.md)). Unassigned loci (~30% globally; ~22.6% of mapped HM450) are **in-scope signal**, not noise. |
 
 Do **not** confuse either with EWAS Atlas `EWAS_Atlas_probe_annotations.tsv`
 (~900k rows: transcripts, TSS offsets, islands). That table is association /
@@ -136,9 +136,10 @@ CLI: `uv run mbs graph build`. Sources and precedence:
 1. Optional table: **fraction of open-sea loci that are unassigned** (CGI × assignment cross-tab) — explains why EPICv2 unassigned % is higher.
 2. Study-level appendix: unmapped probe counts for each converted Hub matrix (already in matrix manifests; not yet rolled up).
 3. Keep Atlas probe TSV out of the graph, but add a one-row “overlap with Atlas Probe.id vocabulary” sanity check if validation joins become common.
+4. Graph-v2 coverage report after 7C (regulatory regions + tiles + remaining direct).
 
 ## Related
 
-- Plan: [`plans/docs-scoring-annotation-catalog.md`](plans/docs-scoring-annotation-catalog.md)
+- Plan: [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
 - Milestone 2 plan: [`plans/milestone-2-canonical-annotation-graph.md`](plans/milestone-2-canonical-annotation-graph.md)
 - Figures regenerate: `scripts/write_pipeline_doc_figures.py`

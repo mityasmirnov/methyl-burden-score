@@ -30,7 +30,9 @@ Do not recursively dump `$MBS_DATA_ROOT` into chat; use these reports.
 | Converted matrices + multitask masks | Present (5d evidence) |
 | Trait harmonization rules | Present |
 | EWAS_db per-study progress | **In progress** (~53% of remote study folders) |
-| Disease full matrix convert | Unblocked (zip OK); convert not yet registered |
+| Disease full matrix convert | Unblocked (zip OK); convert not yet registered — **7B** |
+| Harmonized DuckDB release | Schema exists; population is **7A** |
+| Unique GSM vs pack-row sum | Documented below; census report is **7A** |
 
 ## Source lanes
 
@@ -96,7 +98,12 @@ Advertised GB from NGDC / [`EWAS_DATA.md`](EWAS_DATA.md). On-disk + Zip OK from
 
 Disease/cancer **row** counts in sample-info exceed unique GSM (duplicate rows
 in Hub R tables): cancer 10,841 rows / 10,101 GSM; disease 14,501 rows /
-12,218 GSM. Use **unique `sample_id`** for training N.
+12,218 GSM. Use **unique `sample_id`** for training N; represent labels as
+**long-form** observations (Milestone 7A/7B)—do not `dict[gsm]=row` overwrite.
+
+Nine-pack **row** counts sum far above unique GSMs (packs overlap). Age/tissue/
+sex alone: 16,675 pack-level occurrences → 13,548 unique GSMs after dedup.
+Milestone **7A** census reports true unique N, pack overlap, and conflicts.
 
 **Disease pack history:** earlier incomplete local copies lacked EOCD and were
 quarantined; resilient resume finished 2026-08-11
@@ -108,6 +115,20 @@ Sample-info extracts: `reports/inspection/ewas_datahub_samples/` (ancestry
 file is `sample_race.txt`). Parquet exports:
 `$MBS_DATA_ROOT/canonical/phenotypes/{family}_sample_info.parquet`.
 
+### Recommended pack roles
+
+| Family | Role |
+|--------|------|
+| Age | Core regression |
+| Tissue | Core coarse multiclass |
+| Sex | Auxiliary biological / QC |
+| BMI | Core or secondary regression |
+| Brain | Fine-grained conditional head given brain |
+| Blood | Fine-grained after label QC |
+| Cancer | Multi-label or within-tissue case/control (avoid pan-cancer≈tissue) |
+| Disease | Multi-label binary; **unknown ≠ control** unless documented |
+| Ancestry | Fairness / domain evaluation; not default burden-training target |
+
 ## Canonical matrices in use
 
 | Matrix ID | Samples × loci | Notes |
@@ -115,8 +136,12 @@ file is `sample_race.txt`). Parquet exports:
 | `matrix-hub-age-full-v1` | 8,374 × 482,379 | Full age pack, HM450 |
 | `matrix-hub-tissue-full-v1` | 5,323 × 482,379 | Full tissue pack |
 | `matrix-hub-sex-full-v1` | 2,978 × 482,379 | Full sex pack |
-| `matrix-hub-age-tissue-sex-full-v1` | **13,548 × 482,379** | GSM-union merge; 3,127 deduped GSMs |
+| `matrix-hub-age-tissue-sex-full-v1` | **13,548 × 482,379** | GSM-union merge; freeze **deepmat-data-age-tissue-sex-v1** |
 | GSE35069 pilot | 60 × … | EWAS_db cell-type smoke |
+
+**Not yet converted as full canonical matrices:** disease, cancer, blood, brain,
+BMI, ancestry (BMI/ancestry also missing from pack converter maps) — Milestone
+**7B**.
 
 Multitask phenotype table on the union
 (`sample_phenotype_table_age_tissue_sex_full_v1.parquet`):
@@ -128,8 +153,12 @@ Multitask phenotype table on the union
 | sex | 12,445 |
 
 Study-grouped split (`hub-age-tissue-sex-full-auto-v1`): train 9,489 /
-val 2,074 / external_test 1,985. Evidence:
+val 2,074 / external_test 1,985 (sample-count greedy — trait-aware splits are
+**7C**). Evidence:
 [`reports/inspection/stage0_5d_max_n/`](../reports/inspection/stage0_5d_max_n/).
+
+Frozen model runs (do not overwrite): **deepMAT-flat-v0.1** /
+**deepMAT-hierarchical-v0.1**.
 
 Smaller study-holdout matrices (age/tissue/blood/brain) remain registered for
 benchmarks; see registry + `stage0_hub_real_benchmark/`.
@@ -142,12 +171,12 @@ benchmarks; see registry + `stage0_hub_real_benchmark/`.
 | Family → column | Fixed map in [`EWAS_METADATA.md`](EWAS_METADATA.md) / `FAMILY_VALUE_COLUMN` |
 | Tissue labels | Ontology / class ids via `tissue_ontology.yaml` for CE head |
 | Blood pack | Primary `cell_component` is mostly null; benchmarks often use `tissue` instead |
-| Disease / cancer | Both use `disease` column; empty → control rules at convert; profile zips now OK |
+| Disease / cancer | Both use `disease` column; multi-label long-form in 7A/7B; missing → unknown |
 | Multitask | One shared encoder; per-sample masks gate loss ([`SCORING_PIPELINE.md`](SCORING_PIPELINE.md)) |
 | Atlas traits | 878 study traits / associations — **validation only**, not training labels |
 
-Wave-1 training focus: age, tissue (+ sex in 5d). Disease/cancer aux heads
-remain optional follow-ons once matrices are converted.
+Wave-1 training focus: age, tissue (+ sex in 5d). Disease/cancer heads follow
+7B conversion + eligibility census.
 
 ## EWAS Atlas (knowledge, not training)
 
@@ -161,19 +190,21 @@ remain optional follow-ons once matrices are converted.
 
 ## Known gaps
 
-- **EWAS_db mirror incomplete** (~1049/1989 study dirs; still downloading).
+- **EWAS_db mirror incomplete** (~1049/1989 study dirs; still downloading; not a 7A gate).
 - Blood primary phenotype sparsity; do not treat as pack-wide cell-type labels
   without another column strategy.
 - Registry `sample_count: null` on most pack entries until convert registers N.
-- Disease/cancer **profile → matrix convert** not yet added to the matrices
-  table (zips are ready).
-- Cross-fitting (Milestone 7) is the current pipeline gate.
+- Disease/cancer/blood/brain/BMI/ancestry **profile → matrix convert** not yet
+  in the matrices table (zips ready) — **7B**.
+- DuckDB schema exists but is not a populated harmonized release — **7A**.
+- Final OOF cross-fitting (Milestone 7) is **blocked until 7A–7E**.
 
 ## Proposed improvements
 
-1. Convert disease/cancer packs → `matrix-hub-disease-*` / `matrix-hub-cancer-*` and register Ns.
-2. Populate registry `sample_count` from unique GSM when exporting sample-info Parquet.
-3. Optional Venn / upset of GSM overlap across age∩tissue∩sex (already implied by 13,548 union + 3,127 dedupe note).
+1. Milestone **7A:** `deepmat-data-v1/` + phenotype census + trait eligibility
+   ([`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)).
+2. Milestone **7B:** convert remaining packs; chunked Zarr; multi-label disease.
+3. Populate registry `sample_count` from unique GSM when exporting sample-info.
 4. Do not commit Hub `.RData` sample blobs; keep `.txt` / Parquet only under inspection.
 5. Let EWAS_db finish (or pause if disk approaches capacity); re-run inventory.
 
@@ -181,5 +212,5 @@ remain optional follow-ons once matrices are converted.
 
 - Probe assignment rates: [`PROBE_ANNOTATION_COVERAGE.md`](PROBE_ANNOTATION_COVERAGE.md)
 - Scoring flow: [`SCORING_PIPELINE.md`](SCORING_PIPELINE.md)
-- Plan: [`plans/docs-scoring-annotation-catalog.md`](plans/docs-scoring-annotation-catalog.md)
+- Plan: [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
 - Figures: `scripts/write_pipeline_doc_figures.py`

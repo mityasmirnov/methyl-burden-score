@@ -37,9 +37,21 @@ Keep Cursor session todos in sync (complete / cancel / start next).
 5b. Phenotype registry + multi-pack eval
 5b′. Hub/Atlas metadata structure (required before 5c)
 5c. Multitask shared encoder
+5d. Max-N flat age/tissue/sex
 6. Hierarchical region model
-7. Study-grouped cross-fitting
+7A. Harmonized data release + phenotype census (**current gate**)
+7B. Complete nine-pack canonical matrices
+7C. Supervised architecture corrections (multi-path scores, splits, heads)
+7D. Fold-fitted Level-1 normalization
+7E. Development CV (architecture selection)
+7. Final study-grouped OOF cross-fitting (blocked until 7A–7E)
 8. Optional layers only after 1–7
+
+Ordering after Milestone 6 is locked by
+[`docs/adr/0007-crossfit-prerequisites.md`](docs/adr/0007-crossfit-prerequisites.md).
+Programme brief:
+[`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md).
 
 Before starting **5c**, read `docs/EWAS_METADATA.md` and
 `reports/inspection/ewas_metadata_structure/summary.md`.
+Before starting **7A**, read ADRs 0005–0007.

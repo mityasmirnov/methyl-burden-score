@@ -54,6 +54,31 @@ gene_name = display symbol only; never the primary key
 
 ## Catalog tables
 
+DuckDB holds metadata and may query Parquet. Large sample×locus arrays stay in
+Zarr ([ADR 0005](adr/0005-catalog-matrix-independence.md)). Milestone **7A**
+populates these tables into a versioned release; `mbs catalog init` today only
+applies SQL schema.
+
+### Versioned release layout (7A)
+
+```text
+$MBS_DATA_ROOT/canonical/releases/deepmat-data-v1/
+├── release_manifest.json
+├── catalog/
+│   ├── catalog.duckdb
+│   └── tables/
+├── matrices/
+├── phenotypes/
+├── ontologies/
+├── annotations/
+├── graphs/
+└── splits/
+```
+
+`release_manifest.json` records source checksums, retrieval dates, preprocessing
+level, probe universe, genome build, graph/static-feature versions, phenotype
+families, sample-dedup decisions, and code commit.
+
 ### `study`
 
 ```text
@@ -69,18 +94,36 @@ retrieved_at
 
 ### `sample`
 
+Identity and study linkage. Phenotype values are **not** the long-form SoT
+(optional denormalized age/sex/tissue_raw may exist for convenience):
+
 ```text
 sample_id
 study_id
 source_sample_id
 donor_id
 replicate_group
-age
-sex
-tissue_raw
-tissue_ontology_id
-case_control
+age                 # optional denormalized convenience
+sex                 # optional
+tissue_raw          # optional
+tissue_ontology_id  # optional
+case_control        # optional
 metadata_json
+```
+
+### `sample_source_membership` (7A)
+
+One GSM may appear in several Hub packs. One biological `sample_id`, many
+memberships:
+
+```text
+sample_id
+source_release_id
+phenotype_family
+source_file
+source_row
+matrix_id
+row_index
 ```
 
 ### `assay_file`
@@ -97,6 +140,39 @@ matrix_orientation
 schema_hash
 processing_level
 ```
+
+### `phenotype`
+
+```text
+phenotype_id
+phenotype_name
+phenotype_type
+ontology_id
+unit
+```
+
+### `sample_phenotype` (long-form SoT)
+
+Do not expand one wide row with hundreds of disease columns. Multi-label and
+multi-pack observations use long form; include `source_family` so duplicates
+are not overwritten. Missing disease labels are **unknown**, not automatic
+controls, unless pack documentation establishes controls.
+
+```text
+sample_id
+phenotype_id
+value_numeric
+value_categorical
+label_status
+is_observed
+source_family
+source_record_id
+ontology_id
+```
+
+Observation uniqueness: `(sample_id, phenotype_id, source_family)` or an
+explicit `observation_id`. Wide `sample_phenotype_table.parquet` used for
+training remains a **derived** join table.
 
 ### `probe`
 
@@ -155,10 +231,31 @@ primary_gene_role
 
 ## Numeric matrix contract
 
-Large sample×locus arrays live in **Zarr/HDF5**, not DuckDB. DuckDB holds
-catalog metadata (and optional views over Parquet); phenotype labels for
-training are Parquet (`canonical/phenotypes/`). See Milestone 5c storage notes
+Large sample×locus arrays live in **Zarr** (or a future `MethylationStore`
+backend), not DuckDB. DuckDB holds catalog metadata and optional views over
+Parquet; phenotype labels for training are Parquet (`canonical/phenotypes/`).
+See [ADR 0005](adr/0005-catalog-matrix-independence.md) and Milestone 5c notes
 in [`plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md).
+
+### `MethylationStore` protocol (introduce with 7B)
+
+Training code should depend on a thin protocol, not import Zarr directly forever:
+
+```python
+class MethylationStore(Protocol):
+    @property
+    def n_samples(self) -> int: ...
+    @property
+    def n_loci(self) -> int: ...
+    def sample_ids(self) -> Sequence[str]: ...
+    def locus_index(self) -> pd.DataFrame: ...
+    def read_dense(
+        self, sample_rows: np.ndarray, locus_rows: np.ndarray
+    ) -> np.ndarray: ...
+```
+
+First implementation wraps the existing Zarr layout. TileDB / Parquet
+observation stores are future backends only.
 
 Each canonical study matrix has:
 
@@ -285,13 +382,26 @@ Out-of-fold scores are stored as:
 mbs.zarr                  [n_samples, n_genes]
 gene_present.zarr         [n_samples, n_genes]
 gene_observed_count.zarr  [n_samples, n_genes]
-region_scores.zarr        optional
+rbs.zarr                  optional [n_samples, n_regulatory_regions]
+tbs.zarr                  optional [n_samples, n_tiles]
+direct_contrib.zarr       optional per-task direct CpG contributions
 sample_index.parquet
 gene_index.parquet
 score_manifest.json
 ```
 
-The score manifest records fold and restart membership. Every sample must be traceable to models that excluded its study and replicate group.
+The score manifest records fold and restart membership. Every sample must be
+traceable to models that excluded its study and replicate group. Milestone **7**
+(after 7A–7E) is the OOF export gate.
+
+## Trait eligibility (7A)
+
+Derived Parquet / DuckDB table `trait_eligibility` for every harmonized
+phenotype (columns: `phenotype_id`, family, task type, n_samples / cases /
+controls, prevalence, n_studies / platforms / tissues, confounding scores,
+`eligible_core_task` / `eligible_auxiliary_task` / `eligible_external_evaluation`,
+`exclusion_reason`). Cutoffs:
+[`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
 ## Inspection policy
 

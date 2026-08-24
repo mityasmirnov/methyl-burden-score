@@ -26,11 +26,13 @@ are already documented in [`docs/EWAS_DATA.md`](../EWAS_DATA.md).
    / knowledge-graph validation (post–Stage 0).
 3. **CpGCorpus** is an optional alternate path (requester-pays). Milestone 1
    evidence based on CpGCorpus inspection stays valid and is not re-opened.
-4. **Model milestone order** (amended by [ADR 0003](0003-milestone-5b-phenotype-registry.md)):
+4. **Model milestone order** (amended by [ADR 0003](0003-milestone-5b-phenotype-registry.md)
+   and [ADR 0007](0007-crossfit-prerequisites.md)):
    annotation graph → static locus features → pilot matrix → flat DeepRVAT
    baseline → **phenotype registry / multi-pack eval (5b)** → hierarchical
-   model → study-grouped cross-fitting. PROTRIDER-style autoencoders,
-   ComBat-met, and REGENIE export remain deferred until after that core path
+   model → **7A–7E prerequisites** → study-grouped cross-fitting.
+   PROTRIDER-style autoencoders, ComBat-met, and REGENIE export remain deferred
+   until after that core path
    ([`docs/STRATEGIC_PLAN.md`](../STRATEGIC_PLAN.md)).
 
 ## Consequences

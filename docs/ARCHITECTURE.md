@@ -49,8 +49,10 @@ Initial CpG input:
 ```text
 beta value
 M value
-optional train-fold robust deviation
+optional train-fold robust deviation   # Milestone 7D Level-1 required channel
 static CpGPT sequence-adapter vector
+static-embedding-present flag          # Milestone 7C
+observed / missingness flag
 structured locus annotations
 region-edge annotations
 ```
@@ -118,12 +120,14 @@ The initial gene-region roles are:
 
 CpG-island relation and regulatory annotations are orthogonal features rather than a combinatorial explosion of region types.
 
-### Residual / unmapped path (Milestone 6)
+### Residual / unmapped path (Milestone 6 — frozen v0.1)
 
-Every observed probe is retained. Loci with typed regulatory edges follow the
-hierarchy above. Loci (or Illumina-coordinate-unmapped residual columns) without
-a clean regulatory assignment do **not** enter nearest-gene or
-``__unassigned__`` gene pooling. They use a separate residual DeepSet:
+Every observed probe is retained ([ADR 0004](adr/0004-unmapped-probe-retention.md)).
+Loci with typed gene-region edges follow the hierarchy above. Loci (or
+Illumina-coordinate-unmapped residual columns) without a clean gene-region
+assignment do **not** enter nearest-gene or ``__unassigned__`` gene pooling.
+In **deepMAT-hierarchical-v0.1** they use a separate residual DeepSet that
+max-pools **all** residual CpGs into **one** sample-level scalar:
 
 ```math
 h_{s,c}^{\mathrm{res}} = \phi_{cpg}(x_{s,c})
@@ -142,6 +146,31 @@ Batch tensors expose annotation-status masks
 ``mapped`` / ``unmapped`` / ``ambiguous`` / ``multi_mapped``. Evaluation reports
 full, mapped-only, and residual-only slices on the same folds as the flat
 baseline.
+
+**Target (Milestone 7C, [ADR 0006](adr/0006-multipath-noncoding-scores.md)):**
+replace one-scalar residual compression with **RBS** (non-gene regulatory
+regions), **TBS** (adaptive intergenic tiles), and an optional **direct CpG**
+branch. Eval-time masking of a jointly trained residual slot does **not** show
+that noncoding CpGs are uninformative.
+
+### Target multi-path phenotype model (7C)
+
+```math
+\hat{y}_{s,k}
+=
+W^{G}_{k}\mathrm{MBS}_s
++
+W^{R}_{k}\mathrm{RBS}_s
++
+W^{T}_{k}\mathrm{TBS}_s
++
+D_k(s)
++
+X_s\alpha_k
+```
+
+Direct CpG contribution \(D_k(s)\) is a deepMAT extension (sparse per-locus or
+context-generated weights), not an exact DeepRVAT phenotype module.
 
 ## Optional gated pooling ablation
 
@@ -175,6 +204,10 @@ Phenotype heads consume centered, masked scores:
 ```
 
 This makes an unobserved gene contribute zero to a linear head.
+
+**Implementation gap (fix in Milestone 7C):** tissue uses
+`SeedMaskedLinearHead` (centers at the neutral score); age and sex currently
+multiply raw `mbs * present` without centering. The contract above is normative.
 
 ## Phenotype heads
 
@@ -226,7 +259,7 @@ Static locus features are looked up after collation and are not copied into ever
 
 ## Training and scoring
 
-Development protocol:
+Development protocol (Milestone **7E** architecture selection):
 
 ```text
 3 study-grouped outer folds
@@ -234,18 +267,22 @@ Development protocol:
 study-grouped validation
 ```
 
-Final Stage 0 protocol:
+Final Stage 0 protocol (Milestone **7**, after 7A–7E):
 
 ```text
 5 study-grouped outer folds
 up to 6 random restarts per fold
 ```
 
+Do not launch the final 5×6 protocol until catalog census, nine-pack matrices,
+multi-path architecture, Level-1 normalization, and 7E selection are done
+([ADR 0007](adr/0007-crossfit-prerequisites.md)).
+
 Every stored training-sample MBS value is out-of-fold. Technical replicates and repeated donor measurements remain in one fold.
 
 ## Deferred architecture
 
-Not part of Stage 0:
+Not part of Stage 0 core:
 
 - dynamic CpGPT or MethylGPT token states;
 - LoRA or full foundation-model fine-tuning;
@@ -253,4 +290,8 @@ Not part of Stage 0:
 - attention-only pooling as the reference operator;
 - enhancer-to-gene edges without a versioned evidence policy;
 - intergenic burden assignment to the nearest gene;
-- episignature and epivariant production models.
+- episignature and epivariant production models;
+- ClickHouse or default TileDB migration;
+- PROTRIDER / masked AE as the default normalizer (Level-3 ablation only).
+
+Graph-layer cCRE / tiles for RBS/TBS are Milestone **7C**, not forever-deferred.

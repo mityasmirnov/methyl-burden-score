@@ -16,13 +16,17 @@ CLI: `mbs graph build`.
 probe -> canonical locus -> gene region -> gene
 ```
 
-Future-compatible optional layers:
+Milestone **7C** graph-v2 layers ([ADR 0006](adr/0006-multipath-noncoding-scores.md)):
 
 ```text
-locus -> cCRE or enhancer capsule
-locus -> fixed genomic tile
-locus -> pathway capsule
+locus -> non-gene regulatory region (cCRE / enhancer / CGI / DMR / ChromHMM)  → RBS
+locus -> adaptive CpG-count intergenic tile                                    → TBS
+remaining / explicit residual loci                                             → direct CpG path
 ```
+
+Do **not** use one catch-all residual capsule for all leftover CpGs (MethylCapsNet
+`include_last`-style). Prefer multiple biologically or spatially meaningful
+region systems; shared Deep Sets scale better than one free network per capsule.
 
 ## Canonical sources
 
@@ -110,14 +114,28 @@ These are features or QC fields; they do not create an uncontrolled cross-produc
 
 Do not force intergenic loci to the nearest gene.
 
-Stage 0 records them as unassigned canonical loci. Later graph releases may add:
+Stage 0 five-role graph (`graph-grch38-gencode38-five-role-v1`) records them as
+unassigned canonical loci. Hierarchical-v0.1 routes them to a one-scalar
+residual path (frozen baseline only).
 
-- cCRE-to-gene evidence edges;
-- eQTM-supported edges;
-- fixed genomic tiles;
-- user-defined capsules.
+**Graph v2 / Milestone 7C assignment order:**
 
-Any such edge requires an evidence type, source version, and confidence field.
+1. Gene-linked five-role regions → **MBS**;
+2. Non-gene regulatory annotations (cCRE, enhancer, CGI/shore, DMR, ChromHMM,
+   DHS) without requiring a gene → **RBS**;
+3. Remaining coordinate-mapped loci → adaptive **CpG-count tiles** → **TBS**;
+4. Isolated / unmapped / explicitly retained loci → **direct CpG** contribution.
+
+Any regulatory or tile edge requires an evidence type, source version, and
+confidence field. Optional later: cCRE-to-gene or eQTM-supported gene edges
+with the same provenance fields—never silent nearest-gene.
+
+### MethylCapsNet lessons
+
+Use: multiple capsule / region systems (genes, CGI, enhancers, bins, custom
+BED). Avoid: dropping CpGs absent from a selected capsule; dropping small
+capsules solely for size; one free network per capsule at genome scale; one
+global “all remaining CpGs” module as the production path.
 
 ## Graph tables
 
@@ -199,4 +217,5 @@ A graph release is immutable after use in an experiment. A semantic graph identi
 graph-grch38-gencode38-five-role-v1
 ```
 
-Changing an interval boundary, source annotation, overlap precedence, or edge policy requires a new graph release.
+Changing an interval boundary, source annotation, overlap precedence, or edge policy requires a new graph release. Graph-v2 (RBS/TBS) will use a new
+immutable identifier distinct from `graph-grch38-gencode38-five-role-v1`.

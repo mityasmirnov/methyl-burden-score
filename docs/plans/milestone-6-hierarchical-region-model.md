@@ -131,14 +131,24 @@ flowchart LR
 
 ## Non-goals / deferred
 
-- Nearest-gene assignment; intergenic tiles / cCRE (§8)
-- New immutable graph release
-- Milestone 7 OOF cross-fitting
-- Retraining or replacing the flat 5d baseline
+- Nearest-gene assignment
+- Milestone 7 OOF cross-fitting (blocked until 7A–7E)
+- Retraining or replacing the flat 5d baseline / overwriting freeze tags
 - Disease/cancer heads; attention pooling; BatchNorm
 - Requiring a rebuilt Hub matrix before code lands (existing matrices without
   residual Illumina columns still train; residual gene-unassigned loci use the
   residual path; new conversions retain Illumina-unmapped probes)
+
+### Supersession note (post-v0)
+
+The one-scalar residual path shipped here is frozen as
+**deepMAT-hierarchical-v0.1**. Residual-only eval near chance tests that
+**bottleneck**, not whether noncoding CpGs carry signal. Preferred noncoding
+architecture is Milestone **7C** (RBS + TBS + direct CpG) per
+[ADR 0006](../adr/0006-multipath-noncoding-scores.md) and
+[`post-v0-scientific-programme.md`](post-v0-scientific-programme.md).
+Immutable five-role graph release is not replaced by this milestone; graph-v2
+lands in 7C.
 
 ## Open questions
 

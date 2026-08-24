@@ -6,18 +6,20 @@
 README.md                    project scope and quick start
 AGENTS.md                    authoritative coding-agent rules
 docs/TODO_PIPELINE.md        Stage 0 scientific milestone checklist (agents update)
-docs/STRATEGIC_PLAN.md       long-term data + multimodal vision (post–Stage 0)
+docs/STRATEGIC_PLAN.md       long-term data + multimodal vision
 docs/WORKSPACE.md            server and /data layout
-docs/adr/                    architecture decision records (0001 workspace, 0002 EWAS Hub, 0003 Milestone 5b)
+docs/adr/                    architecture decision records (0001 workspace, 0002 EWAS Hub, 0003 Milestone 5b, 0004 unmapped retention, 0005 catalog/storage, 0006 multi-path scores, 0007 cross-fit prerequisites)
 docs/ARCHITECTURE.md         model contracts (public name: deepMAT; package: mbs)
 docs/DATA_CONTRACT.md        canonical data contracts
 docs/ANNOTATION_GRAPH.md     biological topology
-docs/plans/                  milestone build plans (5b registry; 5c multitask)
+docs/plans/                  milestone build plans (incl. post-v0 programme)
 docs/STATIC_FEATURES.md      CpGPT and MethylGPT artifacts
 docs/EXPERIMENT_PROTOCOL.md  evaluation, controls, train monitoring (TB/JSONL)
 docs/DATA_INSPECTION.md      source acceptance workflow
 docs/EWAS_DATA.md            primary open Data Hub + Atlas downloads
 docs/EWAS_METADATA.md        Atlas small tables + Hub sample-info contracts
+docs/DATA_CATALOG.md         Hub packs, Ns, freeze tags
+docs/SCORING_PIPELINE.md     CpG → MBS / heads narrative
 ```
 
 ## Source package
@@ -26,7 +28,7 @@ docs/EWAS_METADATA.md        Atlas small tables + Hub sample-info contracts
 src/mbs/__init__.py      package version
 src/mbs/cli.py           `mbs` command-line application
 src/mbs/paths.py         /data-only filesystem policy
-src/mbs/catalog.py       DuckDB catalog builder / init
+src/mbs/catalog.py       DuckDB catalog builder / init (schema; 7A populates)
 src/mbs/inspect_source.py shallow source inventory reports
 src/mbs/inspect_cpgcorpus.py CpGCorpus GSE/GPL scientific inspection
 src/mbs/inspect_ewas_metadata.py Atlas small tables + Hub sample-info profiles
@@ -36,25 +38,23 @@ src/mbs/segment_ops.py   permutation-invariant segment reductions
 src/mbs/models.py        flat/hierarchical scorers and linear heads
 src/mbs/annotation/      Stage 0 locus registry + five-role graph builder
 src/mbs/static_features/ offline CpGPT sequence-adapter export + artifact I/O
-src/mbs/matrix/          canonical matrix conversion (EWAS_db pilot)
-src/mbs/training/        flat deepMAT / DeepRVAT-style baseline train loop + CLI
+src/mbs/matrix/          canonical matrix conversion (EWAS_db + Hub packs)
+src/mbs/training/        flat / hierarchical deepMAT train loops
 src/mbs/registry/        phenotype / source dataset registry (Milestone 5b)
 src/mbs/evaluation/      metrics + study-grouped split helpers (Milestone 5b)
 ```
 
-Canonical matrix conversion and flat baseline training are implemented.
-Milestone 5b adds the phenotype registry and multi-pack evaluation scaffold.
-Milestone 5c (pending) adds the unified sample phenotype table and joint
-masked multitask training on Hub packs — see
-[`docs/plans/milestone-5c-multitask-shared-encoder.md`](plans/milestone-5c-multitask-shared-encoder.md).
-Feature stores for online sampling and full study-grouped cross-fitting remain
-later milestones.
+Milestones **1–6** are done (flat + hierarchical v0.1 on age/tissue/sex union).
+**Current gate: 7A** (harmonized release + phenotype census). Final OOF
+cross-fitting is Milestone **7**, blocked until 7A–7E — see
+[`docs/plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
 ## SQL and schemas
 
 ```text
 sql/001_schema.sql                       catalog tables
-sql/010_views.sql                        inspection views
+sql/002_provenance_lanes.sql             provenance lanes
+sql/010_views.sql                        inspection views (census views in 7A)
 schemas/matrix_manifest.schema.json      canonical matrix manifest
 schemas/graph_manifest.schema.json       annotation graph manifest
 schemas/static_feature_manifest.schema.json static feature manifest
@@ -71,8 +71,10 @@ configs/experiment/stage0_flat.yaml        exact DeepRVAT-style baseline
 configs/experiment/stage0_flat_pilot.yaml  GSE35069 cell-type pilot train config
 configs/experiment/stage0_flat_age_holdout.yaml   age study-holdout fixture config
 configs/experiment/stage0_flat_tissue_holdout.yaml tissue study-holdout fixture
-configs/experiment/stage0_flat_multitask.yaml     Hub multitask draft (Milestone 5c)
-configs/experiment/stage0_hier_max.yaml    hierarchical reference model
+configs/experiment/stage0_flat_multitask.yaml     Hub multitask (Milestone 5c)
+configs/experiment/stage0_flat_deeprvat_full.yaml max-N age/tissue/sex (5d)
+configs/experiment/stage0_hier_deeprvat_full.yaml hierarchical v0.1 (6)
+configs/experiment/stage0_hier_max.yaml    hierarchical sketch config
 configs/data/phenotype_registry.yaml     dataset registry (Milestone 5b)
 configs/local/                             machine-specific overrides, ignored
 ```
@@ -102,7 +104,7 @@ vendor/SOURCES.lock.yaml     reviewed repositories and commits
 vendor/README.md             submodule policy
 vendor/epicv2_manifest       EPICv2 reannotation code (Zenodo -> data/raw/manifests)
 vendor/infinium_annotation   Zhou-lab Infinium probe coords/masks (Milestone 2)
-vendor/methylcapsnet         capsule/region taxonomy reference (Milestone 2)
+vendor/methylcapsnet         capsule/region taxonomy reference (Milestone 2 / 7C)
 vendor/*                     read-only submodule pointers after installation
 docs/EWAS_DATA.md            EWAS Atlas + DataHub download inventory (primary)
 docs/EWAS_METADATA.md        Atlas small tables + Hub sample-info contracts
@@ -138,7 +140,7 @@ compose.yaml                     bind-mounted development service
 
 The host Docker daemon must already use `/data/docker` before building large images.
 
-## Stage 0 CLI surface
+## Stage 0 CLI surface (implemented)
 
 ```text
 mbs doctor                 validate /data paths and environment
@@ -150,24 +152,27 @@ mbs inspect ewas-metadata  Atlas small tables + Hub sample-info structure
 mbs graph build            locus registry + five-role annotation graph
 mbs features export-cpgpt  offline CpGPT2M sequence-adapter static features
 mbs matrix convert         EWAS_db study → canonical matrix store
-mbs train flat             flat DeepRVAT-style baseline (fixture or pilot)
+mbs matrix convert-pack    Hub phenotype pack → canonical matrix
+mbs train flat             flat DeepRVAT-style baseline
+mbs train hierarchical     hierarchical + residual-slot v0.1
 mbs monitor                live Rich TUI for a run (metrics.jsonl + GPU + ckpts)
-mbs phenotypes build-multitask-table   Hub age+tissue phenotype table + merge matrix
+mbs phenotypes build-multitask-table   Hub age+tissue(+sex) phenotype table
+```
+
+Planned (Milestone **7A** — not implemented yet; do not advertise as working):
+
+```text
+mbs catalog refresh-release
+mbs catalog validate-release
+mbs catalog phenotype-census
+mbs catalog trait-eligibility
 ```
 
 ## Planned next modules
 
-Recommended implementation order:
-
-```text
-src/mbs/ingest/
-src/mbs/stores/
-src/mbs/data/
-src/mbs/evaluation/
-tools/methylgpt_export/   # ablation-only; after core pipeline if needed
-```
-
-Do not create all modules as empty placeholders. Add one when its contract and tests are ready. Deeper inspection helpers may grow beside `inspect_source.py` when needed.
+Recommended implementation order follows [`TODO_PIPELINE.md`](TODO_PIPELINE.md)
+7A→7E→7. Do not create empty placeholders. Add one module when its contract and
+tests are ready.
 
 ## Coding-agent task boundary
 

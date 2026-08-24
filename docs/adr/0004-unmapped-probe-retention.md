@@ -34,6 +34,9 @@ Unmapped loci follow a separate retained path and are never silently merged into
 - The hierarchical model must expose a residual/unmapped path or equivalent retained output.
 - Evaluation must stratify metrics by mapped versus unmapped loci.
 - Milestone 6 planning and implementation must not use nearest-gene assignment for unannotated loci.
+- **Amendment:** one-scalar residual compression is the Milestone 6 / v0.1
+  implementation of this retention policy. The preferred production noncoding
+  path is multi-path RBS/TBS/direct CpG ([ADR 0006](0006-multipath-noncoding-scores.md)).
 
 ## Non-goals
 

@@ -4,7 +4,12 @@ This file is authoritative for Cursor, Claude, Codex, and other coding agents wo
 
 ## Mission
 
-Implement Stage 0 of the Methylation Burden Score project: a reproducible, study-grouped, cross-fitted pipeline that maps variable sets of observed CpGs to typed regulatory regions and then to one scalar score per sample and gene.
+Implement Stage 0 of the Methylation Burden Score project: a reproducible,
+study-grouped, cross-fitted pipeline that maps variable sets of observed CpGs to
+typed regulatory regions and then to gene-level **MBS** scores (plus, from
+Milestone 7C, optional non-gene **RBS**, intergenic **TBS**, and direct CpG
+contributions) for association and prediction. Current gate and ordering:
+[`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
 
 ## Filesystem policy
 
@@ -80,6 +85,10 @@ Use the project inspection commands, DuckDB queries, manifests, and sanitized re
 8. The exact flat DeepRVAT-style max-pooling model must remain available as a reference baseline.
 9. Production logic belongs in `src/`; notebooks may only call package functions.
 10. Do not advertise placeholder CLI commands as implemented.
+11. Do not store sample×CpG observations as a long DuckDB table; catalog stays independent of the matrix backend ([ADR 0005](docs/adr/0005-catalog-matrix-independence.md)).
+12. Missing disease/cancer labels are **unknown**, not automatic controls, unless pack documentation establishes controls.
+13. Do not assign intergenic loci to the nearest gene; do not treat one-scalar residual compression as proof that noncoding CpGs are uninformative ([ADR 0006](docs/adr/0006-multipath-noncoding-scores.md)).
+14. Do not launch final 5-fold × 6-restart OOF cross-fitting until Milestones 7A–7E are done ([ADR 0007](docs/adr/0007-crossfit-prerequisites.md)).
 
 ## Coding standards
 

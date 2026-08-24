@@ -2,7 +2,8 @@
 
 Stage 0 schema sketch for **deepMAT** (package/CLI: `mbs`). Normative contracts:
 [`ARCHITECTURE.md`](ARCHITECTURE.md), [`ANNOTATION_GRAPH.md`](ANNOTATION_GRAPH.md).
-Implementation brief: [`plans/docs-scoring-annotation-catalog.md`](plans/docs-scoring-annotation-catalog.md).
+Implementation brief: [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
+(historical docs trio: [`plans/docs-scoring-annotation-catalog.md`](plans/docs-scoring-annotation-catalog.md)).
 
 Phenotype heads train the shared encoder; they are **not** part of the exported
 MBS scoring function.
@@ -14,7 +15,8 @@ MBS scoring function.
 | End-to-end mermaid + stage table | Present |
 | Flat vs hierarchical aggregation | Present (+ unassigned semantics) |
 | Phenotype masking / shared encoder | Present |
-| Today vs Milestone 7 OOF MBS | Present |
+| Today vs Milestone 7 OOF MBS | Present; 7 blocked until 7A–7E |
+| Target multi-path (RBS/TBS/direct) | Documented; implement in 7C |
 | Numeric train metrics / loss curves | Out of scope here → `stage0_5d_max_n/`, TB |
 | Cross-fitting fold diagram | Deferred with §7 |
 
@@ -76,7 +78,7 @@ CpG features → φ → elementwise max by gene → ρ → sigmoid MBS[s,g]
 Regions are collapsed when building the locus→gene index (`training/locus_gene.py`).
 This is the DeepRVAT-style reference retained for every comparison.
 
-### Hierarchical (`HierarchicalDeepSet`)
+### Hierarchical (`HierarchicalDeepSet`) — frozen v0.1
 
 ```text
 CpG → max within typed region → φ_region(+ region-type emb) → max within gene → ρ → MBS
@@ -89,6 +91,9 @@ retained as residual matrix columns) stay on the **residual path** — they are
 not nearest-gene assigned and not pooled under `__unassigned__`. Eval reports
 `full` / `mapped_only` / `residual_only` on the same folds as flat.
 
+**Important:** residual_only near-chance results test the **one-scalar
+bottleneck**, not noncoding biology ([ADR 0006](adr/0006-multipath-noncoding-scores.md)).
+
 See [`plans/milestone-6-hierarchical-region-model.md`](plans/milestone-6-hierarchical-region-model.md).
 
 ```mermaid
@@ -99,13 +104,29 @@ flowchart TD
   Locus --> Edge{"locus_region_edges?"}
   Edge -->|yes| Typed["Typed region role"]
   Typed --> Gene["Biological gene MBS"]
-  Edge -->|no| ResidualPath["Residual DeepSet path"]
+  Edge -->|no| ResidualPath["Residual DeepSet path v0.1"]
   ResidualCol --> ResidualPath
   ResidualPath --> ResSlot["Residual score slot"]
   Gene --> Panel["Phenotype panel"]
   ResSlot --> Panel
 ```
 
+### Target multi-path (Milestone 7C)
+
+```mermaid
+flowchart TD
+  Locus2["Canonical locus"] --> GenePath["Gene five-role → MBS"]
+  Locus2 --> RegPath["Non-gene regulatory → RBS"]
+  Locus2 --> TilePath["Adaptive CpG-count tile → TBS"]
+  Locus2 --> Direct["Direct CpG branch"]
+  GenePath --> Heads2["Phenotype heads"]
+  RegPath --> Heads2
+  TilePath --> Heads2
+  Direct --> Heads2
+```
+
+Train branches independently for ablations; do not rely on eval-time masking
+alone.
 ## Changing phenotypes (architecture stays fixed)
 
 ```mermaid
@@ -143,20 +164,23 @@ Contracts: [`EWAS_METADATA.md`](EWAS_METADATA.md),
 - Study-grouped train / validation / external_test splits exist
   (`evaluation/splits.py`); hierarchical runs can reuse a flat `split.json`.
 
-**Deferred (Milestone 7)**
+**Deferred (Milestone 7 — blocked until 7A–7E)**
 
 - Full **out-of-fold** score matrix: every training sample scored only by models
-  that never saw its study group; persisted OOF MBS (+ phenotype preds).
+  that never saw its study group; persisted OOF MBS (+ optional RBS/TBS/direct,
+  phenotype preds).
 - Protocol: [`EXPERIMENT_PROTOCOL.md`](EXPERIMENT_PROTOCOL.md) § out-of-fold;
-  gate: [`TODO_PIPELINE.md`](TODO_PIPELINE.md) §7.
+  gates: [`TODO_PIPELINE.md`](TODO_PIPELINE.md) §7A–7E then §7;
+  [ADR 0007](adr/0007-crossfit-prerequisites.md).
 
 Further deferred: REGENIE-style MBS×2 export (optional post–Stage 0).
 
 ## Proposed improvements (not blocking)
 
-1. Add a small ASCII artifact path example (`matrix_id` → `run_id` → `metrics.json`) once Milestone 6 full train lands.
-2. Link TensorBoard screenshot / epoch curves from `stage0_5d_max_n` when documenting performance (keep this doc topology-only).
-3. When §7 lands, add a cross-fitting fold mermaid and replace the “deferred” bullet with a concrete export schema.
+1. Link TensorBoard / epoch curves from `stage0_5d_max_n` when documenting
+   performance (keep this doc topology-focused).
+2. When §7 lands, add a cross-fitting fold mermaid and concrete export schema
+   including RBS/TBS if selected in 7E.
 
 ## Related commands
 

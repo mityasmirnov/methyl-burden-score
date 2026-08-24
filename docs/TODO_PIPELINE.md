@@ -9,16 +9,24 @@ Status values: `done` | `in_progress` | `pending` | `deferred`
 
 True next milestone after bootstrap:
 
-> one source ingested cleanly → one graph built → one canonical matrix written →
-> one baseline trained → phenotype registry + multi-pack eval → Hub metadata
-> contracts → real Hub pack matrices + study-grouped eval → multitask shared
-> encoder (5c) → max-N flat age/tissue/sex (5d — **done**) → hierarchical
-> (6 — **done**) → **cross-fitting (7)** → one score matrix.
+> … → max-N flat age/tissue/sex (5d — **done**) → hierarchical residual
+> baseline (6 — **done**) → **harmonized release + phenotype census (7A)** →
+> nine-pack matrices (7B) → architecture corrections (7C) → fold-fitted
+> normalization (7D) → development CV (7E) → **final OOF cross-fitting (7)** →
+> one score matrix.
 
-**Current gate:** Milestone **7**. Prerequisites through 6 are `done`.
+**Current gate:** Milestone **7A**. Prerequisites through 6 are `done`.
+Final Milestone **7** (5-fold × ≤6-restart OOF) is **blocked until 7A–7E**
+([ADR 0007](adr/0007-crossfit-prerequisites.md)). Programme brief:
+[`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+
+Frozen references (do not overwrite): **deepMAT-flat-v0.1** /
+**deepMAT-hierarchical-v0.1** / **deepmat-data-age-tissue-sex-v1**. Hierarchical
+v0.1 is a valid baseline, not the preferred phenotype model.
+
 Hub **disease** profile zip is complete (2026-08-11). `EWAS_db` All-Data
-mirror remains in progress (~53% of study dirs) and is not a gate for
-cross-fitting.
+mirror remains in progress (~53% of study dirs) and is **not** a gate for
+7A–7E or Milestone 7.
 
 Primary open data source going forward: **EWAS Data Hub**
 ([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
@@ -75,10 +83,11 @@ historical CpGCorpus inspection and is not re-opened.
   `make download-methylgpt` → `$MBS_DATA_ROOT/raw/methylgpt/` (medium
   checkpoint + type3 probe IDs). See `docs/STATIC_FEATURES.md`. Ablation-only
   for Stage 0 static features.
-- **Intentional non-goals until later milestones:** Parquet population / ingest
-  into catalog tables; committing the shallow whole-corpus inventory under
-  `reports/inspection/cpgcorpus/` (GSE/GPL report for milestone 1 is enough).
-  MethylGPT token-prior export remains ablation-only (not Stage 0 default).
+- **Intentional non-goals until later milestones:** committing the shallow
+  whole-corpus inventory under `reports/inspection/cpgcorpus/` (GSE/GPL report
+  for milestone 1 is enough). MethylGPT token-prior export remains ablation-only
+  (not Stage 0 default). **Parquet → DuckDB catalog population is Milestone 7A**
+  (no longer deferred): see [ADR 0005](adr/0005-catalog-matrix-independence.md).
 - **Hub disease profile zip:** completed 2026-08-11 via
   `scripts/download_disease_pack_resilient.sh` (exact remote size + EOCD).
   Earlier failures were CNCB connection drops / bogus HTTP 416, not disk
@@ -155,7 +164,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Note:** Primary ongoing open source is EWAS Data Hub (ADR 0002). This
   milestone’s CpGCorpus evidence stands; do not re-open milestone 1 to switch
   sources.
-- **Next action:** Milestone 7 — study-grouped cross-fitting.
+- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
 
 ---
 
@@ -189,7 +198,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
     Stage 0 region taxonomy (not the full CapsNet model).
   Convert or export needed tables into `$MBS_DATA_ROOT/canonical/annotations`
   (or graphs); keep bulky vendor blobs out of the Python runtime path.
-- **Next action:** Milestone 7 — study-grouped cross-fitting.
+- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
 
 ---
 
@@ -211,7 +220,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `tests/unit/test_static_features.py`. Build plan:
   [`plans/milestone-3-static-locus-features.md`](plans/milestone-3-static-locus-features.md).
 - **Depends on:** (2) locus registry.
-- **Next action:** Milestone 7 — study-grouped cross-fitting.
+- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
 
 ---
 
@@ -236,7 +245,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `make download-ewas-study STUDY=GSE35069`. Unit tests:
   `tests/unit/test_matrix_store.py`.
 - **Depends on:** (1), (2).
-- **Next action:** Milestone 7 — study-grouped cross-fitting.
+- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
 
 ---
 
@@ -258,7 +267,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `last.pt`, checksums). Unit tests: `tests/unit/test_training_flat.py`. Plan:
   [`plans/milestone-5-flat-deeprvat-baseline.md`](plans/milestone-5-flat-deeprvat-baseline.md).
 - **Depends on:** (4). Model module scaffolding alone is not sufficient.
-- **Next action:** Milestone 7 — study-grouped cross-fitting.
+- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
 
 ---
 
@@ -282,7 +291,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   [`plans/milestone-5b-phenotype-registry-eval.md`](plans/milestone-5b-phenotype-registry-eval.md);
   [ADR 0003](adr/0003-milestone-5b-phenotype-registry.md).
 - **Depends on:** (5).
-- **Next action:** Milestone 7 — study-grouped cross-fitting.
+- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
 
 ---
 
@@ -370,7 +379,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Optional follow-ons:** masked disease/cancer aux heads; blood/brain as
   **domain aux** after ontology; shared-class tissue holdouts.
 - **Depends on:** (5b), (5b′), (5b″) — all `done`.
-- **Next action:** Milestone 7 — study-grouped cross-fitting.
+- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
 
 ---
 
@@ -397,7 +406,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `scripts/write_stage0_5d_report.py`.
 - **Depends on:** (5c).
 - **Plan:** [`plans/milestone-5d-max-n-flat-baseline.md`](plans/milestone-5d-max-n-flat-baseline.md).
-- **Next action:** Milestone 7 — study-grouped cross-fitting.
+- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
+- **Freeze name:** `deepMAT-flat-v0.1` (do not overwrite this run).
 
 ---
 
@@ -419,37 +429,134 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   age MAE 27.8 vs 22.0 y, sex 0.934 vs 0.931. Ablations show mapped≈full and
   residual_only near chance for tissue/sex. Report:
   `reports/inspection/stage0_6_hierarchical/` via
-  `scripts/write_stage0_6_report.py`.
-- **Next action:** Milestone 7 — study-grouped cross-fitting.
+  `scripts/write_stage0_6_report.py`. One-scalar residual is a **bottleneck
+  ablation**, not evidence that noncoding CpGs are uninformative
+  ([ADR 0006](adr/0006-multipath-noncoding-scores.md)).
+- **Freeze name:** `deepMAT-hierarchical-v0.1` (do not overwrite; not the
+  preferred phenotype model vs flat v0.1).
+- **Next action:** Milestone **7A** — harmonized data release + phenotype census.
 
 ---
 
-## 7. Run study-grouped cross-fitting
+## 7A. Harmonized data release and phenotype census
+
+- **Status:** `pending` (**current gate**)
+- **Done when:**
+  - Versioned release `$MBS_DATA_ROOT/canonical/releases/deepmat-data-v1/` with
+    `release_manifest.json` (source checksums, retrieval dates, preprocessing,
+    probe universe, genome build, graph/static versions, phenotype families,
+    dedup decisions, code commit)
+  - DuckDB catalog **populated** from Parquet/manifests (not schema-only):
+    `source_release`, `study`, `platform`, `sample`, `sample_source_membership`,
+    `assay_file`, `phenotype`, `sample_phenotype` (long-form + `source_family`),
+    matrix inventory tables, `fold_assignment`, `artifact`, `experiment`
+  - Census views and reports answer unique GSM vs pack-row sum, studies,
+    platforms, phenotype prevalence, pack overlap, label conflicts, confounding
+  - `trait_eligibility` table with initial cutoffs from
+    [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
+  - Planned CLI (implement, then document): `mbs catalog refresh-release`,
+    `validate-release`, `phenotype-census`, `trait-eligibility`
+- **Depends on:** (6); EWAS_db mirror **not** required.
+- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md);
+  [ADR 0005](adr/0005-catalog-matrix-independence.md),
+  [ADR 0007](adr/0007-crossfit-prerequisites.md).
+- **Next action:** Start coding 7A while EWAS_db download continues.
+
+---
+
+## 7B. Complete canonical Hub matrices
 
 - **Status:** `pending`
-- **Done when:** Out-of-fold MBS scores, age predictions, and tissue predictions
-  are generated with leakage controls (no sample/donor/replicate/held-out study
-  scored by a model that saw it). Score matrix + fold-assignment hash stored.
-- **Depends on:** (5c) at minimum; (6) preferred for hierarchical OOF scores.
+- **Done when:** Disease, cancer, blood, brain, BMI, and ancestry packs convert
+  to canonical full matrices; BMI/ancestry supported in pack converter maps;
+  chunked direct-to-Zarr conversion; probe-collapse policy records contributing
+  probe IDs (mean/robust mean, not lexicographic-first only); disease/cancer
+  multi-label via long-form phenotypes (no silent GSM overwrite); true source
+  checksums; deduplicated union or virtual multi-store index documented.
+- **Depends on:** (7A).
+- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+
+---
+
+## 7C. Supervised architecture corrections
+
+- **Status:** `pending`
+- **Done when:**
+  - All phenotype heads center/mask present scores consistently
+  - Graph v2: non-gene regulatory regions (RBS) + adaptive CpG-count tiles (TBS);
+    optional direct CpG branch (no one-scalar residual as the production path)
+  - `static_present` / observation flags in inputs
+  - Constraint-aware study-grouped splits (class coverage, age-quantile /
+    platform / task-mask balance; no study/donor/replicate leakage)
+  - Task-balanced sampling and loss; trait-specific fold-safe seed masks;
+    token-budget sampler; macro-F1 / balanced accuracy / correlations in run
+    reports; parameter-matched topology when comparing flat vs hierarchical
+- **Depends on:** (7B) for disease/cancer heads; head/split fixes may start on
+  age/tissue/sex after 7A.
+- **ADRs:** [0006](adr/0006-multipath-noncoding-scores.md).
+- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+
+---
+
+## 7D. Fold-fitted normalization ablation
+
+- **Status:** `pending`
+- **Done when:** Level-1 robust per-CpG train-fold M-deviation channels are
+  implemented and fitted only on training studies; A (beta+M) vs B (A + robust z)
+  protocol runnable on identical folds; Levels 2 (ProbeNormalizer) and 3
+  (masked AE) documented as later ablations (§8 until architecture selected).
+  Selection by held-out phenotype + stability, not reconstruction loss alone.
+- **Depends on:** (7C) at least for shared train path; Level-1 can land with 7C.
+- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+
+---
+
+## 7E. Development cross-validation (architecture selection)
+
+- **Status:** `pending`
+- **Done when:** 3 outer study-grouped folds × 2 restarts compare independently
+  trained arms: flat gene-only; hierarchical gene-only; gene + direct; gene +
+  RBS + TBS + direct; each with/without Level-1 robust channels. Report selects
+  architecture for Milestone 7. Eval-time branch masking alone is not sufficient.
+- **Depends on:** (7C), (7D Level-1).
+- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+
+---
+
+## 7. Run study-grouped cross-fitting (final OOF)
+
+- **Status:** `pending` (**blocked until 7A–7E**)
+- **Done when:** Out-of-fold MBS scores (and RBS/TBS/direct contributions when
+  selected), age predictions, and tissue predictions are generated with leakage
+  controls (no sample/donor/replicate/held-out study scored by a model that saw
+  it). Score matrix + fold-assignment hash stored. Protocol: 5 outer folds × up
+  to 6 restarts; fold-specific normalization and seed selection.
+- **Depends on:** (7A)–(7E); architecture chosen in 7E.
+- **Note:** A 3-fold / 1-restart smoke of *existing* machinery is allowed for
+  plumbing; it does not complete this milestone and must not overwrite v0.1
+  freezes ([ADR 0007](adr/0007-crossfit-prerequisites.md)).
 
 ---
 
 ## 8. Optional layers (after core pipeline is stable)
 
 - **Status:** `deferred`
-- **Rule:** Do not start these until milestones 1–7 produce a real model
-  pipeline. Full vision: [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md).
+- **Rule:** Do not start these until milestones 1–7 produce a real OOF model
+  pipeline (7A–7E then 7). Full vision: [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md).
+  Graph-layer cCRE/tiles for scoring are **7C**, not this section.
 
 ### Stage 1+ roadmap (deferred candidates)
 
 | Candidate | Intent / acceptance hint |
 |-----------|--------------------------|
-| PROTRIDER-style conditional AE | Student-t NLL + missingness mask; two-sided CpG tail probabilities as optional features |
+| PROTRIDER-style / masked AE (Level 3) | Only if 7D/7E show Level-1 insufficient; Student-t or masked recon + phenotype; not default |
+| Learned ProbeNormalizer (Level 2) | Bounded residual adapter; fold-fitted; after Level-1 |
 | ComBat-met (rpy2) | Beta-regression batch correction for user/custom IDAT or uncorrected cohorts; assert corrected betas stay in `[0, 1]`. Not required for Data Hub GMQN baselines |
-| EPICv2 IlmnID collapse | Strip technical suffixes, groupby core CpG ID, mean beta before matrix build |
+| TileDB sparse / Zarr v3 WGBS benchmark | First representative WGBS cohort; catalog stays on DuckDB+Parquet ([ADR 0005](adr/0005-catalog-matrix-independence.md)) |
+| ClickHouse | Only if multi-user OLAP portal needed; not training I/O |
 | REGENIE association | Export MBS×2 as pseudodosages (BGEN/VCF); Step 1 + Step 2; Firth for imbalanced binary traits; QQ / λ near 1 |
 | EWAS Atlas enrichment | Compare significant gene–trait hits to Atlas curated associations / pathway enrichment |
-| Richer annotations | MethylGPT priors, MethylCapsNet-inspired topology, intergenic tiles |
+| MethylGPT priors / richer FM fusion | Ablation after multi-path scores stable |
 | Epivariants / episignatures | Explicit epivariant calling and clinical episignature work |
 
 ---
@@ -463,3 +570,4 @@ Before claiming a milestone `done`:
 2. Status in this file is updated in the same change set.
 3. Required checks from `AGENTS.md` pass for code changes.
 4. Do not mark complete because a stub module or download script exists.
+5. Do not advertise planned CLI (`refresh-release`, etc.) as implemented.

@@ -6,7 +6,7 @@ The public model name is **deepMAT** (deep Methylation Aggregation Transformer /
 Deep Set family). The Python package remains `methyl-burden-score` with the
 `mbs` CLI entry point; do not treat a package rename as required for Stage 0.
 
-Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks). The model path is flat DeepRVAT-style **deepMAT** baseline → phenotype registry / multi-pack eval → real Hub pack matrices → multitask shared encoder (**5c done**) → **max-N flat age/tissue/sex (5d — done)** → hierarchical residual-path (**6 — done**) → study-grouped cross-fitting (**7**). Authoritative progress: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). See also [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), and [`docs/adr/0003-milestone-5b-phenotype-registry.md`](docs/adr/0003-milestone-5b-phenotype-registry.md).
+Stage 0 open training and pilot matrices use the CNCB **EWAS Data Hub** (with EWAS Atlas for later association checks). The model path is flat DeepRVAT-style **deepMAT** baseline → phenotype registry / multi-pack eval → real Hub pack matrices → multitask shared encoder (**5c done**) → **max-N flat age/tissue/sex (5d — done)** → hierarchical residual-path (**6 — done**) → **harmonized release + census (7A — current gate)** → nine-pack matrices / architecture / normalization / development CV (**7B–7E**) → study-grouped OOF cross-fitting (**7**, blocked until 7A–7E). Authoritative progress: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md). See also [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md), [`docs/adr/0002-ewas-datahub-primary-source.md`](docs/adr/0002-ewas-datahub-primary-source.md), [`docs/adr/0005-catalog-matrix-independence.md`](docs/adr/0005-catalog-matrix-independence.md), [`docs/adr/0006-multipath-noncoding-scores.md`](docs/adr/0006-multipath-noncoding-scores.md), and [`docs/adr/0007-crossfit-prerequisites.md`](docs/adr/0007-crossfit-prerequisites.md).
 
 The Stage 0 implementation follows four design principles:
 
@@ -20,17 +20,18 @@ The Stage 0 implementation follows four design principles:
 Stage 0 implements:
 
 - canonical GRCh38 locus, probe, region, and gene registries;
-- DuckDB/Parquet metadata and annotation catalogs;
-- Zarr or HDF5 matrix-store interfaces;
+- DuckDB/Parquet metadata catalogs (populated release = Milestone **7A**);
+- Zarr matrix-store interfaces (backend-independent protocol in 7B);
 - a flat CpG-to-gene Deep Set baseline;
-- a hierarchical CpG-to-region-to-gene Deep Set model;
+- a hierarchical CpG-to-region-to-gene Deep Set model (v0.1 residual baseline);
+- planned multi-path RBS / TBS / direct CpG scores (Milestone **7C**);
 - static CpGPT sequence-adapter features exported offline;
 - optional MethylGPT CpG-token priors as an ablation;
 - age-regression and tissue-classification heads;
-- study-grouped cross-fitting and leakage controls;
+- study-grouped OOF cross-fitting after 7A–7E (Milestone **7**);
 - array missingness and manifest-downsampling tests.
 
-Stage 0 deliberately excludes dynamic foundation-model token extraction, LoRA, imputation during training, episignature classifiers, epivariant calling, and production long-read training.
+Stage 0 deliberately excludes dynamic foundation-model token extraction, LoRA, imputation during training, episignature classifiers, epivariant calling, production long-read training, ClickHouse, and default TileDB migration.
 
 ## Server layout
 
@@ -189,7 +190,7 @@ Never committed:
 
 ## Status
 
-Stage 0 milestones **1–5d** are done (see
+Stage 0 milestones **1–6** are done (see
 [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md)):
 
 | Done | What shipped |
@@ -202,14 +203,16 @@ Stage 0 milestones **1–5d** are done (see
 | Real Hub packs (5b″) | `mbs matrix convert-pack`; study-holdout matrices + `stage0_hub_real_benchmark/` |
 | Multitask deepMAT (5c) | Masked age+tissue heads on shared flat encoder |
 | Max-N DeepRVAT flat (5d) | Uncapped age/tissue/sex GSM-union (`matrix-hub-age-tissue-sex-full-v1`, 13548 samples); run `stage0-flat-deeprvat-age-tissue-sex-full-v1`; report `reports/inspection/stage0_5d_max_n/` |
-| Hierarchical residual path (6) | `mbs train hierarchical`; typed CpG→region→gene + residual slot (no `__unassigned__`); run `stage0-hier-deeprvat-age-tissue-sex-full-v1`; report `reports/inspection/stage0_6_hierarchical/` |
+| Hierarchical residual path (6) | `mbs train hierarchical`; typed CpG→region→gene + residual slot (no `__unassigned__`); run `stage0-hier-deeprvat-age-tissue-sex-full-v1` (**deepMAT-hierarchical-v0.1**); report `reports/inspection/stage0_6_hierarchical/` |
 
-**Current gate — Milestone 7:** study-grouped cross-fitting for out-of-fold MBS
-/ age / tissue scores with leakage controls. Milestone 6 closed: hierarchical
-vs flat on the same 5d folds; mapped path carries signal; residual_only alone
-is near chance for tissue/sex. Flat 5d remains the stronger phenotype
-reference on holdout tissue accuracy and age MAE. Disease profile zip
-disease profile zip is complete; EWAS_db All-Data mirror is still in progress (not required for 7). See docs/DATA_CATALOG.md.
+**Current gate — Milestone 7A:** harmonized data release + phenotype census
+([`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md)).
+Final OOF cross-fitting (Milestone **7**) is blocked until 7A–7E. Milestone 6
+closed: hierarchical vs flat on the same 5d folds; mapped path carries signal;
+one-scalar residual_only is near chance for tissue/sex (bottleneck, not
+biology). Flat 5d remains the stronger phenotype reference. Disease profile zip
+is complete; EWAS_db All-Data mirror is still in progress (not required for
+7A). See [`docs/DATA_CATALOG.md`](docs/DATA_CATALOG.md).
 
 Public model name remains **deepMAT**; package/CLI stay `mbs` /
 `methyl-burden-score`.

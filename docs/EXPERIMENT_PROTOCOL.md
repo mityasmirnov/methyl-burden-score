@@ -57,20 +57,24 @@ the final performance story.
 Use `mbs.evaluation.build_study_grouped_split` and the phenotype registry
 (`configs/data/phenotype_registry.yaml`) to record split roles.
 
-Development protocol:
+Development protocol (Milestone **7E**):
 
 ```text
 3 outer folds
 2 restarts per fold
 ```
 
-Final Stage 0 protocol:
+Final Stage 0 protocol (Milestone **7**, after 7A–7E):
 
 ```text
 5 outer folds
 up to 6 restarts per fold
 ```
 
+Do not launch final 5×6 until catalog census, nine-pack matrices, multi-path
+architecture, Level-1 normalization, and 7E selection are complete
+([ADR 0007](adr/0007-crossfit-prerequisites.md)). A 3-fold / 1-restart smoke of
+existing machinery is plumbing only—not Milestone 7.
 ## Training tasks
 
 ### Age
@@ -116,8 +120,14 @@ up to 6 restarts per fold
 | H04 | fused static priors | hierarchical | max/max |
 | H05 | CpGPT adapter + annotations | hierarchical | gated/max |
 | H06 | CpGPT adapter + annotations | hierarchical | mean/mean |
+| M01 | gene MBS only | flat or hier gene | — |
+| M02 | gene + direct CpG | multi-path | — |
+| M03 | gene + RBS + TBS + direct | multi-path | — |
+| N01 | M* + Level-1 robust z | selected topology | — |
 
-Attention-only pooling is deferred until this matrix is complete.
+M* / N* arms are Milestone **7E** (independently trained). Attention-only pooling
+is deferred until this matrix is complete. Report **macro-F1**, **balanced
+accuracy**, correlations, and calibration—not accuracy/MAE alone—for selection.
 
 ## Negative controls
 
@@ -195,7 +205,13 @@ Record:
 
 ## Out-of-fold score generation
 
-For each sample, average only checkpoints from folds and restarts that excluded its full group. Store model IDs and weights in the score manifest.
+For each sample, average only checkpoints from folds and restarts that excluded
+its full group. Store model IDs and weights in the score manifest. This is
+Milestone **7** after architecture selection in **7E**.
+
+Independently trained branch ablations (gene-only vs regulatory vs direct, etc.)
+are required before claiming a branch is uninformative; eval-time masking of a
+jointly trained residual slot is not sufficient.
 
 ## Minimum success criteria
 
