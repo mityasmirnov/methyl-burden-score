@@ -20,6 +20,7 @@ OOF cross-fit stays blocked until those gates pass.
 | Term | Meaning |
 |------|---------|
 | **ADR** | Architecture Decision Record under `docs/adr/`. Binding design choice (e.g. [0006](../adr/0006-multipath-noncoding-scores.md) multi-path scores; [0007](../adr/0007-crossfit-prerequisites.md) 7A–7E before final OOF; [0008](../adr/0008-score-identifiability.md) score orientation). ADRs win when docs disagree. |
+| **ATS** | Age/Tissue/Sex. Frozen Hub GSM-union `matrix-hub-age-tissue-sex-full-v1` (13 548 samples). Freeze: `deepmat-data-age-tissue-sex-v1`. Not all Hub GSM (34 234) and not EWAS_db. |
 | **MBS** | Gene methylation burden: CpG → typed gene region → gene score. |
 | **RBS** | Regulatory Burden Score: CpG → non-gene regulatory regions (cCRE / enhancer / CGI / DMR / ChromHMM-like) → regulatory-region score. |
 | **TBS** | Tile Burden Score: remaining mapped loci → adaptive CpG-count genomic tiles → tile score (no nearest-gene assignment). |
@@ -34,8 +35,9 @@ OOF cross-fit stays blocked until those gates pass.
 | 7A–7B | No (catalog + matrices) |
 | 7C | Trainer/model code + fixture/smoke; not the architecture bake-off |
 | 7D | Norm fit + A/B smoke; not full CV |
-| **7E** | **Yes — development CV** (current gate). Graph-v2 on disk; multi-path unblocked |
-| **7** | **Yes — final OOF** after 7E chooses architecture |
+| **7E** | **Yes — development CV** on frozen ATS (current gate). Graph-v2 unblocks RBS/TBS |
+| **7E′** | **Yes — Hub multitask** (age/tissue/sex/disease/cancer, masked) + hygiene; before Milestone 7 |
+| **7** | **Yes — final OOF** after 7E and 7E′ |
 
 Do not retrain frozen **v0.1** flat/hier runs.
 
@@ -78,18 +80,26 @@ census/eligibility reports were re-exported in the same refresh.
 Topology residual closed:
 [`milestone-7c-graph-v2-topology.md`](milestone-7c-graph-v2-topology.md).
 
-### Improve the analysis (before or beside 7E)
+### Improve the analysis (7E′ — beside 7E; required before Milestone 7)
 
-1. Metadata-only control (study/platform/tissue → phenotype) as a confounding
-   ceiling on the same 7E folds.
-2. Within-study age/BMI ranges and documented disease/cancer controls (7A
-   follow-on); keep those traits auxiliary until controls exist.
-3. Harmonize 7B manifest `platform_id` (`450K` vs frozen `HM450`) on catalog
-   refresh — probe universe is still HM450-aligned.
-4. Parameter-matched width/GELU/dropout/LN for flat vs hier (7C YAML defaults).
-5. Do not use blood `cell_component` pack-wide (~1.1% populated).
-6. Point catalog census tests at a temp `--report-dir` so they cannot overwrite
+Plan: [`milestone-7e-prime-analysis-hygiene.md`](milestone-7e-prime-analysis-hygiene.md).
+
+1. **Hub multitask:** train age + tissue + sex + **disease** (and cancer) with
+   masked unknown≠control on packs already converted (~34 234 unique Hub GSM).
+   Do not overwrite the ATS freeze. More EWAS_db downloads do not enlarge ATS.
+2. Metadata-only control (study/platform/tissue → phenotype) on the same 7E
+   folds (code exists: `fit_metadata_only`; must appear in the 7E report).
+3. Census follow-ons: donor/replicate IDs; within-study age/BMI ranges.
+4. Alias Hub `platform=450K` → catalog `HM450` on next refresh (probe map is
+   already HM450). These nine zips contain **no EPIC rows**.
+5. Parameter-matched width/GELU/dropout/LN for flat vs hier (also 7E Done when).
+6. Do not use blood `cell_component` pack-wide (~1.1% populated).
+7. Census tests: temp `--report-dir` so they cannot clobber
    `reports/inspection/deepmat-data-v1/`.
+8. `*.RData` gitignored; do not commit Hub sample blobs.
+
+Graph-v2 + independent RBS/TBS train-time masks are **done**
+([`milestone-7c-graph-v2-topology.md`](milestone-7c-graph-v2-topology.md)).
 
 ## Scope and acceptance
 
@@ -100,7 +110,8 @@ Topology residual closed:
 | **7B** | All nine Hub packs as canonical matrices; chunked Zarr; multi-label long-form; probe-collapse policy (**done**; six full packs + index + overlap report) |
 | **7C** | Trainer P0/P1 fixes; centered heads; score-orientation anchor; graph v2 (RBS/TBS); direct CpG; constraint-aware splits; metrics wired (**fixture done**; orientation + long-form join + Hub smoke + AUROC emission landed; topology residuals closed — see [`milestone-7c-graph-v2-topology.md`](milestone-7c-graph-v2-topology.md)) |
 | **7D** | Fold-fitted Level-1 MAD robust-z; persist hashes; novel loci `z=0` + `norm_present=False`; Hub DeepRVAT A/B smoke; AE not default (**done**; `reports/inspection/stage0_7d_level1/`) |
-| **7E** | 3×2 independently trained arms including transparent baselines and CpGPT ablation (**current gate**; graph-v2 prep done) |
+| **7E** | 3×2 independently trained arms including transparent baselines, CpGPT ablation, graph-v2 RBS/TBS (**current gate**) |
+| **7E′** | Hub multitask (age/tissue/sex/disease/cancer, masked) + catalog/census hygiene (**before Milestone 7**) |
 | **7** | 5×6 OOF MBS (+ RBS/TBS/direct as applicable) with leakage controls |
 
 ## Locked decisions
@@ -114,7 +125,7 @@ Topology residual closed:
 | Noncoding | MBS + RBS + TBS + optional direct CpG | ADR 0006; ~30% unassigned is signal |
 | Residual one-scalar | Frozen v0.1 only | Bottleneck, not biology test |
 | Normalization | Level-1 fold-fitted robust z required before 7E; AE later | GMQN already on Hub |
-| Final 5×6 | After 7A–7E | ADR 0007 |
+| Final 5×6 | After 7A–7E′ | ADR 0007 + Hub multitask hygiene |
 | Flat vs hier compare | Parameter-matched topology in 7E | Width/activation/dropout differed in v0 |
 | Pack “prevalence” | Availability in Hub packs, not epidemiology | Heterogeneous contributed studies |
 | Score orientation | Anchor before OOF average | ADR 0008 |
@@ -396,10 +407,15 @@ Implementation brief:
 
 **Arms (graph-v2 ready):** mean/elastic-net; parameter-matched flat/hier gene-only;
 gene + direct; gene + RBS + TBS + direct; each neural ± Level-1 z; CpGPT as a
-separate ablation. Independently trained on identical folds. Cohort: frozen ATS
-13 548.
+separate ablation. Independently trained on identical folds. Cohort for
+architecture selection: frozen **ATS** 13 548 (age/tissue/sex GSM-union).
 
-Winner feeds Milestone 7 (5×6). Eval-time branch masking is not sufficient.
+Hub-wide disease/cancer heads and hygiene: **7E′**
+([`milestone-7e-prime-analysis-hygiene.md`](milestone-7e-prime-analysis-hygiene.md)).
+Eligibility `core=False` means unknown≠control, not “skip disease training.”
+
+Winner plus 7E′ multitask feed Milestone 7 (5×6). Eval-time branch masking is
+not sufficient.
 
 ### Milestone 7 — Final OOF
 
@@ -416,7 +432,7 @@ assignments, presence/coverage/norm masks, complete model lineage.
 - GWAS-style REGENIE / BGEN pseudodosage export (not applicable to methylation).
 - Overwriting frozen flat/hier v0.1 runs or `deepmat-data-age-tissue-sex-v1`.
 - Advertising unimplemented CLI as shipped.
-- Retraining v0.1 or launching Milestone **7** before 7E.
+- Retraining v0.1 or launching Milestone **7** before 7E **and** 7E′.
 
 ## Open questions
 

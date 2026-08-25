@@ -52,7 +52,8 @@ Full multi-path 3×2 is unblocked.
 
 | Choice | Decision | Why |
 |--------|----------|-----|
-| Cohort for selection | Frozen ATS `matrix-hub-age-tissue-sex-full-v1` (13 548) | Same family as v0.1 / 7D; disease/cancer auxiliary later |
+| Cohort for selection | Frozen **ATS** `matrix-hub-age-tissue-sex-full-v1` (13 548) | Comparable to v0.1 / 7D. Hub-wide disease/cancer is **7E′**, not a bigger ATS freeze |
+| Disease/cancer in 7E′ | Train with masked unknown≠control | `core=False` ≠ skip heads |
 | Training | Joint DeepRVAT: shared aggregation **and** linear heads | Programme glossary |
 | Independent arms | Separate trains on identical folds | ADR 0006 |
 | Graph for RBS/TBS | `graph-grch38-gencode38-cgi-tile-v2` | CGI RBS + 50-CpG tiles; no SCREEN required |
@@ -84,10 +85,12 @@ flowchart LR
 
 ## Non-goals
 
-- Milestone 7 5×6 OOF; overwriting v0.1; waiting on EWAS_db completeness;
-  Level-2/3 normalizers; dual hyper/hypo channels as default;
-  treating disease/cancer as core until documented controls exist.
+- Milestone 7 5×6 OOF; overwriting v0.1 or the ATS freeze; waiting on EWAS_db
+  completeness; Level-2/3 normalizers; dual hyper/hypo channels as default;
+  treating unlabeled disease/cancer rows as **controls**.
+- Hub-wide multitask and catalog hygiene (those are **7E′**).
 
 ## Open questions
 
-None blocking 7E arms (graph-v2 + train-time masks are on disk).
+None blocking 7E ATS bake-off (graph-v2 + train-time masks are on disk). Hub
+multitask + hygiene: [`milestone-7e-prime-analysis-hygiene.md`](milestone-7e-prime-analysis-hygiene.md).

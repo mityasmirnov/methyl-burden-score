@@ -64,7 +64,8 @@ defaults. The critical path is:
 7C. Architecture corrections (multi-path scores, splits, heads) (**done**, fixture + Hub smoke).
 7D. Fold-fitted Level-1 normalization (**done**).
 7E. Development CV (architecture selection) (**current gate**; graph-v2 on disk).
-7. Final study-grouped OOF cross-fitting (blocked until 7A–7E).
+7E′. Hub multitask + analysis hygiene (required before 7).
+7. Final study-grouped OOF cross-fitting (blocked until 7A–7E′).
 
 Model contracts: [`ARCHITECTURE.md`](ARCHITECTURE.md). Milestone checklist:
 [`TODO_PIPELINE.md`](TODO_PIPELINE.md).
@@ -77,7 +78,7 @@ model.
 ## Post–Stage 0 multimodal stack
 
 After Milestone 7 produces OOF scores, the longer-term vision adds further
-layers. Do not start these while 7A–7E / 7 are open (see
+layers. Do not start these while 7A–7E′ / 7 are open (see
 `.cursor/rules/pipeline-todo.mdc`).
 
 ### Module A — Normalization and epimutation features

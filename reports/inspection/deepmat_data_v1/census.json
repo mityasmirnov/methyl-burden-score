@@ -1,15 +1,15 @@
 {
   "ewas_db_ingest": [
     {
-      "n_assay_files": 78750,
-      "n_samples": 77817,
-      "n_studies": 814,
+      "n_assay_files": 84568,
+      "n_samples": 83635,
+      "n_studies": 855,
       "source_release_id": "ewas-datahub-db-v1",
       "source_system": "ewas_datahub_db",
-      "total_bytes": 576822281794771.0
+      "total_bytes": 602178018444494.0
     }
   ],
-  "generated_at": "2026-08-24T12:49:22Z",
+  "generated_at": "2026-08-25T11:15:54Z",
   "label_conflicts_head": [],
   "overlap_by_n_families": [
     {
@@ -398,12 +398,12 @@
   "release_ewas_db": {
     "advertised_n": 1989,
     "mirror_complete": false,
-    "n_local_gsm": 87153,
-    "n_local_studies": 883,
+    "n_local_gsm": 92971,
+    "n_local_studies": 924,
     "refresh_is_idempotent": true,
     "remote_index_fetched": false,
-    "total_bytes": 989705136148
+    "total_bytes": 1067332702810
   },
-  "unique_gsm": 116113,
+  "unique_gsm": 121931,
   "unique_vs_row_sum_note": "unique GSM must be compared to pack-row sum; overlap makes them unequal"
 }

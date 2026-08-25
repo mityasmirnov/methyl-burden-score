@@ -81,6 +81,10 @@ secrets*
 *.safetensors
 *.pkl
 *.pickle
+*.RData
+*.rda
+*.rdb
+*.rds
 
 # Generated project areas (repo-root only; do not ignore configs/data etc.)
 external_data/

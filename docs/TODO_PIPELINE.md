@@ -13,15 +13,20 @@ True next milestone after bootstrap:
 > baseline (6 — **done**) → harmonized release + phenotype census (7A — **done**) →
 > nine-pack matrices (7B — **done**) → architecture corrections (7C —
 > **done**, fixture + Hub DeepRVAT A/B) → **development CV (7E — current gate)** →
-> **final OOF cross-fitting (7)** → one score matrix.
+> Hub multitask + hygiene (**7E′**) → **final OOF cross-fitting (7)** → one
+> score matrix.
 
 **Current gate:** Milestone **7E** (development CV / architecture selection).
-Gene-only and multi-path arms may use
-`graph-grch38-gencode38-cgi-tile-v2` (on disk under
-`$MBS_DATA_ROOT/canonical/graphs/`; inspection
-`reports/inspection/annotation_graph_cgi_tile_v2/`). Topology residual plan:
-[`plans/milestone-7c-graph-v2-topology.md`](plans/milestone-7c-graph-v2-topology.md).
-Readiness: [`plans/milestone-7e-development-cv.md`](plans/milestone-7e-development-cv.md).
+**ATS** = Age/Tissue/Sex frozen Hub GSM-union
+`matrix-hub-age-tissue-sex-full-v1` (13 548). Graph-v2 is **on disk**
+(`graph-grch38-gencode38-cgi-tile-v2`; inspection
+`reports/inspection/annotation_graph_cgi_tile_v2/`; plan
+[`plans/milestone-7c-graph-v2-topology.md`](plans/milestone-7c-graph-v2-topology.md)),
+so gene-only **and** independent RBS/TBS arms may start. Extra Hub-wide
+multitask + hygiene is **7E′** (required before Milestone **7**, does not
+block starting 7E). Readiness:
+[`plans/milestone-7e-development-cv.md`](plans/milestone-7e-development-cv.md);
+7E′: [`plans/milestone-7e-prime-analysis-hygiene.md`](plans/milestone-7e-prime-analysis-hygiene.md).
 
 **7A–7D** are `done` (7C = fixture + Hub smoke). Hub nine packs and 7B full
 matrices are in the live DuckDB release (`created_at` 2026-08-25T11:15Z:
@@ -31,7 +36,7 @@ matrix artifacts including all nine Hub full packs). EWAS_db is incomplete
 census: `reports/inspection/deepmat_data_v1/` (underscore; matches this
 refresh). Ignore `reports/inspection/deepmat-data-v1/` if it shows ~5 GSM
 (fixture leak into the CLI default hyphen path).
-**Do not retrain v0.1** or start Milestone **7** until 7E lands
+**Do not retrain v0.1** or start Milestone **7** until **7E and 7E′** land
 ([ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
 [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
@@ -39,9 +44,11 @@ refresh). Ignore `reports/inspection/deepmat-data-v1/` if it shows ~5 GSM
 runs; DeepRVAT-style joint aggregation + linear heads).
 
 **Training schedule:** 7A–7B data only; 7C–7D code/fixtures/smokes; **7E** =
-architecture selection (3 folds × 2 restarts, independently trained arms);
-**7** = final 5×6 OOF after 7E. Neural arms train shared score aggregation
-**and** linear phenotype heads end-to-end (DeepRVAT pattern).
+architecture selection on frozen ATS (3 folds × 2 restarts, independently
+trained arms, including graph-v2 RBS/TBS); **7E′** = Hub multitask
+(age/tissue/sex/**disease**/cancer with masked unknown≠control) + hygiene;
+**7** = final 5×6 OOF after 7E **and** 7E′. Neural arms train shared score
+aggregation **and** linear phenotype heads end-to-end (DeepRVAT pattern).
 
 Frozen references (do not overwrite): **deepMAT-flat-v0.1** /
 **deepMAT-hierarchical-v0.1** / **deepmat-data-age-tissue-sex-v1**. Hierarchical
@@ -616,33 +623,72 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   - `$MBS_DATA_ROOT/canonical/graphs/graph-grch38-gencode38-cgi-tile-v2/`
   - `reports/inspection/annotation_graph_cgi_tile_v2/`
   - Train-time RBS/TBS feature masks (eval-time masking is not an ablation)
-- **May start now:** parameter-matched flat/hier on frozen ATS + Level-1 A/B +
-  mean/elastic-net + CpGPT ablation; multi-path RBS/TBS arms on graph-v2.
-  Disease/cancer stay auxiliary until documented controls exist (eligibility
-  already flags this).
+- **May start now:** parameter-matched flat/hier on frozen **ATS** (age/tissue/sex
+  GSM-union, 13 548; freeze `deepmat-data-age-tissue-sex-v1`) + Level-1 A/B +
+  mean/elastic-net + CpGPT ablation; independently trained RBS/TBS/direct arms
+  on graph-v2. Disease/cancer heads with **masked** unknown≠control belong on
+  Hub packs in **7E′** (do not skip them; do not treat unlabeled rows as
+  controls). More EWAS_db files do **not** enlarge ATS.
 - **Done when:** 3 outer study-grouped folds × 2 restarts compare independently
   trained arms: **transparent gene/region mean and elastic-net**;
   **parameter-matched** flat gene-only; **parameter-matched** hierarchical
   gene-only; gene + direct CpG; gene + RBS + TBS + direct; each neural arm
   with/without Level-1 robust-z; **CpGPT inclusion as a separate ablation**.
   Report selects architecture for Milestone 7. Eval-time branch masking and
-  ordered-prefix holdout eval are not sufficient.
+  ordered-prefix holdout eval are not sufficient. Encoder width/GELU/dropout/LN
+  must match for flat vs hier.
 - **Depends on:** (7C), (7D Level-1); graph-v2 on disk for multi-path arms.
 - **Plan:** [`plans/milestone-7e-development-cv.md`](plans/milestone-7e-development-cv.md);
   [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+- **Next action:** Start 7E ATS bake-off; run **7E′** Hub multitask + hygiene
+  in parallel (required before Milestone 7).
+
+---
+
+## 7E′. Hub multitask (age/tissue/sex/disease/cancer) + analysis hygiene
+
+- **Status:** `pending` (extra steps; **required before Milestone 7**; does not
+  block starting 7E on frozen ATS)
+- **Why a separate step:** Frozen ATS is only 13 548 GSM from three packs.
+  Unique Hub GSM already on disk is **34 234**. EWAS_db download progress does
+  not add rows to Hub packs. Eligibility `core=False` for disease/cancer is
+  about **unknown ≠ control**, not about skipping those heads.
+- **Done when:**
+  - Train **age, tissue, sex, and disease** (cancer too) with masked BCE /
+    masked continuous heads on Hub matrices already converted; unlabeled
+    disease/cancer is unknown, never a control
+  - New study-grouped split for that Hub-wide cohort; **do not** overwrite
+    `deepmat-data-age-tissue-sex-v1` or v0.1
+  - Metadata-only control (study/platform/tissue → phenotype) on the **same
+    folds as 7E**, reported as a confounding ceiling
+  - 7A census follow-ons: donor/replicate IDs when present; within-study
+    age/BMI ranges
+  - Catalog: alias Hub sample-info `450K` → `HM450` on next
+    `mbs catalog refresh-release` (same 450K universe; EPIC is not in these
+    nine zips — see plan)
+  - Census/eligibility tests use a temp `--report-dir` (hyphen CLI default must
+    not be fixture-clobbered)
+  - `*.RData` gitignored; no Hub sample blobs committed under
+    `reports/inspection/ewas_datahub_samples/`
+  - Blood `cell_component` not used as a pack-wide head (~1.1% populated)
+  - Parameter-matched flat vs hier YAML (shared with 7E Done when)
+- **Not in this list (already done):** graph-v2 + train-time RBS/TBS masks
+  ([`plans/milestone-7c-graph-v2-topology.md`](plans/milestone-7c-graph-v2-topology.md)).
+- **Depends on:** (7B) matrices; (7E) may run in parallel.
+- **Plan:** [`plans/milestone-7e-prime-analysis-hygiene.md`](plans/milestone-7e-prime-analysis-hygiene.md).
 
 ---
 
 ## 7. Run study-grouped cross-fitting (final OOF)
 
-- **Status:** `pending` (**blocked until 7A–7E**)
+- **Status:** `pending` (**blocked until 7A–7E′**)
 - **Done when:** Out-of-fold MBS scores (and RBS/TBS/direct contributions when
   selected), age predictions, and tissue predictions are generated with leakage
   controls (no sample/donor/replicate/held-out study scored by a model that saw
   it). Scores are **orientation-aligned** (ADR 0008) before averaging. Persist
   fold-specific normalization, presence/count/`norm_present` masks, complete
   model lineage. Protocol: 5 outer folds × up to 6 restarts.
-- **Depends on:** (7A)–(7E); architecture chosen in 7E.
+- **Depends on:** (7A)–(7E′); architecture chosen in 7E; Hub multitask in 7E′.
 - **Note:** A 3-fold / 1-restart smoke of *existing* machinery is allowed for
   plumbing; it does not complete this milestone and must not overwrite v0.1
   freezes ([ADR 0007](adr/0007-crossfit-prerequisites.md)).
@@ -653,7 +699,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 - **Status:** `deferred`
 - **Rule:** Do not start these until milestones 1–7 produce a real OOF model
-  pipeline (7A–7E then 7). Full vision: [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md).
+  pipeline (7A–7E′ then 7). Full vision: [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md).
   Graph-layer cCRE/tiles for scoring are **7C**, not this section.
 
 ### Stage 1+ roadmap (deferred candidates)

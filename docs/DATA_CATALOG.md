@@ -226,21 +226,20 @@ Wave-1 training focus: age, tissue (+ sex in 5d). Disease/cancer heads follow
   un-normalized string.
 - Full-genome `graph-grch38-gencode38-cgi-tile-v2` is **on disk** (RBS ≫ 72
   chrom×context regions; inspection `annotation_graph_cgi_tile_v2/`).
-- Final OOF cross-fitting (Milestone 7) is **blocked until 7A–7E**; **do not
-  retrain v0.1**.
+- Hub baseline packs are **450K-only** (`sample_info.platform == "450K"`). EPIC
+  is not missing from the converter; it is absent from these zips.
+- Final OOF (Milestone 7) is **blocked until 7A–7E′**; **do not retrain v0.1**.
 
 ## Proposed improvements
 
-1. Milestone **7E** development CV (current gate; graph-v2 unblocks RBS/TBS).
-2. Census follow-ons (donor/replicate IDs, metadata-only predictability,
-   documented disease/cancer controls).
-3. Normalize 7B `platform_id` to `HM450` on the next catalog refresh.
+1. Milestone **7E** ATS development CV (current gate; graph-v2 unblocks RBS/TBS).
+2. Milestone **7E′** Hub multitask (age/tissue/sex/disease/cancer, masked) +
+   hygiene — see [`plans/milestone-7e-prime-analysis-hygiene.md`](plans/milestone-7e-prime-analysis-hygiene.md).
+3. Alias Hub `platform=450K` → `HM450` on catalog refresh (EPIC is not in these
+   nine zips; EPIC coverage is in the annotation graph / EWAS_db `add_txt_850`).
 4. Populate registry `sample_count` from unique GSM when exporting sample-info.
-5. Do not commit Hub `.RData` sample blobs; keep `.txt` / Parquet only under inspection.
-6. Let EWAS_db finish (or pause if disk approaches capacity); re-run
+5. Let EWAS_db finish (or pause if disk approaches capacity); re-run
    `mbs catalog refresh-release` — optional, not a 7E gate.
-7. Point census unit tests at a temp `--report-dir` so they cannot clobber
-   `reports/inspection/deepmat-data-v1/`.
 
 ## Related
 

@@ -58,11 +58,14 @@ flowchart LR
 
 ## Non-goals
 
-SCREEN cCRE; 7E 3×2 Hub CV; v0.1 overwrite; Level-2/3 normalizers; reopening
-7C fixture Done when.
+SCREEN cCRE; overwriting v0.1 annotations; Level-2/3 normalizers; reopening
+7C fixture Done when. Hub-scale 7E CV and 7E′ multitask are downstream.
 
 ## Ops
 
 ```bash
 uv run mbs graph build --graph-id graph-grch38-gencode38-cgi-tile-v2
 ```
+
+Unblocks independently trained RBS/TBS arms in **7E**. Remaining Hub-wide
+disease heads + catalog hygiene: **7E′**.

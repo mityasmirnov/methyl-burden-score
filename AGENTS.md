@@ -88,7 +88,7 @@ Use the project inspection commands, DuckDB queries, manifests, and sanitized re
 11. Do not store sample×CpG observations as a long DuckDB table; catalog stays independent of the matrix backend ([ADR 0005](docs/adr/0005-catalog-matrix-independence.md)).
 12. Missing disease/cancer labels are **unknown**, not automatic controls, unless pack documentation establishes controls.
 13. Do not assign intergenic loci to the nearest gene; do not treat one-scalar residual compression as proof that noncoding CpGs are uninformative ([ADR 0006](docs/adr/0006-multipath-noncoding-scores.md)).
-14. Do not launch final 5-fold × 6-restart OOF cross-fitting until Milestones 7A–7E are done ([ADR 0007](docs/adr/0007-crossfit-prerequisites.md)). Do not retrain frozen v0.1 runs; 7A–7D are done and the coding gate is **7E** (graph-v2 on disk; multi-path unblocked).
+14. Do not launch final 5-fold × 6-restart OOF cross-fitting until Milestones 7A–7E′ are done ([ADR 0007](docs/adr/0007-crossfit-prerequisites.md)). Do not retrain frozen v0.1 runs; 7A–7D are done and the coding gate is **7E** (graph-v2 on disk; multi-path unblocked). Hub-wide disease/cancer heads and catalog hygiene are **7E′** (unknown labels stay unknown, not controls).
 15. Before averaging OOF scores, apply a score-orientation anchor; predictive MBS is not a constraint/LOEUF score ([ADR 0008](docs/adr/0008-score-identifiability.md)).
 
 ## Coding standards
