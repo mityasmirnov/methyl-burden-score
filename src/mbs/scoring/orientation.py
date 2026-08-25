@@ -17,9 +17,9 @@ def polarity_from_correlation(mbs: np.ndarray, signed_m: np.ndarray) -> str:
     """Return ``hyper_aligned`` or ``flipped`` from Pearson r of gene-mean scores."""
     a = np.asarray(mbs, dtype=np.float64).reshape(-1)
     b = np.asarray(signed_m, dtype=np.float64).reshape(-1)
-    if a.shape != b.shape or a.size < 2:
-        raise ValueError("mbs and signed_m must be 1-D and same length >= 2")
-    if float(np.std(a)) == 0 or float(np.std(b)) == 0:
+    if a.shape != b.shape:
+        raise ValueError(f"mbs and signed_m length mismatch: {a.shape} vs {b.shape}")
+    if a.size < 2 or float(np.std(a)) == 0 or float(np.std(b)) == 0:
         return "hyper_aligned"
     r = float(np.corrcoef(a, b)[0, 1])
     return "flipped" if r < 0 else "hyper_aligned"

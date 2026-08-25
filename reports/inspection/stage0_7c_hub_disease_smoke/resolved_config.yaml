@@ -1,0 +1,86 @@
+experiment:
+  name: stage0_flat_hub_disease_multilabel_smoke
+  stage: 0
+  seed: 42
+pilot:
+  mode: hub_pack
+  task: multitask
+  empty_as_control: false
+  matrix_id: matrix-hub-disease-full-v1
+  graph_id: graph-grch38-gencode38-five-role-v1
+  static_feature_set: cpgpt2m_adapter_128_v1
+  phenotype_family: disease
+  train_studies: []
+  validation_studies: []
+  external_test_studies: []
+  auto_split: true
+  split_id: hub-disease-full-multilabel-smoke-v1
+  max_samples: 48
+features:
+  methylation:
+    beta: true
+    m_value: true
+    epsilon: 0.001
+  static_feature_set: cpgpt2m_adapter_128_v1
+model:
+  type: flat_deepset
+  phi_layers: 2
+  phi_hidden_dimension: 20
+  rho_layers: 3
+  rho_hidden_dimension: 10
+  activation: leaky_relu
+  pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  dropout: 0.0
+heads:
+  age:
+    enabled: false
+  tissue:
+    enabled: false
+  sex:
+    enabled: false
+  disease:
+    enabled: true
+    value_column: phenotype_value
+    min_count: 2
+  cancer:
+    enabled: false
+loss:
+  lambda_age: 0.0
+  lambda_tissue: 0.0
+  lambda_sex: 0.0
+  lambda_disease: 1.0
+  lambda_cancer: 0.0
+training:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_size: 4
+  batch_token_budget: 200000
+  gradient_clip_norm: 2.0
+  max_epochs: 1
+  early_stopping_patience: 1
+  precision: bf16-mixed
+  require_cuda: false
+device:
+  cuda_visible_devices: '0'
+  torch_device: cuda
+logging:
+  tensorboard: false
+  wandb: false
+  save_resolved_config: true
+  save_environment: true
+  save_checksums: true
+splits:
+  train_fraction: 0.7
+  val_fraction: 0.15
+runtime:
+  run_id: stage0-flat-hub-disease-multilabel-smoke-v1
+  device: cuda:0
+  input_dim: 131
+  n_genes: 6
+  n_classes: 1
+  overfit_fixture: false
+  max_loci: 256
+  project_root: /data/projects/methyl-burden-score

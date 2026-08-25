@@ -16,6 +16,9 @@ import yaml
 from torch import nn
 
 from mbs.evaluation.metrics import (
+    binary_auroc_auprc,
+    expected_calibration_error,
+    masked_multilabel_auroc_auprc,
     metrics_by_group,
     multiclass_metrics,
     regression_metrics,
@@ -459,8 +462,17 @@ def _run_epoch(
     n = 0
     pred_tissue: list[int] = []
     true_tissue: list[int] = []
+    score_tissue: list[float] = []
     pred_age: list[float] = []
     true_age: list[float] = []
+    score_sex: list[float] = []
+    true_sex: list[int] = []
+    disease_true_rows: list[np.ndarray] = []
+    disease_score_rows: list[np.ndarray] = []
+    disease_mask_rows: list[np.ndarray] = []
+    cancer_true_rows: list[np.ndarray] = []
+    cancer_score_rows: list[np.ndarray] = []
+    cancer_mask_rows: list[np.ndarray] = []
     group_study: list[str] = []
     group_platform: list[str] = []
     group_tissue: list[str] = []
@@ -646,6 +658,54 @@ def _run_epoch(
                     if logits is not None:
                         pred_tissue.extend(logits.argmax(dim=-1).detach().cpu().tolist())
                         true_tissue.extend(batch.tissue_target.reshape(-1).detach().cpu().tolist())
+                        if logits.shape[-1] == 2:
+                            probs = torch.softmax(logits, dim=-1)[:, 1]
+                            score_tissue.extend(probs.detach().cpu().tolist())
+                if (
+                    task == "multitask"
+                    and isinstance(head, MultitaskHeads)
+                    and batch.sex_mask is not None
+                    and bool(batch.sex_mask.any())
+                ):
+                    with torch.no_grad():
+                        mbs_p, present_p = _packed_mbs(model, batch)
+                        sex_logits = head.forward_sex(mbs_p, present_p)
+                        sex_probs = torch.softmax(sex_logits, dim=-1)[:, 1]
+                        mask = batch.sex_mask.reshape(-1)
+                        score_sex.extend(sex_probs[mask].detach().cpu().tolist())
+                        sex_tgt = batch.sex_target
+                        if sex_tgt is not None:
+                            true_sex.extend(sex_tgt.reshape(-1)[mask].detach().cpu().tolist())
+                if (
+                    task == "multitask"
+                    and isinstance(head, MultitaskHeads)
+                    and batch.disease_mask is not None
+                    and batch.disease_target is not None
+                    and bool(batch.disease_mask.any())
+                    and head.disease_head is not None
+                ):
+                    with torch.no_grad():
+                        mbs_p, present_p = _packed_mbs(model, batch)
+                        logits = head.forward_disease(mbs_p, present_p)
+                        probs = torch.sigmoid(logits).detach().cpu().numpy()
+                    disease_true_rows.append(batch.disease_target.detach().cpu().numpy())
+                    disease_score_rows.append(probs)
+                    disease_mask_rows.append(batch.disease_mask.detach().cpu().numpy())
+                if (
+                    task == "multitask"
+                    and isinstance(head, MultitaskHeads)
+                    and batch.cancer_mask is not None
+                    and batch.cancer_target is not None
+                    and bool(batch.cancer_mask.any())
+                    and head.cancer_head is not None
+                ):
+                    with torch.no_grad():
+                        mbs_p, present_p = _packed_mbs(model, batch)
+                        logits = head.forward_cancer(mbs_p, present_p)
+                        probs = torch.sigmoid(logits).detach().cpu().numpy()
+                    cancer_true_rows.append(batch.cancer_target.detach().cpu().numpy())
+                    cancer_score_rows.append(probs)
+                    cancer_mask_rows.append(batch.cancer_mask.detach().cpu().numpy())
                 if task in {"regression", "multitask"} and batch.age_target is not None:
                     with torch.no_grad():
                         mbs_p, present_p = _packed_mbs(model, batch)
@@ -681,6 +741,50 @@ def _run_epoch(
         }
     if len(true_age) >= 2:
         extra.update(regression_metrics(np.asarray(true_age), np.asarray(pred_age)))
+    if len(score_tissue) >= 2 and len(set(true_tissue)) == 2:
+        try:
+            extra.update(binary_auroc_auprc(np.asarray(true_tissue), np.asarray(score_tissue)))
+            extra.update(
+                expected_calibration_error(np.asarray(true_tissue), np.asarray(score_tissue))
+            )
+        except ValueError:
+            pass
+    elif len(score_sex) >= 2 and len(set(true_sex)) == 2:
+        try:
+            extra.update(binary_auroc_auprc(np.asarray(true_sex), np.asarray(score_sex)))
+            extra.update(expected_calibration_error(np.asarray(true_sex), np.asarray(score_sex)))
+        except ValueError:
+            pass
+    if disease_true_rows:
+        try:
+            dis = masked_multilabel_auroc_auprc(
+                np.concatenate(disease_true_rows, axis=0),
+                np.concatenate(disease_score_rows, axis=0),
+                np.concatenate(disease_mask_rows, axis=0),
+            )
+            extra["disease_auroc"] = dis["auroc"]
+            extra["disease_auprc"] = dis["auprc"]
+            extra["disease_n_labels_scored"] = dis["n_labels_scored"]
+            if "auroc" not in extra:
+                extra["auroc"] = dis["auroc"]
+                extra["auprc"] = dis["auprc"]
+        except ValueError:
+            pass
+    if cancer_true_rows:
+        try:
+            can = masked_multilabel_auroc_auprc(
+                np.concatenate(cancer_true_rows, axis=0),
+                np.concatenate(cancer_score_rows, axis=0),
+                np.concatenate(cancer_mask_rows, axis=0),
+            )
+            extra["cancer_auroc"] = can["auroc"]
+            extra["cancer_auprc"] = can["auprc"]
+            extra["cancer_n_labels_scored"] = can["n_labels_scored"]
+            if "auroc" not in extra:
+                extra["auroc"] = can["auroc"]
+                extra["auprc"] = can["auprc"]
+        except ValueError:
+            pass
 
     return {
         "loss": total_loss / max(n, 1),
@@ -956,13 +1060,24 @@ def train_flat_baseline(
                     empty_as_control=empty_as_control,
                 )
             sample_rows = split_sample_rows(phenotypes)
-            split = build_study_grouped_split(
-                sample_rows,
-                train_studies=[str(x) for x in pilot["train_studies"]],
-                validation_studies=[str(x) for x in pilot["validation_studies"]],
-                external_test_studies=[str(x) for x in pilot.get("external_test_studies", [])],
-                split_id=str(pilot.get("split_id", f"{matrix_id}-study-grouped-v1")),
-            )
+            auto_split = bool(pilot.get("auto_split", False))
+            train_studies = [str(x) for x in pilot.get("train_studies", [])]
+            if auto_split or not train_studies:
+                split = maybe_constrained_split(
+                    sample_rows,
+                    seed=seed,
+                    train_fraction=float(config.get("splits", {}).get("train_fraction", 0.7)),
+                    val_fraction=float(config.get("splits", {}).get("val_fraction", 0.15)),
+                    split_id=str(pilot.get("split_id", f"{matrix_id}-auto-v1")),
+                )
+            else:
+                split = build_study_grouped_split(
+                    sample_rows,
+                    train_studies=train_studies,
+                    validation_studies=[str(x) for x in pilot["validation_studies"]],
+                    external_test_studies=[str(x) for x in pilot.get("external_test_studies", [])],
+                    split_id=str(pilot.get("split_id", f"{matrix_id}-study-grouped-v1")),
+                )
             train_ids = set(split["train_sample_ids"])
             val_ids = set(split["validation_sample_ids"])
             test_ids = set(split.get("external_test_sample_ids") or [])
@@ -1122,6 +1237,35 @@ def train_flat_baseline(
                 cancer_maps and cancer_maps.label_names
             ):
                 task_kind = "multitask"
+
+    max_samples = config.get("pilot", {}).get("max_samples")
+    if max_samples is not None and not overfit_fixture and not study_holdout_fixture:
+
+        def _cap_prefer_labeled(
+            phs: list[SamplePhenotype] | None,
+            *,
+            n: int,
+            maps: MultilabelMaps | None,
+        ) -> list[SamplePhenotype] | None:
+            if phs is None:
+                return None
+            if maps is None:
+                return phs[:n]
+            labeled = [
+                p
+                for p in phs
+                if maps.masks.get(p.sample_id) is not None and bool(maps.masks[p.sample_id].any())
+            ]
+            unlabeled = [p for p in phs if p not in labeled]
+            return (labeled + unlabeled)[:n]
+
+        n_cap = max(1, int(max_samples))
+        label_maps = disease_maps if disease_maps is not None else cancer_maps
+        train_phenotypes = _cap_prefer_labeled(train_phenotypes, n=n_cap, maps=label_maps)
+        val_phenotypes = _cap_prefer_labeled(val_phenotypes, n=max(1, n_cap // 4), maps=label_maps)
+        test_phenotypes = _cap_prefer_labeled(
+            test_phenotypes, n=max(1, n_cap // 4), maps=label_maps
+        )
 
     pool_name: PoolName = str(model_cfg.get("pooling", "max"))  # type: ignore[assignment]
     enc = resolve_encoder(model_cfg)
@@ -1324,6 +1468,13 @@ def train_flat_baseline(
             "r2",
             "pearson_r",
             "spearman_r",
+            "auroc",
+            "auprc",
+            "ece",
+            "disease_auroc",
+            "disease_auprc",
+            "cancer_auroc",
+            "cancer_auprc",
         ):
             if key in val_metrics:
                 row[f"val_{key}"] = val_metrics[key]
@@ -1447,6 +1598,15 @@ def train_flat_baseline(
             "pearson_r": test_metrics.get("pearson_r"),
             "spearman_r": test_metrics.get("spearman_r"),
             "metrics_by_group": test_metrics.get("metrics_by_group"),
+            "auroc": test_metrics.get("auroc"),
+            "auprc": test_metrics.get("auprc"),
+            "ece": test_metrics.get("ece"),
+            "disease_auroc": test_metrics.get("disease_auroc"),
+            "disease_auprc": test_metrics.get("disease_auprc"),
+            "disease_n_labels_scored": test_metrics.get("disease_n_labels_scored"),
+            "cancer_auroc": test_metrics.get("cancer_auroc"),
+            "cancer_auprc": test_metrics.get("cancer_auprc"),
+            "cancer_n_labels_scored": test_metrics.get("cancer_n_labels_scored"),
         }
 
     age_std_meta = None

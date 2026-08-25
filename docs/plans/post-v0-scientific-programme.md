@@ -21,7 +21,7 @@ OOF cross-fit stays blocked until those gates pass.
 | Freeze v0 | Named freeze tags in docs; artifacts not overwritten |
 | **7A** | Versioned `deepmat-data-v1/` release; populated DuckDB; phenotype census + trait eligibility reports |
 | **7B** | All nine Hub packs as canonical matrices; chunked Zarr; multi-label long-form; probe-collapse policy (**done**; six full packs + index + overlap report) |
-| **7C** | Trainer P0/P1 fixes; centered heads; score-orientation anchor; graph v2 (RBS/TBS); direct CpG; constraint-aware splits; metrics wired (**fixture done**; orientation + long-form join + Hub sidecar verify landed; optional train smoke / AUROC residual) |
+| **7C** | Trainer P0/P1 fixes; centered heads; score-orientation anchor; graph v2 (RBS/TBS); direct CpG; constraint-aware splits; metrics wired (**fixture done**; orientation + long-form join + Hub smoke + AUROC emission landed; topology residuals remain) |
 | **7D** | Fold-fitted Level-1 MAD robust-z; persist hashes; novel loci `z=0` + `norm_present=False`; AE not default (**current gate**) |
 | **7E** | 3×2 independently trained arms including transparent baselines and CpGPT ablation |
 | **7** | 5×6 OOF MBS (+ RBS/TBS/direct as applicable) with leakage controls |
@@ -247,10 +247,9 @@ deepMAT remains a **sample×gene predictive representation**, not a methylation
 constraint / LOEUF analogue (ADR 0008).
 
 **Residual vs 7B:** orientation train-path and long-form multi-label join are
-implemented; Hub sidecars on `matrix-hub-disease-full-v1` /
-`matrix-hub-cancer-full-v1` verify (`hub_longform_ready`). Optional short train
-smoke and AUROC emission remain. Independent leftovers (full-genome graph-v2,
-multi-system hier, true RBS/TBS arm masks) are listed in
+implemented; Hub smoke + holdout AUROC/AUPRC/ECE emission landed
+(`reports/inspection/stage0_7c_hub_disease_smoke/`). Independent leftovers
+(full-genome graph-v2, multi-system hier, true RBS/TBS arm masks) are listed in
 [`milestone-7c-supervised-architecture.md`](milestone-7c-supervised-architecture.md).
 
 ### 7D — Normalization (do not overwrite Hub GMQN betas)

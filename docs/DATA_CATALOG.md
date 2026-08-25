@@ -221,7 +221,7 @@ Wave-1 training focus: age, tissue (+ sex in 5d). Disease/cancer heads follow
 ## Proposed improvements
 
 1. Milestone **7D:** Level-1 fold-fitted MAD; then **7E** architecture CV.
-2. Optional 7C Hub multilabel train smoke + AUROC emission.
+2. Optional 7C topology residuals (full-genome graph-v2, multi-system hier, RBS/TBS arm masks).
 3. Census refresh follow-ons (7A report fields still missing).
 4. Populate registry `sample_count` from unique GSM when exporting sample-info.
 5. Do not commit Hub `.RData` sample blobs; keep `.txt` / Parquet only under inspection.

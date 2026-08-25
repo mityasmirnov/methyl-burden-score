@@ -52,5 +52,6 @@ See `tests/unit/test_stage0_7c.py` (sampler, heads, splits, controls, graph-v2, 
 
 - `hub_longform_ready` true for `matrix-hub-disease-full-v1` and `matrix-hub-cancer-full-v1`.
 - Long-form multi-hot load verified on real sidecars (unknown ≠ control).
-- Optional: short train smoke via `stage0_flat_hub_disease_multilabel.yaml`.
-- Remaining residuals: AUROC trainer emission; full-genome graph-v2; multi-system hier; true RBS/TBS arms — see `docs/plans/milestone-7c-supervised-architecture.md`.
+- Short train smoke: `reports/inspection/stage0_7c_hub_disease_smoke/` (`stage0_flat_hub_disease_multilabel_smoke.yaml`).
+- Holdout JSON emits AUROC/AUPRC/ECE for binary sex/tissue; multilabel disease AUROC when both classes are observed under mask.
+- Remaining topology residuals: full-genome graph-v2; multi-system hier; true RBS/TBS arms — see `docs/plans/milestone-7c-supervised-architecture.md`.

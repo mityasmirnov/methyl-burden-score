@@ -17,8 +17,8 @@ True next milestone after bootstrap:
 
 **Current gate:** Milestone **7D** (Level-1 fold-fitted MAD). **7B** matrices
 and inspection report are `done`. **7C** fixture acceptance is `done`; Hub
-disease/cancer long-form join is verified on the new full matrices (trainer
-smoke optional; AUROC emission and graph-v2 topology remain residual).
+disease multilabel smoke + holdout AUROC/AUPRC/ECE emission landed. Graph-v2
+topology residuals remain (not Done when).
 **Do not retrain v0.1** or start **7E**/Milestone **7** until 7B–7D land
 ([ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
@@ -514,8 +514,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Depends on:** (7A).
 - **Plan:** [`plans/milestone-7b-complete-hub-matrices.md`](plans/milestone-7b-complete-hub-matrices.md);
   [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
-- **Next action:** Milestone **7D** Level-1; optional 7C Hub multilabel train
-  smoke / AUROC emission.
+- **Next action:** Milestone **7D** Level-1; optional graph-v2 / RBS·TBS topology
+  residuals under 7C plan.
 
 ---
 
@@ -543,12 +543,13 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Residual follow-ons** (do not reopen Done when; track in
   [`plans/milestone-7c-supervised-architecture.md`](plans/milestone-7c-supervised-architecture.md)):
 
-  **Hub join (unblocked after 7B):**
+  **Hub join (after 7B):**
   - Long-form multi-hot verified on `matrix-hub-disease-full-v1` /
     `matrix-hub-cancer-full-v1` (`hub_longform_ready` + sidecar load).
-  - Optional: short train smoke with
-    `configs/experiment/stage0_flat_hub_disease_multilabel.yaml` (max_loci /
-    few epochs); emit AUROC/AUPRC/ECE from trainer holdout JSON.
+  - Short train smoke **done** (`stage0_flat_hub_disease_multilabel_smoke.yaml`;
+    `reports/inspection/stage0_7c_hub_disease_smoke/`).
+  - Holdout AUROC/AUPRC/ECE emission **done** (binary sex/tissue; multilabel
+    when both classes observed under mask).
 
   **Ops / later topology (not Done when):**
   - Build full-genome `graph-grch38-gencode38-cgi-tile-v2` artifact under `$MBS_*`

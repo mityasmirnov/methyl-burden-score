@@ -9,6 +9,7 @@ from mbs.evaluation.annotation_slices import (
 from mbs.evaluation.metrics import (
     binary_auroc_auprc,
     expected_calibration_error,
+    masked_multilabel_auroc_auprc,
     metrics_by_group,
     multiclass_metrics,
     regression_metrics,
@@ -29,6 +30,7 @@ __all__ = [
     "expected_calibration_error",
     "grouping_key",
     "index_annotation_summary",
+    "masked_multilabel_auroc_auprc",
     "metrics_by_group",
     "multiclass_metrics",
     "partition_studies_constrained",

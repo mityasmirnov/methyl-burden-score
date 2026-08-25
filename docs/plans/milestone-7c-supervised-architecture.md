@@ -49,8 +49,8 @@ loader) are closed. **7B** Hub full matrices are done.
 | Item | Status | Notes |
 |------|--------|-------|
 | Disease/cancer long-form join | **done** (fixtures + Hub sidecar verify) | `hub_longform_ready` on `matrix-hub-*-full-v1`; multi-hot ≠ control |
-| Optional Hub train smoke | open | `stage0_flat_hub_disease_multilabel.yaml` with `max_loci` / few epochs |
-| AUROC / AUPRC / ECE in trainer JSON | open | Helpers in `metrics.py`; not emitted from holdout path |
+| Optional Hub train smoke | **done** | `stage0_flat_hub_disease_multilabel_smoke.yaml`; report `reports/inspection/stage0_7c_hub_disease_smoke/` |
+| AUROC / AUPRC / ECE in trainer JSON | **done** | Holdout emits binary sex/tissue AUROC/ECE; multilabel `disease_auroc` when both classes observed under mask |
 
 Do **not** treat `matrix-hub-disease-from-agepack-v1` (unique-GSM multiclass) as
 the multi-label solution.

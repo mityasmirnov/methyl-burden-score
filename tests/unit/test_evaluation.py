@@ -12,6 +12,7 @@ from mbs.evaluation import (
     multiclass_metrics,
     regression_metrics,
 )
+from mbs.evaluation.metrics import masked_multilabel_auroc_auprc
 
 
 def test_regression_metrics_perfect() -> None:
@@ -27,6 +28,16 @@ def test_binary_auroc_separable() -> None:
     out = binary_auroc_auprc(y, s)
     assert out["auroc"] == pytest.approx(1.0)
     assert out["auprc"] == pytest.approx(1.0)
+
+
+def test_masked_multilabel_auroc() -> None:
+    y = np.array([[0.0, 1.0], [0.0, 0.0], [1.0, 1.0], [1.0, 0.0]])
+    s = np.array([[0.1, 0.9], [0.2, 0.1], [0.8, 0.85], [0.9, 0.2]])
+    m = np.ones_like(y, dtype=bool)
+    m[1, 1] = False  # unknown cell
+    out = masked_multilabel_auroc_auprc(y, s, m)
+    assert out["auroc"] == pytest.approx(1.0)
+    assert out["n_labels_scored"] == 2.0
 
 
 def test_multiclass_metrics_balanced() -> None:

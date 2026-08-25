@@ -1,0 +1,9 @@
+{
+  "anchor_recipe": "pearson_vs_signed_gene_mean_mvalue",
+  "artifact_version": "1",
+  "fold_id": null,
+  "notes": "Predictive sample x gene MBS; not a methylation constraint or LOEUF analogue.",
+  "restart_id": "stage0-flat-hub-disease-multilabel-smoke-v1",
+  "score_family": "predictive_mbs",
+  "score_polarity": "hyper_aligned"
+}

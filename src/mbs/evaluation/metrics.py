@@ -89,6 +89,41 @@ def binary_auroc_auprc(y_true: np.ndarray, y_score: np.ndarray) -> dict[str, flo
         return {"auroc": float(auroc), "auprc": auprc}
 
 
+def masked_multilabel_auroc_auprc(
+    y_true: np.ndarray,
+    y_score: np.ndarray,
+    mask: np.ndarray,
+) -> dict[str, float]:
+    """Macro-average binary AUROC/AUPRC over observed label cells only."""
+    yt = np.asarray(y_true, dtype=np.float64)
+    ys = np.asarray(y_score, dtype=np.float64)
+    m = np.asarray(mask, dtype=bool)
+    if yt.shape != ys.shape or yt.shape != m.shape or yt.ndim != 2:
+        raise ValueError("y_true, y_score, mask must be 2-D and same shape")
+    aurocs: list[float] = []
+    auprcs: list[float] = []
+    for j in range(yt.shape[1]):
+        keep = m[:, j]
+        if int(keep.sum()) < 2:
+            continue
+        labels = yt[keep, j]
+        if np.unique(labels).size < 2:
+            continue
+        try:
+            out = binary_auroc_auprc(labels, ys[keep, j])
+        except ValueError:
+            continue
+        aurocs.append(float(out["auroc"]))
+        auprcs.append(float(out["auprc"]))
+    if not aurocs:
+        raise ValueError("no label columns with both classes under mask")
+    return {
+        "auroc": float(np.mean(aurocs)),
+        "auprc": float(np.mean(auprcs)),
+        "n_labels_scored": float(len(aurocs)),
+    }
+
+
 def expected_calibration_error(
     y_true: np.ndarray,
     y_prob: np.ndarray,
