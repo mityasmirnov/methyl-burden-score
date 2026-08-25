@@ -30,7 +30,7 @@ Do not recursively dump `$MBS_DATA_ROOT` into chat; use these reports.
 | Converted matrices + multitask masks | Present (5d evidence) |
 | Trait harmonization rules | Present |
 | EWAS_db per-study progress | **In progress** (~53% of remote study folders) |
-| Disease full matrix convert | Unblocked (zip OK); convert not yet registered — **7B** |
+| Disease / cancer / blood / brain / BMI / ancestry full matrices | **7B done** (`matrix-hub-*-full-v1` + stage0_7b report) |
 | Harmonized DuckDB release | **7A done** (`deepmat-data-v1/`); census refresh follow-ons remain |
 | Unique GSM vs pack-row sum | Memberships ≠ people; 7A census + refresh follow-ons |
 
@@ -207,12 +207,12 @@ Wave-1 training focus: age, tissue (+ sex in 5d). Disease/cancer heads follow
 
 ## Known gaps
 
-- **EWAS_db mirror incomplete** (~1049/1989 study dirs; still downloading; not a 7A/7B gate).
+- **EWAS_db mirror incomplete** (~1049/1989 study dirs; still downloading; not a
+  7D–7E gate).
 - Blood primary phenotype sparsity; do not treat as pack-wide cell-type labels
   without another column strategy.
-- Registry `sample_count: null` on most pack entries until convert registers N.
-- Disease/cancer/blood/brain/BMI/ancestry **profile → matrix convert** not yet
-  in the matrices table (zips ready) — **7B**.
+- Registry `sample_count: null` on most pack entries until convert registers N
+  (refresh after 7B: prefer unique GSM from full-matrix sample indexes).
 - 7A census refresh follow-ons (metadata-only predictability, donor/replicate,
   within-study age/BMI ranges) — see programme brief.
 - Final OOF cross-fitting (Milestone 7) is **blocked until 7A–7E**; **do not
@@ -220,12 +220,12 @@ Wave-1 training focus: age, tissue (+ sex in 5d). Disease/cancer heads follow
 
 ## Proposed improvements
 
-1. Milestone **7B:** convert remaining packs; stream-to-Zarr; content checksums;
-   overlapping-GSM beta verify; per-sample platform provenance.
-2. Census refresh follow-ons (7A report fields still missing).
-3. Populate registry `sample_count` from unique GSM when exporting sample-info.
-4. Do not commit Hub `.RData` sample blobs; keep `.txt` / Parquet only under inspection.
-5. Let EWAS_db finish (or pause if disk approaches capacity); re-run inventory.
+1. Milestone **7D:** Level-1 fold-fitted MAD; then **7E** architecture CV.
+2. Optional 7C Hub multilabel train smoke + AUROC emission.
+3. Census refresh follow-ons (7A report fields still missing).
+4. Populate registry `sample_count` from unique GSM when exporting sample-info.
+5. Do not commit Hub `.RData` sample blobs; keep `.txt` / Parquet only under inspection.
+6. Let EWAS_db finish (or pause if disk approaches capacity); re-run inventory.
 
 ## Related
 

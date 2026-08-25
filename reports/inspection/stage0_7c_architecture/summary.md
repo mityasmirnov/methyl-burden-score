@@ -48,8 +48,9 @@ See `tests/unit/test_stage0_7c.py` (sampler, heads, splits, controls, graph-v2, 
 - `load_longform_multilabel`: multi-hot from repeated `sample_id`; unknown sample → all-False mask (not control).
 - Config: `configs/experiment/stage0_flat_hub_disease_multilabel.yaml` (Hub smoke when `matrix-hub-disease-full-v1` exists).
 
-## Still waiting on 7B
+## Hub join (after 7B)
 
-- Hub disease/cancer full matrices (`sample_index.parquet` + long-form sidecar) for real multilabel BCE smoke.
-- Do not use `matrix-hub-disease-from-agepack-v1` as the multi-label path.
-- Other 7C leftovers (AUROC trainer emission, full-genome graph-v2, multi-system hier, true RBS/TBS arms): see `docs/plans/milestone-7c-supervised-architecture.md`.
+- `hub_longform_ready` true for `matrix-hub-disease-full-v1` and `matrix-hub-cancer-full-v1`.
+- Long-form multi-hot load verified on real sidecars (unknown ≠ control).
+- Optional: short train smoke via `stage0_flat_hub_disease_multilabel.yaml`.
+- Remaining residuals: AUROC trainer emission; full-genome graph-v2; multi-system hier; true RBS/TBS arms — see `docs/plans/milestone-7c-supervised-architecture.md`.

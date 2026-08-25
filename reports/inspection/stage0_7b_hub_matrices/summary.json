@@ -1,0 +1,370 @@
+{
+  "milestone": "7B",
+  "seven_b_matrices": [
+    {
+      "family": "disease",
+      "matrix_id": "matrix-hub-disease-full-v1",
+      "present": true,
+      "shape": [
+        12218,
+        482387
+      ],
+      "n_samples": 12218,
+      "n_loci": 482387,
+      "n_phenotype_rows": 14501,
+      "n_collapsed_probes": 34,
+      "platform_id": "450K",
+      "compression": "zstd",
+      "source_sha256": "57a8ea341c0893fe0e2911db7899a5a4738d6b0e1a091de5cb06d24dd4e71efe",
+      "source_byte_size": 21589344448,
+      "checksum_is_content": true,
+      "created_at": "2026-08-24T17:14:23Z"
+    },
+    {
+      "family": "cancer",
+      "matrix_id": "matrix-hub-cancer-full-v1",
+      "present": true,
+      "shape": [
+        10101,
+        482387
+      ],
+      "n_samples": 10101,
+      "n_loci": 482387,
+      "n_phenotype_rows": 10841,
+      "n_collapsed_probes": 34,
+      "platform_id": "450K",
+      "compression": "zstd",
+      "source_sha256": "3427719c63fae6b3ccef0b5f0f681d86f4e6b159fd0292c3c9f76ec2779ba5d7",
+      "source_byte_size": 17253200310,
+      "checksum_is_content": true,
+      "created_at": "2026-08-24T16:04:31Z"
+    },
+    {
+      "family": "blood",
+      "matrix_id": "matrix-hub-blood-full-v1",
+      "present": true,
+      "shape": [
+        3402,
+        482387
+      ],
+      "n_samples": 3402,
+      "n_loci": 482387,
+      "n_phenotype_rows": 3402,
+      "n_collapsed_probes": 34,
+      "platform_id": "450K",
+      "compression": "zstd",
+      "source_sha256": "630523780b2dcb9503e680909e96d7ad55991ad1abef88bf959c8287edbf275c",
+      "source_byte_size": 5220215339,
+      "checksum_is_content": true,
+      "created_at": "2026-08-24T14:57:46Z"
+    },
+    {
+      "family": "brain",
+      "matrix_id": "matrix-hub-brain-full-v1",
+      "present": true,
+      "shape": [
+        1997,
+        482387
+      ],
+      "n_samples": 1997,
+      "n_loci": 482387,
+      "n_phenotype_rows": 1997,
+      "n_collapsed_probes": 34,
+      "platform_id": "450K",
+      "compression": "zstd",
+      "source_sha256": "dd7ef36c8e15dbd16ce403a8f5ddaebe5e485b64bddc5588472fca702155a1ea",
+      "source_byte_size": 2975575853,
+      "checksum_is_content": true,
+      "created_at": "2026-08-24T14:38:07Z"
+    },
+    {
+      "family": "bmi",
+      "matrix_id": "matrix-hub-bmi-full-v1",
+      "present": true,
+      "shape": [
+        2070,
+        482387
+      ],
+      "n_samples": 2070,
+      "n_loci": 482387,
+      "n_phenotype_rows": 2070,
+      "n_collapsed_probes": 34,
+      "platform_id": "450K",
+      "compression": "zstd",
+      "source_sha256": "7fc6172935994d84c0d1d58cedf8c2060039809d624bcc1af51ada2b1f5ef871",
+      "source_byte_size": 3284635193,
+      "checksum_is_content": true,
+      "created_at": "2026-08-24T14:25:15Z"
+    },
+    {
+      "family": "ancestry",
+      "matrix_id": "matrix-hub-ancestry-full-v1",
+      "present": true,
+      "shape": [
+        1380,
+        482387
+      ],
+      "n_samples": 1380,
+      "n_loci": 482387,
+      "n_phenotype_rows": 1380,
+      "n_collapsed_probes": 34,
+      "platform_id": "450K",
+      "compression": "zstd",
+      "source_sha256": "e7c78230840b0bd1373c0775004e83314e98f6ba098c1fed57adf672a7f32e26",
+      "source_byte_size": 2109764152,
+      "checksum_is_content": true,
+      "created_at": "2026-08-24T14:07:42Z"
+    }
+  ],
+  "frozen_age_tissue_sex": [
+    {
+      "family": "age",
+      "matrix_id": "matrix-hub-age-full-v1",
+      "present": true,
+      "shape": [
+        8374,
+        482379
+      ],
+      "n_samples": 8374,
+      "n_loci": 482379,
+      "n_phenotype_rows": null,
+      "n_collapsed_probes": 34,
+      "platform_id": "HM450",
+      "compression": null,
+      "source_sha256": "7c8af840946bae0eb9d026cd70d8a366016a89ffe1df5b24c3be97195d9b5f32",
+      "source_byte_size": null,
+      "checksum_is_content": true,
+      "created_at": "2026-08-06T17:47:50Z"
+    },
+    {
+      "family": "tissue",
+      "matrix_id": "matrix-hub-tissue-full-v1",
+      "present": true,
+      "shape": [
+        5323,
+        482379
+      ],
+      "n_samples": 5323,
+      "n_loci": 482379,
+      "n_phenotype_rows": null,
+      "n_collapsed_probes": 34,
+      "platform_id": "HM450",
+      "compression": null,
+      "source_sha256": "e3ec21cd3b6c4d23d4c8e14e192449f4453d23544d400f4d47b72d7046849f58",
+      "source_byte_size": null,
+      "checksum_is_content": true,
+      "created_at": "2026-08-06T18:14:28Z"
+    },
+    {
+      "family": "sex",
+      "matrix_id": "matrix-hub-sex-full-v1",
+      "present": true,
+      "shape": [
+        2978,
+        482379
+      ],
+      "n_samples": 2978,
+      "n_loci": 482379,
+      "n_phenotype_rows": null,
+      "n_collapsed_probes": 34,
+      "platform_id": "HM450",
+      "compression": null,
+      "source_sha256": "b6b7200881b76c1b0108afbb5074187339151615c295c35c8ba1294ab193ffae",
+      "source_byte_size": null,
+      "checksum_is_content": true,
+      "created_at": "2026-08-06T18:29:15Z"
+    }
+  ],
+  "all_full_matrices": [
+    {
+      "family": "age",
+      "matrix_id": "matrix-hub-age-full-v1",
+      "present": true,
+      "shape": [
+        8374,
+        482379
+      ],
+      "n_samples": 8374,
+      "n_loci": 482379,
+      "n_phenotype_rows": null,
+      "n_collapsed_probes": 34,
+      "platform_id": "HM450",
+      "compression": null,
+      "source_sha256": "7c8af840946bae0eb9d026cd70d8a366016a89ffe1df5b24c3be97195d9b5f32",
+      "source_byte_size": null,
+      "checksum_is_content": true,
+      "created_at": "2026-08-06T17:47:50Z"
+    },
+    {
+      "family": "tissue",
+      "matrix_id": "matrix-hub-tissue-full-v1",
+      "present": true,
+      "shape": [
+        5323,
+        482379
+      ],
+      "n_samples": 5323,
+      "n_loci": 482379,
+      "n_phenotype_rows": null,
+      "n_collapsed_probes": 34,
+      "platform_id": "HM450",
+      "compression": null,
+      "source_sha256": "e3ec21cd3b6c4d23d4c8e14e192449f4453d23544d400f4d47b72d7046849f58",
+      "source_byte_size": null,
+      "checksum_is_content": true,
+      "created_at": "2026-08-06T18:14:28Z"
+    },
+    {
+      "family": "disease",
+      "matrix_id": "matrix-hub-disease-full-v1",
+      "present": true,
+      "shape": [
+        12218,
+        482387
+      ],
+      "n_samples": 12218,
+      "n_loci": 482387,
+      "n_phenotype_rows": 14501,
+      "n_collapsed_probes": 34,
+      "platform_id": "450K",
+      "compression": "zstd",
+      "source_sha256": "57a8ea341c0893fe0e2911db7899a5a4738d6b0e1a091de5cb06d24dd4e71efe",
+      "source_byte_size": 21589344448,
+      "checksum_is_content": true,
+      "created_at": "2026-08-24T17:14:23Z"
+    },
+    {
+      "family": "cancer",
+      "matrix_id": "matrix-hub-cancer-full-v1",
+      "present": true,
+      "shape": [
+        10101,
+        482387
+      ],
+      "n_samples": 10101,
+      "n_loci": 482387,
+      "n_phenotype_rows": 10841,
+      "n_collapsed_probes": 34,
+      "platform_id": "450K",
+      "compression": "zstd",
+      "source_sha256": "3427719c63fae6b3ccef0b5f0f681d86f4e6b159fd0292c3c9f76ec2779ba5d7",
+      "source_byte_size": 17253200310,
+      "checksum_is_content": true,
+      "created_at": "2026-08-24T16:04:31Z"
+    },
+    {
+      "family": "blood",
+      "matrix_id": "matrix-hub-blood-full-v1",
+      "present": true,
+      "shape": [
+        3402,
+        482387
+      ],
+      "n_samples": 3402,
+      "n_loci": 482387,
+      "n_phenotype_rows": 3402,
+      "n_collapsed_probes": 34,
+      "platform_id": "450K",
+      "compression": "zstd",
+      "source_sha256": "630523780b2dcb9503e680909e96d7ad55991ad1abef88bf959c8287edbf275c",
+      "source_byte_size": 5220215339,
+      "checksum_is_content": true,
+      "created_at": "2026-08-24T14:57:46Z"
+    },
+    {
+      "family": "brain",
+      "matrix_id": "matrix-hub-brain-full-v1",
+      "present": true,
+      "shape": [
+        1997,
+        482387
+      ],
+      "n_samples": 1997,
+      "n_loci": 482387,
+      "n_phenotype_rows": 1997,
+      "n_collapsed_probes": 34,
+      "platform_id": "450K",
+      "compression": "zstd",
+      "source_sha256": "dd7ef36c8e15dbd16ce403a8f5ddaebe5e485b64bddc5588472fca702155a1ea",
+      "source_byte_size": 2975575853,
+      "checksum_is_content": true,
+      "created_at": "2026-08-24T14:38:07Z"
+    },
+    {
+      "family": "sex",
+      "matrix_id": "matrix-hub-sex-full-v1",
+      "present": true,
+      "shape": [
+        2978,
+        482379
+      ],
+      "n_samples": 2978,
+      "n_loci": 482379,
+      "n_phenotype_rows": null,
+      "n_collapsed_probes": 34,
+      "platform_id": "HM450",
+      "compression": null,
+      "source_sha256": "b6b7200881b76c1b0108afbb5074187339151615c295c35c8ba1294ab193ffae",
+      "source_byte_size": null,
+      "checksum_is_content": true,
+      "created_at": "2026-08-06T18:29:15Z"
+    },
+    {
+      "family": "bmi",
+      "matrix_id": "matrix-hub-bmi-full-v1",
+      "present": true,
+      "shape": [
+        2070,
+        482387
+      ],
+      "n_samples": 2070,
+      "n_loci": 482387,
+      "n_phenotype_rows": 2070,
+      "n_collapsed_probes": 34,
+      "platform_id": "450K",
+      "compression": "zstd",
+      "source_sha256": "7fc6172935994d84c0d1d58cedf8c2060039809d624bcc1af51ada2b1f5ef871",
+      "source_byte_size": 3284635193,
+      "checksum_is_content": true,
+      "created_at": "2026-08-24T14:25:15Z"
+    },
+    {
+      "family": "ancestry",
+      "matrix_id": "matrix-hub-ancestry-full-v1",
+      "present": true,
+      "shape": [
+        1380,
+        482387
+      ],
+      "n_samples": 1380,
+      "n_loci": 482387,
+      "n_phenotype_rows": 1380,
+      "n_collapsed_probes": 34,
+      "platform_id": "450K",
+      "compression": "zstd",
+      "source_sha256": "e7c78230840b0bd1373c0775004e83314e98f6ba098c1fed57adf672a7f32e26",
+      "source_byte_size": 2109764152,
+      "checksum_is_content": true,
+      "created_at": "2026-08-24T14:07:42Z"
+    }
+  ],
+  "virtual_index": {
+    "present": true,
+    "n_rows": 47843,
+    "n_families": 9,
+    "n_unique_gsm": 34234
+  },
+  "overlap": {
+    "discordant_pairs": [],
+    "max_abs_diff": 0.0,
+    "merge_allowed": true,
+    "n_concordant": 18346,
+    "n_discordant": 0,
+    "n_loci_compared": 256,
+    "n_pairs_checked": 18346,
+    "n_shared_gsm": 9409,
+    "status": "concordant",
+    "tolerance": 0.0001
+  },
+  "all_seven_b_present": true
+}

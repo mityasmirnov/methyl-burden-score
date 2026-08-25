@@ -1,6 +1,6 @@
 # Trait eligibility (deepmat-data-v1)
 
-- Generated: `2026-08-24T15:05:36Z`
+- Generated: `2026-08-25T07:41:29Z`
 
 | Family | Phenotype | Task | n | studies | core | aux | ext | Reason |
 | --- | --- | --- | ---: | ---: | --- | --- | --- | --- |

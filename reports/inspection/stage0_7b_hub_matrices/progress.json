@@ -1,16 +1,14 @@
 {
   "milestone": "7B",
-  "updated_at": "2026-08-24T16:09:28Z",
-  "pid": 3185626,
-  "seven_b_done": 5,
+  "updated_at": "2026-08-25T07:30:48Z",
+  "pid": 3970829,
+  "seven_b_done": 6,
   "seven_b_total": 6,
   "seven_b_in_progress": 0,
-  "all_seven_b_done": false,
-  "running_convert_families": [
-    "disease"
-  ],
-  "virtual_index_present": false,
-  "inspection_summary_present": false,
+  "all_seven_b_done": true,
+  "running_convert_families": [],
+  "virtual_index_present": true,
+  "inspection_summary_present": true,
   "seven_b_matrices": [
     {
       "family": "ancestry",
@@ -85,15 +83,15 @@
     {
       "family": "disease",
       "matrix_id": "matrix-hub-disease-full-v1",
-      "status": "pending",
-      "phase": "pending",
-      "n_samples": null,
-      "n_phenotype_rows": null,
-      "n_loci": null,
-      "platform_id": null,
+      "status": "done",
+      "phase": "done",
+      "n_samples": 12218,
+      "n_phenotype_rows": 14501,
+      "n_loci": 482387,
+      "platform_id": "450K",
       "has_scratch": false,
-      "has_betas": false,
-      "betas_bytes": null,
+      "has_betas": true,
+      "betas_bytes": 11219868816,
       "scratch_bytes": null
     }
   ],
@@ -141,12 +139,8 @@
       "scratch_bytes": null
     }
   ],
-  "next_pending": "disease",
+  "next_pending": null,
   "remaining": [
-    "Finish convert for: disease (skip-if-exists resume)",
-    "mbs matrix index-hub-packs --check-overlap",
-    "scripts/write_stage0_7b_report.py",
-    "mbs catalog refresh-release (7A pointers only)",
-    "Required checks; mark TODO_PIPELINE 7B done with evidence"
+    "Milestone 7B gate closed; next coding gate is 7D"
   ]
 }

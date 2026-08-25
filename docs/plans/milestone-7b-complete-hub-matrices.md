@@ -1,7 +1,7 @@
 # Milestone 7B: Complete canonical Hub matrices
 
-Status: **in_progress** (converter + unit tests landed; pack conversions +
-`reports/inspection/stage0_7b_hub_matrices/` still required for Done when).
+Status: **done** (six full pack matrices + virtual index + overlap concordance +
+`reports/inspection/stage0_7b_hub_matrices/`).
 Normative ADRs: [0005](../adr/0005-catalog-matrix-independence.md),
 [0007](../adr/0007-crossfit-prerequisites.md).
 Checklist: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md).
@@ -10,22 +10,13 @@ Programme context: [`post-v0-scientific-programme.md`](post-v0-scientific-progra
 ## Background convert + tracking
 
 ```bash
-# Start/restart progress watcher (does not kill in-flight convert-pack)
+# Historical: progress watcher (no longer needed once 6/6 done)
 bash scripts/convert_hub_full_packs_background.sh
-
-# One-shot status (refreshes progress.md + plan Progress block)
 bash scripts/status_7b_hub_matrices.sh
-
-# Or just read:
-cat reports/inspection/stage0_7b_hub_matrices/progress.md
+cat reports/inspection/stage0_7b_hub_matrices/summary.md
 ```
 
-Watcher polls every 30s (`MBS_7B_PROGRESS_INTERVAL_SEC`), updates
-`progress.{md,json}` and this plan's Progress block, then when all six packs
-finish runs index + inspection report + `catalog refresh-release`.
-Latest watcher log: `$MBS_ARTIFACT_ROOT/logs/matrix_convert/7b_watcher_latest.log`.
-
-## Done so far (code)
+## Done (code + data)
 
 - Plan + DATA_CONTRACT / DATA_CATALOG virtual-index docs
 - Probe collapse: mean/median + `contributing_probe_ids` on locus index
@@ -33,25 +24,20 @@ Latest watcher log: `$MBS_ARTIFACT_ROOT/logs/matrix_convert/7b_watcher_latest.lo
 - BMI/ancestry pack maps; unique GSM + long-form phenotypes; content sha256
 - Virtual index helpers + CLI `mbs matrix index-hub-packs`
 - Unit tests for maps, collapse, checksum, dup GSM, overlap, chunked oracle
-- Full converts **done:** ancestry, bmi, brain, blood, cancer
-- Progress auto-updater + background watcher (disease in flight)
+- Full converts **done:** ancestry, bmi, brain, blood, cancer, disease
+- Index + overlap + inspection summary + catalog refresh-release (watcher finalize)
 
-## Left (gate)
+## Left (post-gate)
 
-- Finish **disease** convert (cancer + other five packs done)
-- Build `hub_pack_matrix_index.parquet` + overlap concordance
-- Write `reports/inspection/stage0_7b_hub_matrices/summary.{md,json}`
-- `mbs catalog refresh-release` (pointers only)
-- Required checks; mark `TODO_PIPELINE.md` 7B `done` only with evidence
-- Refresh DATA_CATALOG known-gaps once matrices land
+None for 7B Done when. Follow-ons live under **7C** residuals / **7D**.
 
 ## Progress
 
 <!-- 7B-PROGRESS-START -->
 
-_Auto-updated `2026-08-24T16:09:28Z` by `scripts/update_7b_convert_progress.py`._
+_Auto-updated `2026-08-25T07:30:48Z` by `scripts/update_7b_convert_progress.py`._
 
-**5/6** 7B packs done. Active: `disease`.
+**6/6** 7B packs done.
 
 | Family | Status |
 |--------|--------|
@@ -60,7 +46,7 @@ _Auto-updated `2026-08-24T16:09:28Z` by `scripts/update_7b_convert_progress.py`.
 | `brain` | done `1997×482387` |
 | `blood` | done `3402×482387` |
 | `cancer` | done `10101×482387` |
-| `disease` | pending |
+| `disease` | done `12218×482387` |
 
 Track live: `reports/inspection/stage0_7b_hub_matrices/progress.md`
 

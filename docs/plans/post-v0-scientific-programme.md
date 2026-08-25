@@ -7,10 +7,9 @@ Normative ADRs: [0005](../adr/0005-catalog-matrix-independence.md),
 [0008](../adr/0008-score-identifiability.md).
 Checklist: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md).
 
-**Do not retrain v0.1.** Freeze those runs. **7A** and **7C** (fixture
-acceptance) are closed. Finish **7B** matrices, then **7D**, before
-development training (**7E**). The incomplete `EWAS_db` mirror must not block
-7B–7E.
+**Do not retrain v0.1.** Freeze those runs. **7A**, **7B**, and **7C** (fixture
+acceptance) are closed. Finish **7D** Level-1 before development training
+(**7E**). The incomplete `EWAS_db` mirror must not block 7D–7E.
 
 This document is the coding brief for **7A–7E**. The expensive Milestone **7**
 OOF cross-fit stays blocked until those gates pass.
@@ -21,9 +20,9 @@ OOF cross-fit stays blocked until those gates pass.
 |-----------|---------------------|
 | Freeze v0 | Named freeze tags in docs; artifacts not overwritten |
 | **7A** | Versioned `deepmat-data-v1/` release; populated DuckDB; phenotype census + trait eligibility reports |
-| **7B** | All nine Hub packs as canonical matrices; chunked Zarr; multi-label long-form; probe-collapse policy (**current gate**; converter code landed) |
-| **7C** | Trainer P0/P1 fixes; centered heads; score-orientation anchor; graph v2 (RBS/TBS); direct CpG; constraint-aware splits; metrics wired (**fixture done**; orientation + long-form join code landed; **Hub disease/cancer smoke waits on 7B convert**) |
-| **7D** | Fold-fitted Level-1 MAD robust-z; persist hashes; novel loci `z=0` + `norm_present=False`; AE not default |
+| **7B** | All nine Hub packs as canonical matrices; chunked Zarr; multi-label long-form; probe-collapse policy (**done**; six full packs + index + overlap report) |
+| **7C** | Trainer P0/P1 fixes; centered heads; score-orientation anchor; graph v2 (RBS/TBS); direct CpG; constraint-aware splits; metrics wired (**fixture done**; orientation + long-form join + Hub sidecar verify landed; optional train smoke / AUROC residual) |
+| **7D** | Fold-fitted Level-1 MAD robust-z; persist hashes; novel loci `z=0` + `norm_present=False`; AE not default (**current gate**) |
 | **7E** | 3×2 independently trained arms including transparent baselines and CpGPT ablation |
 | **7** | 5×6 OOF MBS (+ RBS/TBS/direct as applicable) with leakage controls |
 
@@ -206,10 +205,11 @@ Shipped (`deepmat-data-v1/`). Refresh follow-on: remaining census fields above
 (metadata-only predictability, within-study age/BMI ranges, donor/replicate).
 Do not wait on EWAS_db completeness.
 
-### 7B — Complete matrices (current coding gate)
+### 7B — Complete matrices (**done**)
 
 Implementation brief:
 [`milestone-7b-complete-hub-matrices.md`](milestone-7b-complete-hub-matrices.md).
+Evidence: `reports/inspection/stage0_7b_hub_matrices/`.
 
 - Convert disease, cancer, blood, brain, BMI, ancestry; add BMI/ancestry maps.
 - Stream probe chunks **directly** to compressed Zarr (no full dense RAM).
@@ -247,13 +247,16 @@ deepMAT remains a **sample×gene predictive representation**, not a methylation
 constraint / LOEUF analogue (ADR 0008).
 
 **Residual vs 7B:** orientation train-path and long-form multi-label join are
-implemented on fixtures. Hub smoke (`matrix-hub-disease-full-v1` /
-`matrix-hub-cancer-full-v1` + `stage0_flat_hub_disease_multilabel.yaml`) waits
-until 7B pack convert finishes. Independent leftovers (full-genome graph-v2,
+implemented; Hub sidecars on `matrix-hub-disease-full-v1` /
+`matrix-hub-cancer-full-v1` verify (`hub_longform_ready`). Optional short train
+smoke and AUROC emission remain. Independent leftovers (full-genome graph-v2,
 multi-system hier, true RBS/TBS arm masks) are listed in
 [`milestone-7c-supervised-architecture.md`](milestone-7c-supervised-architecture.md).
 
 ### 7D — Normalization (do not overwrite Hub GMQN betas)
+
+Implementation brief:
+[`milestone-7d-fold-fitted-normalization.md`](milestone-7d-fold-fitted-normalization.md).
 
 Hub profiles are already GMQN-normalized. Canonical betas stay GMQN.
 

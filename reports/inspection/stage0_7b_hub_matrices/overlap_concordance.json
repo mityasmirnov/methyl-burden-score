@@ -1,0 +1,12 @@
+{
+  "discordant_pairs": [],
+  "max_abs_diff": 0.0,
+  "merge_allowed": true,
+  "n_concordant": 18346,
+  "n_discordant": 0,
+  "n_loci_compared": 256,
+  "n_pairs_checked": 18346,
+  "n_shared_gsm": 9409,
+  "status": "concordant",
+  "tolerance": 0.0001
+}

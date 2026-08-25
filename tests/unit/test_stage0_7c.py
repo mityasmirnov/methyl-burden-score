@@ -313,3 +313,30 @@ def test_overfit_writes_score_manifest(monkeypatch: pytest.MonkeyPatch) -> None:
     assert payload["score_family"] == "predictive_mbs"
     assert payload["score_polarity"] in {"hyper_aligned", "flipped"}
     assert "anchor_recipe" in payload
+
+
+def test_hub_disease_cancer_longform_sidecar_join() -> None:
+    """Real 7B matrices: multi-hot join when Hub full packs are on disk."""
+    data_root = Path(__file__).resolve().parents[2] / "data"
+    disease_id = "matrix-hub-disease-full-v1"
+    cancer_id = "matrix-hub-cancer-full-v1"
+    if not hub_longform_ready(data_root, disease_id):
+        pytest.skip("matrix-hub-disease-full-v1 not present")
+    if not hub_longform_ready(data_root, cancer_id):
+        pytest.skip("matrix-hub-cancer-full-v1 not present")
+
+    for mid, min_labels in ((disease_id, 5), (cancer_id, 5)):
+        idx = data_root / "canonical" / "matrices" / mid / "sample_index.parquet"
+        side = data_root / "canonical" / "matrices" / mid / "sample_phenotypes.parquet"
+        sample_ids = pd.read_parquet(idx, columns=["sample_id"])["sample_id"].astype(str).tolist()
+        assert sample_ids
+        maps = load_longform_multilabel(side, sample_ids=sample_ids[:64], min_count=5)
+        assert len(maps.label_names) >= min_labels
+        # At least one of the first 64 samples should have an observed label.
+        assert any(bool(m.any()) for m in maps.masks.values())
+        # Unknown sample stays all-masked.
+        unknown = load_longform_multilabel(
+            side, sample_ids=["__no_such_gsm__"], min_count=5, label_names=list(maps.label_names)
+        )
+        assert not unknown.masks["__no_such_gsm__"].any()
+        assert float(unknown.targets["__no_such_gsm__"].sum()) == 0.0

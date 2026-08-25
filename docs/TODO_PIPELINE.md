@@ -11,14 +11,14 @@ True next milestone after bootstrap:
 
 > … → max-N flat age/tissue/sex (5d — **done**) → hierarchical residual
 > baseline (6 — **done**) → harmonized release + phenotype census (7A — **done**) →
-> **nine-pack matrices (7B — current gate)** → architecture corrections (7C —
-> **done**, fixture) → fold-fitted normalization (7D) → development CV (7E) →
-> **final OOF cross-fitting (7)** → one score matrix.
+> nine-pack matrices (7B — **done**) → architecture corrections (7C —
+> **done**, fixture) → **fold-fitted normalization (7D — current gate)** →
+> development CV (7E) → **final OOF cross-fitting (7)** → one score matrix.
 
-**Current gate:** Milestone **7B** (pack conversions + inspection report).
-**7C** fixture acceptance is `done`. Residual polish that needs Hub matrices
-waits on **7B** (disease/cancer full convert still running); other 7C
-follow-ons are listed under 7C and do not reopen Done when.
+**Current gate:** Milestone **7D** (Level-1 fold-fitted MAD). **7B** matrices
+and inspection report are `done`. **7C** fixture acceptance is `done`; Hub
+disease/cancer long-form join is verified on the new full matrices (trainer
+smoke optional; AUROC emission and graph-v2 topology remain residual).
 **Do not retrain v0.1** or start **7E**/Milestone **7** until 7B–7D land
 ([ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
@@ -495,7 +495,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 7B. Complete canonical Hub matrices
 
-- **Status:** `in_progress` (**current coding gate**)
+- **Status:** `done`
 - **Done when:** Disease, cancer, blood, brain, BMI, and ancestry packs convert
   to canonical full matrices; BMI/ancestry supported in pack converter maps;
   **stream probe chunks directly** to compressed Zarr (no full dense RAM stack);
@@ -506,16 +506,16 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   overlapping GSM betas **verified** (do not silently take the first pack);
   deduplicated union or virtual multi-store index documented;
   evidence under `reports/inspection/stage0_7b_hub_matrices/`.
-- **Code landed (not Done when):** stream-to-Zarr converter, probe-collapse
-  columns, long-form phenotypes, virtual `hub_pack_matrix_index`, unit tests,
-  `scripts/convert_hub_full_packs.sh` / `scripts/write_stage0_7b_report.py`.
-  **Track live:** `bash scripts/status_7b_hub_matrices.sh` or
-  `reports/inspection/stage0_7b_hub_matrices/progress.md` (auto-updated by
-  `scripts/convert_hub_full_packs_background.sh`). Remaining: finish disease
-  convert, then index/overlap + inspection summary + refresh-release.
+- **Evidence:** six full matrices under `$MBS_DATA_ROOT/canonical/matrices/`;
+  `hub_pack_matrix_index.parquet`; overlap `concordant` (0 discordant);
+  `reports/inspection/stage0_7b_hub_matrices/summary.{md,json}`; unit tests for
+  converter path. Disease `12218×482387` (14501 phenotype rows); cancer
+  `10101×482387`. Watcher finalize ~2026-08-24T17:22Z.
 - **Depends on:** (7A).
 - **Plan:** [`plans/milestone-7b-complete-hub-matrices.md`](plans/milestone-7b-complete-hub-matrices.md);
   [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+- **Next action:** Milestone **7D** Level-1; optional 7C Hub multilabel train
+  smoke / AUROC emission.
 
 ---
 
@@ -543,24 +543,23 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Residual follow-ons** (do not reopen Done when; track in
   [`plans/milestone-7c-supervised-architecture.md`](plans/milestone-7c-supervised-architecture.md)):
 
-  **Blocked on 7B (Hub data still converting):**
-  - Hub smoke: `stage0_flat_hub_disease_multilabel.yaml` (and cancer analogue)
-    once `matrix-hub-disease-full-v1` / `matrix-hub-cancer-full-v1` have
-    `sample_index.parquet` + long-form `sample_phenotypes.parquet`
-    (`hub_longform_ready`). Code path + fixture tests already landed.
-  - Optional: emit AUROC/AUPRC/ECE from trainer holdout JSON when disease/cancer
-    (or binary sex) Hub eval is exercised.
+  **Hub join (unblocked after 7B):**
+  - Long-form multi-hot verified on `matrix-hub-disease-full-v1` /
+    `matrix-hub-cancer-full-v1` (`hub_longform_ready` + sidecar load).
+  - Optional: short train smoke with
+    `configs/experiment/stage0_flat_hub_disease_multilabel.yaml` (max_loci /
+    few epochs); emit AUROC/AUPRC/ECE from trainer holdout JSON.
 
-  **Not blocked on 7B (ops / later topology):**
+  **Ops / later topology (not Done when):**
   - Build full-genome `graph-grch38-gencode38-cgi-tile-v2` artifact under `$MBS_*`
   - Multi-system hier RBS/TBS index (beyond gene-only `locus_region_gene`)
   - True region-system feature masks for `rbs`/`tbs` branch arms
 
-  **Landed in residual polish (fixtures):** train-path `apply_orientation` +
-  honest `score_manifest.json`; `load_longform_multilabel` + masked BCE +
-  `lambda_disease`/`lambda_cancer`.
-- **Depends on:** (7B) only for Hub-scale disease/cancer join smoke; trainer
-  already closed on age/tissue/sex fixtures (still **before 7E**).
+  **Landed in residual polish (fixtures + Hub join):** train-path
+  `apply_orientation` + honest `score_manifest.json`;
+  `load_longform_multilabel` + masked BCE + `lambda_disease`/`lambda_cancer`.
+- **Depends on:** (7B) done for Hub data; trainer closed on age/tissue/sex
+  fixtures (still **before 7E**).
 - **ADRs:** [0006](adr/0006-multipath-noncoding-scores.md),
   [0008](adr/0008-score-identifiability.md).
 - **Plan:** [`plans/milestone-7c-supervised-architecture.md`](plans/milestone-7c-supervised-architecture.md);
@@ -570,7 +569,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 7D. Fold-fitted normalization ablation
 
-- **Status:** `pending`
+- **Status:** `pending` (**current coding gate**)
 - **Done when:** Level-1 study-balanced median + **1.4826×MAD** on train-fold
   M-values; persist \(\mu,\sigma\) and hashes; novel loci `z=0` +
   `norm_present=False` (not discarded); A (beta+M) vs B (A + robust z) on
@@ -580,6 +579,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   reconstruction loss.
 - **Depends on:** (7C) at least for shared train path; Level-1 can land with 7C.
 - **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+
 
 ---
 
