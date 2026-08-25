@@ -1,0 +1,73 @@
+# Fixture-only Level-1 (channel B) smoke config. No Hub matrix_id.
+# Use with: mbs train flat --overfit-fixture --config configs/experiment/stage0_flat_level1_fixture.yaml
+
+experiment:
+  name: stage0_flat_level1_fixture
+  stage: 0
+  seed: 42
+
+stage0:
+  use_cpgpt_static_features: true
+  use_methylgpt_prior: false
+  use_methylcapsnet_annotations: false
+  use_epicv2_manifest: true
+  use_longread: false
+  use_attention_pooling: false
+
+paths:
+  data_release: canonical/release=stage0-v1
+  artifact_root: .
+  scratch_root: .
+
+features:
+  methylation:
+    beta: true
+    m_value: true
+    robust_deviation: true
+    epsilon: 0.001
+    sigma_min: 1.0e-6
+  static_feature_set: cpgpt2m_adapter_128_v1
+  structured_annotations: true
+  feature_source_dropout: 0.0
+
+model:
+  type: flat_deepset
+  input_dimension: null
+  phi_layers: 2
+  phi_hidden_dimension: 20
+  rho_layers: 3
+  rho_hidden_dimension: 10
+  activation: leaky_relu
+  pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  dropout: 0.0
+
+heads:
+  age:
+    enabled: true
+    loss: mse
+    target_standardization: train_fold
+  tissue:
+    enabled: true
+    loss: cross_entropy
+    class_weighting: train_fold_balanced
+
+training:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_token_budget: 500000
+  gradient_clip_norm: 2.0
+  max_epochs: 20
+  early_stopping_patience: 10
+  precision: fp32
+  num_workers: 0
+  require_cuda: false
+
+logging:
+  tensorboard: false
+  wandb: false
+  save_resolved_config: true
+  save_environment: true
+  save_checksums: true

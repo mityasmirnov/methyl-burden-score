@@ -1,0 +1,70 @@
+{
+  "acceptance": {
+    "channel_a_no_fold_norm": true,
+    "channel_b_has_fold_norm": true,
+    "input_dim_b_gt_a": true,
+    "splits_identical": true
+  },
+  "canonical_matrix_untouched": true,
+  "cohort": "deeprvat_hub age/tissue/sex",
+  "created_at": "2026-08-25T10:46:53.526531+00:00",
+  "device": "cuda:0",
+  "input_dim_a": 131,
+  "input_dim_b": 133,
+  "locus_ids_sha256": "6be6d4b54c4fa574f19d1544249d9a8f86c974c693d4b363ecca2c1db270902c",
+  "matrix_id": "matrix-hub-age-tissue-sex-full-v1",
+  "milestone": "7D",
+  "mu_sha256": "1a40231ba13eee0e56c5bc9578e5de6afe502d1627094e9354c5d8025b729b98",
+  "n_estimated": 512,
+  "n_train": 9794,
+  "n_unestimated": 0,
+  "run_a": {
+    "fold_norm_present": false,
+    "input_dimension": 131,
+    "n_test": 0,
+    "n_train": 9794,
+    "n_val": 2105,
+    "path": "artifacts/runs/stage0-7d-level1-a",
+    "robust_deviation": false,
+    "run_id": "stage0-7d-level1-a"
+  },
+  "run_b": {
+    "fold_norm_manifest": {
+      "artifact_version": "fold-norm-level1-v1",
+      "created_at": "2026-08-25T10:38:49.604011+00:00",
+      "epsilon": 0.001,
+      "fold_id": "hub-age-tissue-sex-full-auto-v1",
+      "formula": "z=(M-median)/max(1.4826*MAD,sigma_min); train-fold only",
+      "locus_ids_path": "fold_norm/locus_ids.npy",
+      "locus_ids_sha256": "6be6d4b54c4fa574f19d1544249d9a8f86c974c693d4b363ecca2c1db270902c",
+      "mad_scale": 1.4826,
+      "mu_path": "fold_norm/mu.npy",
+      "mu_sha256": "1a40231ba13eee0e56c5bc9578e5de6afe502d1627094e9354c5d8025b729b98",
+      "n_estimated": 512,
+      "n_loci": 512,
+      "n_train_samples": 9794,
+      "n_unestimated": 0,
+      "run_id": "stage0-7d-level1-b",
+      "sigma_min": 1e-06,
+      "sigma_path": "fold_norm/sigma.npy",
+      "sigma_sha256": "6021ca818f327c6b52cb31a17fe54dcf747dbac33574e2bbe24421707985d5d3"
+    },
+    "fold_norm_present": true,
+    "input_dimension": 133,
+    "level1_normalization": {
+      "enabled": true,
+      "manifest_hash": "1a40231ba13eee0e56c5bc9578e5de6afe502d1627094e9354c5d8025b729b98",
+      "n_estimated": 512,
+      "n_unestimated": 0,
+      "sigma_min": 1e-06
+    },
+    "n_test": 0,
+    "n_train": 9794,
+    "n_val": 2105,
+    "path": "artifacts/runs/stage0-7d-level1-b",
+    "robust_deviation": true,
+    "run_id": "stage0-7d-level1-b"
+  },
+  "sigma_sha256": "6021ca818f327c6b52cb31a17fe54dcf747dbac33574e2bbe24421707985d5d3",
+  "splits_identical": true
+}

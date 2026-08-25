@@ -7,9 +7,10 @@ Normative ADRs: [0005](../adr/0005-catalog-matrix-independence.md),
 [0008](../adr/0008-score-identifiability.md).
 Checklist: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md).
 
-**Do not retrain v0.1.** Freeze those runs. **7A**, **7B**, and **7C** (fixture
-acceptance) are closed. Finish **7D** Level-1 before development training
-(**7E**). The incomplete `EWAS_db` mirror must not block 7D–7E.
+**Do not retrain v0.1.** Freeze those runs. **7A**, **7B**, **7C** (fixture
+acceptance), and **7D** (Level-1 fixtures + Hub ATS A/B) are closed. **7E**
+development CV is the **current coding gate**. The incomplete `EWAS_db` mirror
+must not block 7E.
 
 This document is the coding brief for **7A–7E**. The expensive Milestone **7**
 OOF cross-fit stays blocked until those gates pass.
@@ -22,8 +23,8 @@ OOF cross-fit stays blocked until those gates pass.
 | **7A** | Versioned `deepmat-data-v1/` release; populated DuckDB; phenotype census + trait eligibility reports |
 | **7B** | All nine Hub packs as canonical matrices; chunked Zarr; multi-label long-form; probe-collapse policy (**done**; six full packs + index + overlap report) |
 | **7C** | Trainer P0/P1 fixes; centered heads; score-orientation anchor; graph v2 (RBS/TBS); direct CpG; constraint-aware splits; metrics wired (**fixture done**; orientation + long-form join + Hub smoke + AUROC emission landed; topology residuals remain) |
-| **7D** | Fold-fitted Level-1 MAD robust-z; persist hashes; novel loci `z=0` + `norm_present=False`; AE not default (**current gate**) |
-| **7E** | 3×2 independently trained arms including transparent baselines and CpGPT ablation |
+| **7D** | Fold-fitted Level-1 MAD robust-z; persist hashes; novel loci `z=0` + `norm_present=False`; Hub DeepRVAT A/B smoke; AE not default (**done**; `reports/inspection/stage0_7d_level1/`) |
+| **7E** | 3×2 independently trained arms including transparent baselines and CpGPT ablation (**current gate**) |
 | **7** | 5×6 OOF MBS (+ RBS/TBS/direct as applicable) with leakage controls |
 
 ## Locked decisions
@@ -296,7 +297,12 @@ select on held-out phenotype, replicate concordance, and cross-platform
 stability — **not** reconstruction loss. Vanilla AE reconstructs
 study/platform artifacts well; it is not the first normalizer.
 
-Compare A (beta+M) vs B (A + robust z) on identical folds.
+Compare A (beta+M) vs B (A + robust z) on identical folds (fixtures and
+DeepRVAT Hub ATS: `matrix-hub-age-tissue-sex-full-v1`). Evidence:
+`reports/inspection/stage0_7d_level1/` when closed.
+
+Comprehensive RBS/TBS (graph-v2 + train-time masks) is a **7E prerequisite**,
+not 7D Done when.
 
 ### 7E — Development CV
 

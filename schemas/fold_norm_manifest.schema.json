@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mityasmirnov/methyl-burden-score/schemas/fold_norm_manifest.schema.json",
+  "title": "Level-1 fold-fitted MAD robust-z manifest",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "artifact_version",
+    "formula",
+    "epsilon",
+    "sigma_min",
+    "n_train_samples",
+    "n_loci",
+    "n_estimated",
+    "n_unestimated",
+    "mu_sha256",
+    "sigma_sha256",
+    "locus_ids_sha256",
+    "mad_scale"
+  ],
+  "properties": {
+    "artifact_version": {"type": "string"},
+    "formula": {"type": "string"},
+    "fold_id": {"type": ["string", "null"]},
+    "run_id": {"type": ["string", "null"]},
+    "epsilon": {"type": "number"},
+    "sigma_min": {"type": "number"},
+    "mad_scale": {"type": "number"},
+    "n_train_samples": {"type": "integer", "minimum": 0},
+    "n_loci": {"type": "integer", "minimum": 0},
+    "n_estimated": {"type": "integer", "minimum": 0},
+    "n_unestimated": {"type": "integer", "minimum": 0},
+    "mu_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sigma_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "locus_ids_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "mu_path": {"type": "string"},
+    "sigma_path": {"type": "string"},
+    "locus_ids_path": {"type": "string"},
+    "created_at": {"type": "string"}
+  }
+}

@@ -20,19 +20,31 @@ def apply_feature_control(
     *,
     mode: str,
     include_m_value: bool = True,
+    include_robust_z: bool = False,
 ) -> NDArray[np.float32]:
-    """Zero methylation and/or static channels. Layout: beta, [M], static..., static_present."""
+    """Zero methylation and/or static channels.
+
+    Layout: ``beta, [M], [z], static..., static_present, [norm_present]``.
+    Coverage-only keeps trailing present flags (``static_present`` and optional
+    ``norm_present``).
+    """
     out = np.asarray(features, dtype=np.float32).copy()
     if out.ndim != 2 or out.shape[0] == 0:
         return out
-    n_methyl = 2 if include_m_value else 1
+    n_methyl = 1
+    if include_m_value:
+        n_methyl += 1
+    if include_robust_z:
+        n_methyl += 1
+    n_flags = 1 + (1 if include_robust_z else 0)
     if mode in {"none", "off", ""}:
         return out
     if mode == "static_only":
         out[:, :n_methyl] = 0.0
         return out
     if mode == "coverage_only":
-        out[:, :-1] = 0.0
+        # Keep only trailing present flag column(s).
+        out[:, : out.shape[1] - n_flags] = 0.0
         return out
     raise ValueError(f"unknown feature control: {mode}")
 

@@ -44,6 +44,12 @@ from mbs.training.hier_dataset import (
     make_synthetic_hier_overfit_bundle,
     pack_hier_records_to_batch,
 )
+from mbs.training.level1_norm import (
+    Level1NormParams,
+    fit_level1_from_betas,
+    persist_level1,
+    resolve_level1_config,
+)
 from mbs.training.locus_gene import load_graph_tables
 from mbs.training.locus_region_gene import (
     HIER_REGION_TYPES,
@@ -196,6 +202,9 @@ def _run_hier_epoch(
     allowed_region_type_ids: set[int] | None = None,
     include_residual: bool = True,
     include_mapped: bool = True,
+    include_m_value: bool = True,
+    include_robust_z: bool = False,
+    level1_params: Level1NormParams | None = None,
 ) -> dict[str, float]:
     if train:
         model.train()
@@ -259,7 +268,16 @@ def _run_hier_epoch(
             else:
                 if all_phenotypes is None or pilot_store is None:
                     raise RuntimeError("missing phenotypes/store for materialization")
-                chunk = [_materialize_hier_record(all_phenotypes[i], pilot_store) for i in idxs]
+                chunk = [
+                    _materialize_hier_record(
+                        all_phenotypes[i],
+                        pilot_store,
+                        include_m_value=include_m_value,
+                        include_robust_z=include_robust_z,
+                        level1_params=level1_params,
+                    )
+                    for i in idxs
+                ]
             age_values: list[float | None] = []
             age_flags: list[bool] = []
             tissue_flags: list[bool] = []
@@ -355,6 +373,10 @@ def _run_hier_epoch(
 def _materialize_hier_record(
     phenotype: SamplePhenotype,
     store: _HierPilotStore,
+    *,
+    include_m_value: bool = True,
+    include_robust_z: bool = False,
+    level1_params: Any | None = None,
 ) -> HierSampleRecord:
     row = store.sample_row_by_id[phenotype.sample_id]
     beta_row = np.asarray(store.betas[row, : store.n_cols], dtype=np.float32)
@@ -365,6 +387,9 @@ def _materialize_hier_record(
         static_valid=store.static_valid,
         locus_region=store.locus_region,
         epsilon=store.epsilon,
+        include_m_value=include_m_value,
+        include_robust_z=include_robust_z,
+        level1_params=level1_params,
     )
 
 
@@ -403,6 +428,13 @@ def train_hierarchical_baseline(
     _set_seed(seed)
 
     train_cfg = config.get("training", {})
+    level1_cfg = resolve_level1_config(config)
+    include_m_value = bool(level1_cfg["include_m_value"])
+    include_robust_z = bool(level1_cfg["include_robust_z"])
+    level1_epsilon = float(level1_cfg["epsilon"])
+    level1_sigma_min = float(level1_cfg["sigma_min"])
+    level1_params: Level1NormParams | None = None
+    level1_manifest: dict[str, Any] | None = None
     require_cuda = bool(train_cfg.get("require_cuda", False)) and not overfit_fixture
     if overfit_fixture and device_str.startswith("cuda") and not torch.cuda.is_available():
         device_str = "cpu"
@@ -431,7 +463,13 @@ def train_hierarchical_baseline(
     age_std = 1.0
 
     if overfit_fixture:
-        bundle = make_synthetic_hier_overfit_bundle(seed=seed)
+        bundle = make_synthetic_hier_overfit_bundle(
+            seed=seed,
+            include_m_value=include_m_value,
+            include_robust_z=include_robust_z,
+            sigma_min=level1_sigma_min,
+            epsilon=level1_epsilon,
+        )
         train_records = list(bundle["records"])
         val_records = train_records
         locus_region = bundle["locus_region"]
@@ -441,6 +479,7 @@ def train_hierarchical_baseline(
         n_panel = int(bundle["n_panel"])
         input_dim = int(bundle["input_dim"])
         n_classes = int(bundle["n_classes"])
+        level1_params = bundle.get("level1_params")
         split = {
             "mode": "overfit_fixture",
             "train_sample_ids": [r.sample_id for r in train_records],
@@ -599,8 +638,12 @@ def train_hierarchical_baseline(
             f"[hier] static ready dim={static_dim} valid_cols={int(static_valid.sum())}/{n_cols}",
             flush=True,
         )
-        epsilon = float(config.get("features", {}).get("methylation", {}).get("epsilon", 0.001))
-        input_dim = cpg_input_dim(static_dim)
+        epsilon = float(level1_epsilon)
+        input_dim = cpg_input_dim(
+            static_dim,
+            include_m_value=include_m_value,
+            include_robust_z=include_robust_z,
+        )
         sample_row_by_id = {
             str(sid): int(row)
             for sid, row in zip(
@@ -622,6 +665,20 @@ def train_hierarchical_baseline(
             epsilon=epsilon,
             n_cols=n_cols,
         )
+        if include_robust_z:
+            if not train_phenotypes:
+                raise ValueError("robust_deviation requires train phenotypes for Hub/pilot path")
+            train_rows = [sample_row_by_id[str(p.sample_id)] for p in train_phenotypes]
+            level1_params = fit_level1_from_betas(
+                pilot_store.betas,
+                train_rows,
+                epsilon=level1_epsilon,
+                sigma_min=level1_sigma_min,
+                n_loci=n_cols,
+                locus_ids=locus_index["locus_id"].to_numpy()[:n_cols],
+                fold_id=str(split.get("split_id") or run_id),
+                run_id=run_id,
+            )
         tissue_train = [p.class_index for p in train_phenotypes if p.tissue_mask]
         if tissue_train:
             class_weights = _class_weights(tissue_train, n_classes)
@@ -708,6 +765,20 @@ def train_hierarchical_baseline(
     run_root.mkdir(parents=True, exist_ok=True)
     ckpt_root.mkdir(parents=True, exist_ok=True)
     checkpoint_hashes: dict[str, str] = {}
+    if level1_params is not None and include_robust_z:
+        if level1_params.run_id is None:
+            level1_params = Level1NormParams(
+                mu=level1_params.mu,
+                sigma=level1_params.sigma,
+                estimated=level1_params.estimated,
+                locus_ids=level1_params.locus_ids,
+                sigma_min=level1_params.sigma_min,
+                n_train_samples=level1_params.n_train_samples,
+                epsilon=level1_params.epsilon,
+                fold_id=level1_params.fold_id or run_id,
+                run_id=run_id,
+            )
+        level1_manifest = persist_level1(run_root, level1_params)
 
     log_cfg = config.get("logging", {})
     use_tb = bool(log_cfg.get("tensorboard", False))
@@ -773,6 +844,9 @@ def train_hierarchical_baseline(
             allowed_region_type_ids=allowed_region_type_ids,
             include_residual=include_residual,
             include_mapped=include_mapped,
+            include_m_value=include_m_value,
+            include_robust_z=include_robust_z,
+            level1_params=level1_params,
         )
 
     print(  # noqa: T201
@@ -989,6 +1063,19 @@ def train_hierarchical_baseline(
             flat_metrics=flat_metrics if isinstance(flat_metrics, dict) else None,
         ),
         "age_standardization": {"mean": age_mean, "std": age_std},
+        "level1_normalization": (
+            {
+                "enabled": True,
+                "manifest_hash": (
+                    None if level1_manifest is None else level1_manifest.get("mu_sha256")
+                ),
+                "n_estimated": None if level1_params is None else level1_params.n_estimated,
+                "n_unestimated": None if level1_params is None else level1_params.n_unestimated,
+                "sigma_min": level1_sigma_min if include_robust_z else None,
+            }
+            if include_robust_z
+            else {"enabled": False}
+        ),
     }
     # ADR 0008: orient gene-panel MBS (exclude residual slot) vs signed gene-mean M.
     polarity = "hyper_aligned"

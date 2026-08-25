@@ -1,0 +1,144 @@
+# Milestone 7D Hub Level-1 channel B (robust_deviation=true).
+# Same seed/split as stage0_flat_deeprvat_level1_a.yaml for identical folds.
+# Smoke: mbs train flat --config ... --run-id stage0-7d-level1-b --max-loci 512 --max-epochs 2
+
+experiment:
+  name: stage0_flat_deeprvat_level1_b
+  stage: 0
+  public_model_name: deepMAT
+  seed: 42
+
+stage0:
+  use_cpgpt_static_features: true
+  use_methylgpt_prior: false
+  use_methylcapsnet_annotations: false
+  use_epicv2_manifest: true
+  use_longread: false
+  use_attention_pooling: false
+
+pilot:
+  mode: deeprvat_hub
+  matrix_id: matrix-hub-age-tissue-sex-full-v1
+  graph_id: graph-grch38-gencode38-five-role-v1
+  static_feature_set: cpgpt2m_adapter_128_v1
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology_age_tissue_sex_full_v1.yaml
+  auto_split: true
+  split_id: hub-age-tissue-sex-full-auto-v1
+
+data:
+  phenotype_registry: configs/data/phenotype_registry.yaml
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology_age_tissue_sex_full_v1.yaml
+  wave: 1
+
+features:
+  methylation:
+    beta: true
+    m_value: true
+    robust_deviation: true
+    epsilon: 0.001
+    sigma_min: 1.0e-6
+  static_feature_set: cpgpt2m_adapter_128_v1
+
+model:
+  type: flat_deepset
+  input_dimension: null
+  phi_layers: 2
+  phi_hidden_dimension: 20
+  rho_layers: 3
+  rho_hidden_dimension: 10
+  activation: leaky_relu
+  pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  dropout: 0.0
+
+heads:
+  age:
+    enabled: true
+    loss: huber
+    huber_delta: 1.0
+    target_standardization: train_fold
+    linear: true
+  tissue:
+    enabled: true
+    loss: cross_entropy
+    class_weighting: train_fold_balanced
+    ontology: harmonized
+    linear: true
+  sex:
+    enabled: true
+    loss: cross_entropy
+    n_classes: 2
+    linear: true
+  disease:
+    enabled: false
+    loss: bce_with_logits
+    role: auxiliary
+    linear: true
+  cancer:
+    enabled: false
+    loss: bce_with_logits
+    role: auxiliary
+    linear: true
+  blood:
+    enabled: false
+    loss: cross_entropy
+    role: domain_auxiliary
+    linear: true
+  brain:
+    enabled: false
+    loss: cross_entropy
+    role: domain_auxiliary
+    linear: true
+
+loss:
+  lambda_age: 1.0
+  lambda_tissue: 1.0
+  lambda_sex: 1.0
+  lambda_disease: 0.0
+  lambda_cancer: 0.0
+  lambda_blood: 0.0
+  lambda_brain: 0.0
+
+training:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_size: 4
+  batch_token_budget: 500000
+  gradient_clip_norm: 2.0
+  max_epochs: 2
+  early_stopping_patience: 8
+  precision: bf16-mixed
+  num_workers: 0
+  require_cuda: true
+
+splits:
+  grouping_columns:
+    - study_id
+    - donor_id
+  protocol: study_grouped
+  train_fraction: 0.7
+  val_fraction: 0.15
+  test_fraction: 0.15
+
+device:
+  cuda_visible_devices: "0"
+  torch_device: cuda
+
+logging:
+  tensorboard: false
+  auto_tensorboard: false
+  jsonl: true
+  wandb: false
+  save_resolved_config: true
+  save_environment: true
+  save_checksums: true
+
+evaluation:
+  age_metrics: [mae, rmse, pearson, spearman]
+  tissue_metrics: [macro_f1, balanced_accuracy, confusion_matrix]
+  sex_metrics: [accuracy, balanced_accuracy]
+  report_by: [study_id, platform_id, phenotype_family]

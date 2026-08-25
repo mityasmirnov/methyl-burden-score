@@ -7,7 +7,9 @@ from typing import Any
 
 import numpy as np
 
-from mbs.training.direct_cpg import fit_direct_elasticnet
+from mbs.training.direct_cpg import direct_cpg_design_matrix, fit_direct_elasticnet
+from mbs.training.features import beta_to_m_value
+from mbs.training.level1_norm import resolve_level1_config
 from mbs.training.loop import TrainResult, train_flat_baseline
 from mbs.training.phenotypes import hub_longform_ready
 
@@ -33,12 +35,28 @@ def train_branch_arm(
     if arm == "direct":
         rng = np.random.default_rng(int(config.get("experiment", {}).get("seed", 42)))
         n, p = 20, 8
-        z = rng.normal(size=(n, p))
+        # Synthetic betas → M; Level-1 when robust_deviation else centered M.
+        betas = rng.uniform(0.05, 0.95, size=(n, p))
+        level1_cfg = resolve_level1_config(config)
+        m = beta_to_m_value(betas, epsilon=float(level1_cfg["epsilon"]))
         obs = rng.random(size=(n, p)) > 0.2
+        z, _params = direct_cpg_design_matrix(
+            m,
+            obs,
+            use_level1=bool(level1_cfg["include_robust_z"]),
+            sigma_min=float(level1_cfg["sigma_min"]),
+            epsilon=float(level1_cfg["epsilon"]),
+        )
         y = z[:, 0] + 0.1 * rng.normal(size=n)
         studies = np.array(["A"] * 10 + ["B"] * 10)
         fitted = fit_direct_elasticnet(z, obs, y, studies, min_studies=2)
-        return {"arm": arm, "run_id": run_id, "n_loci": fitted["n_loci"], "direct": True}
+        return {
+            "arm": arm,
+            "run_id": run_id,
+            "n_loci": fitted["n_loci"],
+            "direct": True,
+            "use_level1": bool(level1_cfg["include_robust_z"]),
+        }
     cfg = dict(config)
     cfg.setdefault("model", {})
     cfg["model"] = {**cfg["model"], "arm": arm}

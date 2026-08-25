@@ -16,7 +16,8 @@ from mbs.batch import (
     ANNOTATION_STATUS_UNMAPPED,
     annotation_status_masks,
 )
-from mbs.training.features import assemble_cpg_features, cpg_input_dim
+from mbs.training.features import assemble_cpg_features, beta_to_m_value, cpg_input_dim
+from mbs.training.level1_norm import apply_level1_robust_z, fit_level1_robust_z
 from mbs.training.locus_region_gene import (
     HIER_REGION_TYPES,
     REGION_TYPE_TO_ID,
@@ -132,6 +133,9 @@ def _assemble_features(
     static_rows: np.ndarray,
     static_present: np.ndarray,
     include_m_value: bool,
+    include_robust_z: bool,
+    robust_z: np.ndarray | None,
+    norm_present: np.ndarray | None,
     epsilon: float,
 ) -> np.ndarray:
     return assemble_cpg_features(
@@ -139,6 +143,9 @@ def _assemble_features(
         static_rows=static_rows,
         static_present=static_present,
         include_m_value=include_m_value,
+        include_robust_z=include_robust_z,
+        robust_z=robust_z,
+        norm_present=norm_present,
         epsilon=epsilon,
     )
 
@@ -151,6 +158,8 @@ def gather_hier_sample_features(
     locus_region: LocusRegionGeneIndex,
     epsilon: float = 0.001,
     include_m_value: bool = True,
+    include_robust_z: bool = False,
+    level1_params: Any | None = None,
 ) -> HierSampleFeatureBundle:
     """Build ragged hierarchical + residual features for one sample."""
     beta_row = np.asarray(beta_row, dtype=np.float32)
@@ -160,12 +169,26 @@ def gather_hier_sample_features(
         raise ValueError(
             f"beta_row length {beta_row.shape[0]} < n_study_loci {locus_region.n_study_loci}"
         )
+    if include_robust_z and level1_params is None:
+        raise ValueError("include_robust_z requires level1_params")
 
     cols = locus_region.edge_col_index
     regions = locus_region.edge_region_index
     n_dropped_nan = 0
     n_missing_static = 0
-    feat_dim = cpg_input_dim(int(static_by_col.shape[1]), include_m_value=include_m_value)
+    feat_dim = cpg_input_dim(
+        int(static_by_col.shape[1]),
+        include_m_value=include_m_value,
+        include_robust_z=include_robust_z,
+    )
+
+    def _z_for(
+        cols_k: np.ndarray, betas_k: np.ndarray
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
+        if not include_robust_z:
+            return None, None
+        m_k = beta_to_m_value(betas_k, epsilon=epsilon)
+        return apply_level1_robust_z(m_k, level1_params, col_index=cols_k)
 
     if cols.size == 0:
         mapped_features = np.zeros((0, feat_dim), dtype=np.float32)
@@ -180,11 +203,16 @@ def gather_hier_sample_features(
         n_missing_static += int((finite & ~static_ok).sum())
         cols_k = cols[keep]
         regions_k = regions[keep]
+        betas_k = betas[keep]
+        z, n_pres = _z_for(cols_k, betas_k)
         mapped_features = _assemble_features(
-            betas=betas[keep],
+            betas=betas_k,
             static_rows=static_by_col[cols_k],
             static_present=static_ok[keep],
             include_m_value=include_m_value,
+            include_robust_z=include_robust_z,
+            robust_z=z,
+            norm_present=n_pres,
             epsilon=epsilon,
         )
         mapped_regions = regions_k.astype(np.int64, copy=False)
@@ -201,11 +229,16 @@ def gather_hier_sample_features(
         n_missing_static += int((finite_r & ~static_ok_r).sum())
         keep_r = finite_r
         cols_r = res_cols[keep_r]
+        betas_rk = betas_r[keep_r]
+        z_r, n_pres_r = _z_for(cols_r, betas_rk)
         residual_features = _assemble_features(
-            betas=betas_r[keep_r],
+            betas=betas_rk,
             static_rows=static_by_col[cols_r],
             static_present=static_ok_r[keep_r],
             include_m_value=include_m_value,
+            include_robust_z=include_robust_z,
+            robust_z=z_r,
+            norm_present=n_pres_r,
             epsilon=epsilon,
         )
 
@@ -230,6 +263,9 @@ def build_hier_sample(
     static_valid: np.ndarray,
     locus_region: LocusRegionGeneIndex,
     epsilon: float = 0.001,
+    include_m_value: bool = True,
+    include_robust_z: bool = False,
+    level1_params: Any | None = None,
 ) -> HierSampleRecord:
     features = gather_hier_sample_features(
         beta_row=beta_row,
@@ -237,6 +273,9 @@ def build_hier_sample(
         static_valid=static_valid,
         locus_region=locus_region,
         epsilon=epsilon,
+        include_m_value=include_m_value,
+        include_robust_z=include_robust_z,
+        level1_params=level1_params,
     )
     if features.n_observed_edges == 0 and features.n_observed_residual == 0:
         raise ValueError(f"sample {phenotype.sample_id!r} has zero observed CpGs")
@@ -385,10 +424,16 @@ def make_synthetic_hier_overfit_bundle(
     static_dim: int = 4,
     seed: int = 0,
     include_residual: bool = True,
+    include_m_value: bool = True,
+    include_robust_z: bool = False,
+    sigma_min: float = 1e-6,
+    epsilon: float = 0.001,
 ) -> dict[str, Any]:
     """Tiny hierarchical fixture: typed regions + optional residual columns."""
     if n_genes < n_classes:
         raise ValueError("n_genes must be >= n_classes for the overfit fixture")
+    if include_robust_z and not include_m_value:
+        raise ValueError("include_robust_z requires include_m_value")
     rng = np.random.default_rng(seed)
 
     n_typed = n_genes
@@ -444,7 +489,9 @@ def make_synthetic_hier_overfit_bundle(
     )
 
     class_names = [f"class_{i}" for i in range(n_classes)]
-    records: list[HierSampleRecord] = []
+    beta_rows: list[np.ndarray] = []
+    static_rows: list[np.ndarray] = []
+    class_idxs: list[int] = []
     ages: list[float] = []
     for s in range(n_samples):
         cls = s % n_classes
@@ -457,12 +504,35 @@ def make_synthetic_hier_overfit_bundle(
         )
         static = rng.normal(0, 0.01, size=(n_cpgs_eff, static_dim)).astype(np.float32)
         static[cls, 0] = 1.0 + float(cls)
-        static_valid = np.ones(n_cpgs_eff, dtype=bool)
+        beta_rows.append(betas)
+        static_rows.append(static)
+        class_idxs.append(cls)
+        ages.append(20.0 + 10.0 * cls)
+
+    level1 = None
+    if include_robust_z:
+        m_mat = np.stack(
+            [beta_to_m_value(b, epsilon=epsilon) for b in beta_rows],
+            axis=0,
+        )
+        level1 = fit_level1_robust_z(
+            m_mat,
+            sigma_min=sigma_min,
+            epsilon=epsilon,
+        )
+
+    records: list[HierSampleRecord] = []
+    static_valid = np.ones(n_cpgs_eff, dtype=bool)
+    for s, (betas, static, cls) in enumerate(zip(beta_rows, static_rows, class_idxs, strict=True)):
         features = gather_hier_sample_features(
             beta_row=betas,
             static_by_col=static,
             static_valid=static_valid,
             locus_region=locus_region,
+            epsilon=epsilon,
+            include_m_value=include_m_value,
+            include_robust_z=include_robust_z,
+            level1_params=level1,
         )
         records.append(
             HierSampleRecord(
@@ -472,7 +542,6 @@ def make_synthetic_hier_overfit_bundle(
                 features=features,
             )
         )
-        ages.append(20.0 + 10.0 * cls)
 
     return {
         "records": records,
@@ -484,9 +553,14 @@ def make_synthetic_hier_overfit_bundle(
         "n_genes": len(gene_ids),
         "n_panel": locus_region.n_panel,
         "n_regions": locus_region.n_regions,
-        "input_dim": cpg_input_dim(static_dim),
+        "input_dim": cpg_input_dim(
+            static_dim, include_m_value=include_m_value, include_robust_z=include_robust_z
+        ),
         "n_classes": n_classes,
         "region_types": list(HIER_REGION_TYPES),
+        "level1_params": level1,
+        "include_m_value": include_m_value,
+        "include_robust_z": include_robust_z,
         "annotation_statuses": {
             "mapped": ANNOTATION_STATUS_MAPPED,
             "unmapped": ANNOTATION_STATUS_UNMAPPED,

@@ -60,9 +60,16 @@ from mbs.training.dataset import (
     make_synthetic_study_holdout_bundle,
     pack_records_to_batch,
     record_to_batch,
+    refit_level1_on_flat_records,
 )
 from mbs.training.encoder_config import resolve_encoder
 from mbs.training.features import build_static_column_table, cpg_input_dim
+from mbs.training.level1_norm import (
+    Level1NormParams,
+    fit_level1_from_betas,
+    persist_level1,
+    resolve_level1_config,
+)
 from mbs.training.locus_gene import LocusGeneIndex, build_locus_gene_index, load_graph_tables
 from mbs.training.multitask import MultitaskHeads, masked_multitask_loss
 from mbs.training.phenotype_table import load_tissue_ontology
@@ -265,11 +272,22 @@ def maybe_constrained_split(
         )
 
 
-def _apply_feature_control_inplace(record: FlatSampleRecord, mode: str) -> None:
+def _apply_feature_control_inplace(
+    record: FlatSampleRecord,
+    mode: str,
+    *,
+    include_m_value: bool = True,
+    include_robust_z: bool = False,
+) -> None:
     if mode in {"none", "off", ""}:
         return
     feats = record.features.cpg_features
-    feats[:] = apply_feature_control(feats, mode=mode)
+    feats[:] = apply_feature_control(
+        feats,
+        mode=mode,
+        include_m_value=include_m_value,
+        include_robust_z=include_robust_z,
+    )
 
 
 def _materialize_record(
@@ -277,6 +295,9 @@ def _materialize_record(
     store: _PilotStore,
     *,
     control_mode: str = "none",
+    include_m_value: bool = True,
+    include_robust_z: bool = False,
+    level1_params: Level1NormParams | None = None,
 ) -> FlatSampleRecord:
     row = store.sample_row_by_id[phenotype.sample_id]
     beta_row = np.asarray(store.betas[row, : store.n_cols], dtype=np.float32)
@@ -287,8 +308,16 @@ def _materialize_record(
         static_valid=store.static_valid,
         locus_gene=store.locus_gene,
         epsilon=store.epsilon,
+        include_m_value=include_m_value,
+        include_robust_z=include_robust_z,
+        level1_params=level1_params,
     )
-    _apply_feature_control_inplace(rec, control_mode)
+    _apply_feature_control_inplace(
+        rec,
+        control_mode,
+        include_m_value=include_m_value,
+        include_robust_z=include_robust_z,
+    )
     return rec
 
 
@@ -341,6 +370,8 @@ def _orient_and_write_score_manifest(
     cfg_hash: str,
     checkpoint_hashes: dict[str, str],
     control_mode: str,
+    include_robust_z: bool = False,
+    level1_params: Level1NormParams | None = None,
 ) -> dict[str, Any]:
     """Compute ADR 0008 polarity on train fold; flip heads and rewrite checkpoints if needed."""
     polarity = "hyper_aligned"
@@ -376,7 +407,16 @@ def _orient_and_write_score_manifest(
             _consume(rec)
     elif train_phenotypes is not None and pilot_store is not None:
         for ph in train_phenotypes:
-            _consume(_materialize_record(ph, pilot_store, control_mode=control_mode))
+            _consume(
+                _materialize_record(
+                    ph,
+                    pilot_store,
+                    control_mode=control_mode,
+                    include_m_value=include_m_value,
+                    include_robust_z=include_robust_z,
+                    level1_params=level1_params,
+                )
+            )
 
     if mbs_rows and m_batches:
         mbs_arr = np.stack(mbs_rows, axis=0)
@@ -444,6 +484,9 @@ def _run_epoch(
     control_mode: str = "none",
     disease_maps: MultilabelMaps | None = None,
     cancer_maps: MultilabelMaps | None = None,
+    include_m_value: bool = True,
+    include_robust_z: bool = False,
+    level1_params: Level1NormParams | None = None,
 ) -> dict[str, float]:
     if train:
         model.train()
@@ -521,7 +564,14 @@ def _run_epoch(
                 if all_phenotypes is None or pilot_store is None:
                     raise RuntimeError("missing phenotypes/store for on-the-fly materialization")
                 chunk = [
-                    _materialize_record(all_phenotypes[i], pilot_store, control_mode=control_mode)
+                    _materialize_record(
+                        all_phenotypes[i],
+                        pilot_store,
+                        control_mode=control_mode,
+                        include_m_value=include_m_value,
+                        include_robust_z=include_robust_z,
+                        level1_params=level1_params,
+                    )
                     for i in idxs
                 ]
             age_values: list[float | None] = []
@@ -641,11 +691,6 @@ def _run_epoch(
             sex_correct += float(metrics.get("sex_correct", 0.0))
             n += int(batch_n)
             if not train:
-                for record in chunk:
-                    ph = ph_by_id.get(record.sample_id)
-                    group_study.append(str(ph.study_id if ph and ph.study_id else record.sample_id))
-                    group_platform.append(str(ph.platform if ph and ph.platform else "unknown"))
-                    group_tissue.append(str(ph.cell_type if ph else "unknown"))
                 if task != "regression" and bool(batch.tissue_mask.any()):
                     with torch.no_grad():
                         mbs_p, present_p = _packed_mbs(model, batch)
@@ -661,6 +706,15 @@ def _run_epoch(
                         if logits.shape[-1] == 2:
                             probs = torch.softmax(logits, dim=-1)[:, 1]
                             score_tissue.extend(probs.detach().cpu().tolist())
+                        for record in chunk:
+                            ph = ph_by_id.get(record.sample_id)
+                            group_study.append(
+                                str(ph.study_id if ph and ph.study_id else record.sample_id)
+                            )
+                            group_platform.append(
+                                str(ph.platform if ph and ph.platform else "unknown")
+                            )
+                            group_tissue.append(str(ph.cell_type if ph else "unknown"))
                 if (
                     task == "multitask"
                     and isinstance(head, MultitaskHeads)
@@ -863,6 +917,13 @@ def train_flat_baseline(
     batch_token_budget = int(raw_budget) if raw_budget not in (None, "", 0) else None
     control_mode = _control_mode(config)
     model_cfg = config.get("model", {})
+    level1_cfg = resolve_level1_config(config)
+    include_m_value = bool(level1_cfg["include_m_value"])
+    include_robust_z = bool(level1_cfg["include_robust_z"])
+    level1_epsilon = float(level1_cfg["epsilon"])
+    level1_sigma_min = float(level1_cfg["sigma_min"])
+    level1_params: Level1NormParams | None = None
+    level1_manifest: dict[str, Any] | None = None
 
     fixture_records: list[FlatSampleRecord] | None = None
     train_phenotypes: list[SamplePhenotype] | None = None
@@ -897,6 +958,23 @@ def train_flat_baseline(
         val_ids = set(split_manifest["validation_sample_ids"])
         train_records = [r for r in records if r.sample_id in train_ids]
         val_records = [r for r in records if r.sample_id in val_ids]
+        if include_robust_z:
+            level1_params, rebuilt = refit_level1_on_flat_records(
+                train_records,
+                records,
+                include_m_value=include_m_value,
+                sigma_min=level1_sigma_min,
+                epsilon=level1_epsilon,
+                fold_id="study-holdout-fixture-v1",
+                run_id=run_id,
+            )
+            train_records = [r for r in rebuilt if r.sample_id in train_ids]
+            val_records = [r for r in rebuilt if r.sample_id in val_ids]
+            input_dim = cpg_input_dim(
+                int(bundle["static_dim"]),
+                include_m_value=include_m_value,
+                include_robust_z=True,
+            )
         split = split_manifest
         class_weights = _class_weights([r.class_index for r in train_records], n_classes)
         if torch.allclose(class_weights, torch.ones_like(class_weights)):
@@ -911,6 +989,24 @@ def train_flat_baseline(
         n_classes = int(bundle["n_classes"])
         train_records = fixture_records
         val_records = fixture_records
+        if include_robust_z:
+            level1_params, rebuilt = refit_level1_on_flat_records(
+                train_records,
+                fixture_records,
+                include_m_value=include_m_value,
+                sigma_min=level1_sigma_min,
+                epsilon=level1_epsilon,
+                fold_id="overfit_fixture",
+                run_id=run_id,
+            )
+            fixture_records = rebuilt
+            train_records = rebuilt
+            val_records = rebuilt
+            input_dim = cpg_input_dim(
+                int(bundle["static_dim"]),
+                include_m_value=include_m_value,
+                include_robust_z=True,
+            )
         split = {
             "mode": "overfit_fixture",
             "train_sample_ids": [r.sample_id for r in fixture_records],
@@ -1124,8 +1220,12 @@ def train_flat_baseline(
             embeddings=open_embeddings_zarr(static_paths.embeddings_path),
             n_study_loci=n_cols,
         )
-        epsilon = float(config.get("features", {}).get("methylation", {}).get("epsilon", 0.001))
-        input_dim = cpg_input_dim(static_dim)
+        epsilon = float(level1_epsilon)
+        input_dim = cpg_input_dim(
+            static_dim,
+            include_m_value=include_m_value,
+            include_robust_z=include_robust_z,
+        )
         sample_row_by_id = {
             str(sid): int(row)
             for sid, row in zip(
@@ -1148,6 +1248,20 @@ def train_flat_baseline(
             epsilon=epsilon,
             n_cols=n_cols,
         )
+        if include_robust_z:
+            if not train_phenotypes:
+                raise ValueError("robust_deviation requires train phenotypes for Hub/pilot path")
+            train_rows = [sample_row_by_id[str(p.sample_id)] for p in train_phenotypes]
+            level1_params = fit_level1_from_betas(
+                pilot_store.betas,
+                train_rows,
+                epsilon=level1_epsilon,
+                sigma_min=level1_sigma_min,
+                n_loci=n_cols,
+                locus_ids=locus_index["locus_id"].to_numpy()[:n_cols],
+                fold_id=str(split.get("split_id") or run_id),
+                run_id=run_id,
+            )
         if task_kind != "regression":
             tissue_train = [
                 p.class_index for p in train_phenotypes if task_kind != "multitask" or p.tissue_mask
@@ -1184,11 +1298,15 @@ def train_flat_baseline(
             if rec_list is None:
                 continue
             for rec in rec_list:
-                _apply_feature_control_inplace(rec, control_mode)
+                _apply_feature_control_inplace(
+                    rec,
+                    control_mode,
+                    include_m_value=include_m_value,
+                    include_robust_z=include_robust_z,
+                )
     if control_mode == "metadata_only":
         epochs = 0
 
-    include_m_value = bool(config.get("features", {}).get("methylation", {}).get("m_value", True))
     disease_maps: MultilabelMaps | None = None
     cancer_maps: MultilabelMaps | None = None
     _heads_early = config.get("heads", {}) if isinstance(config.get("heads"), dict) else {}
@@ -1352,6 +1470,14 @@ def train_flat_baseline(
     run_root.mkdir(parents=True, exist_ok=True)
     ckpt_root.mkdir(parents=True, exist_ok=True)
     checkpoint_hashes: dict[str, str] = {}
+    if level1_params is not None:
+        level1_manifest = persist_level1(run_root, level1_params)
+
+    level1_epoch_kwargs: dict[str, Any] = {
+        "include_m_value": include_m_value,
+        "include_robust_z": include_robust_z,
+        "level1_params": level1_params,
+    }
 
     log_cfg = config.get("logging", {})
     use_tb = bool(log_cfg.get("tensorboard", False))
@@ -1416,6 +1542,7 @@ def train_flat_baseline(
             control_mode=control_mode,
             disease_maps=disease_maps,
             cancer_maps=cancer_maps,
+            **level1_epoch_kwargs,
         )
         val_metrics = _run_epoch(
             records=val_records,
@@ -1447,6 +1574,7 @@ def train_flat_baseline(
             control_mode=control_mode,
             disease_maps=disease_maps,
             cancer_maps=cancer_maps,
+            **level1_epoch_kwargs,
         )
         row = {
             "epoch": epoch,
@@ -1575,6 +1703,7 @@ def train_flat_baseline(
             control_mode=control_mode,
             disease_maps=disease_maps,
             cancer_maps=cancer_maps,
+            **level1_epoch_kwargs,
         )
         test_mae = test_metrics["mae"]
         if task_kind in {"regression", "multitask"}:
@@ -1628,6 +1757,19 @@ def train_flat_baseline(
         "external_test": holdout_metrics,
         "age_standardization": age_std_meta,
         "control_mode": control_mode,
+        "level1_normalization": (
+            {
+                "enabled": True,
+                "manifest_hash": (
+                    None if level1_manifest is None else level1_manifest.get("mu_sha256")
+                ),
+                "n_estimated": None if level1_params is None else level1_params.n_estimated,
+                "n_unestimated": None if level1_params is None else level1_params.n_unestimated,
+                "sigma_min": level1_sigma_min if include_robust_z else None,
+            }
+            if include_robust_z
+            else {"enabled": False}
+        ),
     }
     if control_mode == "metadata_only" and train_phenotypes is not None:
         meta_task = "regression" if task_kind == "regression" else "multiclass"
@@ -1652,6 +1794,8 @@ def train_flat_baseline(
         device=device,
         n_genes=n_genes,
         include_m_value=include_m_value,
+        include_robust_z=include_robust_z,
+        level1_params=level1_params,
         run_root=run_root,
         ckpt_root=ckpt_root,
         run_id=run_id,

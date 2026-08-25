@@ -12,8 +12,14 @@ from torch import Tensor
 from mbs.training.features import (
     SampleFeatureBundle,
     assemble_cpg_features,
+    beta_to_m_value,
     cpg_input_dim,
     gather_sample_features,
+)
+from mbs.training.level1_norm import (
+    Level1NormParams,
+    apply_level1_robust_z,
+    fit_level1_robust_z,
 )
 from mbs.training.locus_gene import LocusGeneIndex
 from mbs.training.phenotypes import SamplePhenotype
@@ -99,6 +105,9 @@ def build_flat_sample(
     static_valid: np.ndarray,
     locus_gene: LocusGeneIndex,
     epsilon: float = 0.001,
+    include_m_value: bool = True,
+    include_robust_z: bool = False,
+    level1_params: Any | None = None,
 ) -> FlatSampleRecord:
     features = gather_sample_features(
         beta_row=beta_row,
@@ -106,6 +115,9 @@ def build_flat_sample(
         static_valid=static_valid,
         locus_gene=locus_gene,
         epsilon=epsilon,
+        include_m_value=include_m_value,
+        include_robust_z=include_robust_z,
+        level1_params=level1_params,
     )
     if features.n_observed_edges == 0:
         raise ValueError(f"sample {phenotype.sample_id!r} has zero observed gene-mapped CpGs")
@@ -268,19 +280,28 @@ def make_synthetic_overfit_bundle(
     n_classes: int = 3,
     static_dim: int = 4,
     seed: int = 0,
+    include_m_value: bool = True,
+    include_robust_z: bool = False,
 ) -> dict[str, Any]:
     """Tiny in-memory fixture that is linearly separable by class-tied patterns.
 
     Each class lights up exactly one gene (high beta on that gene's CpGs).
+    When ``include_robust_z``, Level-1 params are fit on all fixture samples
+    (overfit path); study-holdout trains must re-fit on the train fold only.
     """
     if n_genes < n_classes:
         raise ValueError("n_genes must be >= n_classes for the overfit fixture")
+    if include_robust_z and not include_m_value:
+        raise ValueError("include_robust_z requires include_m_value")
     rng = np.random.default_rng(seed)
     # Equal CpGs per gene
     cpg_to_gene = np.array([i % n_genes for i in range(n_cpgs)], dtype=np.int64)
     gene_ids = [f"GENE{i}" for i in range(n_genes)]
     class_names = [f"class_{i}" for i in range(n_classes)]
+    edge_cols = np.arange(n_cpgs, dtype=np.int64)
 
+    beta_rows: list[np.ndarray] = []
+    static_rows: list[np.ndarray] = []
     records: list[FlatSampleRecord] = []
     ages: list[float] = []
     for s in range(n_samples):
@@ -292,11 +313,32 @@ def make_synthetic_overfit_bundle(
         betas = np.clip(betas + rng.normal(0, 0.005, size=n_cpgs), 0.01, 0.99).astype(np.float32)
         static = rng.normal(0, 0.01, size=(n_cpgs, static_dim)).astype(np.float32)
         static[active, 0] = 1.0 + float(cls)
+        beta_rows.append(betas)
+        static_rows.append(static)
+        ages.append(20.0 + 10.0 * cls)
 
+    level1 = None
+    if include_robust_z:
+        m_mat = np.stack([beta_to_m_value(b) for b in beta_rows], axis=0)
+        level1 = fit_level1_robust_z(m_mat, sigma_min=1e-6)
+
+    for s in range(n_samples):
+        betas = beta_rows[s]
+        static = static_rows[s]
+        robust_z = None
+        norm_present = None
+        if include_robust_z and level1 is not None:
+            robust_z, norm_present = apply_level1_robust_z(
+                beta_to_m_value(betas), level1, col_index=edge_cols
+            )
         features = assemble_cpg_features(
             betas=betas,
             static_rows=static,
             static_present=np.ones(n_cpgs, dtype=np.float32),
+            include_m_value=include_m_value,
+            include_robust_z=include_robust_z,
+            robust_z=robust_z,
+            norm_present=norm_present,
         )
         bundle = SampleFeatureBundle(
             cpg_features=features,
@@ -304,16 +346,16 @@ def make_synthetic_overfit_bundle(
             n_observed_edges=n_cpgs,
             n_dropped_nan_beta=0,
             n_dropped_no_static=0,
+            edge_col_index=edge_cols.copy(),
         )
         records.append(
             FlatSampleRecord(
                 sample_id=f"SYN{s:03d}",
                 donor_id=str((s % 4) + 1),
-                class_index=cls,
+                class_index=s % n_classes,
                 features=bundle,
             )
         )
-        ages.append(20.0 + 10.0 * cls)
 
     return {
         "records": records,
@@ -321,8 +363,15 @@ def make_synthetic_overfit_bundle(
         "class_names": class_names,
         "ages": ages,
         "n_genes": n_genes,
-        "input_dim": cpg_input_dim(static_dim),
+        "n_cpgs": n_cpgs,
+        "static_dim": static_dim,
+        "input_dim": cpg_input_dim(
+            static_dim, include_m_value=include_m_value, include_robust_z=include_robust_z
+        ),
         "n_classes": n_classes,
+        "level1_params": level1,
+        "include_m_value": include_m_value,
+        "include_robust_z": include_robust_z,
     }
 
 
@@ -336,11 +385,17 @@ def make_synthetic_study_holdout_bundle(
     static_dim: int = 4,
     seed: int = 0,
     task: str = "tissue",
+    include_m_value: bool = True,
+    include_robust_z: bool = False,
 ) -> dict[str, Any]:
     """Multi-study synthetic fixture for study-grouped holdout benchmarks.
 
     ``task='tissue'`` → multiclass labels; ``task='age'`` → ages tied to class
     with continuous targets (class_index still set for shared head smoke).
+
+    When ``include_robust_z``, the base bundle fits Level-1 on **all** studies;
+    callers that need leakage-safe params must re-fit on the train fold via
+    ``refit_level1_on_flat_records``.
     """
     base = make_synthetic_overfit_bundle(
         n_samples=len(studies) * samples_per_study,
@@ -349,6 +404,8 @@ def make_synthetic_study_holdout_bundle(
         n_classes=n_classes,
         static_dim=static_dim,
         seed=seed,
+        include_m_value=include_m_value,
+        include_robust_z=include_robust_z,
     )
     records: list[FlatSampleRecord] = []
     sample_rows: list[dict[str, Any]] = []
@@ -384,3 +441,95 @@ def make_synthetic_study_holdout_bundle(
         "studies": list(studies),
         "task": task,
     }
+
+
+def refit_level1_on_flat_records(
+    train_records: list[FlatSampleRecord],
+    all_records: list[FlatSampleRecord],
+    *,
+    include_m_value: bool = True,
+    sigma_min: float = 1e-6,
+    epsilon: float = 0.001,
+    fold_id: str | None = None,
+    run_id: str | None = None,
+) -> tuple[Any, list[FlatSampleRecord]]:
+    """Fit Level-1 on train records' M columns; rebuild all records with channel B.
+
+    Expects channel-A features (beta, M, static..., static_present) and
+    ``edge_col_index`` on each bundle. Returns params and new record list.
+    """
+    if not include_m_value:
+        raise ValueError("Level-1 refit requires m_value")
+    if not train_records:
+        raise ValueError("cannot fit Level-1 without train records")
+
+    n_loci = 0
+    for rec in train_records:
+        cols = rec.features.edge_col_index
+        if cols is None:
+            raise ValueError("edge_col_index required for Level-1 refit")
+        n_loci = max(n_loci, int(cols.max()) + 1 if cols.size else 0)
+    for rec in all_records:
+        cols = rec.features.edge_col_index
+        if cols is None:
+            raise ValueError("edge_col_index required for Level-1 refit")
+        n_loci = max(n_loci, int(cols.max()) + 1 if cols.size else 0)
+
+    m_mat = np.full((len(train_records), n_loci), np.nan, dtype=np.float64)
+    for i, rec in enumerate(train_records):
+        feats = rec.features.cpg_features
+        cols = rec.features.edge_col_index
+        if cols is None:
+            raise ValueError("edge_col_index required for Level-1 refit")
+        # Channel A: beta=0, M=1
+        m_vals = feats[:, 1]
+        m_mat[i, cols] = m_vals
+
+    params: Level1NormParams = fit_level1_robust_z(
+        m_mat,
+        sigma_min=sigma_min,
+        epsilon=epsilon,
+        fold_id=fold_id,
+        run_id=run_id,
+    )
+
+    rebuilt: list[FlatSampleRecord] = []
+    for rec in all_records:
+        feats = rec.features.cpg_features
+        cols = rec.features.edge_col_index
+        if cols is None:
+            raise ValueError("edge_col_index required for Level-1 refit")
+        betas = feats[:, 0]
+        m_vals = feats[:, 1]
+        # static starts after beta+M; ends before static_present
+        static = feats[:, 2:-1]
+        static_present = feats[:, -1]
+        z, norm_present = apply_level1_robust_z(m_vals, params, col_index=cols)
+        new_feats = assemble_cpg_features(
+            betas=betas,
+            static_rows=static,
+            static_present=static_present,
+            include_m_value=True,
+            include_robust_z=True,
+            robust_z=z,
+            norm_present=norm_present,
+            epsilon=epsilon,
+        )
+        bundle = SampleFeatureBundle(
+            cpg_features=new_feats,
+            cpg_to_gene=rec.features.cpg_to_gene.copy(),
+            n_observed_edges=rec.features.n_observed_edges,
+            n_dropped_nan_beta=rec.features.n_dropped_nan_beta,
+            n_dropped_no_static=rec.features.n_dropped_no_static,
+            n_missing_static=rec.features.n_missing_static,
+            edge_col_index=cols.copy(),
+        )
+        rebuilt.append(
+            FlatSampleRecord(
+                sample_id=rec.sample_id,
+                donor_id=rec.donor_id,
+                class_index=rec.class_index,
+                features=bundle,
+            )
+        )
+    return params, rebuilt

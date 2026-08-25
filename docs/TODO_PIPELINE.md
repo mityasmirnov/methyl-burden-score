@@ -12,14 +12,15 @@ True next milestone after bootstrap:
 > … → max-N flat age/tissue/sex (5d — **done**) → hierarchical residual
 > baseline (6 — **done**) → harmonized release + phenotype census (7A — **done**) →
 > nine-pack matrices (7B — **done**) → architecture corrections (7C —
-> **done**, fixture) → **fold-fitted normalization (7D — current gate)** →
-> development CV (7E) → **final OOF cross-fitting (7)** → one score matrix.
+> **done**, fixture + Hub DeepRVAT A/B) → **development CV (7E — current gate)** →
+> **final OOF cross-fitting (7)** → one score matrix.
 
-**Current gate:** Milestone **7D** (Level-1 fold-fitted MAD). **7B** matrices
-and inspection report are `done`. **7C** fixture acceptance is `done`; Hub
-disease multilabel smoke + holdout AUROC/AUPRC/ECE emission landed. Graph-v2
-topology residuals remain (not Done when).
-**Do not retrain v0.1** or start **7E**/Milestone **7** until 7B–7D land
+**Current gate:** Milestone **7E** (development CV / architecture selection). **7B**
+matrices and inspection report are `done`. **7C** fixture acceptance is `done`.
+**7D** Level-1 fold-fitted MAD is `done` (fixtures + Hub ATS A/B smoke;
+`reports/inspection/stage0_7d_level1/`). Graph-v2 topology residuals remain a
+**7E prerequisite** (not 7D Done when).
+**Do not retrain v0.1** or start Milestone **7** until 7E lands
 ([ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
 [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
@@ -570,23 +571,26 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 7D. Fold-fitted normalization ablation
 
-- **Status:** `pending` (**current coding gate**)
+- **Status:** `done`
 - **Done when:** Level-1 study-balanced median + **1.4826×MAD** on train-fold
   M-values; persist \(\mu,\sigma\) and hashes; novel loci `z=0` +
   `norm_present=False` (not discarded); A (beta+M) vs B (A + robust z) on
-  identical folds. Do **not** overwrite Hub GMQN canonical betas. Levels 2
-  (bounded residual MLP + LayerNorm/RMSNorm) and 3 (fold-isolated masked AE)
-  documented as later ablations; select on phenotype/stability, not
-  reconstruction loss.
+  identical folds (fixtures **and** DeepRVAT Hub ATS smoke). Do **not**
+  overwrite Hub GMQN canonical betas. Levels 2 (bounded residual MLP +
+  LayerNorm/RMSNorm) and 3 (fold-isolated masked AE) documented as later
+  ablations; select on phenotype/stability, not reconstruction loss.
+- **Evidence:** `tests/unit/test_stage0_7d.py`; Hub smoke runs
+  `stage0-7d-level1-{a,b}`; `reports/inspection/stage0_7d_level1/`.
 - **Depends on:** (7C) at least for shared train path; Level-1 can land with 7C.
-- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+- **Plan:** [`plans/milestone-7d-fold-fitted-normalization.md`](plans/milestone-7d-fold-fitted-normalization.md);
+  [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
 
 ---
 
 ## 7E. Development cross-validation (architecture selection)
 
-- **Status:** `pending`
+- **Status:** `pending` (**current coding gate**)
 - **Done when:** 3 outer study-grouped folds × 2 restarts compare independently
   trained arms: **transparent gene/region mean and elastic-net**;
   **parameter-matched** flat gene-only; **parameter-matched** hierarchical
