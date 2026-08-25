@@ -40,10 +40,10 @@ Keep Cursor session todos in sync (complete / cancel / start next).
 5d. Max-N flat age/tissue/sex
 6. Hierarchical region model
 7A. Harmonized data release + phenotype census (**done**)
-7B. Complete nine-pack canonical matrices (**current gate**)
-7C. Supervised architecture corrections (multi-path scores, splits, heads)
-7D. Fold-fitted Level-1 normalization
-7E. Development CV (architecture selection)
+7B. Complete nine-pack canonical matrices (**done**)
+7C. Supervised architecture corrections (multi-path scores, splits, heads) (**done**, fixture + Hub smoke)
+7D. Fold-fitted Level-1 normalization (**done**)
+7E. Development CV (architecture selection) (**current gate**; graph-v2 on disk; multi-path unblocked)
 7. Final study-grouped OOF cross-fitting (blocked until 7A–7E)
 8. Optional layers only after 1–7
 
@@ -52,9 +52,11 @@ Ordering after Milestone 6 is locked by
 and [`docs/adr/0008-score-identifiability.md`](docs/adr/0008-score-identifiability.md).
 Programme brief:
 [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md).
-Do not retrain v0.1 or start 7E before 7B–7D.
+Do not retrain v0.1. 7A–7D are done. Do not start Milestone **7** before 7E.
+7E may include RBS/TBS arms on graph-v2.
 
 Before starting **5c**, read `docs/EWAS_METADATA.md` and
 `reports/inspection/ewas_metadata_structure/summary.md`.
-Before starting **7B**, read ADRs 0005–0008 and the 7A release under
-`$MBS_DATA_ROOT/canonical/releases/deepmat-data-v1/`.
+Before starting **7E**, read ADRs 0005–0008, the 7A release under
+`$MBS_DATA_ROOT/canonical/releases/deepmat-data-v1/`, and
+[`docs/plans/milestone-7e-development-cv.md`](docs/plans/milestone-7e-development-cv.md).

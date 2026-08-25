@@ -12,6 +12,7 @@ import pytest
 import torch
 
 from mbs.annotation.build import attach_cgi_tile_systems
+from mbs.annotation.regulatory_regions import build_rbs_regions
 from mbs.evaluation.splits import partition_studies_constrained
 from mbs.models import FlatDeepSet, HierarchicalDeepSet, SharedMLP, center_mask_scores
 from mbs.scoring.orientation import (
@@ -165,6 +166,42 @@ def test_graph_v2_assignment_disjoint() -> None:
     assert {3, 4, 5} <= by_sys["tbs"]
 
 
+def test_per_island_rbs_two_islands() -> None:
+    loci = pd.DataFrame(
+        {
+            "locus_id": [1, 2, 3, 4],
+            "chromosome": ["chr1"] * 4,
+            "position": [50, 55, 200, 205],
+            "cpg_context": ["island", "north_shore", "island", "south_shore"],
+        }
+    )
+    islands = pd.DataFrame(
+        {
+            "chromosome": ["chr1", "chr1"],
+            "start": [40, 190],
+            "end": [60, 210],
+        }
+    )
+    rbs_r, rbs_e = build_rbs_regions(loci, gene_assigned_locus_ids=set(), islands=islands)
+    assert len(rbs_r) >= 2
+    region_ids = set(rbs_r["region_id"])
+    assert any("40-60" in rid for rid in region_ids)
+    assert any("190-210" in rid for rid in region_ids)
+    by_region = rbs_e.groupby("region_id")["locus_id"].apply(set).to_dict()
+    # Loci near first island attach there; second island's loci to the other
+    first = [rid for rid in region_ids if "40-60" in rid]
+    second = [rid for rid in region_ids if "190-210" in rid]
+    assert first and second
+    first_loci: set[object] = set()
+    for rid in first:
+        first_loci |= by_region[rid]
+    second_loci: set[object] = set()
+    for rid in second:
+        second_loci |= by_region[rid]
+    assert {1, 2} <= first_loci
+    assert {3, 4} <= second_loci
+
+
 def test_direct_elasticnet_and_arms(monkeypatch: pytest.MonkeyPatch) -> None:
     repo = Path(__file__).resolve().parents[2]
     workspace = repo / "scratch" / "pytest" / f"7c-branch-{uuid4().hex}"
@@ -188,6 +225,7 @@ def test_direct_elasticnet_and_arms(monkeypatch: pytest.MonkeyPatch) -> None:
     art_root = workspace / "artifacts"
     data_root.mkdir()
     art_root.mkdir()
+    panels: dict[str, set[str]] = {}
     for arm in ("direct", "gene", "rbs", "tbs"):
         out = train_branch_arm(
             arm=arm,
@@ -200,6 +238,12 @@ def test_direct_elasticnet_and_arms(monkeypatch: pytest.MonkeyPatch) -> None:
             overfit_fixture=True,
         )
         assert out["arm"] == arm
+        if arm != "direct":
+            panels[arm] = set(out.get("gene_ids") or [])
+    assert panels["gene"].isdisjoint(panels["rbs"])
+    assert panels["gene"].isdisjoint(panels["tbs"])
+    assert panels["rbs"].isdisjoint(panels["tbs"])
+    assert panels["gene"] and panels["rbs"] and panels["tbs"]
 
 
 def test_matched_encoder_sharedmlp() -> None:

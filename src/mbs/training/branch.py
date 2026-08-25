@@ -69,4 +69,11 @@ def train_branch_arm(
         device_str=device,
         overfit_fixture=overfit_fixture,
     )
-    return {"arm": arm, "run_id": result.run_id, "metrics": result.metrics, "direct": False}
+    return {
+        "arm": arm,
+        "run_id": result.run_id,
+        "metrics": result.metrics,
+        "direct": False,
+        "n_genes": result.metrics.get("gene_panel_size"),
+        "gene_ids": list(result.metrics.get("gene_ids") or []),
+    }

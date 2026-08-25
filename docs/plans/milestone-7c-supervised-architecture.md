@@ -60,9 +60,9 @@ the multi-label solution.
 | Item | Status | Notes |
 |------|--------|-------|
 | `apply_orientation` on real gene-mean M | **done** (flat + hier train) | Train-fold gene-mean MBS vs signed gene-mean M; flips head weights + rewrites ckpts; `score_manifest.json` |
-| Full-genome graph-v2 artifact | Builder + fixture path done; do not rebuild genome in CI | Run `mbs graph build --graph-id graph-grch38-gencode38-cgi-tile-v2` under `$MBS_*` when needed |
-| Multi-system hier index (RBS/TBS DeepSet combo) | `locus_region_gene` still filters `region_system==gene` for v0.1-compatible hier | Shared CpG encoder + per-system region embeddings is 7E topology work |
-| Branch arms `rbs`/`tbs` | CLI/run-dir + fixture overfit; still gene FlatDeepSet features | True region-system masks need graph-v2 train index |
+| Full-genome graph-v2 artifact | **on disk** | `$MBS_DATA_ROOT/canonical/graphs/graph-grch38-gencode38-cgi-tile-v2/`; `reports/inspection/annotation_graph_cgi_tile_v2/`; plan [`milestone-7c-graph-v2-topology.md`](milestone-7c-graph-v2-topology.md) |
+| Multi-system hier index (RBS/TBS) | **done** | `region_systems` on `build_locus_region_gene_index`; default gene-only |
+| Branch arms `rbs`/`tbs` | **train-time masks done** | System filter at index build; Hub-scale 7E still pending |
 
 ## Non-goals
 

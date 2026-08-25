@@ -6,9 +6,11 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import torch
 from torch import Tensor
 
+from mbs.annotation.build import attach_cgi_tile_systems
 from mbs.training.features import (
     SampleFeatureBundle,
     assemble_cpg_features,
@@ -21,7 +23,8 @@ from mbs.training.level1_norm import (
     apply_level1_robust_z,
     fit_level1_robust_z,
 )
-from mbs.training.locus_gene import LocusGeneIndex
+from mbs.training.locus_gene import LocusGeneIndex, build_locus_gene_index
+from mbs.training.locus_region_gene import region_systems_from_arm
 from mbs.training.phenotypes import SamplePhenotype
 
 
@@ -372,6 +375,155 @@ def make_synthetic_overfit_bundle(
         "level1_params": level1,
         "include_m_value": include_m_value,
         "include_robust_z": include_robust_z,
+    }
+
+
+def make_synthetic_arm_overfit_bundle(
+    *,
+    arm: str,
+    n_samples: int = 12,
+    n_classes: int = 3,
+    static_dim: int = 4,
+    seed: int = 0,
+    include_m_value: bool = True,
+    include_robust_z: bool = False,
+) -> dict[str, Any]:
+    """Tiny fixture whose panel is RBS or TBS regions from a mini graph-v2.
+
+    Builds gene + CGI RBS + tiles in-memory, then indexes only the requested
+    arm so CI proves ``rbs``/``tbs`` train on a different panel than gene.
+    """
+    if arm not in {"rbs", "tbs"}:
+        raise ValueError(f"arm fixture supports rbs/tbs, got {arm!r}")
+    if include_robust_z and not include_m_value:
+        raise ValueError("include_robust_z requires include_m_value")
+
+    # 1 gene locus + island/shore (RBS) + open-sea mapped (TBS) + unmapped
+    loci = pd.DataFrame(
+        {
+            "locus_id": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+            "chromosome": ["chr1"] * 9,
+            "position": [10, 100, 110, 200, 210, 220, 300, 310, 400],
+            "cpg_context": [
+                "island",
+                "island",
+                "north_shore",
+                "open_sea",
+                "open_sea",
+                "open_sea",
+                "open_sea",
+                "open_sea",
+                "open_sea",
+            ],
+            "mapping_status": ["mapped"] * 8 + ["unmapped"],
+        }
+    )
+    regions = pd.DataFrame(
+        {
+            "region_id": ["g:body"],
+            "gene_id": ["ENSG1"],
+            "region_type": ["gene_body"],
+            "chromosome": ["chr1"],
+            "start": [1],
+            "end": [15],
+            "strand": ["+"],
+            "source_version": ["gencode"],
+            "region_system": ["gene"],
+        }
+    )
+    edges = pd.DataFrame(
+        {
+            "locus_id": [1],
+            "region_id": ["g:body"],
+            "edge_weight": [1.0],
+            "evidence_type": ["gene"],
+            "primary_gene_role": [True],
+        }
+    )
+    out_r, out_e = attach_cgi_tile_systems(loci, regions, edges, tile_target_n_cpgs=2)
+    systems = region_systems_from_arm(arm)
+    locus_index = pd.DataFrame(
+        {
+            "col_index": list(range(len(loci))),
+            "locus_id": loci["locus_id"].tolist(),
+        }
+    )
+    locus_gene = build_locus_gene_index(
+        locus_index=locus_index,
+        locus_region_edges=out_e,
+        regions=out_r,
+        region_systems=systems,
+    )
+    n_cpgs = locus_gene.n_study_loci
+    n_panel = locus_gene.n_genes
+    if n_panel < n_classes:
+        # Pad classes down if the tiny graph has fewer entities
+        n_classes = max(1, n_panel)
+    rng = np.random.default_rng(seed)
+    gene_ids = list(locus_gene.gene_ids)
+    class_names = [f"class_{i}" for i in range(n_classes)]
+    edge_col = locus_gene.edge_col_index
+    edge_gene = locus_gene.edge_gene_index
+
+    records: list[FlatSampleRecord] = []
+    ages: list[float] = []
+    for s in range(n_samples):
+        cls = s % n_classes
+        betas = np.full(n_cpgs, 0.05, dtype=np.float32)
+        # Light up columns belonging to panel entity ``cls``
+        active_cols = set(edge_col[edge_gene == cls].tolist())
+        for c in active_cols:
+            betas[int(c)] = 0.95
+        betas = np.clip(betas + rng.normal(0, 0.005, size=n_cpgs), 0.01, 0.99).astype(np.float32)
+        static = rng.normal(0, 0.01, size=(n_cpgs, static_dim)).astype(np.float32)
+        for c in active_cols:
+            static[int(c), 0] = 1.0 + float(cls)
+        # Observed edges only
+        obs_betas = betas[edge_col]
+        obs_static = static[edge_col]
+        features = assemble_cpg_features(
+            betas=obs_betas,
+            static_rows=obs_static,
+            static_present=np.ones(len(edge_col), dtype=np.float32),
+            include_m_value=include_m_value,
+            include_robust_z=False,
+        )
+        bundle = SampleFeatureBundle(
+            cpg_features=features,
+            cpg_to_gene=edge_gene.copy(),
+            n_observed_edges=int(edge_col.shape[0]),
+            n_dropped_nan_beta=0,
+            n_dropped_no_static=0,
+            edge_col_index=edge_col.copy(),
+        )
+        records.append(
+            FlatSampleRecord(
+                sample_id=f"ARM{s:03d}",
+                donor_id=str((s % 4) + 1),
+                class_index=cls,
+                features=bundle,
+            )
+        )
+        ages.append(20.0 + 10.0 * cls)
+
+    return {
+        "records": records,
+        "gene_ids": gene_ids,
+        "class_names": class_names,
+        "ages": ages,
+        "n_genes": n_panel,
+        "n_cpgs": n_cpgs,
+        "static_dim": static_dim,
+        "input_dim": cpg_input_dim(
+            static_dim, include_m_value=include_m_value, include_robust_z=include_robust_z
+        ),
+        "n_classes": n_classes,
+        "level1_params": None,
+        "include_m_value": include_m_value,
+        "include_robust_z": include_robust_z,
+        "arm": arm,
+        "region_systems": list(systems),
+        "locus_gene": locus_gene,
     }
 
 

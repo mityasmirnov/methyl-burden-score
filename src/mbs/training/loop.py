@@ -56,6 +56,7 @@ from mbs.training.dataset import (
     FlatBatch,
     FlatSampleRecord,
     build_flat_sample,
+    make_synthetic_arm_overfit_bundle,
     make_synthetic_overfit_bundle,
     make_synthetic_study_holdout_bundle,
     pack_records_to_batch,
@@ -70,7 +71,12 @@ from mbs.training.level1_norm import (
     persist_level1,
     resolve_level1_config,
 )
-from mbs.training.locus_gene import LocusGeneIndex, build_locus_gene_index, load_graph_tables
+from mbs.training.locus_gene import (
+    LocusGeneIndex,
+    build_locus_gene_index,
+    load_graph_tables,
+    region_systems_from_arm,
+)
 from mbs.training.multitask import MultitaskHeads, masked_multitask_loss
 from mbs.training.phenotype_table import load_tissue_ontology
 from mbs.training.phenotypes import (
@@ -917,6 +923,11 @@ def train_flat_baseline(
     batch_token_budget = int(raw_budget) if raw_budget not in (None, "", 0) else None
     control_mode = _control_mode(config)
     model_cfg = config.get("model", {})
+    arm = model_cfg.get("arm")
+    if model_cfg.get("region_systems"):
+        region_systems = tuple(str(s) for s in model_cfg["region_systems"])
+    else:
+        region_systems = region_systems_from_arm(str(arm) if arm is not None else None)
     level1_cfg = resolve_level1_config(config)
     include_m_value = bool(level1_cfg["include_m_value"])
     include_robust_z = bool(level1_cfg["include_robust_z"])
@@ -980,7 +991,15 @@ def train_flat_baseline(
         if torch.allclose(class_weights, torch.ones_like(class_weights)):
             class_weights = None
     elif overfit_fixture:
-        bundle = make_synthetic_overfit_bundle(seed=seed)
+        if region_systems == ("gene",):
+            bundle = make_synthetic_overfit_bundle(seed=seed)
+        else:
+            bundle = make_synthetic_arm_overfit_bundle(
+                arm=str(arm),
+                seed=seed,
+                include_m_value=include_m_value,
+                include_robust_z=include_robust_z,
+            )
         fixture_records = list(bundle["records"])
         class_names = list(bundle["class_names"])
         gene_ids = list(bundle["gene_ids"])
@@ -989,7 +1008,7 @@ def train_flat_baseline(
         n_classes = int(bundle["n_classes"])
         train_records = fixture_records
         val_records = fixture_records
-        if include_robust_z:
+        if include_robust_z and region_systems == ("gene",):
             level1_params, rebuilt = refit_level1_on_flat_records(
                 train_records,
                 fixture_records,
@@ -1011,6 +1030,8 @@ def train_flat_baseline(
             "mode": "overfit_fixture",
             "train_sample_ids": [r.sample_id for r in fixture_records],
             "val_sample_ids": [r.sample_id for r in fixture_records],
+            "arm": str(arm) if arm is not None else "gene",
+            "region_systems": list(region_systems),
         }
         class_weights = _class_weights([r.class_index for r in fixture_records], n_classes)
         if torch.allclose(class_weights, torch.ones_like(class_weights)):
@@ -1205,6 +1226,7 @@ def train_flat_baseline(
             locus_region_edges=lr_edges,
             regions=regions,
             max_loci=max_loci,
+            region_systems=region_systems,
         )
         gene_ids = locus_gene.gene_ids
         n_genes = locus_gene.n_genes
@@ -1750,6 +1772,7 @@ def train_flat_baseline(
         "n_classes": n_classes,
         "class_names": class_names,
         "gene_panel_size": len(gene_ids),
+        "gene_ids": list(gene_ids),
         "overfit_fixture": overfit_fixture,
         "device": str(device),
         "model_public_name": "deepMAT",

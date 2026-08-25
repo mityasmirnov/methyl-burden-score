@@ -34,7 +34,7 @@ OOF cross-fit stays blocked until those gates pass.
 | 7A–7B | No (catalog + matrices) |
 | 7C | Trainer/model code + fixture/smoke; not the architecture bake-off |
 | 7D | Norm fit + A/B smoke; not full CV |
-| **7E** | **Yes — development CV / architecture selection** (current gate) |
+| **7E** | **Yes — development CV** (current gate). Graph-v2 on disk; multi-path unblocked |
 | **7** | **Yes — final OOF** after 7E chooses architecture |
 
 Do not retrain frozen **v0.1** flat/hier runs.
@@ -53,6 +53,44 @@ encoder but are not part of the exported scoring function
 (gene/region mean, elastic-net) may fit a linear layer on fixed features only;
 neural arms are joint DeepRVAT-style (shared φ/pool/ρ + linear heads).
 
+## Readiness vs live catalog (2026-08-25)
+
+Inspected `$MBS_DATA_ROOT/canonical/releases/deepmat-data-v1/` (manifest
+`created_at` 2026-08-25T11:15:35Z). **Hub packs and 7B matrices are in the
+catalog.** EWAS_db incompleteness is expected and not a 7E gate. Underscore
+census/eligibility reports were re-exported in the same refresh.
+
+| Check | Live catalog / disk | Notes |
+|-------|---------------------|-------|
+| Samples / studies / phenotype rows | 121 931 / 1 325 / 216 476 | Unique GSM includes EWAS_db-only files |
+| Pack memberships / unique Hub GSM | 47 843 / 34 234 | Memberships ≠ people |
+| EWAS_db assay files / studies | 92 971 / 924 of 1989 | `mirror_complete: false` |
+| Matrix artifacts | 20, including all `matrix-hub-*-full-v1` | 7B disease 12 218 × 482 387; cancer 10 101 |
+| Overlap betas | 0 discordant (7B report) | Concordant |
+| Frozen 5d split | `fold_assignment` n=13 548 | Do not overwrite |
+| Graph-v2 on disk | **yes** | `graph-grch38-gencode38-cgi-tile-v2` + `annotation_graph_cgi_tile_v2/` |
+| Donor / replicate groups | `v_replicate_groups` = 0 | Census follow-on |
+| Hyphen inspection dir | **5 GSM fixture leak** | Ignore; use `deepmat_data_v1/` (underscore) |
+| 7B `platform_id` | `450K` on six full packs; `HM450` on 5d ATS | Same 450K universe; string not normalized |
+
+**Proceed to 7E?** **Yes** (including RBS/TBS on graph-v2). Plan:
+[`milestone-7e-development-cv.md`](milestone-7e-development-cv.md).
+Topology residual closed:
+[`milestone-7c-graph-v2-topology.md`](milestone-7c-graph-v2-topology.md).
+
+### Improve the analysis (before or beside 7E)
+
+1. Metadata-only control (study/platform/tissue → phenotype) as a confounding
+   ceiling on the same 7E folds.
+2. Within-study age/BMI ranges and documented disease/cancer controls (7A
+   follow-on); keep those traits auxiliary until controls exist.
+3. Harmonize 7B manifest `platform_id` (`450K` vs frozen `HM450`) on catalog
+   refresh — probe universe is still HM450-aligned.
+4. Parameter-matched width/GELU/dropout/LN for flat vs hier (7C YAML defaults).
+5. Do not use blood `cell_component` pack-wide (~1.1% populated).
+6. Point catalog census tests at a temp `--report-dir` so they cannot overwrite
+   `reports/inspection/deepmat-data-v1/`.
+
 ## Scope and acceptance
 
 | Milestone | Done when (summary) |
@@ -60,9 +98,9 @@ neural arms are joint DeepRVAT-style (shared φ/pool/ρ + linear heads).
 | Freeze v0 | Named freeze tags in docs; artifacts not overwritten |
 | **7A** | Versioned `deepmat-data-v1/` release; populated DuckDB; phenotype census + trait eligibility reports |
 | **7B** | All nine Hub packs as canonical matrices; chunked Zarr; multi-label long-form; probe-collapse policy (**done**; six full packs + index + overlap report) |
-| **7C** | Trainer P0/P1 fixes; centered heads; score-orientation anchor; graph v2 (RBS/TBS); direct CpG; constraint-aware splits; metrics wired (**fixture done**; orientation + long-form join + Hub smoke + AUROC emission landed; topology residuals remain) |
+| **7C** | Trainer P0/P1 fixes; centered heads; score-orientation anchor; graph v2 (RBS/TBS); direct CpG; constraint-aware splits; metrics wired (**fixture done**; orientation + long-form join + Hub smoke + AUROC emission landed; topology residuals closed — see [`milestone-7c-graph-v2-topology.md`](milestone-7c-graph-v2-topology.md)) |
 | **7D** | Fold-fitted Level-1 MAD robust-z; persist hashes; novel loci `z=0` + `norm_present=False`; Hub DeepRVAT A/B smoke; AE not default (**done**; `reports/inspection/stage0_7d_level1/`) |
-| **7E** | 3×2 independently trained arms including transparent baselines and CpGPT ablation (**current gate**) |
+| **7E** | 3×2 independently trained arms including transparent baselines and CpGPT ablation (**current gate**; graph-v2 prep done) |
 | **7** | 5×6 OOF MBS (+ RBS/TBS/direct as applicable) with leakage controls |
 
 ## Locked decisions
@@ -142,7 +180,7 @@ v_split_trait_balance
 | Brain / blood fine class | Outside single-study or evaluation-only |
 | Ancestry | Fairness / domain eval; not default burden-training target |
 
-### Planned CLI (7A — do not advertise as implemented until coded)
+### Implemented CLI (7A)
 
 ```text
 mbs catalog refresh-release
@@ -150,6 +188,11 @@ mbs catalog validate-release
 mbs catalog phenotype-census
 mbs catalog trait-eligibility
 ```
+
+Default `--report-dir` is `reports/inspection/deepmat-data-v1` (hyphen = release
+id). Keep the committed snapshot at `reports/inspection/deepmat_data_v1/`
+(underscore). After tests, the hyphen dir can contain a tiny fixture census —
+re-export from the live catalog before citing numbers.
 
 ## Data / artifact flow
 
@@ -213,23 +256,21 @@ For every harmonized phenotype:
 - predictability from study/platform/tissue metadata alone;
 - eligibility as core, auxiliary, or evaluation-only.
 
-## Defects still in code (7B/7C — do not retrain v0.1)
+## Defects: landed vs remaining (do not retrain v0.1)
 
-| Pri | Problem | Consequence |
-|-----|---------|-------------|
-| P0 | Disease/cancer keyed by GSM; SQL one sample–phenotype row | Silent multi-label overwrite |
-| P0 | One platform map; merged manifests hard-coded HM450 | EPIC/EPICv2 provenance wrong |
-| P0 | Dense RAM then Zarr | Disease/cancer peak memory |
-| P0 | Lexicographic first probe per locus | EPICv2 replicates discarded |
-| P0 | Pack “checksums” = filename/size | Not content hashes (`hub_pack.py`) |
-| P0 | No epoch shuffle; pack/study order | Homogeneous task/study batches |
-| P0 | `batch_token_budget` unused | Ragged CpG counts ignored |
-| P0 | Split balances sample count only | No class/task/age/platform/donor constraints |
-| P1 | Age/sex `MBS × present`; tissue centers 0.5 | Inconsistent missing-gene leakage |
-| P1 | Mapped loci without CpGPT dropped; residual zeros, no flag | Static-feature availability selects |
-| P1 | Configured macro-F1 / balanced acc / correlations not emitted | Accuracy/MAE insufficient for selection |
-| P1 | Flat vs hier different width/GELU/dropout/LN | Not a topology-only comparison |
-| P1 | No CpG normalization channel | Only age-target standardization is fold-fitted |
+Many P0/P1 items from the original review are **closed in 7B–7D** (chunked
+Zarr, long-form labels, content zip hashes, epoch shuffle, token-budget
+sampler, constraint-aware splits, centered heads, Level-1 MAD, AUROC emission,
+orientation train-path). Remaining before a **full** 7E:
+
+| Pri | Remaining | Consequence |
+|-----|-----------|-------------|
+| P0 | (closed) graph-v2 + RBS/TBS masks | See milestone-7c-graph-v2-topology.md |
+| P0 | Hier still gene-system only | RBS/TBS not in hierarchical path |
+| P0 | Branch `rbs`/`tbs` still gene FlatDeepSet features | Eval-time mask ≠ independent arm |
+| P1 | Census follow-ons (donor/replicate, metadata-only predictability, within-study age/BMI) | Confounding / eligibility incomplete |
+| P1 | Hyphen vs underscore census paths | Fixture reports can overwrite CLI default |
+| P1 | 7B `platform_id=450K` vs 5d `HM450` | Catalog provenance inconsistency, not a convert bug |
 
 v0.1 residual-only: ~108k loci → one scalar; eval-time mask of jointly trained
 branch; **first 512 ordered** holdout samples. Near-chance is not evidence
@@ -240,9 +281,10 @@ noncoding CpGs lack signal. Flat vs hier (tissue 0.666 vs 0.598; age MAE 22.0 vs
 
 ### 7A — Harmonized release + census
 
-Shipped (`deepmat-data-v1/`). Refresh follow-on: remaining census fields above
-(metadata-only predictability, within-study age/BMI ranges, donor/replicate).
-Do not wait on EWAS_db completeness.
+Shipped (`deepmat-data-v1/`). Live catalog (2026-08-25T11:15Z) is the SoT;
+underscore census matches it. Follow-on fields (metadata-only predictability,
+within-study age/BMI, donor/replicate) still open. Do not wait on EWAS_db
+completeness. Do not cite the hyphen inspection dir if N≈5.
 
 ### 7B — Complete matrices (**done**)
 
@@ -287,9 +329,9 @@ constraint / LOEUF analogue (ADR 0008).
 
 **Residual vs 7B:** orientation train-path and long-form multi-label join are
 implemented; Hub smoke + holdout AUROC/AUPRC/ECE emission landed
-(`reports/inspection/stage0_7c_hub_disease_smoke/`). Independent leftovers
-(full-genome graph-v2, multi-system hier, true RBS/TBS arm masks) are listed in
-[`milestone-7c-supervised-architecture.md`](milestone-7c-supervised-architecture.md).
+(`reports/inspection/stage0_7c_hub_disease_smoke/`). Topology leftovers
+(full-genome graph-v2, multi-system hier, true RBS/TBS arm masks) are closed in
+[`milestone-7c-graph-v2-topology.md`](milestone-7c-graph-v2-topology.md).
 
 ### 7D — Normalization (do not overwrite Hub GMQN betas)
 
@@ -339,27 +381,23 @@ Compare A (beta+M) vs B (A + robust z) on identical folds (fixtures and
 DeepRVAT Hub ATS: `matrix-hub-age-tissue-sex-full-v1`). Evidence:
 `reports/inspection/stage0_7d_level1/` when closed.
 
-Comprehensive RBS/TBS (graph-v2 + train-time masks) is a **7E prerequisite**,
-not 7D Done when.
+Comprehensive RBS/TBS (graph-v2 + train-time masks) is closed as 7E prep
+([`milestone-7c-graph-v2-topology.md`](milestone-7c-graph-v2-topology.md)).
 
 ### 7E — Development CV
+
+Implementation brief:
+[`milestone-7e-development-cv.md`](milestone-7e-development-cv.md).
 
 ```text
 3 outer study-grouped folds
 2 random restarts
 ```
 
-Independently trained (minimum):
-
-```text
-gene/region mean and elastic-net baselines
-parameter-matched flat gene-only
-parameter-matched hierarchical gene-only
-gene + direct CpG
-gene + RBS + TBS + direct
-each neural arm with / without Level-1 robust z
-CpGPT inclusion as a separate ablation
-```
+**Arms (graph-v2 ready):** mean/elastic-net; parameter-matched flat/hier gene-only;
+gene + direct; gene + RBS + TBS + direct; each neural ± Level-1 z; CpGPT as a
+separate ablation. Independently trained on identical folds. Cohort: frozen ATS
+13 548.
 
 Winner feeds Milestone 7 (5×6). Eval-time branch masking is not sufficient.
 
@@ -377,10 +415,9 @@ assignments, presence/coverage/norm masks, complete model lineage.
   **methylation constraint / LOEUF-like scores**.
 - GWAS-style REGENIE / BGEN pseudodosage export (not applicable to methylation).
 - Overwriting frozen flat/hier v0.1 runs or `deepmat-data-age-tissue-sex-v1`.
-- Advertising planned catalog CLI before implementation.
-- Retraining v0.1 or launching 7E/7 before 7B–7D.
+- Advertising unimplemented CLI as shipped.
+- Retraining v0.1 or launching Milestone **7** before 7E.
 
 ## Open questions
 
-None blocking. Optional git annotated tags for the freeze names may be added
-later; docs already bind the run/matrix IDs.
+None blocking 7E (graph-v2 + train-time RBS/TBS masks are on disk).

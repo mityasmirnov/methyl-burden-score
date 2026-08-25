@@ -52,11 +52,12 @@ from mbs.training.level1_norm import (
 )
 from mbs.training.locus_gene import load_graph_tables
 from mbs.training.locus_region_gene import (
-    HIER_REGION_TYPES,
     REGION_TYPE_TO_ID,
     RESIDUAL_PANEL_ID,
     LocusRegionGeneIndex,
     build_locus_region_gene_index,
+    region_systems_from_arm,
+    region_type_vocab,
 )
 from mbs.training.loop import (
     TrainResult,
@@ -451,6 +452,12 @@ def train_hierarchical_baseline(
     raw_budget = train_cfg.get("batch_token_budget")
     batch_token_budget = int(raw_budget) if raw_budget not in (None, "", 0) else None
     model_cfg = config.get("model", {})
+    arm = model_cfg.get("arm")
+    if model_cfg.get("region_systems"):
+        region_systems = tuple(str(s) for s in model_cfg["region_systems"])
+    else:
+        region_systems = region_systems_from_arm(str(arm) if arm is not None else None)
+    type_vocab = region_type_vocab(region_systems)
 
     train_records: list[HierSampleRecord] | None = None
     val_records: list[HierSampleRecord] | None = None
@@ -463,6 +470,10 @@ def train_hierarchical_baseline(
     age_std = 1.0
 
     if overfit_fixture:
+        if region_systems != ("gene",):
+            raise ValueError(
+                "hier overfit_fixture supports gene-only; use flat branch arms for rbs/tbs fixtures"
+            )
         bundle = make_synthetic_hier_overfit_bundle(
             seed=seed,
             include_m_value=include_m_value,
@@ -610,6 +621,7 @@ def train_hierarchical_baseline(
             locus_region_edges=lr_edges,
             regions=regions,
             max_loci=max_loci,
+            region_systems=region_systems,
         )
         gene_ids = locus_region.gene_ids
         n_genes = locus_region.n_genes
@@ -699,16 +711,21 @@ def train_hierarchical_baseline(
                 "n_typed_edges": locus_region.n_typed_edges,
                 "n_residual_cols": locus_region.n_residual_cols,
                 "annotation_summary": index_annotation_summary(locus_region),
-                "region_types": list(HIER_REGION_TYPES),
+                "region_types": list(locus_region.region_types),
+                "region_systems": list(locus_region.region_systems),
             }
         )
 
-    region_types_cfg = model_cfg.get("region_types") or list(HIER_REGION_TYPES)
-    if list(region_types_cfg) != list(HIER_REGION_TYPES):
+    region_types_cfg = model_cfg.get("region_types") or list(type_vocab)
+    if list(region_types_cfg) != list(type_vocab):
         raise ValueError(
-            f"model.region_types must match {list(HIER_REGION_TYPES)}, got {region_types_cfg}"
+            f"model.region_types must match {list(type_vocab)}, got {region_types_cfg}"
         )
-    n_region_types = len(HIER_REGION_TYPES)
+    n_region_types = len(type_vocab)
+    # Prefer index vocab when real graph was loaded
+    if not overfit_fixture:
+        n_region_types = len(locus_region.region_types)
+        type_vocab = locus_region.region_types
     enc = resolve_encoder(
         model_cfg,
         default_activation="gelu",
@@ -1046,7 +1063,8 @@ def train_hierarchical_baseline(
         "class_names": class_names,
         "gene_panel_size": len(gene_ids),
         "panel_ids": [*gene_ids, RESIDUAL_PANEL_ID],
-        "region_types": list(HIER_REGION_TYPES),
+        "region_types": list(locus_region.region_types),
+        "region_systems": list(locus_region.region_systems),
         "overfit_fixture": overfit_fixture,
         "device": str(device),
         "model_public_name": "deepMAT-hierarchical",

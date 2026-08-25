@@ -60,10 +60,10 @@ defaults. The critical path is:
 5b–5d. Phenotype registry, Hub pack matrices, multitask, max-N age/tissue/sex.
 6. Hierarchical region model (frozen v0.1 residual baseline).
 7A. Harmonized data release + phenotype census (**done**).
-7B. Complete nine-pack canonical matrices (**current gate**).
-7C. Architecture corrections (multi-path scores, splits, heads).
-7D. Fold-fitted Level-1 normalization.
-7E. Development CV (architecture selection).
+7B. Complete nine-pack canonical matrices (**done**).
+7C. Architecture corrections (multi-path scores, splits, heads) (**done**, fixture + Hub smoke).
+7D. Fold-fitted Level-1 normalization (**done**).
+7E. Development CV (architecture selection) (**current gate**; graph-v2 on disk).
 7. Final study-grouped OOF cross-fitting (blocked until 7A–7E).
 
 Model contracts: [`ARCHITECTURE.md`](ARCHITECTURE.md). Milestone checklist:
@@ -82,7 +82,7 @@ layers. Do not start these while 7A–7E / 7 are open (see
 
 ### Module A — Normalization and epimutation features
 
-**Stage 0 next (7D):** fold-fitted robust per-CpG z on **train-fold** M-values:
+**Stage 0 Level-1 (7D — done):** fold-fitted robust per-CpG z on **train-fold** M-values:
 
 ```math
 \mu_c=\operatorname{median}_{s \in \mathrm{train}}(M_{s,c}),\qquad

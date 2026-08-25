@@ -337,7 +337,8 @@ def pack_hier_records_to_batch(
     allow = allowed_region_type_ids
     allow_np: np.ndarray | None = None
     if allow is not None:
-        allow_np = np.zeros(len(HIER_REGION_TYPES), dtype=np.bool_)
+        n_types = max(int(locus_region.region_type_id.max()) + 1, len(locus_region.region_types))
+        allow_np = np.zeros(n_types, dtype=np.bool_)
         for tid in allow:
             t = int(tid)
             if 0 <= t < allow_np.shape[0]:

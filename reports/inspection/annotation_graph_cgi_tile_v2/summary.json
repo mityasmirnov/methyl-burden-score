@@ -1,0 +1,102 @@
+{
+  "cpg_context_counts": {
+    "island": 179826,
+    "north_shelf": 36648,
+    "north_shore": 88753,
+    "open_sea": 647094,
+    "south_shelf": 37046,
+    "south_shore": 93155
+  },
+  "locus_region_edges_by_type": {
+    "cgi_island": 22356,
+    "cgi_north_shore": 13848,
+    "cgi_south_shore": 15378,
+    "cpg_tile": 269530,
+    "five_prime": 22071,
+    "gene_body": 433506,
+    "promoter_core": 200605,
+    "promoter_proximal": 175070,
+    "three_prime": 39695
+  },
+  "n_genes": 19937,
+  "n_loci": 1082522,
+  "n_loci_multi_gene": 92793,
+  "n_locus_region_edges": 1192059,
+  "n_probe_locus_edges": 2288527,
+  "n_probes": 2290670,
+  "n_regions": 346133,
+  "n_unassigned_loci": 0,
+  "n_unmapped_probes": 2143,
+  "platform_coverage": [
+    {
+      "n_mapped": 865904,
+      "n_probes": 866553,
+      "platform_id": "EPIC"
+    },
+    {
+      "n_mapped": 937054,
+      "n_probes": 937690,
+      "platform_id": "EPICv2"
+    },
+    {
+      "n_mapped": 485569,
+      "n_probes": 486427,
+      "platform_id": "HM450"
+    }
+  ],
+  "probes_collapsed_max": 12,
+  "probes_collapsed_mean": 2.1140697371508383,
+  "region_counts_by_type": {
+    "cgi_island": 5733,
+    "cgi_north_shore": 6155,
+    "cgi_south_shore": 6468,
+    "cpg_tile": 5446,
+    "five_prime": 92299,
+    "gene_body": 19940,
+    "promoter_core": 70994,
+    "promoter_proximal": 58824,
+    "three_prime": 80274
+  },
+  "region_policy": {
+    "cgi_shelf_bp": 4000,
+    "cgi_shore_bp": 2000,
+    "coordinate_convention": "1-based_inclusive_cytosine; BED export 0-based_half_open",
+    "gencode_release": 38,
+    "gene_types": [
+      "protein_coding"
+    ],
+    "intergenic_policy": "leave_unassigned",
+    "promoter_core_bp": 200,
+    "promoter_proximal_upstream_bp": 1500,
+    "rbs_source": "UCSC_cgi_per_island_shore",
+    "region_systems": [
+      "gene",
+      "rbs",
+      "tbs"
+    ],
+    "region_types": [
+      "promoter_core",
+      "promoter_proximal",
+      "five_prime",
+      "three_prime",
+      "gene_body"
+    ],
+    "role_precedence": [
+      "promoter_core",
+      "promoter_proximal",
+      "five_prime",
+      "three_prime",
+      "gene_body"
+    ],
+    "tile_target_n_cpgs": 50
+  },
+  "source_stats": {
+    "n_raw_probes": 2290670,
+    "platforms": [
+      "HM450",
+      "EPIC",
+      "EPICv2"
+    ],
+    "reused_v1_graph": "graph-grch38-gencode38-five-role-v1"
+  }
+}

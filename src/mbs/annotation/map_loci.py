@@ -93,7 +93,8 @@ def map_loci_to_regions(
 
 
 def write_regions_bed(regions: pd.DataFrame, path: Path) -> None:
-    """Write BED6+ with gene_id and region_type columns."""
+    """Write BED6+ with gene_id and region_type columns (null gene_id → ``.``)."""
+    gene_col = regions["gene_id"].where(regions["gene_id"].notna(), ".")
     bed = pd.DataFrame(
         {
             "chrom": regions["chromosome"],
@@ -102,7 +103,7 @@ def write_regions_bed(regions: pd.DataFrame, path: Path) -> None:
             "region_id": regions["region_id"],
             "score": 0,
             "strand": regions["strand"],
-            "gene_id": regions["gene_id"],
+            "gene_id": gene_col,
             "region_type": regions["region_type"],
         }
     )

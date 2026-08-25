@@ -50,15 +50,18 @@ Launching that expensive protocol on the current architecture would lock in:
 ## Consequences
 
 - [`TODO_PIPELINE.md`](../TODO_PIPELINE.md) orders **7A → 7B → 7C → 7D → 7E → 7**.
-  After 7A lands, the current gate is **7B**.
+  After 7A landed the gate was **7B**. As of 2026-08-25, **7A–7D are done**;
+  the current gate is **7E** (graph-v2 on disk; multi-path unblocked for
+  graph-v2).
 - Build brief:
   [`plans/post-v0-scientific-programme.md`](../plans/post-v0-scientific-programme.md).
 - Storage / catalog: [ADR 0005](0005-catalog-matrix-independence.md).
 - Noncoding paths: [ADR 0006](0006-multipath-noncoding-scores.md).
 - Score orientation / predictive vs constraint: [ADR 0008](0008-score-identifiability.md).
 - EWAS_db All-Data mirror progress is **not** a gate for 7A–7E.
-- **Do not retrain v0.1.** After 7A, the first coding deliverable is **7B**, not
-  another training run. 7E starts only after 7B–7D.
+- **Do not retrain v0.1.** After 7A the first coding deliverable was **7B**.
+  7E (gene-only) starts only after 7B–7D, which are now closed. Milestone **7**
+  stays blocked until 7E.
 
 ## Non-goals
 

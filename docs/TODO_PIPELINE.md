@@ -15,11 +15,22 @@ True next milestone after bootstrap:
 > **done**, fixture + Hub DeepRVAT A/B) → **development CV (7E — current gate)** →
 > **final OOF cross-fitting (7)** → one score matrix.
 
-**Current gate:** Milestone **7E** (development CV / architecture selection). **7B**
-matrices and inspection report are `done`. **7C** fixture acceptance is `done`.
-**7D** Level-1 fold-fitted MAD is `done` (fixtures + Hub ATS A/B smoke;
-`reports/inspection/stage0_7d_level1/`). Graph-v2 topology residuals remain a
-**7E prerequisite** (not 7D Done when).
+**Current gate:** Milestone **7E** (development CV / architecture selection).
+Gene-only and multi-path arms may use
+`graph-grch38-gencode38-cgi-tile-v2` (on disk under
+`$MBS_DATA_ROOT/canonical/graphs/`; inspection
+`reports/inspection/annotation_graph_cgi_tile_v2/`). Topology residual plan:
+[`plans/milestone-7c-graph-v2-topology.md`](plans/milestone-7c-graph-v2-topology.md).
+Readiness: [`plans/milestone-7e-development-cv.md`](plans/milestone-7e-development-cv.md).
+
+**7A–7D** are `done` (7C = fixture + Hub smoke). Hub nine packs and 7B full
+matrices are in the live DuckDB release (`created_at` 2026-08-25T11:15Z:
+**121 931** samples, **1 325** studies, **216 476** phenotype rows, **20**
+matrix artifacts including all nine Hub full packs). EWAS_db is incomplete
+(**924**/1989 studies, **92 971** GSM files) and **not** a gate. Authoritative
+census: `reports/inspection/deepmat_data_v1/` (underscore; matches this
+refresh). Ignore `reports/inspection/deepmat-data-v1/` if it shows ~5 GSM
+(fixture leak into the CLI default hyphen path).
 **Do not retrain v0.1** or start Milestone **7** until 7E lands
 ([ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
@@ -39,9 +50,10 @@ near-chance on an ordered 512-sample prefix is **not** evidence that noncoding
 CpGs lack signal.
 
 Hub **disease** profile zip is complete (2026-08-11). `EWAS_db` All-Data
-mirror remains in progress (~883 studies with GSM files / 1989 advertised) and is
-**not** a gate for 7B–7E or Milestone 7; re-run `mbs catalog refresh-release`
-as more `EWAS_db/{GSE}/` dirs arrive.
+mirror remains in progress (**924** local studies / 1989 advertised;
+**92 971** GSM files in the 11:15Z catalog) and is **not** a gate for 7E or
+Milestone 7; re-run `mbs catalog refresh-release` as more `EWAS_db/{GSE}/`
+dirs arrive.
 
 Primary open data source going forward: **EWAS Data Hub**
 ([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
@@ -184,7 +196,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Note:** Primary ongoing open source is EWAS Data Hub (ADR 0002). This
   milestone’s CpGCorpus evidence stands; do not re-open milestone 1 to switch
   sources.
-- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
+- **Next action:** Milestone **7E** (graph-v2 on disk; multi-path unblocked).
 
 ---
 
@@ -218,7 +230,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
     Stage 0 region taxonomy (not the full CapsNet model).
   Convert or export needed tables into `$MBS_DATA_ROOT/canonical/annotations`
   (or graphs); keep bulky vendor blobs out of the Python runtime path.
-- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
+- **Next action:** Milestone **7E** (graph-v2 on disk; multi-path unblocked).
 
 ---
 
@@ -240,7 +252,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `tests/unit/test_static_features.py`. Build plan:
   [`plans/milestone-3-static-locus-features.md`](plans/milestone-3-static-locus-features.md).
 - **Depends on:** (2) locus registry.
-- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
+- **Next action:** Milestone **7E** (graph-v2 on disk; multi-path unblocked).
 
 ---
 
@@ -265,7 +277,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `make download-ewas-study STUDY=GSE35069`. Unit tests:
   `tests/unit/test_matrix_store.py`.
 - **Depends on:** (1), (2).
-- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
+- **Next action:** Milestone **7E** (graph-v2 on disk; multi-path unblocked).
 
 ---
 
@@ -287,7 +299,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `last.pt`, checksums). Unit tests: `tests/unit/test_training_flat.py`. Plan:
   [`plans/milestone-5-flat-deeprvat-baseline.md`](plans/milestone-5-flat-deeprvat-baseline.md).
 - **Depends on:** (4). Model module scaffolding alone is not sufficient.
-- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
+- **Next action:** Milestone **7E** (graph-v2 on disk; multi-path unblocked).
 
 ---
 
@@ -311,7 +323,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   [`plans/milestone-5b-phenotype-registry-eval.md`](plans/milestone-5b-phenotype-registry-eval.md);
   [ADR 0003](adr/0003-milestone-5b-phenotype-registry.md).
 - **Depends on:** (5).
-- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
+- **Next action:** Milestone **7E** (graph-v2 on disk; multi-path unblocked).
 
 ---
 
@@ -399,7 +411,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Optional follow-ons:** masked disease/cancer aux heads; blood/brain as
   **domain aux** after ontology; shared-class tissue holdouts.
 - **Depends on:** (5b), (5b′), (5b″) — all `done`.
-- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
+- **Next action:** Milestone **7E** (graph-v2 on disk; multi-path unblocked).
 
 ---
 
@@ -426,7 +438,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `scripts/write_stage0_5d_report.py`.
 - **Depends on:** (5c).
 - **Plan:** [`plans/milestone-5d-max-n-flat-baseline.md`](plans/milestone-5d-max-n-flat-baseline.md).
-- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
+- **Next action:** Milestone **7E** (gene-only arms may start; full 3×2 waits
+  on graph-v2).
 - **Freeze name:** `deepMAT-flat-v0.1` (do not overwrite this run).
 
 ---
@@ -454,7 +467,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   ([ADR 0006](adr/0006-multipath-noncoding-scores.md)).
 - **Freeze name:** `deepMAT-hierarchical-v0.1` (do not overwrite; not the
   preferred phenotype model vs flat v0.1).
-- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
+- **Next action:** Milestone **7E** (graph-v2 on disk; multi-path unblocked).
 
 ---
 
@@ -483,10 +496,11 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `$MBS_DATA_ROOT/canonical/releases/deepmat-data-v1/` (schema-valid
   `release_manifest.json`, populated `catalog/catalog.duckdb` +
   `catalog/tables/*.parquet`, phenotype long-form, matrix pointers, ingested
-  5d `split.json`). Real refresh 2026-08-24: **116 113** unique GSM,
-  **1 284** studies, **216 476** phenotype rows; EWAS_db listing **883** local
-  studies / **87 153** GSM files (`mirror_complete: false`, advertised 1989).
-  Census + eligibility:
+  5d `split.json`). Live refresh 2026-08-25T11:15Z: **121 931** unique GSM
+  (Hub pack members **34 234**; rest EWAS_db-only), **1 325** studies,
+  **216 476** phenotype rows; EWAS_db listing **924** local studies /
+  **92 971** GSM files (`mirror_complete: false`, advertised 1989). Census +
+  eligibility match this refresh:
   `reports/inspection/deepmat_data_v1/`. Unit tests:
   `tests/unit/test_catalog_release.py`. Plan:
   [`plans/milestone-7a-harmonized-release.md`](plans/milestone-7a-harmonized-release.md).
@@ -495,9 +509,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md);
   [ADR 0005](adr/0005-catalog-matrix-independence.md),
   [ADR 0007](adr/0007-crossfit-prerequisites.md).
-- **Next action:** Milestone **7B** — complete nine-pack canonical matrices.
-  Re-run `mbs catalog refresh-release` (or `make catalog-refresh-release`) whenever
-  more `EWAS_db` study dirs finish downloading.
+- **Next action:** Milestone **7E**. EWAS_db refresh is optional and not a
+  7E gate. Do not cite the hyphen inspection dir.
 
 ---
 
@@ -522,8 +535,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Depends on:** (7A).
 - **Plan:** [`plans/milestone-7b-complete-hub-matrices.md`](plans/milestone-7b-complete-hub-matrices.md);
   [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
-- **Next action:** Milestone **7D** Level-1; optional graph-v2 / RBS·TBS topology
-  residuals under 7C plan.
+- **Next action:** Milestone **7E** (graph-v2 on disk; full 3×2 unblocked).
 
 ---
 
@@ -559,10 +571,12 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   - Holdout AUROC/AUPRC/ECE emission **done** (binary sex/tissue; multilabel
     when both classes observed under mask).
 
-  **Ops / later topology (not Done when):**
-  - Build full-genome `graph-grch38-gencode38-cgi-tile-v2` artifact under `$MBS_*`
-  - Multi-system hier RBS/TBS index (beyond gene-only `locus_region_gene`)
-  - True region-system feature masks for `rbs`/`tbs` branch arms
+  **Topology residual (closed; not Done when reopen):**
+  - Full-genome `graph-grch38-gencode38-cgi-tile-v2` on disk (RBS n≈18 356 ≫ 72;
+    TBS n≈5 446; inspection `annotation_graph_cgi_tile_v2/`)
+  - Multi-system hier index (`region_systems`; default still gene-only)
+  - Train-time region-system masks for `rbs`/`tbs` arms
+  - Plan: [`plans/milestone-7c-graph-v2-topology.md`](plans/milestone-7c-graph-v2-topology.md)
 
   **Landed in residual polish (fixtures + Hub join):** train-path
   `apply_orientation` + honest `score_manifest.json`;
@@ -598,6 +612,14 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 ## 7E. Development cross-validation (architecture selection)
 
 - **Status:** `pending` (**current coding gate**)
+- **Prep (done):**
+  - `$MBS_DATA_ROOT/canonical/graphs/graph-grch38-gencode38-cgi-tile-v2/`
+  - `reports/inspection/annotation_graph_cgi_tile_v2/`
+  - Train-time RBS/TBS feature masks (eval-time masking is not an ablation)
+- **May start now:** parameter-matched flat/hier on frozen ATS + Level-1 A/B +
+  mean/elastic-net + CpGPT ablation; multi-path RBS/TBS arms on graph-v2.
+  Disease/cancer stay auxiliary until documented controls exist (eligibility
+  already flags this).
 - **Done when:** 3 outer study-grouped folds × 2 restarts compare independently
   trained arms: **transparent gene/region mean and elastic-net**;
   **parameter-matched** flat gene-only; **parameter-matched** hierarchical
@@ -605,8 +627,9 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   with/without Level-1 robust-z; **CpGPT inclusion as a separate ablation**.
   Report selects architecture for Milestone 7. Eval-time branch masking and
   ordered-prefix holdout eval are not sufficient.
-- **Depends on:** (7C), (7D Level-1).
-- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+- **Depends on:** (7C), (7D Level-1); graph-v2 on disk for multi-path arms.
+- **Plan:** [`plans/milestone-7e-development-cv.md`](plans/milestone-7e-development-cv.md);
+  [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
 ---
 
@@ -657,4 +680,8 @@ Before claiming a milestone `done`:
 2. Status in this file is updated in the same change set.
 3. Required checks from `AGENTS.md` pass for code changes.
 4. Do not mark complete because a stub module or download script exists.
-5. Do not advertise planned CLI (`refresh-release`, etc.) as implemented.
+5. Catalog CLI (`refresh-release`, `validate-release`, `phenotype-census`,
+   `trait-eligibility`) **is implemented**. Do not advertise *other* placeholder
+   commands as implemented. Default census dir is
+   `reports/inspection/deepmat-data-v1` (hyphen); keep the committed snapshot
+   under `reports/inspection/deepmat_data_v1/` (underscore).

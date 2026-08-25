@@ -21,8 +21,9 @@ Hub evidence: `reports/inspection/stage0_7d_level1/` (runs `stage0-7d-level1-a/b
 | Hub GMQN | Canonical betas never rewritten |
 | Levels 2–3 | Documented stubs only; config keys raise `NotImplementedError` |
 
-**7E stays blocked** until this milestone is `done`. Comprehensive RBS/TBS
-(graph-v2 + train-time masks) is a **7E prerequisite**, not 7D Done when.
+This milestone is `done`. Gene-only **7E** may start. Comprehensive RBS/TBS
+(graph-v2 + train-time masks) is a **full 7E bake-off prerequisite**, not 7D
+Done when.
 
 ## Locked decisions
 
@@ -102,12 +103,14 @@ raises `NotImplementedError`.
 - Median-of-study-medians
 - Full-genome graph-v2 build / multi-system RBS·TBS train masks (7E prep)
 
-## Immediate next after 7D (7E prerequisites; not Done when)
+## Immediate next after 7D (7E prerequisites)
 
-1. Build genome `graph-grch38-gencode38-cgi-tile-v2` under `$MBS_*`.
-2. Multi-system hier index (stop filtering `region_system==gene` only).
-3. Train-time RBS/TBS feature masks for independent arms (eval-time masking
-   insufficient per ADR / TODO).
+1. ~~Build genome `graph-grch38-gencode38-cgi-tile-v2` under `$MBS_*`.~~ **done**
+2. ~~Multi-system hier index (stop filtering `region_system==gene` only).~~ **done**
+3. ~~Train-time RBS/TBS feature masks for independent arms.~~ **done**
+
+Plan: [`milestone-7c-graph-v2-topology.md`](milestone-7c-graph-v2-topology.md).
+Next: Milestone **7E** development CV.
 
 ## Open questions
 

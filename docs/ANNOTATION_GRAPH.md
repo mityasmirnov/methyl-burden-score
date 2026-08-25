@@ -217,5 +217,13 @@ A graph release is immutable after use in an experiment. A semantic graph identi
 graph-grch38-gencode38-five-role-v1
 ```
 
-Changing an interval boundary, source annotation, overlap precedence, or edge policy requires a new graph release. Graph-v2 (RBS/TBS) will use a new
-immutable identifier distinct from `graph-grch38-gencode38-five-role-v1`.
+Changing an interval boundary, source annotation, overlap precedence, or edge
+policy requires a new graph release. Graph-v2 (RBS/TBS) uses the immutable
+identifier `graph-grch38-gencode38-cgi-tile-v2` (per-island CGI RBS + adaptive
+CpG-count TBS; ADR 0006). Build via
+`mbs graph build --graph-id graph-grch38-gencode38-cgi-tile-v2` (reuses v1
+annotations; writes only the graph-v2 directory). **On disk** under
+`$MBS_DATA_ROOT/canonical/graphs/graph-grch38-gencode38-cgi-tile-v2/`
+(inspection: `reports/inspection/annotation_graph_cgi_tile_v2/`; RBS
+`UCSC_cgi_per_island_shore`). Plan:
+[`plans/milestone-7c-graph-v2-topology.md`](plans/milestone-7c-graph-v2-topology.md).
