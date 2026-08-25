@@ -15,6 +15,44 @@ must not block 7E.
 This document is the coding brief for **7A–7E**. The expensive Milestone **7**
 OOF cross-fit stays blocked until those gates pass.
 
+## Glossary and training model
+
+| Term | Meaning |
+|------|---------|
+| **ADR** | Architecture Decision Record under `docs/adr/`. Binding design choice (e.g. [0006](../adr/0006-multipath-noncoding-scores.md) multi-path scores; [0007](../adr/0007-crossfit-prerequisites.md) 7A–7E before final OOF; [0008](../adr/0008-score-identifiability.md) score orientation). ADRs win when docs disagree. |
+| **MBS** | Gene methylation burden: CpG → typed gene region → gene score. |
+| **RBS** | Regulatory Burden Score: CpG → non-gene regulatory regions (cCRE / enhancer / CGI / DMR / ChromHMM-like) → regulatory-region score. |
+| **TBS** | Tile Burden Score: remaining mapped loci → adaptive CpG-count genomic tiles → tile score (no nearest-gene assignment). |
+| **Level-1 MAD** | Fold-fitted robust z on train-fold M-values: \(\mu=\mathrm{median}\), \(\sigma=1.4826\times\mathrm{MAD}\); Hub GMQN betas stay canonical. Novel loci: `z=0` + `norm_present=False`. |
+| **3×2 independently trained arms** | Milestone **7E**: 3 outer study-grouped folds × 2 random restarts; each architecture arm trained from scratch on the same folds (not eval-time branch masking). |
+| **5×6 OOF** | Milestone **7**: 5 outer folds × ≤6 restarts; every sample scored only by models that never saw its study/donor/replicate group; orientation-aligned average → score matrix. |
+
+### When training runs
+
+| Step | Training? |
+|------|-----------|
+| 7A–7B | No (catalog + matrices) |
+| 7C | Trainer/model code + fixture/smoke; not the architecture bake-off |
+| 7D | Norm fit + A/B smoke; not full CV |
+| **7E** | **Yes — development CV / architecture selection** (current gate) |
+| **7** | **Yes — final OOF** after 7E chooses architecture |
+
+Do not retrain frozen **v0.1** flat/hier runs.
+
+### DeepRVAT-style: aggregation **and** heads
+
+Same pattern as DeepRVAT: a **shared** set scorer produces gene-level (and later
+RBS/TBS) scores; **linear phenotype heads** (age, tissue, sex, …) consume those
+scores. Training is **end-to-end**: phenotype loss updates heads **and** the
+shared aggregation network jointly. Heads are trained, not post-hoc only.
+
+Exported product is the score matrix (MBS ± RBS/TBS/direct); heads train the
+encoder but are not part of the exported scoring function
+([`SCORING_PIPELINE.md`](../SCORING_PIPELINE.md),
+[`ARCHITECTURE.md`](../ARCHITECTURE.md)). Transparent 7E baselines
+(gene/region mean, elastic-net) may fit a linear layer on fixed features only;
+neural arms are joint DeepRVAT-style (shared φ/pool/ρ + linear heads).
+
 ## Scope and acceptance
 
 | Milestone | Done when (summary) |

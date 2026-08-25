@@ -23,7 +23,14 @@ matrices and inspection report are `done`. **7C** fixture acceptance is `done`.
 **Do not retrain v0.1** or start Milestone **7** until 7E lands
 ([ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
-[`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+[`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
+(glossary: ADR / MBS / RBS / TBS / Level-1 MAD / 3×2 / 5×6 OOF; when training
+runs; DeepRVAT-style joint aggregation + linear heads).
+
+**Training schedule:** 7A–7B data only; 7C–7D code/fixtures/smokes; **7E** =
+architecture selection (3 folds × 2 restarts, independently trained arms);
+**7** = final 5×6 OOF after 7E. Neural arms train shared score aggregation
+**and** linear phenotype heads end-to-end (DeepRVAT pattern).
 
 Frozen references (do not overwrite): **deepMAT-flat-v0.1** /
 **deepMAT-hierarchical-v0.1** / **deepmat-data-age-tissue-sex-v1**. Hierarchical
