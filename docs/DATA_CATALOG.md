@@ -162,7 +162,18 @@ Cross-pack membership is the virtual index
 checks (do not silently take the first pack). Plan:
 [`plans/milestone-7b-complete-hub-matrices.md`](plans/milestone-7b-complete-hub-matrices.md).
 
-Multitask phenotype table on the union
+Milestone **7E′** adds a **virtual multi-store** cohort (no dense ~61 GB union):
+
+| Artifact | Notes |
+|----------|--------|
+| `matrix-hub-nine-pack-virtual-v1` | Route + indices; pack priority age→…→ancestry; locus intersection |
+| `sample_phenotype_table_hub_nine_pack_v1.parquet` | Masked age/tissue/sex/disease/cancer; unknown ≠ control |
+| Split `hub-nine-pack-full-auto-v1` | Study-grouped; does **not** overwrite ATS freeze |
+| Blood | `cell_component` is **not** a pack-wide head (~1.1% populated) |
+
+Plan: [`plans/milestone-7e-prime-analysis-hygiene.md`](plans/milestone-7e-prime-analysis-hygiene.md).
+
+Multitask phenotype table on the ATS union
 (`sample_phenotype_table_age_tissue_sex_full_v1.parquet`):
 
 | Mask | Samples with label |

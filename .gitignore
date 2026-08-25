@@ -85,6 +85,9 @@ secrets*
 *.rda
 *.rdb
 *.rds
+reports/inspection/ewas_datahub_samples/**/*.RData
+# Regenerable GSM assignment lists (large); summary counts stay in git
+reports/inspection/stage0_7e_prime/hub_nine_pack_split.json
 
 # Generated project areas (repo-root only; do not ignore configs/data etc.)
 external_data/

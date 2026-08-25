@@ -19,9 +19,9 @@ from mbs.annotation.build import DEFAULT_GRAPH_ID
 from mbs.annotation.manifest import git_commit, sha256_file, utc_now_iso, write_json
 from mbs.catalog import build_catalog
 from mbs.paths import DataPaths
+from mbs.platform_id import PLATFORM_ALIASES, normalize_platform
 from mbs.registry.sample_info import FAMILY_VALUE_COLUMN
 from mbs.static_features.export_cpgpt import DEFAULT_FEATURE_SET_ID
-from mbs.training.phenotype_table import PLATFORM_ALIASES, normalize_platform
 
 RELEASE_ID = "deepmat-data-v1"
 ARTIFACT_VERSION = "release-manifest-v1"
@@ -235,6 +235,29 @@ def _label_status_for_row(
     return "observed", True
 
 
+def _donor_replicate_from_row(row: dict[str, Any]) -> tuple[str | None, str | None]:
+    """Copy donor/replicate when Hub sample-info provides them; never invent."""
+    donor: str | None = None
+    for key in ("donor_id", "subject_id", "individual_id"):
+        raw = row.get(key)
+        if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+            continue
+        text = str(raw).strip()
+        if text:
+            donor = text
+            break
+    replicate: str | None = None
+    for key in ("replicate_group", "replicate_id", "technical_replicate"):
+        raw = row.get(key)
+        if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+            continue
+        text = str(raw).strip()
+        if text:
+            replicate = text
+            break
+    return donor, replicate
+
+
 def build_long_form_phenotypes(data_root: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Build long-form phenotypes, membership, and sample stubs from Hub packs."""
     pheno_rows: list[dict[str, Any]] = []
@@ -256,6 +279,7 @@ def build_long_form_phenotypes(data_root: Path) -> tuple[pd.DataFrame, pd.DataFr
                 raise ValueError(f"blank sample/study in {family} row {row_index}")
             platform_id = normalize_platform(row.get("platform"))
             sample_type = row.get("sample_type")
+            donor_id, replicate_group = _donor_replicate_from_row(row)
             meta = sample_meta.setdefault(
                 sid,
                 {
@@ -267,10 +291,16 @@ def build_long_form_phenotypes(data_root: Path) -> tuple[pd.DataFrame, pd.DataFr
                     "sex": None,
                     "tissue_raw": None,
                     "case_control": None,
+                    "donor_id": donor_id,
+                    "replicate_group": replicate_group,
                 },
             )
             if meta["platform_id"] is None and platform_id is not None:
                 meta["platform_id"] = platform_id
+            if meta.get("donor_id") is None and donor_id is not None:
+                meta["donor_id"] = donor_id
+            if meta.get("replicate_group") is None and replicate_group is not None:
+                meta["replicate_group"] = replicate_group
 
             membership_rows.append(
                 {
@@ -888,8 +918,8 @@ def refresh_release(
                     "sample_id": str(rec["sample_id"]),
                     "study_id": str(rec["study_id"]),
                     "source_sample_id": str(rec.get("source_sample_id") or rec["sample_id"]),
-                    "donor_id": None,
-                    "replicate_group": None,
+                    "donor_id": rec.get("donor_id"),
+                    "replicate_group": rec.get("replicate_group"),
                     "age": rec.get("age"),
                     "sex": rec.get("sex"),
                     "tissue_raw": rec.get("tissue_raw"),
@@ -1417,6 +1447,27 @@ def write_phenotype_census_report(
     conflicts = _query_df(database, "SELECT * FROM v_sample_label_conflicts LIMIT 50")
     prevalence = _query_df(database, "SELECT * FROM v_phenotype_prevalence ORDER BY 1, 2")
     ewas = _query_df(database, "SELECT * FROM v_ewas_db_ingest_status")
+    age_by_study = _query_df(
+        database,
+        "SELECT * FROM v_age_distribution_by_study ORDER BY study_id LIMIT 500",
+    )
+    bmi_by_study = _query_df(
+        database,
+        "SELECT * FROM v_bmi_distribution_by_study ORDER BY study_id LIMIT 500",
+    )
+    donor_counts = _query_df(
+        database,
+        """
+        SELECT
+            count(*) FILTER (WHERE donor_id IS NOT NULL) AS n_with_donor,
+            count(*) FILTER (WHERE replicate_group IS NOT NULL) AS n_with_replicate,
+            count(DISTINCT donor_id) FILTER (WHERE donor_id IS NOT NULL) AS n_distinct_donors,
+            count(DISTINCT replicate_group) FILTER (
+                WHERE replicate_group IS NOT NULL
+            ) AS n_distinct_replicate_groups
+        FROM sample
+        """,
+    )
     payload = {
         "generated_at": utc_now_iso(),
         "unique_gsm": unique_gsm,
@@ -1430,6 +1481,11 @@ def write_phenotype_census_report(
         "phenotype_prevalence": prevalence.to_dict(orient="records"),
         "ewas_db_ingest": ewas.to_dict(orient="records"),
         "release_ewas_db": (release_manifest or {}).get("ewas_db"),
+        "age_distribution_by_study": age_by_study.to_dict(orient="records"),
+        "bmi_distribution_by_study": bmi_by_study.to_dict(orient="records"),
+        "donor_replicate": (
+            donor_counts.to_dict(orient="records")[0] if not donor_counts.empty else {}
+        ),
     }
     write_json(report_dir / "census.json", payload)
     lines = [
@@ -1479,6 +1535,51 @@ def write_phenotype_census_report(
         f"(mirror_complete={ewas_meta.get('mirror_complete')})"
     )
     lines.append(f"- Local GSM files: `{ewas_meta.get('n_local_gsm')}`")
+    lines.append("")
+    donor_meta = cast(dict[str, Any], payload.get("donor_replicate") or {})
+    lines.extend(
+        [
+            "## Donor / replicate (when present)",
+            "",
+            f"- Samples with donor_id: **{donor_meta.get('n_with_donor', 0)}**",
+            f"- Distinct donors: **{donor_meta.get('n_distinct_donors', 0)}**",
+            f"- Samples with replicate_group: **{donor_meta.get('n_with_replicate', 0)}**",
+            f"- Distinct replicate groups: **{donor_meta.get('n_distinct_replicate_groups', 0)}**",
+            "",
+            "Hub sample-info currently lacks donor columns for most packs; "
+            "counts stay 0 until source fields exist (never invented from GSM).",
+            "",
+            "## Within-study age ranges",
+            "",
+        ]
+    )
+    age_rows = cast(list[dict[str, Any]], payload.get("age_distribution_by_study") or [])
+    if not age_rows:
+        lines.append("_No age-by-study rows._")
+    else:
+        lines.append("| study_id | n | age_min | age_max | age_mean |")
+        lines.append("| --- | ---: | ---: | ---: | ---: |")
+        lines.extend(
+            f"| `{row['study_id']}` | {row['n_samples']} | "
+            f"{row['age_min']} | {row['age_max']} | {row['age_mean']} |"
+            for row in age_rows[:50]
+        )
+        if len(age_rows) > 50:
+            lines.append(f"| … | ({len(age_rows) - 50} more studies) | | | |")
+    lines.extend(["", "## Within-study BMI ranges", ""])
+    bmi_rows = cast(list[dict[str, Any]], payload.get("bmi_distribution_by_study") or [])
+    if not bmi_rows:
+        lines.append("_No BMI-by-study rows._")
+    else:
+        lines.append("| study_id | n | bmi_min | bmi_max | bmi_mean |")
+        lines.append("| --- | ---: | ---: | ---: | ---: |")
+        lines.extend(
+            f"| `{row['study_id']}` | {row['n_samples']} | "
+            f"{row['bmi_min']} | {row['bmi_max']} | {row['bmi_mean']} |"
+            for row in bmi_rows[:50]
+        )
+        if len(bmi_rows) > 50:
+            lines.append(f"| … | ({len(bmi_rows) - 50} more studies) | | | |")
     lines.append("")
     lines.append("Re-run `mbs catalog refresh-release` after more `EWAS_db` study dirs download.")
     lines.append("")

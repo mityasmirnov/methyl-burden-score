@@ -86,8 +86,14 @@ def load_multitask_phenotypes(
         age_mask = bool(row.get("age_mask"))
         tissue_mask = bool(row.get("tissue_mask"))
         sex_mask = bool(row.get("sex_mask", False))
-        if not age_mask and not tissue_mask and not sex_mask:
-            raise ValueError(f"sample {sid} has no task masks")
+        disease_pack = bool(row.get("disease_mask", False))
+        cancer_pack = bool(row.get("cancer_mask", False))
+        # Hub-wide cohort may include disease/cancer-only GSMs; longform maps
+        # supply multilabel targets. Age/tissue/sex-only requirement is for
+        # the ATS freeze path.
+        if not age_mask and not tissue_mask and not sex_mask and not disease_pack and not cancer_pack:
+            # Still allow ancestry/bmi/blood-only rows (masked heads stay off).
+            pass
         age_f: float | None = None
         if age_mask:
             raw_age = row.get("age_years")
@@ -117,6 +123,8 @@ def load_multitask_phenotypes(
                     f"tissue_class_id={cid} disagrees with ontology index "
                     f"{class_index} for label {cell!r}"
                 )
+        elif not age_mask and not sex_mask:
+            cell = "_none"
         sex_class_index = 0
         if sex_mask:
             raw_sex_cid = row.get("sex_class_id")
@@ -134,12 +142,18 @@ def load_multitask_phenotypes(
         if raw_donor is not None and not (isinstance(raw_donor, float) and pd.isna(raw_donor)):
             text = str(raw_donor).strip()
             donor = text or None
+        if tissue_mask or sex_mask:
+            title = cell
+        elif age_mask:
+            title = f"age={age_f}"
+        else:
+            title = sid
         phenotypes.append(
             SamplePhenotype(
                 sample_id=sid,
                 cell_type=cell,
                 donor_id=donor,
-                title=cell if tissue_mask or sex_mask else f"age={age_f}",
+                title=title,
                 class_index=class_index,
                 study_id=None if study is None else str(study),
                 age=age_f,

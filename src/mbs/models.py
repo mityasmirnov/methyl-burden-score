@@ -202,14 +202,14 @@ class HierarchicalDeepSet(nn.Module):
             [16, 8],
             1,
             dropout=dropout,
-            activation="leaky_relu",
+            activation=activation,
         )
         self.residual_rho = SharedMLP(
             cpg_hidden_dim,
             [16, 8],
             1,
             dropout=dropout,
-            activation="leaky_relu",
+            activation=activation,
         )
 
     def forward(

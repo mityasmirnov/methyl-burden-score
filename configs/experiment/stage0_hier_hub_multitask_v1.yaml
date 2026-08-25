@@ -1,0 +1,162 @@
+# Milestone 7E′: parameter-matched hierarchical Hub multitask.
+# Same encoder block as stage0_flat_hub_multitask_v1 (GELU / dropout / LN / width 64).
+# Reuses flat Hub multitask split when present; does not overwrite ATS freeze.
+
+experiment:
+  name: stage0_hier_hub_multitask_v1
+  stage: 0
+  public_model_name: deepMAT-hierarchical
+  seed: 42
+
+stage0:
+  use_cpgpt_static_features: true
+  use_methylgpt_prior: false
+  use_methylcapsnet_annotations: false
+  use_epicv2_manifest: true
+  use_longread: false
+  use_attention_pooling: false
+
+pilot:
+  mode: deeprvat_hub
+  matrix_id: matrix-hub-nine-pack-virtual-v1
+  disease_matrix_id: matrix-hub-disease-full-v1
+  cancer_matrix_id: matrix-hub-cancer-full-v1
+  graph_id: graph-grch38-gencode38-five-role-v1
+  static_feature_set: cpgpt2m_adapter_128_v1
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology_hub_nine_pack_v1.yaml
+  auto_split: true
+  reuse_flat_split: true
+  flat_split_run_id: stage0-flat-hub-multitask-v1
+  split_id: hub-nine-pack-full-auto-v1
+  empty_as_control: false
+
+data:
+  phenotype_registry: configs/data/phenotype_registry.yaml
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology_hub_nine_pack_v1.yaml
+  wave: 1
+
+features:
+  methylation:
+    beta: true
+    m_value: true
+    epsilon: 0.001
+  static_feature_set: cpgpt2m_adapter_128_v1
+
+model:
+  type: hierarchical_deepset
+  region_types:
+    - promoter_core
+    - promoter_proximal
+    - five_prime
+    - three_prime
+    - gene_body
+  residual_path: true
+  region_hidden_dimension: 32
+  region_type_dimension: 8
+  cpg_pooling: max
+  region_pooling: max
+  residual_pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  encoder:
+    activation: gelu
+    dropout: 0.1
+    layer_norm: true
+    cpg_hidden_dim: 64
+
+heads:
+  age:
+    enabled: true
+    loss: huber
+    huber_delta: 1.0
+    target_standardization: train_fold
+    linear: true
+  tissue:
+    enabled: true
+    loss: cross_entropy
+    class_weighting: train_fold_balanced
+    ontology: harmonized
+    linear: true
+  sex:
+    enabled: true
+    loss: cross_entropy
+    n_classes: 2
+    linear: true
+  disease:
+    enabled: true
+    loss: bce_with_logits
+    role: auxiliary
+    linear: true
+    value_column: phenotype_value
+    min_count: 5
+  cancer:
+    enabled: true
+    loss: bce_with_logits
+    role: auxiliary
+    linear: true
+    value_column: phenotype_value
+    min_count: 5
+  blood:
+    enabled: false
+  brain:
+    enabled: false
+
+loss:
+  lambda_age: 1.0
+  lambda_tissue: 1.0
+  lambda_sex: 1.0
+  lambda_disease: 1.0
+  lambda_cancer: 1.0
+  lambda_blood: 0.0
+  lambda_brain: 0.0
+
+training:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_size: 4
+  batch_token_budget: 500000
+  gradient_clip_norm: 2.0
+  max_epochs: 40
+  early_stopping_patience: 8
+  precision: bf16-mixed
+  num_workers: 0
+  require_cuda: true
+
+controls:
+  mode: none
+  metadata_only: true
+  static_only: true
+  coverage_only: true
+  label_permutation: false
+
+splits:
+  grouping_columns:
+    - study_id
+    - donor_id
+  protocol: study_grouped
+  train_fraction: 0.7
+  val_fraction: 0.15
+  test_fraction: 0.15
+
+device:
+  cuda_visible_devices: "0"
+  torch_device: cuda
+
+logging:
+  tensorboard: true
+  auto_tensorboard: true
+  tensorboard_port: 6009
+  jsonl: true
+  wandb: false
+  save_resolved_config: true
+  save_environment: true
+  save_checksums: true
+
+evaluation:
+  age_metrics: [mae, rmse, pearson, spearman]
+  tissue_metrics: [macro_f1, balanced_accuracy, confusion_matrix]
+  sex_metrics: [accuracy, balanced_accuracy]
+  report_by: [study_id, platform_id, phenotype_family]

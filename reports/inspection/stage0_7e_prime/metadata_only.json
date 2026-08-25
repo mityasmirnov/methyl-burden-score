@@ -1,0 +1,100 @@
+{
+  "artifacts": {
+    "hub_phenotype_table": "/data/projects/methyl-burden-score/data/canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet",
+    "hub_split_id": "hub-nine-pack-full-auto-v1",
+    "virtual_matrix_id": "matrix-hub-nine-pack-virtual-v1"
+  },
+  "cohorts": [
+    {
+      "label": "ats_freeze_hub-age-tissue-sex-full-auto-v1",
+      "metrics": {
+        "external_test": {
+          "age": {
+            "mae": 20.938508267267082,
+            "pearson_r": 0.33419015028535026,
+            "r2": 0.08339392660345513,
+            "rmse": 24.668475179571658,
+            "spearman_r": 0.09880672470618648
+          },
+          "sex": {
+            "balanced_accuracy": 0.5479779739560879,
+            "macro_f1": 0.5317343186265872
+          },
+          "tissue": {
+            "balanced_accuracy": 0.3191489361702128,
+            "macro_f1": 0.3132714235335606
+          }
+        },
+        "protocol": "fit_train_score_holdout",
+        "validation": {
+          "age": {
+            "mae": 20.02326631901986,
+            "pearson_r": -0.12475298419394946,
+            "r2": -0.14348288129355669,
+            "rmse": 23.612006842624922,
+            "spearman_r": -0.1440155050963179
+          },
+          "sex": {
+            "balanced_accuracy": 0.6243231820492511,
+            "macro_f1": 0.6169340237543454
+          },
+          "tissue": {
+            "balanced_accuracy": 0.3829787234042553,
+            "macro_f1": 0.3805463136410658
+          }
+        }
+      },
+      "n_external_test": 1985,
+      "n_train": 9489,
+      "n_validation": 2074,
+      "split_id": "hub-age-tissue-sex-full-auto-v1"
+    },
+    {
+      "label": "hub_nine_pack_full-auto-v1",
+      "metrics": {
+        "external_test": {
+          "age": {
+            "mae": 22.33882973737262,
+            "pearson_r": 0.549792372138225,
+            "r2": 0.052221651026038374,
+            "rmse": 25.694626445014716,
+            "spearman_r": 0.5627690590696226
+          },
+          "sex": {
+            "balanced_accuracy": 0.451638457256758,
+            "macro_f1": 0.4503280835106299
+          },
+          "tissue": {
+            "balanced_accuracy": 0.40625,
+            "macro_f1": 0.39748251104565535
+          }
+        },
+        "protocol": "fit_train_score_holdout",
+        "validation": {
+          "age": {
+            "mae": 19.25737525814981,
+            "pearson_r": 0.251199866495667,
+            "r2": 0.052743933684797684,
+            "rmse": 22.55703532964939,
+            "spearman_r": 0.1520700287601159
+          },
+          "sex": {
+            "balanced_accuracy": 0.6311367676662047,
+            "macro_f1": 0.6298759606443736
+          },
+          "tissue": {
+            "balanced_accuracy": 0.484375,
+            "macro_f1": 0.47492458521870284
+          }
+        }
+      },
+      "n_external_test": 4648,
+      "n_train": 24010,
+      "n_validation": 5576,
+      "split_id": "hub-nine-pack-full-auto-v1"
+    }
+  ],
+  "generated_at": "2026-08-25T12:35:49Z",
+  "note": "Metadata-only confounding ceiling (study/platform/tissue one-hots). Sidecar for 7E\u2032; 7E bake-off report must include the ATS ceiling. Not a replacement for neural training.",
+  "protocol": "fit_train_score_holdout"
+}

@@ -34,6 +34,7 @@ from mbs.matrix.store import (
     write_matrix_manifest,
     write_sample_index,
 )
+from mbs.platform_id import normalize_platform
 
 # Metadata row keys that appear before probe rows in Hub pack TSVs.
 _METADATA_KEYS = frozenset(
@@ -529,16 +530,16 @@ def _stream_pack_to_zarr(
 
 def _manifest_platform_id(unique_samples: pd.DataFrame, fallback: str) -> str:
     if "platform" not in unique_samples.columns:
-        return fallback
+        return normalize_platform(fallback) or fallback
     values = sorted(
         {
-            str(p).strip()
+            normalize_platform(p) or str(p).strip()
             for p in unique_samples["platform"].tolist()
             if str(p).strip() and str(p) != "nan"
         }
     )
     if not values:
-        return fallback
+        return normalize_platform(fallback) or fallback
     if len(values) == 1:
         return values[0]
     return "mixed"

@@ -265,10 +265,82 @@ def test_scan_ewas_db_tree_lists_txt_only(release_workspace: Path) -> None:
 
 def test_catalog_refresh_release_cli(release_workspace: Path) -> None:
     _seed_hub_and_ewas(release_workspace)
-    result = runner.invoke(app, ["catalog", "refresh-release", "--no-fetch-remote-index"])
+    report_dir = release_workspace / "reports" / "inspection" / "refresh-cli"
+    result = runner.invoke(
+        app,
+        [
+            "catalog",
+            "refresh-release",
+            "--no-fetch-remote-index",
+            "--report-dir",
+            str(report_dir),
+        ],
+    )
     assert result.exit_code == 0, result.output
     payload = json.loads(result.output)
     assert payload["release_id"] == RELEASE_ID
     assert payload["n_samples"] > 0
+    assert payload["report_dir"] == str(report_dir)
+    assert (report_dir / "census.json").is_file()
+    assert (report_dir / "trait_eligibility.json").is_file()
     val = runner.invoke(app, ["catalog", "validate-release"])
     assert val.exit_code == 0, val.output
+
+
+def test_catalog_census_and_eligibility_cli_temp_report_dir(release_workspace: Path) -> None:
+    _seed_hub_and_ewas(release_workspace)
+    report_dir = release_workspace / "reports" / "inspection" / "census-cli"
+    refresh = runner.invoke(
+        app,
+        [
+            "catalog",
+            "refresh-release",
+            "--no-fetch-remote-index",
+            "--report-dir",
+            str(report_dir),
+        ],
+    )
+    assert refresh.exit_code == 0, refresh.output
+    census_dir = release_workspace / "reports" / "inspection" / "census-only"
+    census = runner.invoke(
+        app,
+        ["catalog", "phenotype-census", "--report-dir", str(census_dir)],
+    )
+    assert census.exit_code == 0, census.output
+    census_payload = json.loads((census_dir / "census.json").read_text(encoding="utf-8"))
+    assert "age_distribution_by_study" in census_payload
+    assert "bmi_distribution_by_study" in census_payload
+    assert census_payload["donor_replicate"].get("n_with_donor", 0) == 0
+    elig_dir = release_workspace / "reports" / "inspection" / "elig-only"
+    elig = runner.invoke(
+        app,
+        ["catalog", "trait-eligibility", "--report-dir", str(elig_dir)],
+    )
+    assert elig.exit_code == 0, elig.output
+    assert (elig_dir / "trait_eligibility.json").is_file()
+
+
+def test_platform_alias_450k_to_hm450_on_refresh(release_workspace: Path) -> None:
+    _seed_hub_and_ewas(release_workspace)
+    report_dir = release_workspace / "reports" / "inspection" / "platform-alias"
+    result = runner.invoke(
+        app,
+        [
+            "catalog",
+            "refresh-release",
+            "--no-fetch-remote-index",
+            "--report-dir",
+            str(report_dir),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    paths = DataPaths.from_environment()
+    rp = release_paths(paths.data_root, RELEASE_ID)
+    con = duckdb.connect(str(rp.catalog_db), read_only=True)
+    platforms = {
+        row[0]
+        for row in con.execute("SELECT DISTINCT platform_id FROM study").fetchall()
+    }
+    con.close()
+    assert "450K" not in platforms
+    assert "HM450" in platforms

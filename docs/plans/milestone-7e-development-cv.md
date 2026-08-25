@@ -89,6 +89,10 @@ flowchart LR
   completeness; Level-2/3 normalizers; dual hyper/hypo channels as default;
   treating unlabeled disease/cancer rows as **controls**.
 - Hub-wide multitask and catalog hygiene (those are **7E′**).
+- Metadata-only confounding ceiling helper lives in **7E′**
+  ([`milestone-7e-prime-analysis-hygiene.md`](milestone-7e-prime-analysis-hygiene.md);
+  report under `reports/inspection/stage0_7e_prime/`). The 7E bake-off report
+  **must include** that ATS-split ceiling alongside neural arms.
 
 ## Open questions
 

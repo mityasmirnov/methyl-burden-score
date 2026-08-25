@@ -93,6 +93,20 @@ WHERE sp.phenotype_id = 'age'
   AND sp.numeric_value IS NOT NULL
 GROUP BY sm.study_id;
 
+CREATE OR REPLACE VIEW v_bmi_distribution_by_study AS
+SELECT
+    sm.study_id,
+    count(DISTINCT sp.sample_id) AS n_samples,
+    min(sp.numeric_value) AS bmi_min,
+    max(sp.numeric_value) AS bmi_max,
+    avg(sp.numeric_value) AS bmi_mean
+FROM sample_phenotype AS sp
+JOIN sample AS sm USING (sample_id)
+WHERE sp.phenotype_id = 'bmi'
+  AND sp.is_observed
+  AND sp.numeric_value IS NOT NULL
+GROUP BY sm.study_id;
+
 CREATE OR REPLACE VIEW v_trait_missingness AS
 SELECT
     phenotype_id,

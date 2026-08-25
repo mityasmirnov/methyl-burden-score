@@ -111,7 +111,7 @@ Graph-v2 + independent RBS/TBS train-time masks are **done**
 | **7C** | Trainer P0/P1 fixes; centered heads; score-orientation anchor; graph v2 (RBS/TBS); direct CpG; constraint-aware splits; metrics wired (**fixture done**; orientation + long-form join + Hub smoke + AUROC emission landed; topology residuals closed — see [`milestone-7c-graph-v2-topology.md`](milestone-7c-graph-v2-topology.md)) |
 | **7D** | Fold-fitted Level-1 MAD robust-z; persist hashes; novel loci `z=0` + `norm_present=False`; Hub DeepRVAT A/B smoke; AE not default (**done**; `reports/inspection/stage0_7d_level1/`) |
 | **7E** | 3×2 independently trained arms including transparent baselines, CpGPT ablation, graph-v2 RBS/TBS (**current gate**) |
-| **7E′** | Hub multitask (age/tissue/sex/disease/cancer, masked) + catalog/census hygiene (**before Milestone 7**) |
+| **7E′** | Hub multitask (age/tissue/sex/disease/cancer, masked) + catalog/census hygiene (**done**; before Milestone 7) |
 | **7** | 5×6 OOF MBS (+ RBS/TBS/direct as applicable) with leakage controls |
 
 ## Locked decisions

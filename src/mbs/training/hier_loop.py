@@ -15,13 +15,14 @@ from mbs.evaluation.annotation_slices import (
     compare_hierarchical_vs_flat,
     index_annotation_summary,
 )
+from mbs.evaluation.metrics import multiclass_metrics, regression_metrics
 from mbs.evaluation.splits import build_study_grouped_split
 from mbs.matrix.store import (
     matrix_store_paths,
-    open_betas_zarr,
     read_locus_index,
     read_sample_index,
 )
+from mbs.matrix.virtual_hub_store import open_betas_for_matrix
 from mbs.models import HierarchicalDeepSet
 from mbs.scoring.orientation import (
     accumulate_signed_gene_mean_m,
@@ -222,6 +223,10 @@ def _run_hier_epoch(
     sex_n = 0.0
     sex_correct = 0.0
     n = 0
+    pred_tissue: list[int] = []
+    true_tissue: list[int] = []
+    pred_age: list[float] = []
+    true_age: list[float] = []
     amp_dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
     context = torch.enable_grad() if train else torch.no_grad()
     ph_by_id = {p.sample_id: p for p in (phenotypes or [])}
@@ -358,8 +363,26 @@ def _run_hier_epoch(
             sex_n += float(result.metrics.get("sex_n", 0.0))
             sex_correct += float(result.metrics.get("sex_correct", 0.0))
             n += len(chunk)
+            if not train:
+                # Autocast may leave activations in bf16; heads are fp32.
+                mbs_f = mbs.float()
+                present_f = present
+                if bool(batch.tissue_mask.any()):
+                    logits = head.forward_tissue(mbs_f, present_f)
+                    tmask = batch.tissue_mask.reshape(-1)
+                    pred_tissue.extend(
+                        logits.argmax(dim=-1).reshape(-1)[tmask].detach().cpu().tolist()
+                    )
+                    true_tissue.extend(
+                        batch.tissue_target.reshape(-1)[tmask].detach().cpu().tolist()
+                    )
+                if batch.age_target is not None and bool(batch.age_mask.any()):
+                    age_hat = head.forward_age(mbs_f, present_f)
+                    amask = batch.age_mask.reshape(-1)
+                    pred_age.extend(age_hat.reshape(-1)[amask].detach().cpu().tolist())
+                    true_age.extend(batch.age_target.reshape(-1)[amask].detach().cpu().tolist())
 
-    return {
+    out: dict[str, float] = {
         "loss": total_loss / max(n, 1),
         "accuracy": total_correct / max(tissue_n, 1.0),
         "mae": total_mae_sum / max(age_n, 1.0),
@@ -369,6 +392,21 @@ def _run_hier_epoch(
         "tissue_n": tissue_n,
         "sex_n": sex_n,
     }
+    if pred_tissue and true_tissue:
+        tissue_m = multiclass_metrics(np.asarray(true_tissue), np.asarray(pred_tissue))
+        out["macro_f1"] = float(tissue_m.get("macro_f1") or 0.0)
+        out["balanced_accuracy"] = float(tissue_m.get("balanced_accuracy") or 0.0)
+    if pred_age and true_age:
+        # Match flat loop: RMSE/R² on standardized age; MAE destandardized in holdout.
+        age_m = regression_metrics(
+            np.asarray(true_age, dtype=np.float64),
+            np.asarray(pred_age, dtype=np.float64),
+        )
+        out["rmse"] = float(age_m.get("rmse") or 0.0)
+        out["r2"] = float(age_m.get("r2") or 0.0)
+        out["pearson_r"] = float(age_m.get("pearson_r") or 0.0)
+        out["spearman_r"] = float(age_m.get("spearman_r") or 0.0)
+    return out
 
 
 def _materialize_hier_record(
@@ -636,20 +674,28 @@ def train_hierarchical_baseline(
             flush=True,
         )
 
-        static_paths = static_feature_store_paths(
-            data_root / "canonical" / "static_features" / feature_set
-        )
-        print("[hier] aligning static features…", flush=True)  # noqa: T201
-        static_by_col, static_valid, static_dim = build_static_column_table(
-            locus_index_locus_ids=locus_index["locus_id"].to_numpy(),
-            static_loci=read_loci_index(static_paths.loci_path),
-            embeddings=open_embeddings_zarr(static_paths.embeddings_path),
-            n_study_loci=n_cols,
-        )
-        print(  # noqa: T201
-            f"[hier] static ready dim={static_dim} valid_cols={int(static_valid.sum())}/{n_cols}",
-            flush=True,
-        )
+        use_cpgpt = bool(config.get("stage0", {}).get("use_cpgpt_static_features", True))
+        if not use_cpgpt or not feature_set or str(feature_set).lower() in {"none", "null", "off"}:
+            static_by_col = np.zeros((n_cols, 0), dtype=np.float32)
+            static_valid = np.zeros(n_cols, dtype=bool)
+            static_dim = 0
+            print("[hier] CpGPT static disabled (dim=0)", flush=True)  # noqa: T201
+        else:
+            static_paths = static_feature_store_paths(
+                data_root / "canonical" / "static_features" / feature_set
+            )
+            print("[hier] aligning static features…", flush=True)  # noqa: T201
+            static_by_col, static_valid, static_dim = build_static_column_table(
+                locus_index_locus_ids=locus_index["locus_id"].to_numpy(),
+                static_loci=read_loci_index(static_paths.loci_path),
+                embeddings=open_embeddings_zarr(static_paths.embeddings_path),
+                n_study_loci=n_cols,
+            )
+            print(  # noqa: T201
+                f"[hier] static ready dim={static_dim} "
+                f"valid_cols={int(static_valid.sum())}/{n_cols}",
+                flush=True,
+            )
         epsilon = float(level1_epsilon)
         input_dim = cpg_input_dim(
             static_dim,
@@ -670,7 +716,7 @@ def train_hierarchical_baseline(
         pilot_store = _HierPilotStore(
             phenotypes=phenotypes,
             sample_row_by_id=sample_row_by_id,
-            betas=open_betas_zarr(matrix_paths.betas_path),
+            betas=open_betas_for_matrix(matrix_paths.root),
             static_by_col=static_by_col,
             static_valid=static_valid,
             locus_region=locus_region,
@@ -991,6 +1037,12 @@ def train_hierarchical_baseline(
             "tissue_n": base.get("tissue_n"),
             "sex_n": base.get("sex_n"),
             "sex_accuracy": base.get("sex_accuracy"),
+            "macro_f1": base.get("macro_f1"),
+            "balanced_accuracy": base.get("balanced_accuracy"),
+            "rmse": base.get("rmse"),
+            "r2": base.get("r2"),
+            "pearson_r": base.get("pearson_r"),
+            "spearman_r": base.get("spearman_r"),
             "split": "external_test" if test_phenotypes else "validation",
         }
         body_id = REGION_TYPE_TO_ID["gene_body"]

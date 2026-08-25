@@ -30,6 +30,8 @@ from mbs.matrix.hub_pack_index import (
     check_overlapping_gsm_betas,
 )
 from mbs.matrix.multitask_merge import merge_age_tissue_matrices
+from mbs.matrix.store import read_sample_index
+from mbs.matrix.virtual_hub_store import VIRTUAL_MATRIX_ID, build_virtual_hub_store
 from mbs.paths import DataPaths, PathPolicyError
 from mbs.release import (
     RELEASE_ID,
@@ -41,9 +43,16 @@ from mbs.release import (
 )
 from mbs.static_features.export_cpgpt import DEFAULT_FEATURE_SET_ID, export_cpgpt_adapter
 from mbs.training.branch import train_branch_arm
+from mbs.training.dev_cv import run_dev_cv
 from mbs.training.hier_loop import train_hierarchical_baseline
 from mbs.training.loop import load_experiment_config, train_flat_baseline
 from mbs.training.monitor import run_monitor, ssh_tunnel_hint, validate_run_id
+from mbs.training.phenotype_table import (
+    HUB_UNION_PHENOTYPE_TABLE,
+    HUB_UNION_SEX_ONTOLOGY,
+    HUB_UNION_TISSUE_ONTOLOGY,
+    build_hub_union_phenotype_table,
+)
 
 app = typer.Typer(no_args_is_help=True, help="Methylation Burden Score tooling")
 catalog_app = typer.Typer(no_args_is_help=True, help="DuckDB catalog operations")
@@ -801,7 +810,7 @@ def matrix_index_hub_packs_cmd(
     n_unique = 0 if index.empty else len({str(x) for x in index["sample_id"].tolist()})
     payload: dict[str, Any] = {
         "index_path": str(index_path),
-        "n_rows": int(len(index)),
+        "n_rows": len(index),
         "n_families": n_families,
         "n_unique_gsm": n_unique,
     }
@@ -818,6 +827,46 @@ def matrix_index_hub_packs_cmd(
         )
         payload["overlap"] = overlap.report
     console.print_json(json.dumps(payload))
+
+
+@matrix_app.command("build-hub-virtual")
+def matrix_build_hub_virtual_cmd(
+    matrix_id: Annotated[
+        str,
+        typer.Option(help="Output virtual matrix id"),
+    ] = VIRTUAL_MATRIX_ID,
+) -> None:
+    """Build Hub nine-pack virtual multi-store (route + indices; no dense Zarr)."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    paths.ensure_directories()
+    try:
+        result = build_virtual_hub_store(
+            data_root=paths.data_root,
+            output_matrix_id=matrix_id,
+        )
+    except (FileNotFoundError, ValueError) as error:
+        console.print(f"[bold red]Build failed:[/bold red] {error}")
+        raise typer.Exit(code=1) from error
+
+    console.print_json(
+        json.dumps(
+            {
+                "matrix_id": result.matrix_id,
+                "output_dir": str(result.output_dir),
+                "n_samples": result.n_samples,
+                "n_loci": result.n_loci,
+                "n_source_matrices": result.n_source_matrices,
+                "route_path": str(result.route_path),
+                "stats": result.stats,
+            },
+            default=str,
+        )
+    )
 
 
 @features_app.command("export-cpgpt")
@@ -990,6 +1039,79 @@ def phenotypes_build_multitask_table_cmd(  # noqa: PLR0917
                 "sex_ontology": (
                     None if result.sex_ontology_path is None else str(result.sex_ontology_path)
                 ),
+                "stats": result.stats,
+            },
+            default=str,
+        )
+    )
+
+
+@phenotypes_app.command("build-hub-union-table")
+def phenotypes_build_hub_union_table_cmd(
+    matrix_id: Annotated[
+        str,
+        typer.Option(help="Virtual matrix id (sample/locus indices)"),
+    ] = VIRTUAL_MATRIX_ID,
+    phenotype_table: Annotated[
+        Path | None,
+        typer.Option(help="Output sample phenotype parquet path"),
+    ] = None,
+    tissue_ontology: Annotated[
+        Path | None,
+        typer.Option(help="Output tissue ontology YAML path"),
+    ] = None,
+    sex_ontology: Annotated[
+        Path | None,
+        typer.Option(help="Output sex ontology YAML path"),
+    ] = None,
+    min_tissue_n: Annotated[
+        int,
+        typer.Option(help="Minimum samples per tissue class"),
+    ] = 10,
+) -> None:
+    """Join nine Hub pack phenotypes for the virtual multitask cohort (7E′)."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+
+    paths.ensure_directories()
+    sample_index_path = (
+        paths.data_root / "canonical" / "matrices" / matrix_id / "sample_index.parquet"
+    )
+    if not sample_index_path.is_file():
+        console.print(
+            f"[bold red]Missing virtual sample index:[/bold red] {sample_index_path}. "
+            "Run `mbs matrix build-hub-virtual` first."
+        )
+        raise typer.Exit(code=1)
+    sample_index = read_sample_index(sample_index_path)
+    default_table = paths.data_root / "canonical" / "phenotypes" / HUB_UNION_PHENOTYPE_TABLE
+    default_tissue = paths.data_root / "canonical" / "phenotypes" / HUB_UNION_TISSUE_ONTOLOGY
+    default_sex = paths.data_root / "canonical" / "phenotypes" / HUB_UNION_SEX_ONTOLOGY
+    try:
+        result = build_hub_union_phenotype_table(
+            data_root=paths.data_root,
+            sample_index=sample_index,
+            matrix_id=matrix_id,
+            phenotype_table_path=phenotype_table.resolve() if phenotype_table else default_table,
+            tissue_ontology_path=tissue_ontology.resolve() if tissue_ontology else default_tissue,
+            sex_ontology_path=sex_ontology.resolve() if sex_ontology else default_sex,
+            min_tissue_n=min_tissue_n,
+        )
+    except (FileNotFoundError, ValueError) as error:
+        console.print(f"[bold red]Build failed:[/bold red] {error}")
+        raise typer.Exit(code=1) from error
+
+    console.print_json(
+        json.dumps(
+            {
+                "matrix_id": matrix_id,
+                "n_samples": result.n_samples,
+                "phenotype_table": str(result.phenotype_table_path),
+                "tissue_ontology": str(result.tissue_ontology_path),
+                "sex_ontology": str(result.sex_ontology_path),
                 "stats": result.stats,
             },
             default=str,
@@ -1305,13 +1427,19 @@ def train_hierarchical_cmd(  # noqa: PLR0917
 
 
 @train_app.command("branch")
-def train_branch_cmd(
+def train_branch_cmd(  # noqa: PLR0917
     arm: Annotated[str, typer.Option(help="Independent arm: gene, rbs, tbs, or direct")] = "gene",
     run_id: Annotated[str, typer.Option(help="Artifact run id")] = "stage0-branch-fixture-v1",
     device: Annotated[str, typer.Option(help="Torch device")] = "cpu",
     config: Annotated[Path | None, typer.Option(help="Optional experiment YAML")] = None,
+    overfit_fixture: Annotated[
+        bool,
+        typer.Option("--overfit-fixture/--hub", help="Synthetic fixture vs Hub config path"),
+    ] = True,
+    max_epochs: Annotated[int | None, typer.Option(help="Override training.max_epochs")] = None,
+    max_loci: Annotated[int | None, typer.Option(help="Cap study loci for smoke")] = None,
 ) -> None:
-    """Train one independently fitted branch arm (Milestone 7C)."""
+    """Train one independently fitted branch arm (Milestone 7C/7E)."""
     try:
         paths = DataPaths.from_environment()
     except PathPolicyError as error:
@@ -1331,9 +1459,52 @@ def train_branch_cmd(
         config=cfg,
         run_id=run_id,
         device=device,
-        overfit_fixture=True,
+        overfit_fixture=overfit_fixture,
+        max_epochs=max_epochs,
+        max_loci=max_loci,
     )
     console.print_json(json.dumps(result, default=str))
+
+
+@train_app.command("dev-cv")
+def train_dev_cv_cmd(  # noqa: PLR0917
+    config: Annotated[
+        Path,
+        typer.Option(help="Bake-off YAML (default: stage0_7e_bakeoff.yaml)"),
+    ] = Path("configs/experiment/stage0_7e_bakeoff.yaml"),
+    report_dir: Annotated[
+        Path,
+        typer.Option(help="Inspection report directory"),
+    ] = Path("reports/inspection/stage0_7e_dev_cv"),
+    device: Annotated[str, typer.Option(help="Torch device")] = "cuda",
+    max_epochs: Annotated[int | None, typer.Option(help="Override max_epochs for all arms")] = None,
+    max_loci: Annotated[int | None, typer.Option(help="Cap loci (Hub smoke / CV budget)")] = None,
+    fixture: Annotated[
+        bool,
+        typer.Option("--fixture/--hub", help="Synthetic fold plumbing only (not Done when)"),
+    ] = False,
+) -> None:
+    """Milestone 7E development CV orchestrator (3×2 arms, shared folds)."""
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+    paths.ensure_directories()
+    cfg_path = config if config.is_absolute() else paths.project_root / config
+    out_dir = report_dir if report_dir.is_absolute() else paths.project_root / report_dir
+    summary = run_dev_cv(
+        project_root=paths.project_root,
+        data_root=paths.data_root,
+        artifact_root=paths.artifact_root,
+        bakeoff_config=cfg_path,
+        report_dir=out_dir,
+        device=device,
+        max_epochs=max_epochs,
+        max_loci=max_loci,
+        fixture=fixture,
+    )
+    console.print_json(json.dumps(summary, default=str))
 
 
 @app.command("monitor")

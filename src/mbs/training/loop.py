@@ -30,10 +30,10 @@ from mbs.evaluation.splits import (
 )
 from mbs.matrix.store import (
     matrix_store_paths,
-    open_betas_zarr,
     read_locus_index,
     read_sample_index,
 )
+from mbs.matrix.virtual_hub_store import open_betas_for_matrix
 from mbs.models import FlatDeepSet, SeedMaskedLinearHead, center_mask_scores
 from mbs.scoring.orientation import (
     accumulate_signed_gene_mean_m,
@@ -49,6 +49,7 @@ from mbs.static_features.store import (
 )
 from mbs.training.controls import (
     apply_feature_control,
+    evaluate_metadata_only_ceiling,
     fit_metadata_only,
     permute_labels_within_study,
 )
@@ -82,7 +83,6 @@ from mbs.training.phenotype_table import load_tissue_ontology
 from mbs.training.phenotypes import (
     MultilabelMaps,
     SamplePhenotype,
-    hub_longform_ready,
     load_gse35069_phenotypes,
     load_hub_regression_phenotypes,
     load_hub_sample_info_phenotypes,
@@ -1233,15 +1233,21 @@ def train_flat_baseline(
         n_classes = 1 if task_kind == "regression" else len(class_names)
         n_cols = locus_gene.n_study_loci if max_loci is None else int(max_loci)
 
-        static_paths = static_feature_store_paths(
-            data_root / "canonical" / "static_features" / feature_set
-        )
-        static_by_col, static_valid, static_dim = build_static_column_table(
-            locus_index_locus_ids=locus_index["locus_id"].to_numpy(),
-            static_loci=read_loci_index(static_paths.loci_path),
-            embeddings=open_embeddings_zarr(static_paths.embeddings_path),
-            n_study_loci=n_cols,
-        )
+        use_cpgpt = bool(config.get("stage0", {}).get("use_cpgpt_static_features", True))
+        if not use_cpgpt or not feature_set or str(feature_set).lower() in {"none", "null", "off"}:
+            static_by_col = np.zeros((n_cols, 0), dtype=np.float32)
+            static_valid = np.zeros(n_cols, dtype=bool)
+            static_dim = 0
+        else:
+            static_paths = static_feature_store_paths(
+                data_root / "canonical" / "static_features" / feature_set
+            )
+            static_by_col, static_valid, static_dim = build_static_column_table(
+                locus_index_locus_ids=locus_index["locus_id"].to_numpy(),
+                static_loci=read_loci_index(static_paths.loci_path),
+                embeddings=open_embeddings_zarr(static_paths.embeddings_path),
+                n_study_loci=n_cols,
+            )
         epsilon = float(level1_epsilon)
         input_dim = cpg_input_dim(
             static_dim,
@@ -1263,7 +1269,7 @@ def train_flat_baseline(
         pilot_store = _PilotStore(
             phenotypes=phenotypes,
             sample_row_by_id=sample_row_by_id,
-            betas=open_betas_zarr(matrix_paths.betas_path),
+            betas=open_betas_for_matrix(matrix_paths.root),
             static_by_col=static_by_col,
             static_valid=static_valid,
             locus_gene=locus_gene,
@@ -1329,6 +1335,11 @@ def train_flat_baseline(
     if control_mode == "metadata_only":
         epochs = 0
 
+    controls_cfg = config.get("controls", {}) if isinstance(config.get("controls"), dict) else {}
+    want_metadata_sidecar = bool(controls_cfg.get("metadata_only", False)) or (
+        control_mode == "metadata_only"
+    )
+
     disease_maps: MultilabelMaps | None = None
     cancer_maps: MultilabelMaps | None = None
     _heads_early = config.get("heads", {}) if isinstance(config.get("heads"), dict) else {}
@@ -1341,42 +1352,80 @@ def train_flat_baseline(
         bool(can_cfg_early.get("enabled", False)) or int(can_cfg_early.get("n_labels", 0) or 0) > 0
     )
     matrix_id_cfg = str(config.get("pilot", {}).get("matrix_id", "") or "")
-    if (
-        (want_disease or want_cancer)
-        and matrix_id_cfg
-        and hub_longform_ready(data_root, matrix_id_cfg)
-    ):
-        sidecar = data_root / "canonical" / "matrices" / matrix_id_cfg / "sample_phenotypes.parquet"
-        if sidecar.is_file():
-            all_ph = [
-                *(train_phenotypes or []),
-                *(val_phenotypes or []),
-                *(test_phenotypes or []),
-            ]
-            # Fixture paths may only have records.
-            sid_list = (
-                [p.sample_id for p in all_ph]
-                if all_ph
-                else [r.sample_id for r in (train_records or [])]
+    disease_matrix_id = str(
+        config.get("pilot", {}).get("disease_matrix_id")
+        or dis_cfg_early.get("matrix_id")
+        or "matrix-hub-disease-full-v1"
+    )
+    cancer_matrix_id = str(
+        config.get("pilot", {}).get("cancer_matrix_id")
+        or can_cfg_early.get("matrix_id")
+        or "matrix-hub-cancer-full-v1"
+    )
+    if want_disease or want_cancer:
+        all_ph = [
+            *(train_phenotypes or []),
+            *(val_phenotypes or []),
+            *(test_phenotypes or []),
+        ]
+        sid_list = (
+            [p.sample_id for p in all_ph]
+            if all_ph
+            else [r.sample_id for r in (train_records or [])]
+        )
+        if want_disease and sid_list:
+            dis_sidecar = (
+                data_root
+                / "canonical"
+                / "matrices"
+                / disease_matrix_id
+                / "sample_phenotypes.parquet"
             )
-            if want_disease and sid_list:
+            # Fall back to training matrix sidecar (disease-only smoke configs).
+            if not dis_sidecar.is_file() and matrix_id_cfg:
+                alt = (
+                    data_root
+                    / "canonical"
+                    / "matrices"
+                    / matrix_id_cfg
+                    / "sample_phenotypes.parquet"
+                )
+                if alt.is_file():
+                    dis_sidecar = alt
+            if dis_sidecar.is_file():
                 disease_maps = load_longform_multilabel(
-                    sidecar,
+                    dis_sidecar,
                     sample_ids=sid_list,
                     value_column=str(dis_cfg_early.get("value_column") or "phenotype_value"),
                     min_count=int(dis_cfg_early.get("min_count", 1) or 1),
                 )
-            if want_cancer and sid_list:
+        if want_cancer and sid_list:
+            can_sidecar = (
+                data_root
+                / "canonical"
+                / "matrices"
+                / cancer_matrix_id
+                / "sample_phenotypes.parquet"
+            )
+            if not can_sidecar.is_file() and matrix_id_cfg:
+                alt = (
+                    data_root
+                    / "canonical"
+                    / "matrices"
+                    / matrix_id_cfg
+                    / "sample_phenotypes.parquet"
+                )
+                if alt.is_file():
+                    can_sidecar = alt
+            if can_sidecar.is_file():
                 cancer_maps = load_longform_multilabel(
-                    sidecar,
+                    can_sidecar,
                     sample_ids=sid_list,
-                    value_column=str(can_cfg_early.get("value_column") or "cancer"),
+                    value_column=str(can_cfg_early.get("value_column") or "phenotype_value"),
                     min_count=int(can_cfg_early.get("min_count", 1) or 1),
                 )
-            if (disease_maps and disease_maps.label_names) or (
-                cancer_maps and cancer_maps.label_names
-            ):
-                task_kind = "multitask"
+        if (disease_maps and disease_maps.label_names) or (cancer_maps and cancer_maps.label_names):
+            task_kind = "multitask"
 
     max_samples = config.get("pilot", {}).get("max_samples")
     if max_samples is not None and not overfit_fixture and not study_holdout_fixture:
@@ -1794,7 +1843,38 @@ def train_flat_baseline(
             else {"enabled": False}
         ),
     }
-    if control_mode == "metadata_only" and train_phenotypes is not None:
+    if want_metadata_sidecar and train_phenotypes is not None:
+        eval_sets: dict[str, list[SamplePhenotype]] = {}
+        if val_phenotypes:
+            eval_sets["validation"] = list(val_phenotypes)
+        if test_phenotypes:
+            eval_sets["external_test"] = list(test_phenotypes)
+        if not eval_sets:
+            # Legacy in-sample ceiling when no holdout is available.
+            meta_task = "regression" if task_kind == "regression" else "multiclass"
+            y = (
+                np.array([float(p.age or 0.0) for p in train_phenotypes])
+                if meta_task == "regression"
+                else np.array([p.class_index for p in train_phenotypes])
+            )
+            metrics_out["metadata_only"] = {
+                "protocol": "fit_score_train_only",
+                "train": fit_metadata_only(
+                    study_ids=[str(p.study_id or p.sample_id) for p in train_phenotypes],
+                    platforms=[p.platform for p in train_phenotypes],
+                    tissues=[p.cell_type for p in train_phenotypes],
+                    y=y,
+                    task=meta_task,
+                ),
+            }
+        else:
+            metrics_out["metadata_only"] = evaluate_metadata_only_ceiling(
+                train=train_phenotypes,
+                eval_sets=eval_sets,
+                disease_maps=disease_maps,
+                cancer_maps=cancer_maps,
+            )
+    elif control_mode == "metadata_only" and train_phenotypes is not None:
         meta_task = "regression" if task_kind == "regression" else "multiclass"
         y = (
             np.array([float(p.age or 0.0) for p in train_phenotypes])

@@ -10,7 +10,7 @@ from mbs.paths import DataPaths
 
 # sql/001 + 002 + 010 + 011 (keep in sync when schema changes)
 EXPECTED_TABLES = 23
-EXPECTED_VIEWS = 21
+EXPECTED_VIEWS = 22
 
 
 def _repo_root() -> Path:

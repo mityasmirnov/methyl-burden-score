@@ -183,10 +183,10 @@ def test_port_helpers_and_tb_meta(tmp_path: Path) -> None:
     assert port_is_free(free)
     assert "ssh -L" in ssh_tunnel_hint(6006)
     server = TensorBoardServer(
-        port=6011,
+        port=free,
         pid=None,
         logdir=tmp_path / "tb",
-        url="http://127.0.0.1:6011",
+        url=f"http://127.0.0.1:{free}",
         reused=False,
         meta_path=tmp_path / "tensorboard.json",
     )

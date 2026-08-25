@@ -71,6 +71,19 @@
     },
     "conversion_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
     "created_at": {"type": "string", "format": "date-time"},
-    "notes": {"type": "string"}
+    "notes": {"type": "string"},
+    "kind": {
+      "type": "string",
+      "description": "virtual_multi_store for Hub nine-pack routing without dense Zarr"
+    },
+    "route_path": {
+      "type": "string",
+      "pattern": "^/data/",
+      "description": "Parquet routing table for virtual_multi_store"
+    },
+    "source_matrix_ids": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
   }
 }

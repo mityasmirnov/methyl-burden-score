@@ -1,0 +1,116 @@
+# Capped Hub multitask smoke (7E′). All five heads; unknown ≠ control.
+# Uses the virtual matrix when present; max_samples keeps CI/operator smoke cheap.
+
+experiment:
+  name: stage0_flat_hub_multitask_smoke
+  stage: 0
+  public_model_name: deepMAT
+  seed: 42
+
+pilot:
+  mode: deeprvat_hub
+  matrix_id: matrix-hub-nine-pack-virtual-v1
+  disease_matrix_id: matrix-hub-disease-full-v1
+  cancer_matrix_id: matrix-hub-cancer-full-v1
+  graph_id: graph-grch38-gencode38-five-role-v1
+  static_feature_set: cpgpt2m_adapter_128_v1
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology_hub_nine_pack_v1.yaml
+  auto_split: true
+  split_id: hub-nine-pack-multitask-smoke-v1
+  empty_as_control: false
+  max_samples: 64
+
+features:
+  methylation:
+    beta: true
+    m_value: true
+    epsilon: 0.001
+  static_feature_set: cpgpt2m_adapter_128_v1
+
+model:
+  type: flat_deepset
+  phi_layers: 2
+  rho_layers: 3
+  rho_hidden_dimension: 10
+  pooling: max
+  output_activation: sigmoid
+  neutral_score: 0.5
+  encoder:
+    activation: gelu
+    dropout: 0.1
+    layer_norm: true
+    cpg_hidden_dim: 64
+
+heads:
+  age:
+    enabled: true
+    loss: huber
+    huber_delta: 1.0
+    target_standardization: train_fold
+    linear: true
+  tissue:
+    enabled: true
+    loss: cross_entropy
+    class_weighting: train_fold_balanced
+    ontology: harmonized
+    linear: true
+  sex:
+    enabled: true
+    loss: cross_entropy
+    n_classes: 2
+    linear: true
+  disease:
+    enabled: true
+    loss: bce_with_logits
+    value_column: phenotype_value
+    min_count: 2
+  cancer:
+    enabled: true
+    loss: bce_with_logits
+    value_column: phenotype_value
+    min_count: 2
+  blood:
+    enabled: false
+  brain:
+    enabled: false
+
+loss:
+  lambda_age: 1.0
+  lambda_tissue: 1.0
+  lambda_sex: 1.0
+  lambda_disease: 1.0
+  lambda_cancer: 1.0
+  lambda_blood: 0.0
+  lambda_brain: 0.0
+
+training:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_size: 4
+  batch_token_budget: 200000
+  gradient_clip_norm: 2.0
+  max_epochs: 1
+  early_stopping_patience: 1
+  precision: bf16-mixed
+  require_cuda: false
+
+controls:
+  mode: none
+  metadata_only: true
+
+device:
+  cuda_visible_devices: "0"
+  torch_device: cuda
+
+logging:
+  tensorboard: false
+  wandb: false
+  save_resolved_config: true
+  save_environment: true
+  save_checksums: true
+
+splits:
+  train_fraction: 0.7
+  val_fraction: 0.15

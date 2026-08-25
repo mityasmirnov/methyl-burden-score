@@ -640,15 +640,13 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Depends on:** (7C), (7D Level-1); graph-v2 on disk for multi-path arms.
 - **Plan:** [`plans/milestone-7e-development-cv.md`](plans/milestone-7e-development-cv.md);
   [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
-- **Next action:** Start 7E ATS bake-off; run **7E′** Hub multitask + hygiene
-  in parallel (required before Milestone 7).
+- **Next action:** Finish 7E ATS bake-off (7E′ Hub multitask + hygiene is **done**).
 
 ---
 
 ## 7E′. Hub multitask (age/tissue/sex/disease/cancer) + analysis hygiene
 
-- **Status:** `pending` (extra steps; **required before Milestone 7**; does not
-  block starting 7E on frozen ATS)
+- **Status:** `done`
 - **Why a separate step:** Frozen ATS is only 13 548 GSM from three packs.
   Unique Hub GSM already on disk is **34 234**. EWAS_db download progress does
   not add rows to Hub packs. Eligibility `core=False` for disease/cancer is
