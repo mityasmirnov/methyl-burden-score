@@ -1466,6 +1466,70 @@ def train_branch_cmd(  # noqa: PLR0917
     console.print_json(json.dumps(result, default=str))
 
 
+@train_app.command("cascade")
+def train_cascade_cmd(  # noqa: PLR0917
+    config: Annotated[
+        Path,
+        typer.Option(help="Experiment YAML (default: stage0_7f_rbs_gene_direct.yaml)"),
+    ] = Path("configs/experiment/stage0_7f_rbs_gene_direct.yaml"),
+    run_id: Annotated[str, typer.Option(help="Artifact run id")] = "stage0-7f-cascade-v1",
+    device: Annotated[str, typer.Option(help="Torch device")] = "cpu",
+    overfit_fixture: Annotated[
+        bool,
+        typer.Option("--overfit-fixture/--hub", help="Synthetic fixture vs Hub frozen folds"),
+    ] = False,
+    max_folds: Annotated[
+        int | None,
+        typer.Option(help="Cap outer folds for Hub smoke (default: all)"),
+    ] = None,
+    max_loci: Annotated[
+        int | None,
+        typer.Option(help="Override cv_budget.max_loci for Hub smoke"),
+    ] = None,
+    max_epochs: Annotated[
+        int | None,
+        typer.Option(help="Override cv_budget.max_epochs for Hub smoke"),
+    ] = None,
+    max_train_samples: Annotated[
+        int | None,
+        typer.Option(help="Subsample train rows per fold (Hub smoke)"),
+    ] = None,
+) -> None:
+    """Milestone 7F RBS→gene cascade + leftover direct (no TBS scores)."""
+    from mbs.training.cascade_loop import train_cascade
+    from mbs.training.loop import load_experiment_config
+
+    try:
+        paths = DataPaths.from_environment()
+    except PathPolicyError as error:
+        console.print(f"[bold red]Path policy failure:[/bold red] {error}")
+        raise typer.Exit(code=2) from error
+    paths.ensure_directories()
+    cfg_path = config if config.is_absolute() else paths.project_root / config
+    cfg = None if overfit_fixture else load_experiment_config(cfg_path)
+    if cfg is not None:
+        budget = dict(cfg.get("cv_budget") or {})
+        if max_loci is not None:
+            budget["max_loci"] = int(max_loci)
+        if max_epochs is not None:
+            budget["max_epochs"] = int(max_epochs)
+        cfg["cv_budget"] = budget
+    result = train_cascade(
+        project_root=paths.project_root,
+        data_root=paths.data_root,
+        artifact_root=paths.artifact_root,
+        config=cfg,
+        config_path=None if overfit_fixture else cfg_path,
+        run_id=run_id,
+        device_str=device,
+        overfit_fixture=overfit_fixture,
+        max_folds=max_folds,
+        max_train_samples=max_train_samples,
+    )
+    console.print_json(json.dumps(result.metrics, default=str))
+    console.print(f"[green]report[/green] {result.report_dir}")
+
+
 @train_app.command("dev-cv")
 def train_dev_cv_cmd(  # noqa: PLR0917
     config: Annotated[

@@ -332,6 +332,179 @@ class HierarchicalDeepSet(nn.Module):
         return mbs, present, logits
 
 
+class CascadeModelOutput(TypedDict):
+    rbs: Tensor
+    rbs_present: Tensor
+    mbs: Tensor
+    centered_mbs: Tensor
+    present: Tensor
+    orphan_rbs: Tensor
+    orphan_present: Tensor
+    logits: Tensor
+
+
+class CascadeDeepSet(nn.Module):
+    """7F topology: CpG → typed region (RBS) → gene-pooled MBS; orphan RBS kept.
+
+    No residual/tile path — leftover CpGs are scored outside this module
+    (direct elastic-net). ``region_to_gene`` uses -1 for orphan regions.
+    """
+
+    def __init__(
+        self,
+        input_dim: int,
+        n_region_types: int,
+        *,
+        cpg_hidden_dim: int = 64,
+        region_hidden_dim: int = 32,
+        region_type_dim: int = 8,
+        cpg_pool: PoolName = "max",
+        region_pool: PoolName = "max",
+        neutral_score: float = 0.5,
+        dropout: float = 0.1,
+        activation: str = "gelu",
+        layer_norm: bool = True,
+    ) -> None:
+        super().__init__()
+        if n_region_types <= 0:
+            raise ValueError("n_region_types must be positive")
+        self.cpg_pool: PoolName = cpg_pool
+        self.region_pool: PoolName = region_pool
+        self.neutral_score = neutral_score
+        self.cpg_hidden_dim = cpg_hidden_dim
+        self.region_hidden_dim = region_hidden_dim
+
+        self.cpg_encoder = SharedMLP(
+            input_dim,
+            [cpg_hidden_dim],
+            cpg_hidden_dim,
+            dropout=dropout,
+            layer_norm=layer_norm,
+            activation=activation,
+        )
+        self.region_type_embedding = nn.Embedding(n_region_types, region_type_dim)
+        self.region_encoder = SharedMLP(
+            cpg_hidden_dim + region_type_dim,
+            [region_hidden_dim],
+            region_hidden_dim,
+            dropout=dropout,
+            layer_norm=layer_norm,
+            activation=activation,
+        )
+        self.region_rho = SharedMLP(
+            region_hidden_dim,
+            [region_hidden_dim],
+            1,
+            dropout=dropout,
+            activation=activation,
+        )
+
+    def forward(
+        self,
+        *,
+        cpg_features: Tensor,
+        cpg_to_region: Tensor,
+        region_type: Tensor,
+        region_to_gene: Tensor,
+        n_regions: int,
+        n_gene_instances: int,
+        orphan_region_indices: Tensor | None = None,
+    ) -> CascadeModelOutput:
+        if region_type.shape != (n_regions,):
+            raise ValueError(
+                f"region_type must have shape ({n_regions},), found {tuple(region_type.shape)}"
+            )
+        if region_to_gene.shape != (n_regions,):
+            raise ValueError(
+                "region_to_gene must have one entry per region: "
+                f"expected {n_regions}, found {region_to_gene.shape[0]}"
+            )
+
+        device = cpg_features.device if cpg_features.numel() else region_type.device
+        dtype = cpg_features.dtype if cpg_features.numel() else torch.float32
+
+        if cpg_features.shape[0] == 0 or n_regions == 0:
+            rbs = torch.full((n_regions,), self.neutral_score, device=device, dtype=dtype)
+            rbs_present = torch.zeros(n_regions, dtype=torch.bool, device=device)
+            mbs = torch.full((n_gene_instances,), self.neutral_score, device=device, dtype=dtype)
+            present = torch.zeros(n_gene_instances, dtype=torch.bool, device=device)
+            logits = torch.zeros(n_gene_instances, device=device, dtype=dtype)
+        else:
+            cpg_hidden = self.cpg_encoder(cpg_features)
+            region_pooled, rbs_present = segment_pool(
+                cpg_hidden,
+                cpg_to_region,
+                n_regions,
+                self.cpg_pool,
+            )
+            type_hidden = self.region_type_embedding(region_type.to(torch.long))
+            region_hidden = self.region_encoder(torch.cat([region_pooled, type_hidden], dim=-1))
+            region_hidden = region_hidden * rbs_present.unsqueeze(-1)
+            rbs_logits = self.region_rho(region_hidden).squeeze(-1)
+            raw_rbs = torch.sigmoid(rbs_logits)
+            rbs = torch.where(
+                rbs_present,
+                raw_rbs,
+                torch.full_like(raw_rbs, self.neutral_score),
+            )
+
+            allocated = region_to_gene >= 0
+            if allocated.any() and n_gene_instances > 0:
+                active = allocated & rbs_present
+                if active.any():
+                    score_vals = rbs[active].unsqueeze(-1)
+                    gene_idx = region_to_gene[active].to(torch.long)
+                    gene_scores, gene_present = segment_pool(
+                        score_vals,
+                        gene_idx,
+                        n_gene_instances,
+                        self.region_pool,
+                    )
+                    mbs = gene_scores.squeeze(-1)
+                    mbs = torch.where(
+                        gene_present,
+                        mbs,
+                        torch.full_like(mbs, self.neutral_score),
+                    )
+                    present = gene_present
+                    logits = mbs
+                else:
+                    mbs = torch.full(
+                        (n_gene_instances,), self.neutral_score, device=device, dtype=dtype
+                    )
+                    present = torch.zeros(n_gene_instances, dtype=torch.bool, device=device)
+                    logits = torch.zeros(n_gene_instances, device=device, dtype=dtype)
+            else:
+                mbs = torch.full(
+                    (n_gene_instances,), self.neutral_score, device=device, dtype=dtype
+                )
+                present = torch.zeros(n_gene_instances, dtype=torch.bool, device=device)
+                logits = torch.zeros(n_gene_instances, device=device, dtype=dtype)
+
+        if orphan_region_indices is None:
+            orphan_idx = torch.flatnonzero(region_to_gene < 0)
+        else:
+            orphan_idx = orphan_region_indices.to(torch.long)
+        if orphan_idx.numel() == 0:
+            orphan_rbs = torch.zeros(0, device=device, dtype=dtype)
+            orphan_present = torch.zeros(0, dtype=torch.bool, device=device)
+        else:
+            orphan_rbs = rbs[orphan_idx]
+            orphan_present = rbs_present[orphan_idx]
+
+        centered = center_mask_scores(mbs, present, neutral_score=self.neutral_score)
+        return {
+            "rbs": rbs,
+            "rbs_present": rbs_present,
+            "mbs": mbs,
+            "centered_mbs": centered,
+            "present": present,
+            "orphan_rbs": orphan_rbs,
+            "orphan_present": orphan_present,
+            "logits": logits,
+        }
+
+
 class SeedMaskedLinearHead(nn.Module):
     """Trait-specific linear head over shared gene scores and optional covariates."""
 

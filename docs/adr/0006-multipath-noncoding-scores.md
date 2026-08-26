@@ -59,6 +59,9 @@ CpG term is a deepMAT extension, not an exact DeepRVAT copy.
   target (7C).
 - Flat gene-only and hierarchical gene-only remain mandatory reference arms in
   Milestone **7E**.
+- **Superseded for product TBS scores:** [ADR 0009](0009-drop-tbs-scores.md)
+  drops tile scores after 7E; leftover CpGs stay **direct**. Graph-v2 tile
+  nodes may remain on disk unused.
 
 ## Non-goals
 

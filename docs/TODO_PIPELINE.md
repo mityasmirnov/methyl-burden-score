@@ -14,11 +14,12 @@ True next milestone after bootstrap:
 > nine-pack matrices (7B — **done**) → architecture corrections (7C —
 > **done**, fixture + Hub DeepRVAT A/B) → development CV (7E — **done**) →
 > Hub multitask + hygiene (**7E′** — **done**) → **RBS→gene + direct topology
-> (7F — current gate)** → **methylation-only full eval (7G)** →
+> (7F — done)** → **methylation-only full eval (7G — current gate)** →
 > **final OOF cross-fitting (7)** → one score matrix.
 
-**Current gate:** Milestone **7F** (drop tile scores; RBS genome-wide then
-gene-associated RBS aggregation; leftover CpGs go **direct**).
+**Current gate:** Milestone **7G** (methylation-only full eval that closes 7E
+evaluation gaps). **7F** (RBS→gene + direct leftover, no TBS) is **done**
+(`reports/inspection/stage0_7f_rbs_gene_direct/`; [ADR 0009](adr/0009-drop-tbs-scores.md)).
 **ATS** = Age/Tissue/Sex frozen Hub GSM-union
 `matrix-hub-age-tissue-sex-full-v1` (13 548). Graph-v2 is **on disk**
 (`graph-grch38-gencode38-cgi-tile-v2`; inspection
@@ -26,10 +27,10 @@ gene-associated RBS aggregation; leftover CpGs go **direct**).
 [`plans/milestone-7c-graph-v2-topology.md`](plans/milestone-7c-graph-v2-topology.md)).
 7E selected `N-multipath-l1a` under a 2-epoch / 8 192-locus budget and
 linear fusion of **region means**, not neural scores — that is evidence, not
-the shipped topology. 7E′ hygiene is **done**. Readiness:
+the shipped topology (7F replaces it). 7E′ hygiene is **done**. Readiness:
 [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
-(§7F / §7G); 7E report
-[`reports/inspection/stage0_7e_dev_cv/analysis.md`](../reports/inspection/stage0_7e_dev_cv/analysis.md).
+(§7G); 7F report
+[`reports/inspection/stage0_7f_rbs_gene_direct/analysis.md`](../reports/inspection/stage0_7f_rbs_gene_direct/analysis.md).
 
 **7A–7D** are `done` (7C = fixture + Hub smoke). Hub nine packs and 7B full
 matrices are in the live DuckDB release (`created_at` 2026-08-25T11:15Z:
@@ -688,7 +689,10 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 7F. RBS→gene cascade + direct leftover (no tile scores)
 
-- **Status:** `pending` (**current gate**)
+- **Status:** `done`
+- **Plan (impl):** [`plans/milestone-7f-rbs-gene-direct.md`](plans/milestone-7f-rbs-gene-direct.md);
+  [ADR 0009](adr/0009-drop-tbs-scores.md).
+- **Report:** [`reports/inspection/stage0_7f_rbs_gene_direct/`](../reports/inspection/stage0_7f_rbs_gene_direct/)
 - **Why:** 7E’s winner fused gene + RBS + **TBS** + direct as linear models on
   **presence-aware region means**, not saved neural scores. **Tiles are
   dropped** because 50-CpG bins randomly aggregate leftover loci into a
@@ -733,7 +737,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 7G. Methylation-only full evaluation (close 7E gaps)
 
-- **Status:** `pending` (**blocked until 7F**)
+- **Status:** `pending` (**current gate**)
 - **Why:** The 90-cell 7E bake-off **finished**. Gaps were evaluation quality,
   not a crashed trainer: 2 epochs and 8 192 / 482 379 loci; late fusion was
   not neural MBS; T-mean-region was not a named cell; HGB stood in for

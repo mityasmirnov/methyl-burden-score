@@ -390,22 +390,24 @@ The batch stores observed sample–CpG pairs, not a padded whole-manifest matrix
 Out-of-fold scores are stored as:
 
 ```text
-mbs.zarr                  [n_samples, n_genes]
+mbs.zarr                  [n_samples, n_genes]   # gene-aggregated RBS (7F+)
 gene_present.zarr         [n_samples, n_genes]
 gene_observed_count.zarr  [n_samples, n_genes]
-rbs.zarr                  optional [n_samples, n_regulatory_regions]
-tbs.zarr                  optional [n_samples, n_tiles]
+rbs.zarr                  optional [n_samples, n_orphan_or_all_rbs]
+tbs.zarr                  unused after 7F (ADR 0009); may be absent
 direct_contrib.zarr       optional per-task direct CpG contributions
 sample_index.parquet
 gene_index.parquet
 score_manifest.json
 ```
 
-The score manifest records fold and restart membership, **score polarity /
+From Milestone **7F**, product fusion uses saved **orphan RBS + MBS + direct**
+matrices ([ADR 0009](adr/0009-drop-tbs-scores.md)); do not write a TBS score
+arm. The score manifest records fold and restart membership, **score polarity /
 orientation anchor** ([ADR 0008](adr/0008-score-identifiability.md)), and
 fold-fitted normalizer hashes. Every sample must be traceable to models that
-excluded its study and replicate group. Milestone **7** (after 7A–7E) is the
-OOF export gate. Averaging unaligned `MBS` and `1−MBS` folds is undefined.
+excluded its study and replicate group. Milestone **7** (after 7F and 7G) is
+the OOF export gate. Averaging unaligned `MBS` and `1−MBS` folds is undefined.
 OOF MBS is a **predictive** sample×gene representation, not a constraint or
 LOEUF analogue.
 

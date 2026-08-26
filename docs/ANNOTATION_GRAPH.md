@@ -118,17 +118,25 @@ Stage 0 five-role graph (`graph-grch38-gencode38-five-role-v1`) records them as
 unassigned canonical loci. Hierarchical-v0.1 routes them to a one-scalar
 residual path (frozen baseline only).
 
-**Graph v2 / Milestone 7C assignment order:**
+**Graph v2 / Milestone 7C on-disk assignment order** (tile nodes may remain):
 
-1. Gene-linked five-role regions → **MBS**;
+1. Gene-linked five-role regions;
 2. Non-gene regulatory annotations (cCRE, enhancer, CGI/shore, DMR, ChromHMM,
    DHS) without requiring a gene → **RBS**;
-3. Remaining coordinate-mapped loci → adaptive **CpG-count tiles** → **TBS**;
+3. Remaining coordinate-mapped loci → adaptive **CpG-count tiles** (graph
+   nodes only after 7F);
 4. Isolated / unmapped / explicitly retained loci → **direct CpG** contribution.
+
+**Score topology from Milestone 7F** ([ADR 0009](adr/0009-drop-tbs-scores.md)):
+typed regions (gene roles + RBS) → region scores; allocate RBS to genes
+(typed role and/or nearest-gene of the **region**) → **MBS**; orphan RBS stay
+genome-wide; leftover CpGs (including former tile-only loci) → **direct**.
+Do not emit TBS scores. Do not nearest-gene leftover **CpGs**
+([ADR 0004](adr/0004-unmapped-probe-retention.md)).
 
 Any regulatory or tile edge requires an evidence type, source version, and
 confidence field. Optional later: cCRE-to-gene or eQTM-supported gene edges
-with the same provenance fields—never silent nearest-gene.
+with the same provenance fields—never silent nearest-gene of unmapped CpGs.
 
 ### MethylCapsNet lessons
 

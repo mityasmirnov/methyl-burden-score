@@ -10,9 +10,8 @@ Checklist: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md).
 **Do not retrain v0.1.** Freeze those runs. **7A**, **7B**, **7C** (fixture
 acceptance), **7D**, **7E** (development CV), and **7E′** (Hub multitask +
 hygiene) are closed. **7F** (RBS→gene + direct leftover, no TBS scores) is
-the **current coding gate**. **7G** closes 7E’s evaluation-quality gaps with
-**methylation-input** comparators only. The incomplete `EWAS_db` mirror must
-not block 7F/7G.
+**done**. **7G** (methylation-only full eval) is the **current coding gate**.
+The incomplete `EWAS_db` mirror must not block 7G.
 
 This document is the coding brief for **7A–7G**. The expensive Milestone **7**
 OOF cross-fit stays blocked until **7F and 7G** pass.
@@ -41,8 +40,8 @@ OOF cross-fit stays blocked until **7F and 7G** pass.
 | 7D | Norm fit + A/B smoke; not full CV |
 | **7E** | **Done** — development CV on frozen ATS (2-epoch / 8 192-locus budget; linear region-mean fusion) |
 | **7E′** | **Done** — Hub multitask + hygiene |
-| **7F** | **Yes — current gate.** RBS→gene cascade + direct leftover; save neural scores and fuse them |
-| **7G** | **Yes** — methylation-only re-eval (longer train, ROC, M-value ridge / enet / trees / optional PCA-SVA) |
+| **7F** | **Done.** RBS→gene cascade + direct leftover; saved neural scores fused |
+| **7G** | **Yes — current gate.** Methylation-only re-eval (closes 7E gaps) |
 | **7** | **Yes — final OOF** after 7F and 7G |
 
 Do not retrain frozen **v0.1** flat/hier runs.
@@ -446,7 +445,11 @@ Report: [`../reports/inspection/stage0_7e_dev_cv/analysis.md`](../reports/inspec
 
 Hub-wide disease/cancer heads: **7E′** (**done**).
 
-### 7F — RBS→gene + direct leftover (**current gate**)
+### 7F — RBS→gene + direct leftover (**done**)
+
+Impl brief: [`milestone-7f-rbs-gene-direct.md`](milestone-7f-rbs-gene-direct.md);
+[ADR 0009](../adr/0009-drop-tbs-scores.md);
+report [`stage0_7f_rbs_gene_direct/`](../../reports/inspection/stage0_7f_rbs_gene_direct/).
 
 Drop **TBS** (random CpG-count bins). Assignment: typed region first
 (cCRE / enhancer / CGI / DMR / ChromHMM / similar / gene roles) → **RBS**.
@@ -507,7 +510,5 @@ model lineage. **No TBS.**
 
 ## Open questions
 
-None blocking **7F** (graph-v2 and frozen 7E folds are on disk). Record a
-short ADR if dropping TBS as a product score family must amend ADR 0006
-before Milestone 7 exports; 7F/7G already lock leftover→direct in this
-brief.
+None blocking **7F** (graph-v2 and frozen 7E folds are on disk).
+[ADR 0009](../adr/0009-drop-tbs-scores.md) drops product TBS scores.
