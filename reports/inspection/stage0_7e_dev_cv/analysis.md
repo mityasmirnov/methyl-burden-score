@@ -250,6 +250,7 @@ The 90-cell bake-off **did finish** (3 folds × arms). These gaps are about
 | `summary.json` / `summary.md` | Raw 90-cell bake-off dump |
 | `arm_means.json` | Fold-averaged table used here |
 | `classical_baselines.json` | M-value ridge / enet / HGB / PCA-SVA |
-| `figures/` | Bars, heatmap, ROC |
+| `figures/` | Bars, heatmap, schema, ROC |
+| `milestone-7e-dev-cv.canvas.tsx` | Interactive Cursor canvas source (open beside chat from the IDE canvases folder; this file is the git-tracked mirror) |
 | `configs/experiment/stage0_7e_bakeoff.yaml` | Arm matrix |
 | `artifacts/splits/hub-ats-7e-3fold-v1/` | Frozen folds (not in git) |
