@@ -43,7 +43,7 @@ Keep Cursor session todos in sync (complete / cancel / start next).
 7B. Complete nine-pack canonical matrices (**done**)
 7C. Supervised architecture corrections (multi-path scores, splits, heads) (**done**, fixture + Hub smoke)
 7D. Fold-fitted Level-1 normalization (**done**)
-7E. Development CV (architecture selection) (**current gate**; graph-v2 on disk; multi-path unblocked)
+7E. Development CV (architecture selection) (**done**)
 7E′. Hub multitask (age/tissue/sex/disease/cancer, masked) + analysis hygiene (**done**)
 7. Final study-grouped OOF cross-fitting (blocked until 7E)
 8. Optional layers only after 1–7

@@ -164,6 +164,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"scripts/write_7e_analysis_report.py" = ["T201", "E501", "RUF001", "TRY301", "PERF401"]
 "tests/**/*.py" = ["S101", "ANN201", "PLR2004", "S108", "E501"]
 "src/mbs/**/*.py" = ["TRY003", "PLR0912", "RUF002"]
 "src/mbs/annotation/cgi_context.py" = ["S608"]

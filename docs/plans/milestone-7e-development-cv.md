@@ -1,6 +1,6 @@
 # Milestone 7E: Development CV (architecture selection)
 
-Status: **pending** (current coding gate). Graph-v2 + train-time RBS/TBS masks
+Status: **done**. Winner: `N-multipath-l1a`. Report: `reports/inspection/stage0_7e_dev_cv/`. Graph-v2 + train-time RBS/TBS masks
 are on disk; full 3×2 bake-off may include multi-path arms. Gene-only arms
 remain valid on the five-role graph and Level-1 channel A/B.
 Checklist: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md).
@@ -98,3 +98,10 @@ flowchart LR
 
 None blocking 7E ATS bake-off (graph-v2 + train-time masks are on disk). Hub
 multitask + hygiene: [`milestone-7e-prime-analysis-hygiene.md`](milestone-7e-prime-analysis-hygiene.md).
+
+## Evidence
+
+- Report: `reports/inspection/stage0_7e_dev_cv/{summary.md,summary.json}`
+- Winner: `N-multipath-l1a` (tissue macro-F1=0.32877947753439823, age MAE=11.48540720058696)
+- CV budget: max_loci=8192, max_epochs=2, 3 outer folds × 2 restarts
+- Protocol: shared `hub-ats-7e-3fold-v1` folds; Level-1 A/B; CpGPT-off; late-fusion multipath/gene-direct on graph-v2

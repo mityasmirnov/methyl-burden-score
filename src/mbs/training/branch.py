@@ -28,39 +28,65 @@ def train_branch_arm(
     run_id: str,
     device: str = "cpu",
     overfit_fixture: bool = True,
+    max_epochs: int | None = None,
+    max_loci: int | None = None,
 ) -> dict[str, Any]:
     """Train one arm on its own run id. Eval-time masking is not this function."""
     if arm not in VALID_ARMS:
         raise ValueError(f"arm must be one of {sorted(VALID_ARMS)}")
     if arm == "direct":
-        rng = np.random.default_rng(int(config.get("experiment", {}).get("seed", 42)))
-        n, p = 20, 8
-        # Synthetic betas → M; Level-1 when robust_deviation else centered M.
-        betas = rng.uniform(0.05, 0.95, size=(n, p))
-        level1_cfg = resolve_level1_config(config)
-        m = beta_to_m_value(betas, epsilon=float(level1_cfg["epsilon"]))
-        obs = rng.random(size=(n, p)) > 0.2
-        z, _params = direct_cpg_design_matrix(
-            m,
-            obs,
-            use_level1=bool(level1_cfg["include_robust_z"]),
-            sigma_min=float(level1_cfg["sigma_min"]),
-            epsilon=float(level1_cfg["epsilon"]),
+        if overfit_fixture:
+            rng = np.random.default_rng(int(config.get("experiment", {}).get("seed", 42)))
+            n, p = 20, 8
+            betas = rng.uniform(0.05, 0.95, size=(n, p))
+            level1_cfg = resolve_level1_config(config)
+            m = beta_to_m_value(betas, epsilon=float(level1_cfg["epsilon"]))
+            obs = rng.random(size=(n, p)) > 0.2
+            z, _params = direct_cpg_design_matrix(
+                m,
+                obs,
+                use_level1=bool(level1_cfg["include_robust_z"]),
+                sigma_min=float(level1_cfg["sigma_min"]),
+                epsilon=float(level1_cfg["epsilon"]),
+            )
+            y = z[:, 0] + 0.1 * rng.normal(size=n)
+            studies = np.array(["A"] * 10 + ["B"] * 10)
+            fitted = fit_direct_elasticnet(z, obs, y, studies, min_studies=2)
+            return {
+                "arm": arm,
+                "run_id": run_id,
+                "n_loci": fitted["n_loci"],
+                "direct": True,
+                "use_level1": bool(level1_cfg["include_robust_z"]),
+            }
+        # Hub direct: train flat gene path is not used; phenotype elastic-net
+        # over Level-1 z is handled via transparent_baselines in dev_cv.
+        # Keep a gene FlatDeepSet train tagged as direct-adjacent for lineage.
+        cfg = dict(config)
+        cfg.setdefault("model", {})
+        cfg["model"] = {**cfg["model"], "arm": "gene"}
+        result: TrainResult = train_flat_baseline(
+            project_root=project_root,
+            data_root=data_root,
+            artifact_root=artifact_root,
+            config=cfg,
+            run_id=run_id,
+            device_str=device,
+            overfit_fixture=False,
+            max_epochs=max_epochs,
+            max_loci=max_loci,
         )
-        y = z[:, 0] + 0.1 * rng.normal(size=n)
-        studies = np.array(["A"] * 10 + ["B"] * 10)
-        fitted = fit_direct_elasticnet(z, obs, y, studies, min_studies=2)
         return {
             "arm": arm,
-            "run_id": run_id,
-            "n_loci": fitted["n_loci"],
+            "run_id": result.run_id,
+            "metrics": result.metrics,
             "direct": True,
-            "use_level1": bool(level1_cfg["include_robust_z"]),
+            "hub": True,
         }
     cfg = dict(config)
     cfg.setdefault("model", {})
     cfg["model"] = {**cfg["model"], "arm": arm}
-    result: TrainResult = train_flat_baseline(
+    result = train_flat_baseline(
         project_root=project_root,
         data_root=data_root,
         artifact_root=artifact_root,
@@ -68,6 +94,8 @@ def train_branch_arm(
         run_id=run_id,
         device_str=device,
         overfit_fixture=overfit_fixture,
+        max_epochs=max_epochs,
+        max_loci=max_loci,
     )
     return {
         "arm": arm,

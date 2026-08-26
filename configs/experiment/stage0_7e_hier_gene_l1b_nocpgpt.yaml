@@ -1,0 +1,152 @@
+controls:
+  mode: none
+data:
+  phenotype_registry: configs/data/phenotype_registry.yaml
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology_age_tissue_sex_full_v1.yaml
+  wave: 1
+device:
+  cuda_visible_devices: '0'
+  torch_device: cuda
+evaluation:
+  age_metrics:
+  - mae
+  - rmse
+  - pearson
+  - spearman
+  report_by:
+  - study_id
+  - platform_id
+  - phenotype_family
+  sex_metrics:
+  - accuracy
+  - balanced_accuracy
+  tissue_metrics:
+  - macro_f1
+  - balanced_accuracy
+  - confusion_matrix
+experiment:
+  name: stage0_7e_hier_gene_l1b_nocpgpt
+  public_model_name: deepMAT-hierarchical
+  seed: 42
+  stage: 0
+features:
+  methylation:
+    beta: true
+    epsilon: 0.001
+    m_value: true
+    robust_deviation: true
+    sigma_min: 1.0e-06
+  static_feature_set: none
+heads:
+  age:
+    enabled: true
+    huber_delta: 1.0
+    linear: true
+    loss: huber
+    target_standardization: train_fold
+  blood:
+    enabled: false
+    linear: true
+    loss: cross_entropy
+    role: domain_auxiliary
+  brain:
+    enabled: false
+    linear: true
+    loss: cross_entropy
+    role: domain_auxiliary
+  cancer:
+    enabled: false
+    linear: true
+    loss: bce_with_logits
+    role: auxiliary
+  disease:
+    enabled: false
+    linear: true
+    loss: bce_with_logits
+    role: auxiliary
+  sex:
+    enabled: true
+    linear: true
+    loss: cross_entropy
+    n_classes: 2
+  tissue:
+    class_weighting: train_fold_balanced
+    enabled: true
+    linear: true
+    loss: cross_entropy
+    ontology: harmonized
+logging:
+  auto_tensorboard: false
+  jsonl: true
+  save_checksums: true
+  save_environment: true
+  save_resolved_config: true
+  tensorboard: false
+  wandb: false
+loss:
+  lambda_age: 1.0
+  lambda_blood: 0.0
+  lambda_brain: 0.0
+  lambda_cancer: 0.0
+  lambda_disease: 0.0
+  lambda_sex: 1.0
+  lambda_tissue: 1.0
+model:
+  cpg_pooling: max
+  encoder:
+    activation: gelu
+    cpg_hidden_dim: 64
+    dropout: 0.1
+    layer_norm: true
+  neutral_score: 0.5
+  output_activation: sigmoid
+  region_hidden_dimension: 32
+  region_pooling: max
+  region_type_dimension: 8
+  region_types:
+  - promoter_core
+  - promoter_proximal
+  - five_prime
+  - three_prime
+  - gene_body
+  residual_path: true
+  residual_pooling: max
+  type: hierarchical_deepset
+pilot:
+  auto_split: false
+  graph_id: graph-grch38-gencode38-five-role-v1
+  matrix_id: matrix-hub-age-tissue-sex-full-v1
+  mode: deeprvat_hub
+  reuse_flat_split: false
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+  split_id: hub-ats-7e-3fold-v1
+  static_feature_set: none
+  tissue_ontology: canonical/phenotypes/tissue_ontology_age_tissue_sex_full_v1.yaml
+splits:
+  grouping_columns:
+  - study_id
+  - donor_id
+  protocol: study_grouped
+  test_fraction: 0.15
+  train_fraction: 0.7
+  val_fraction: 0.15
+stage0:
+  use_attention_pooling: false
+  use_cpgpt_static_features: false
+  use_epicv2_manifest: true
+  use_longread: false
+  use_methylcapsnet_annotations: false
+  use_methylgpt_prior: false
+training:
+  batch_size: 4
+  batch_token_budget: 500000
+  early_stopping_patience: 5
+  gradient_clip_norm: 2.0
+  learning_rate: 0.001
+  max_epochs: 15
+  num_workers: 0
+  optimizer: adamw
+  precision: bf16-mixed
+  require_cuda: true
+  weight_decay: 0.0001

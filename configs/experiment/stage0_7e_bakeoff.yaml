@@ -1,0 +1,115 @@
+# Milestone 7E Hub ATS bake-off (architecture selection).
+# Shared 3 outer study-grouped folds × 2 restarts.
+# Locus/epoch budget is a CV compute ceiling; topology comparison stays matched.
+
+split_id: hub-ats-7e-3fold-v1
+n_folds: 3
+restart_seeds: [42, 43]
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+tissue_ontology: canonical/phenotypes/tissue_ontology_age_tissue_sex_full_v1.yaml
+cv_budget:
+  max_loci: 8192
+  max_epochs: 2
+  note: "Matched locus budget across arms (~182 genes / RBS+TBS on graph-v2); not ordered-prefix holdout."
+
+arms:
+  - name: T-mean-gene
+    family: transparent
+    level1: null
+    cpgpt: false
+  - name: T-enet
+    family: transparent
+    level1: null
+    cpgpt: false
+  - name: N-flat-gene-l1a
+    family: neural
+    config: configs/experiment/stage0_7e_flat_gene_l1a.yaml
+    level1: false
+    cpgpt: true
+  - name: N-flat-gene-l1b
+    family: neural
+    config: configs/experiment/stage0_7e_flat_gene_l1b.yaml
+    level1: true
+    cpgpt: true
+  - name: N-hier-gene-l1a
+    family: neural
+    config: configs/experiment/stage0_7e_hier_gene_l1a.yaml
+    level1: false
+    cpgpt: true
+  - name: N-hier-gene-l1b
+    family: neural
+    config: configs/experiment/stage0_7e_hier_gene_l1b.yaml
+    level1: true
+    cpgpt: true
+  - name: N-flat-gene-l1b-nocpgpt
+    family: neural
+    config: configs/experiment/stage0_7e_flat_gene_l1b_nocpgpt.yaml
+    level1: true
+    cpgpt: false
+  - name: N-hier-gene-l1b-nocpgpt
+    family: neural
+    config: configs/experiment/stage0_7e_hier_gene_l1b_nocpgpt.yaml
+    level1: true
+    cpgpt: false
+  - name: N-gene-direct-l1a
+    family: neural
+    config: configs/experiment/stage0_7e_flat_gene_l1a_v2.yaml
+    level1: false
+    cpgpt: true
+    branch_arm: gene
+    tag: direct
+  - name: N-gene-direct-l1b
+    family: neural
+    config: configs/experiment/stage0_7e_flat_gene_l1b_v2.yaml
+    level1: true
+    cpgpt: true
+    branch_arm: gene
+    tag: direct
+  - name: N-rbs-l1a
+    family: neural
+    config: configs/experiment/stage0_7e_flat_rbs_l1a_v2.yaml
+    level1: false
+    cpgpt: true
+    branch_arm: rbs
+    tag: mp
+  - name: N-rbs-l1b
+    family: neural
+    config: configs/experiment/stage0_7e_flat_rbs_l1b_v2.yaml
+    level1: true
+    cpgpt: true
+    branch_arm: rbs
+    tag: mp
+  - name: N-tbs-l1a
+    family: neural
+    config: configs/experiment/stage0_7e_flat_tbs_l1a_v2.yaml
+    level1: false
+    cpgpt: true
+    branch_arm: tbs
+    tag: mp
+  - name: N-tbs-l1b
+    family: neural
+    config: configs/experiment/stage0_7e_flat_tbs_l1b_v2.yaml
+    level1: true
+    cpgpt: true
+    branch_arm: tbs
+    tag: mp
+  - name: N-multipath-l1a
+    family: neural
+    config: configs/experiment/stage0_7e_flat_gene_l1a_v2.yaml
+    level1: false
+    cpgpt: true
+    branch_arm: gene
+    tag: mpa
+    fusion_from: [N-rbs-l1a, N-tbs-l1a, N-multipath-l1a]
+  - name: N-multipath-l1b
+    family: neural
+    config: configs/experiment/stage0_7e_flat_gene_l1b_v2.yaml
+    level1: true
+    cpgpt: true
+    branch_arm: gene
+    tag: mp
+    fusion_from: [N-rbs-l1b, N-tbs-l1b, N-multipath-l1b]
+  - name: C-metadata
+    family: control
+    level1: null
+    cpgpt: false

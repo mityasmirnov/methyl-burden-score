@@ -618,7 +618,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 7E. Development cross-validation (architecture selection)
 
-- **Status:** `pending` (**current coding gate**)
+- **Status:** `done` (winner `N-multipath-l1a`; readable report
+  `reports/inspection/stage0_7e_dev_cv/analysis.md`)
 - **Prep (done):**
   - `$MBS_DATA_ROOT/canonical/graphs/graph-grch38-gencode38-cgi-tile-v2/`
   - `reports/inspection/annotation_graph_cgi_tile_v2/`
@@ -640,7 +641,9 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Depends on:** (7C), (7D Level-1); graph-v2 on disk for multi-path arms.
 - **Plan:** [`plans/milestone-7e-development-cv.md`](plans/milestone-7e-development-cv.md);
   [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
-- **Next action:** Finish 7E ATS bake-off (7E′ Hub multitask + hygiene is **done**).
+- **Next action:** Architecture selected (`N-multipath-l1a`). Readable analysis:
+  [`reports/inspection/stage0_7e_dev_cv/analysis.md`](../reports/inspection/stage0_7e_dev_cv/analysis.md).
+  Do not start Milestone **7** 5x6 OOF until 7E' hygiene is treated as done (it is).
 
 ---
 

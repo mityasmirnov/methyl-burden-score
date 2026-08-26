@@ -1,0 +1,28 @@
+split_id: hub-ats-7e-3fold-v1
+n_folds: 3
+restart_seeds: [42, 43]
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+tissue_ontology: canonical/phenotypes/tissue_ontology_age_tissue_sex_full_v1.yaml
+cv_budget:
+  max_loci: 8192
+  max_epochs: 2
+arms:
+  - name: N-hier-gene-l1a
+    family: neural
+    config: configs/experiment/stage0_7e_hier_gene_l1a.yaml
+    level1: false
+    cpgpt: true
+  - name: N-hier-gene-l1b
+    family: neural
+    config: configs/experiment/stage0_7e_hier_gene_l1b.yaml
+    level1: true
+    cpgpt: true
+  - name: N-hier-gene-l1b-nocpgpt
+    family: neural
+    config: configs/experiment/stage0_7e_hier_gene_l1b_nocpgpt.yaml
+    level1: true
+    cpgpt: false
+  - name: C-metadata
+    family: control
+    level1: null
+    cpgpt: false

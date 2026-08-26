@@ -116,6 +116,101 @@ def assert_no_study_leakage(split: dict[str, Any]) -> None:
         role_by_study[study_id] = role
 
 
+def build_outer_study_grouped_folds(
+    samples: Sequence[dict[str, Any]],
+    *,
+    n_folds: int = 3,
+    seed: int = 42,
+    val_fraction: float = 0.15,
+    split_id: str = "hub-ats-7e-3fold-v1",
+) -> dict[str, Any]:
+    """Build ``n_folds`` study-grouped outer folds for development CV.
+
+    Studies are shuffled with ``seed``, then round-robin assigned to fold
+    buckets. For fold ``i``, bucket ``i`` is ``external_test``; remaining
+    studies are split into train/validation by sample-count greediness
+    (``val_fraction`` of the non-test sample mass).
+    """
+    if n_folds < 2:
+        raise ValueError("n_folds must be >= 2")
+    if not (0.0 < val_fraction < 1.0):
+        raise ValueError("val_fraction must be in (0, 1)")
+    counts: dict[str, int] = {}
+    for sample in samples:
+        study_id = str(sample["study_id"])
+        counts[study_id] = counts.get(study_id, 0) + 1
+    if len(counts) < n_folds:
+        raise ValueError(f"need >= {n_folds} studies, found {len(counts)}")
+    studies = sorted(counts.keys())
+    rng = Random(seed)  # noqa: S311 — deterministic CV seed, not crypto
+    rng.shuffle(studies)
+    buckets: list[list[str]] = [[] for _ in range(n_folds)]
+    for i, study in enumerate(studies):
+        buckets[i % n_folds].append(study)
+
+    folds: list[dict[str, Any]] = []
+    for fold_idx in range(n_folds):
+        test_studies = list(buckets[fold_idx])
+        rest = [s for j, bucket in enumerate(buckets) if j != fold_idx for s in bucket]
+        rest_n = sum(counts[s] for s in rest)
+        val_budget = max(1, int(rest_n * val_fraction))
+        rest_sorted = sorted(rest, key=lambda s: (-counts[s], s))
+        rng_fold = Random(seed + fold_idx + 1)  # noqa: S311
+        rng_fold.shuffle(rest_sorted)
+        train: list[str] = []
+        val: list[str] = []
+        val_n = 0
+        for study in rest_sorted:
+            n = counts[study]
+            if val_n < val_budget or not val:
+                val.append(study)
+                val_n += n
+            else:
+                train.append(study)
+        if not train and val:
+            moved = val.pop()
+            train.append(moved)
+        if not val and train:
+            moved = train.pop()
+            val.append(moved)
+        if not train or not val or not test_studies:
+            raise ValueError(
+                f"fold {fold_idx} empty role(s): "
+                f"train={len(train)} val={len(val)} test={len(test_studies)}"
+            )
+        split = build_study_grouped_split(
+            samples,
+            train_studies=train,
+            validation_studies=val,
+            external_test_studies=test_studies,
+            split_id=f"{split_id}/fold-{fold_idx}",
+        )
+        assert_no_study_leakage(split)
+        split["outer_fold"] = fold_idx
+        folds.append(split)
+
+    # Every study must appear in exactly one test fold.
+    test_hits: dict[str, int] = {}
+    for split in folds:
+        for sid in split["external_test_studies"]:
+            test_hits[str(sid)] = test_hits.get(str(sid), 0) + 1
+    bad = {k: v for k, v in test_hits.items() if v != 1}
+    if bad:
+        raise ValueError(f"studies not in exactly one test fold: {bad}")
+    missing = set(counts) - set(test_hits)
+    if missing:
+        raise ValueError(f"studies never held out: {sorted(missing)}")
+
+    return {
+        "split_id": split_id,
+        "mode": "outer_study_grouped",
+        "n_folds": n_folds,
+        "seed": seed,
+        "val_fraction": val_fraction,
+        "folds": folds,
+    }
+
+
 def partition_studies_by_sample_count(
     samples: Sequence[dict[str, Any]],
     *,
