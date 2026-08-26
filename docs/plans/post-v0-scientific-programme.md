@@ -122,8 +122,8 @@ Graph-v2 + independent RBS/TBS train-time masks are **done**
 | **7D** | Fold-fitted Level-1 MAD robust-z; persist hashes; novel loci `z=0` + `norm_present=False`; Hub DeepRVAT A/B smoke; AE not default (**done**; `reports/inspection/stage0_7d_level1/`) |
 | **7E** | 3×2 independently trained arms; report at `stage0_7e_dev_cv/` (**done**; budget-limited) |
 | **7E′** | Hub multitask (age/tissue/sex/disease/cancer, masked) + catalog/census hygiene (**done**) |
-| **7F** | RBS genome-wide → gene-associated RBS aggregation; leftover CpGs **direct**; no TBS scores; fuse **saved neural** scores (**current gate**) |
-| **7G** | Methylation-only re-eval on frozen 7E folds: longer train, ROC, M-value ridge/enet/trees/optional PCA-SVA; no metadata-only ranking |
+| **7F** | RBS genome-wide → gene-associated RBS aggregation; leftover CpGs **direct**; no TBS scores; fuse **saved neural** scores (**done**) |
+| **7G** | Methylation-only re-eval on frozen 7E folds: longer train, ROC, M-value ridge/enet/trees/optional PCA-SVA; no metadata-only ranking (**current gate**) |
 | **7** | 5×6 OOF gene-RBS + RBS + direct (no TBS) with leakage controls |
 
 ## Locked decisions
@@ -469,22 +469,26 @@ Fusion must write per-sample score matrices and train the head on **those**,
 not on region-mean tables. Same frozen split `hub-ats-7e-3fold-v1`. Fixture
 tests required. Report: `reports/inspection/stage0_7f_rbs_gene_direct/`.
 
-### 7G — Methylation-only full evaluation
+### 7G — Methylation-only full evaluation (**current gate**)
 
-Re-run the 7F cascade on the **same** frozen ATS folds with a budget above
-7E’s 2-epoch / 8 192-locus ceiling (document any remaining ceiling). Compare
-**only** methods that take methylation (β/M/z) as input:
+Impl brief: [`milestone-7g-methylation-eval.md`](milestone-7g-methylation-eval.md).
 
-- 7F neural fusion (saved scores)
+Re-run the 7F cascade on the **same** frozen ATS folds with budget
+**65 536 loci / 15 epochs / 3×1** (above 7E’s 2-epoch / 8 192-locus ceiling;
+remaining ceiling 482 379 loci / no 2nd restart — named in the report).
+Compare **only** methods that take methylation (β/M/z) as input:
+
+- 7F neural fusion (saved scores) — arm `N-cascade-l1`
 - M-value ridge / elastic-net (SGD if coordinate descent cannot finish)
-- Histogram GB or LightGBM
+- Histogram GB (LightGBM stand-in; no new dep)
 - optional train-fold PCA-SVA then linear
-- gene-only / region-mean transparent arms if kept, as named cells
+- gene-mean / **region-mean** (`T-mean-region`) / elastic-net transparent arms
 
 Emit sex AUROC and tissue one-vs-rest ROC from the **neural** scores. Age:
 MAE in years and R² (no ROC). Do not rank metadata-only. Report:
 `reports/inspection/stage0_7g_methylation_eval/`. Winner of 7G is the
-topology for Milestone 7.
+topology for Milestone 7. Launch via
+`scripts/train_7g_methylation_eval_background.sh` (nohup; skip-if-done folds).
 
 ### Milestone 7 — Final OOF
 

@@ -1,0 +1,34 @@
+# Milestone 7G: methylation-only full eval (cascade + classical + transparent).
+# Frozen hub-ats-7e-3fold-v1; budget above 7E (8192×2); remaining ceiling in report.
+split_id: hub-ats-7e-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+milestone: 7G
+report_dir: reports/inspection/stage0_7g_methylation_eval
+cv_budget:
+  max_loci: 65536
+  max_epochs: 15
+experiment:
+  name: stage0_7g_methylation_eval
+  seed: 42
+  stage: 0
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-age-tissue-sex-full-v1
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+model:
+  topology: rbs_gene_direct
+  tbs_arm: false
+  pooling: max
+  neutral_score: 0.5
+  cpg_hidden_dim: 64
+  region_hidden_dim: 32
+  dropout: 0.1
+  activation: gelu
+  layer_norm: true
+training:
+  max_epochs: 15
+  learning_rate: 0.001
+  batch_size: 1
+device:
+  torch_device: cuda

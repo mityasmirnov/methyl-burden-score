@@ -87,6 +87,36 @@ def nearest_gene_on_chromosome(
     return str(g.iloc[best]["gene_id"])
 
 
+def _gene_tables_by_chrom(genes: pd.DataFrame) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    """chromosome → (starts, ends, gene_ids) for fast nearest-gene."""
+    out: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]] = {}
+    if genes.empty or "chromosome" not in genes.columns:
+        return out
+    for chrom, g in genes.groupby(genes["chromosome"].astype(str), sort=False):
+        out[str(chrom)] = (
+            g["start"].to_numpy(dtype=np.int64, copy=False),
+            g["end"].to_numpy(dtype=np.int64, copy=False),
+            g["gene_id"].astype(str).to_numpy(copy=False),
+        )
+    return out
+
+
+def _nearest_from_chrom_table(
+    midpoint: int,
+    starts: np.ndarray,
+    ends: np.ndarray,
+    gene_ids: np.ndarray,
+) -> str | None:
+    if starts.size == 0:
+        return None
+    dist = np.where(
+        (midpoint >= starts) & (midpoint <= ends),
+        0,
+        np.minimum(np.abs(midpoint - starts), np.abs(midpoint - ends)),
+    )
+    return str(gene_ids[int(np.argmin(dist))])
+
+
 def allocate_rbs_genes(
     regions: pd.DataFrame,
     genes: pd.DataFrame,
@@ -96,6 +126,7 @@ def allocate_rbs_genes(
     Regions already carrying a non-null ``gene_id`` keep it. Null-gene typed
     RBS regions receive same-chromosome nearest gene; failure → None (orphan).
     """
+    chrom_tables = _gene_tables_by_chrom(genes)
     out: list[str | None] = []
     for rec in regions.itertuples(index=False):
         gid = getattr(rec, "gene_id", None)
@@ -108,10 +139,14 @@ def allocate_rbs_genes(
             out.append(str(gid))
             continue
         chrom = str(getattr(rec, "chromosome", ""))
+        table = chrom_tables.get(chrom)
+        if table is None:
+            out.append(None)
+            continue
         start = int(getattr(rec, "start", 0) or 0)
         end = int(getattr(rec, "end", start) or start)
         mid = (start + end) // 2
-        out.append(nearest_gene_on_chromosome(chrom, mid, genes))
+        out.append(_nearest_from_chrom_table(mid, table[0], table[1], table[2]))
     return pd.Series(out, index=regions.index, dtype=object)
 
 
@@ -159,8 +194,6 @@ def build_cascade_assignment(
     if selected.empty:
         raise ValueError("no gene/rbs regions for cascade assignment")
 
-    selected["allocated_gene_id"] = allocate_rbs_genes(selected, genes)
-
     type_vocab = region_type_vocab(TYPED_SYSTEMS)
     type_to_id = {name: i for i, name in enumerate(type_vocab)}
 
@@ -173,6 +206,41 @@ def build_cascade_assignment(
     else:
         n_study_loci = int(len(locus_index))
 
+    # Restrict edges + nearest-gene to regions that touch the study locus prefix.
+    # Graph edges may store locus_id as float; normalize so "10.0" == "10".
+    def _norm_ids(series: pd.Series) -> pd.Series:
+        return series.map(
+            lambda x: str(int(float(x))) if x is not None and not (isinstance(x, float) and np.isnan(x)) else ""
+        )
+
+    lr = locus_region_edges.loc[:, ["locus_id", "region_id"]].copy()
+    lr["region_id"] = lr["region_id"].astype(str)
+    lr["locus_id"] = _norm_ids(lr["locus_id"])
+    study["locus_id"] = _norm_ids(study["locus_id"])
+    study_locus_ids = set(study["locus_id"].tolist()) - {""}
+    lr = lr.loc[lr["locus_id"].isin(study_locus_ids)].copy()
+    touch_ids = set(lr["region_id"].tolist())
+    selected = selected.loc[selected["region_id"].astype(str).isin(touch_ids)].copy()
+    if selected.empty:
+        # No typed edges in prefix → all direct.
+        all_cols = study["col_index"].to_numpy(dtype=np.int64, copy=False)
+        direct_col_index = all_cols[(all_cols >= 0) & (all_cols < n_study_loci)].astype(np.int64)
+        return CascadeAssignment(
+            gene_ids=[],
+            region_ids=[],
+            region_type_id=np.zeros(0, dtype=np.int64),
+            region_to_gene=np.zeros(0, dtype=np.int64),
+            orphan_region_mask=np.zeros(0, dtype=bool),
+            edge_col_index=np.zeros(0, dtype=np.int64),
+            edge_region_index=np.zeros(0, dtype=np.int64),
+            direct_col_index=direct_col_index,
+            region_types=type_vocab,
+            n_study_loci=n_study_loci,
+            allocated_gene_id=[],
+        )
+
+    selected["allocated_gene_id"] = allocate_rbs_genes(selected, genes)
+
     region_view = selected.loc[
         :,
         [c for c in ("region_id", "region_type", "allocated_gene_id", "region_system") if c in selected.columns],
@@ -180,8 +248,6 @@ def build_cascade_assignment(
     region_view["region_id"] = region_view["region_id"].astype(str)
     region_view["region_type"] = region_view["region_type"].astype(str)
 
-    lr = locus_region_edges.loc[:, ["locus_id", "region_id"]].copy()
-    lr["region_id"] = lr["region_id"].astype(str)
     # Drop edges that point at TBS / unknown regions (left join miss).
     merged = study.merge(lr, on="locus_id", how="left")
     merged = merged.merge(region_view, on="region_id", how="left")

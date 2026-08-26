@@ -87,9 +87,85 @@ def predict_linear_multitask(
         out["age"] = np.asarray(models["age"].predict(x_arr), dtype=np.float64)
     if "tissue" in models:
         out["tissue"] = np.asarray(models["tissue"].predict(x_arr), dtype=np.int64)
+        if hasattr(models["tissue"], "predict_proba"):
+            out["tissue_proba"] = np.asarray(
+                models["tissue"].predict_proba(x_arr), dtype=np.float64
+            )
+            out["tissue_classes"] = np.asarray(models["tissue"].classes_, dtype=np.int64)
     if "sex" in models:
         out["sex"] = np.asarray(models["sex"].predict(x_arr), dtype=np.int64)
+        if hasattr(models["sex"], "predict_proba"):
+            out["sex_proba"] = np.asarray(models["sex"].predict_proba(x_arr), dtype=np.float64)
+            out["sex_classes"] = np.asarray(models["sex"].classes_, dtype=np.int64)
     return out
+
+
+def _positive_class_scores(
+    proba: np.ndarray,
+    classes: np.ndarray,
+    *,
+    positive: int = 1,
+) -> np.ndarray | None:
+    """Column of ``predict_proba`` for ``positive`` class, if present."""
+    classes_a = np.asarray(classes, dtype=np.int64)
+    proba_a = np.asarray(proba, dtype=np.float64)
+    matches = np.where(classes_a == int(positive))[0]
+    if matches.size == 0:
+        if proba_a.ndim == 2 and proba_a.shape[1] == 2:
+            return proba_a[:, 1]
+        return None
+    return proba_a[:, int(matches[0])]
+
+
+def tissue_one_vs_rest_auroc(
+    y_true: np.ndarray,
+    proba: np.ndarray,
+    classes: np.ndarray,
+    *,
+    top_n: int = 5,
+    class_names: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Top-N tissue one-vs-rest AUROC curves from multiclass probabilities."""
+    from sklearn.metrics import roc_auc_score, roc_curve  # noqa: PLC0415
+
+    yt = np.asarray(y_true, dtype=np.int64)
+    proba_a = np.asarray(proba, dtype=np.float64)
+    classes_a = np.asarray(classes, dtype=np.int64)
+    class_to_col = {int(c): i for i, c in enumerate(classes_a.tolist())}
+    counts: dict[int, int] = {}
+    for yi in yt.tolist():
+        counts[int(yi)] = counts.get(int(yi), 0) + 1
+    ranked = sorted(counts.items(), key=lambda kv: -kv[1])[: int(top_n)]
+    curves: list[dict[str, Any]] = []
+    for cls, _n in ranked:
+        if cls not in class_to_col:
+            continue
+        binary = (yt == cls).astype(np.int64)
+        if binary.min() == binary.max():
+            continue
+        scores = proba_a[:, class_to_col[cls]]
+        fpr, tpr, _ = roc_curve(binary, scores)
+        label = (
+            class_names[cls]
+            if class_names is not None and 0 <= cls < len(class_names)
+            else str(cls)
+        )
+        # Downsample for report JSON size.
+        if fpr.size > 80:
+            idx = np.linspace(0, fpr.size - 1, 80).astype(np.int64)
+            fpr_s, tpr_s = fpr[idx], tpr[idx]
+        else:
+            fpr_s, tpr_s = fpr, tpr
+        curves.append(
+            {
+                "label": label,
+                "class_index": int(cls),
+                "auroc": float(roc_auc_score(binary, scores)),
+                "fpr": fpr_s.tolist(),
+                "tpr": tpr_s.tolist(),
+            }
+        )
+    return curves
 
 
 def evaluate_multitask_predictions(
@@ -103,8 +179,11 @@ def evaluate_multitask_predictions(
     sex_mask: np.ndarray | None,
     study_ids: np.ndarray | None = None,
     platforms: np.ndarray | None = None,
+    tissue_class_names: list[str] | None = None,
 ) -> dict[str, Any]:
     """Holdout metrics for transparent / late-fusion linear heads."""
+    from mbs.evaluation.metrics import binary_auroc_auprc  # noqa: PLC0415
+
     metrics: dict[str, Any] = {}
     if "age" in preds and age is not None and age_mask is not None:
         m = np.asarray(age_mask, dtype=bool)
@@ -128,6 +207,23 @@ def evaluate_multitask_predictions(
                 for k, v in multiclass_metrics(yt, yp).items()
                 if k in {"macro_f1", "balanced_accuracy", "accuracy"}
             }
+            if (
+                "tissue_proba" in preds
+                and "tissue_classes" in preds
+                and preds["tissue_proba"].shape[0] == len(preds["tissue"])
+            ):
+                proba_m = preds["tissue_proba"][m]
+                curves = tissue_one_vs_rest_auroc(
+                    yt,
+                    proba_m,
+                    preds["tissue_classes"],
+                    class_names=tissue_class_names,
+                )
+                if curves:
+                    metrics["tissue_roc"] = curves
+                    metrics["tissue"]["macro_ovr_auroc"] = float(
+                        np.mean([c["auroc"] for c in curves])
+                    )
             if study_ids is not None:
                 metrics["tissue_by_study"] = metrics_by_group(
                     yt, yp, np.asarray(study_ids)[m], task="multiclass"
@@ -141,11 +237,34 @@ def evaluate_multitask_predictions(
         if m.any():
             yt = np.asarray(sex, dtype=np.int64)[m]
             yp = preds["sex"][m]
-            metrics["sex"] = {
+            sex_metrics: dict[str, Any] = {
                 k: v
                 for k, v in multiclass_metrics(yt, yp).items()
                 if k in {"macro_f1", "balanced_accuracy", "accuracy"}
             }
+            if (
+                "sex_proba" in preds
+                and "sex_classes" in preds
+                and preds["sex_proba"].shape[0] == len(preds["sex"])
+            ):
+                scores = _positive_class_scores(
+                    preds["sex_proba"][m], preds["sex_classes"], positive=1
+                )
+                if scores is not None and len(np.unique(yt)) >= 2:
+                    try:
+                        from sklearn.metrics import roc_curve  # noqa: PLC0415
+
+                        roc = binary_auroc_auprc(yt, scores)
+                        sex_metrics.update(roc)
+                        fpr, tpr, _ = roc_curve(yt, scores)
+                        if fpr.size > 80:
+                            idx = np.linspace(0, fpr.size - 1, 80).astype(np.int64)
+                            fpr, tpr = fpr[idx], tpr[idx]
+                        sex_metrics["fpr"] = fpr.tolist()
+                        sex_metrics["tpr"] = tpr.tolist()
+                    except ValueError:
+                        pass
+            metrics["sex"] = sex_metrics
     return metrics
 
 
@@ -195,6 +314,7 @@ def run_mean_baseline(
     study_ids_test: np.ndarray | None = None,
     platforms_test: np.ndarray | None = None,
     kind: MeanKind = "gene",
+    tissue_class_names: list[str] | None = None,
 ) -> dict[str, Any]:
     """Fit + evaluate a presence-aware mean feature baseline."""
     models = fit_linear_multitask(
@@ -217,6 +337,7 @@ def run_mean_baseline(
         sex_mask=sex_mask_test,
         study_ids=study_ids_test,
         platforms=platforms_test,
+        tissue_class_names=tissue_class_names,
     )
     return {"kind": kind, "metrics": metrics, "n_features": int(x_train.shape[1])}
 

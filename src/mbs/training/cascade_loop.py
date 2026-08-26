@@ -291,7 +291,6 @@ def _fit_direct_columns(
         return np.zeros((n_all, 0), dtype=np.float32), []
     return np.concatenate(cols, axis=1), names
 
-
 def train_cascade_on_arrays(
     *,
     assignment: CascadeAssignment,
@@ -309,13 +308,37 @@ def train_cascade_on_arrays(
     seed: int = 42,
     device_str: str = "cpu",
     lr: float = 1e-2,
+    age_mask: np.ndarray | None = None,
+    tissue_mask: np.ndarray | None = None,
+    sex_mask: np.ndarray | None = None,
+    cpg_hidden_dim: int = 64,
+    region_hidden_dim: int = 32,
+    dropout: float = 0.1,
+    skip_if_done: bool = False,
 ) -> dict[str, Any]:
     """Train CascadeDeepSet + MBS heads; write scores; late-fuse; return metrics."""
+    score_dir = out_dir / "scores"
+    manifest_path = score_dir / "score_manifest.json"
+    metrics_path = out_dir / "metrics.json"
+    if skip_if_done and manifest_path.is_file() and metrics_path.is_file():
+        cached = json.loads(metrics_path.read_text(encoding="utf-8"))
+        cached["skipped"] = True
+        cached["score_dir"] = str(score_dir)
+        return cached
+
     _set_seed(seed)
     device = resolve_device(device_str, require_cuda=False)
     n_region_types = max(len(assignment.region_types), 1)
     n_genes = max(assignment.n_genes, 1)
-    model = CascadeDeepSet(1, n_region_types, cpg_hidden_dim=16, region_hidden_dim=8, dropout=0.0)
+    model = CascadeDeepSet(
+        1,
+        n_region_types,
+        cpg_hidden_dim=int(cpg_hidden_dim),
+        region_hidden_dim=int(region_hidden_dim),
+        dropout=float(dropout),
+        activation="gelu",
+        layer_norm=True,
+    )
     heads = MultitaskHeads(n_genes, max(len(class_names), 2), sex_enabled=True)
     model.to(device)
     heads.to(device)
@@ -323,6 +346,18 @@ def train_cascade_on_arrays(
 
     train_idx = np.asarray(train_idx, dtype=np.int64)
     test_idx = np.asarray(test_idx, dtype=np.int64)
+    n = len(sample_ids)
+    age_mask_a = (
+        np.ones(n, dtype=bool) if age_mask is None else np.asarray(age_mask, dtype=bool)
+    )
+    tissue_mask_a = (
+        np.ones(n, dtype=bool)
+        if tissue_mask is None
+        else np.asarray(tissue_mask, dtype=bool)
+    )
+    sex_mask_a = (
+        np.ones(n, dtype=bool) if sex_mask is None else np.asarray(sex_mask, dtype=bool)
+    )
 
     for _epoch in range(max_epochs):
         model.train()
@@ -330,26 +365,50 @@ def train_cascade_on_arrays(
         order = train_idx.copy()
         np.random.shuffle(order)
         for i in order.tolist():
+            if not (bool(age_mask_a[i]) or bool(tissue_mask_a[i]) or bool(sex_mask_a[i])):
+                continue
             out = _forward_sample(model, assignment, betas[i], device=device)
             mbs = out["mbs"].unsqueeze(0)
             present = out["present"].unsqueeze(0)
             if assignment.n_genes == 0:
                 mbs = torch.full((1, 1), 0.5, device=device)
                 present = torch.zeros(1, 1, dtype=torch.bool, device=device)
-            age_t = torch.tensor([float(ages[i])], device=device)
-            tissue_t = torch.tensor([int(tissue[i])], device=device, dtype=torch.long)
-            sex_t = torch.tensor([int(sex[i])], device=device, dtype=torch.long)
-            age_pred = heads.forward_age(mbs, present)
-            tissue_pred = heads.forward_tissue(mbs, present)
-            sex_pred = heads.forward_sex(mbs, present)
-            loss = F.huber_loss(age_pred, age_t) + F.cross_entropy(
-                tissue_pred, tissue_t
-            )
-            if sex_pred is not None:
-                loss = loss + F.cross_entropy(sex_pred, sex_t)
+            loss = torch.zeros((), device=device)
+            if bool(age_mask_a[i]):
+                age_t = torch.tensor([float(ages[i])], device=device)
+                age_pred = heads.forward_age(mbs, present)
+                loss = loss + F.huber_loss(age_pred, age_t)
+            if bool(tissue_mask_a[i]):
+                tissue_t = torch.tensor([int(tissue[i])], device=device, dtype=torch.long)
+                tissue_pred = heads.forward_tissue(mbs, present)
+                loss = loss + F.cross_entropy(tissue_pred, tissue_t)
+            if bool(sex_mask_a[i]):
+                sex_t = torch.tensor([int(sex[i])], device=device, dtype=torch.long)
+                sex_pred = heads.forward_sex(mbs, present)
+                if sex_pred is not None:
+                    loss = loss + F.cross_entropy(sex_pred, sex_t)
             opt.zero_grad(set_to_none=True)
             loss.backward()
             opt.step()
+        if (_epoch + 1) % max(1, max_epochs // 5) == 0 or _epoch == 0:
+            print(
+                f"[cascade] {out_dir.name} epoch {_epoch + 1}/{max_epochs}",
+                flush=True,
+            )
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ckpt_path = out_dir / "best.pt"
+    torch.save(
+        {
+            "model": model.state_dict(),
+            "heads": heads.state_dict(),
+            "seed": seed,
+            "max_epochs": max_epochs,
+            "cpg_hidden_dim": cpg_hidden_dim,
+            "region_hidden_dim": region_hidden_dim,
+        },
+        ckpt_path,
+    )
 
     mbs_all, present_all, orphan_all = score_samples(model, assignment, betas, device=device)
     direct_all, direct_names = _fit_direct_columns(
@@ -357,18 +416,17 @@ def train_cascade_on_arrays(
         betas_all=betas,
         direct_cols=assignment.direct_col_index,
         ages_train=ages[train_idx],
-        age_mask_train=np.ones(len(train_idx), dtype=bool),
+        age_mask_train=age_mask_a[train_idx],
         tissue_train=tissue[train_idx],
-        tissue_mask_train=np.ones(len(train_idx), dtype=bool),
+        tissue_mask_train=tissue_mask_a[train_idx],
         sex_train=sex[train_idx],
-        sex_mask_train=np.ones(len(train_idx), dtype=bool),
+        sex_mask_train=sex_mask_a[train_idx],
         study_ids_train=study_ids[train_idx],
         use_level1=True,
     )
 
     gene_ids = list(assignment.gene_ids) if assignment.gene_ids else ["__none__"]
     orphan_ids = list(assignment.orphan_region_ids)
-    score_dir = out_dir / "scores"
     write_cascade_score_dir(
         score_dir,
         sample_ids=sample_ids,
@@ -379,7 +437,7 @@ def train_cascade_on_arrays(
         orphan_rbs=orphan_all,
         direct_contrib=direct_all,
         direct_task_names=direct_names,
-        fold_id="fixture",
+        fold_id=str(out_dir.name),
         restart_id=str(seed),
     )
 
@@ -393,18 +451,19 @@ def train_cascade_on_arrays(
         scores_train=x_tr,
         scores_test=x_te,
         age_train=ages[train_idx],
-        age_mask_train=np.ones(len(train_idx), dtype=bool),
+        age_mask_train=age_mask_a[train_idx],
         tissue_train=tissue[train_idx],
-        tissue_mask_train=np.ones(len(train_idx), dtype=bool),
+        tissue_mask_train=tissue_mask_a[train_idx],
         sex_train=sex[train_idx],
-        sex_mask_train=np.ones(len(train_idx), dtype=bool),
+        sex_mask_train=sex_mask_a[train_idx],
         age_test=ages[test_idx],
-        age_mask_test=np.ones(len(test_idx), dtype=bool),
+        age_mask_test=age_mask_a[test_idx],
         tissue_test=tissue[test_idx],
-        tissue_mask_test=np.ones(len(test_idx), dtype=bool),
+        tissue_mask_test=tissue_mask_a[test_idx],
         sex_test=sex[test_idx],
-        sex_mask_test=np.ones(len(test_idx), dtype=bool),
+        sex_mask_test=sex_mask_a[test_idx],
         study_ids_test=study_ids[test_idx],
+        tissue_class_names=list(class_names) if class_names else None,
     )
     fused["n_orphan_rbs"] = int(assignment.n_orphan_rbs)
     fused["n_direct"] = int(assignment.n_direct)
@@ -412,6 +471,9 @@ def train_cascade_on_arrays(
     fused["tbs_arm"] = False
     fused["score_dir"] = str(score_dir)
     fused["fusion_n_features"] = int(x.shape[1])
+    fused["skipped"] = False
+    fused["checkpoint"] = str(ckpt_path)
+    write_json(metrics_path, fused)
     return fused
 
 
@@ -455,6 +517,9 @@ def run_cascade_fixture(
         max_epochs=max_epochs,
         seed=seed,
         device_str=device_str,
+        cpg_hidden_dim=16,
+        region_hidden_dim=8,
+        dropout=0.0,
     )
     report_dir = project_root / "reports" / "inspection" / "stage0_7f_rbs_gene_direct"
     report_dir.mkdir(parents=True, exist_ok=True)
@@ -479,24 +544,23 @@ def run_cascade_fixture(
     write_json(report_dir / "summary.json", summary)
     analysis = f"""# Stage 0 Milestone 7F — RBS→gene + direct leftover
 
-Status: fixture topology smoke (saved neural/enet score matrices + late fusion).
+Status: **done** for topology acceptance (assignment + trainer + saved-score
+fusion + inspection). Full-budget methylation-only bake-off is **7G**.
 
-## Topology
+## Topology (ADR 0009)
 
-- Typed regions (`gene` + `rbs`) → RBS scores via `CascadeDeepSet`
-- Gene-allocated RBS (typed `gene_id` and/or nearest-gene) → MBS
-- Orphan RBS kept as genome-wide block
-- Leftover CpGs (including former TBS-only loci) → Level-1 + elastic-net **direct**
-- **No TBS arm** in the fusion matrix ([ADR 0009](../../../docs/adr/0009-drop-tbs-scores.md))
+```text
+CpG → typed region (gene roles | RBS) → RBS score
+        ├─ allocated to gene (typed and/or nearest-gene) → MBS
+        └─ no gene allocation → orphan RBS
+CpG with no typed region (incl. former TBS-only) → direct
+late fusion: [orphan RBS | MBS | direct] → linear heads
+```
 
-## Assignment (fixture)
+- **No TBS arm** in the model matrix or score export.
+- Nearest-gene applies only to typed **RBS** allocation, never leftover CpGs.
 
-| Quantity | Value |
-|----------|------:|
-| Genes (MBS) | {assignment.n_genes} |
-| Typed regions | {assignment.n_regions} |
-| Orphan RBS | {assignment.n_orphan_rbs} |
-| Direct loci | {assignment.n_direct} |
+## Assignment
 
 Nearest-gene RBS allocation: `{assignment.allocated_gene_id}`
 Direct columns (not nearest-gene as CpGs): `{assignment.direct_col_index.tolist()}`
@@ -518,7 +582,9 @@ Hub re-run on frozen `hub-ats-7e-3fold-v1` uses the same cascade path
 (`mbs train cascade` without `--overfit-fixture`).
 """
     (report_dir / "analysis.md").write_text(analysis, encoding="utf-8")
-    return CascadeTrainResult(metrics=summary, score_dir=Path(str(metrics["score_dir"])), report_dir=report_dir)
+    return CascadeTrainResult(
+        metrics=summary, score_dir=Path(str(metrics["score_dir"])), report_dir=report_dir
+    )
 
 
 def run_cascade_hub(
@@ -531,8 +597,10 @@ def run_cascade_hub(
     device_str: str = "cpu",
     max_folds: int | None = None,
     max_train_samples: int | None = None,
+    report_dir: Path | None = None,
+    skip_if_done: bool = True,
 ) -> CascadeTrainResult:
-    """Train cascade on frozen 7E folds; write scores + report (7E budget)."""
+    """Train cascade on frozen 7E folds; write scores + report."""
     pilot = config.get("pilot", {})
     matrix_id = str(pilot.get("matrix_id", "matrix-hub-age-tissue-sex-full-v1"))
     graph_id = str(pilot.get("graph_id", "graph-grch38-gencode38-cgi-tile-v2"))
@@ -541,6 +609,24 @@ def run_cascade_hub(
     max_loci = int(cv_budget.get("max_loci", config.get("training", {}).get("max_loci", 8192)))
     max_epochs = int(cv_budget.get("max_epochs", config.get("training", {}).get("max_epochs", 2)))
     seed = int(config.get("experiment", {}).get("seed", 42))
+    model_cfg = config.get("model", {})
+    cpg_hidden = int(model_cfg.get("cpg_hidden_dim", 64))
+    region_hidden = int(model_cfg.get("region_hidden_dim", 32))
+    dropout = float(model_cfg.get("dropout", 0.1))
+    milestone = str(config.get("milestone", config.get("experiment", {}).get("name", "7F")))
+    if "7g" in milestone.lower() or "7g" in run_id.lower():
+        milestone_tag = "7G"
+        default_report = project_root / "reports" / "inspection" / "stage0_7g_methylation_eval"
+    else:
+        milestone_tag = "7F"
+        default_report = project_root / "reports" / "inspection" / "stage0_7f_rbs_gene_direct"
+    report_rel = config.get("report_dir")
+    if report_dir is None and report_rel:
+        report_dir = Path(str(report_rel))
+        if not report_dir.is_absolute():
+            report_dir = project_root / report_dir
+    if report_dir is None:
+        report_dir = default_report
 
     folds_path = artifact_root / "splits" / split_id / "folds.json"
     if not folds_path.is_file():
@@ -550,18 +636,25 @@ def run_cascade_hub(
     if max_folds is not None:
         folds = folds[: int(max_folds)]
 
+    print(f"[cascade] loading matrix/graph max_loci={max_loci}", flush=True)
     matrix_paths = matrix_store_paths(data_root / "canonical" / "matrices" / matrix_id)
     sample_index = read_sample_index(matrix_paths.sample_index_path)
     locus_index = read_locus_index(matrix_paths.locus_index_path)
     lr_edges, regions = load_graph_tables(data_root / "canonical" / "graphs" / graph_id)
     genes_path = data_root / "canonical" / "graphs" / graph_id / "genes.parquet"
     genes = pd.read_parquet(genes_path) if genes_path.is_file() else pd.DataFrame()
+    print(f"[cascade] building assignment (regions={len(regions)})", flush=True)
     assignment = build_cascade_assignment(
         locus_index=locus_index,
         locus_region_edges=lr_edges,
         regions=regions,
         genes=genes,
         max_loci=max_loci,
+    )
+    print(
+        f"[cascade] assignment genes={assignment.n_genes} regions={assignment.n_regions} "
+        f"orphan_rbs={assignment.n_orphan_rbs} direct={assignment.n_direct}",
+        flush=True,
     )
     betas_z = open_betas_zarr(matrix_paths.betas_path)
     row_by_id = {
@@ -588,27 +681,27 @@ def run_cascade_hub(
     run_root = run_dir(artifact_root, run_id)
     run_root.mkdir(parents=True, exist_ok=True)
     fold_summaries: list[dict[str, Any]] = []
-
     n_cols = assignment.n_study_loci
 
+    # Dense prefix load once (~3.5 GB float32 for 13.5k × 65k).
+    print(f"[cascade] loading betas[:, :{n_cols}] into RAM…", flush=True)
+    betas_all = np.asarray(betas_z[:, :n_cols], dtype=np.float32)
+    print(f"[cascade] betas shape={betas_all.shape} dtype={betas_all.dtype}", flush=True)
+
     def _load_betas(ids: list[str]) -> tuple[np.ndarray, list[str]]:
-        rows = []
-        kept = []
-        for sid in ids:
-            if sid not in row_by_id:
-                continue
-            row = np.asarray(betas_z[row_by_id[sid], :n_cols], dtype=np.float64)
-            rows.append(row)
-            kept.append(sid)
-        if not rows:
+        kept = [sid for sid in ids if sid in row_by_id]
+        if not kept:
             raise ValueError("no samples with matrix rows")
-        return np.stack(rows, axis=0), kept
+        rows = np.asarray([row_by_id[sid] for sid in kept], dtype=np.int64)
+        return betas_all[rows], kept
 
     for fold_i, fold in enumerate(folds):
         train_ids = [s for s in fold["train_sample_ids"] if s in row_by_id and s in ph_by_id]
         test_ids = [
             s
-            for s in (fold.get("external_test_sample_ids") or fold.get("validation_sample_ids") or [])
+            for s in (
+                fold.get("external_test_sample_ids") or fold.get("validation_sample_ids") or []
+            )
             if s in row_by_id and s in ph_by_id
         ]
         if max_train_samples is not None and len(train_ids) > int(max_train_samples):
@@ -618,6 +711,11 @@ def run_cascade_hub(
         if max_train_samples is not None and len(test_ids) > max(16, int(max_train_samples) // 4):
             n_te = max(16, int(max_train_samples) // 4)
             test_ids = test_ids[:n_te]
+        print(
+            f"[cascade] fold {fold_i} loading train={len(train_ids)} test={len(test_ids)} "
+            f"loci={n_cols} epochs={max_epochs}",
+            flush=True,
+        )
         betas_tr, train_ids = _load_betas(train_ids)
         betas_te, test_ids = _load_betas(test_ids)
         betas = np.concatenate([betas_tr, betas_te], axis=0)
@@ -625,34 +723,38 @@ def run_cascade_hub(
         train_idx = np.arange(len(train_ids), dtype=np.int64)
         test_idx = np.arange(len(train_ids), len(sample_ids), dtype=np.int64)
 
-        def _arr(ids: list[str], attr: str, default: float = 0.0) -> np.ndarray:
-            out = []
-            for sid in ids:
-                p = ph_by_id[sid]
-                val = getattr(p, attr, None)
-                out.append(default if val is None else float(val))
-            return np.asarray(out, dtype=np.float64)
-
-        ages = _arr(sample_ids, "age", 0.0)
-        # tissue / sex as class indices when masked
-        tissue = np.asarray(
-            [int(ph_by_id[s].class_index) if ph_by_id[s].tissue_mask else 0 for s in sample_ids],
-            dtype=np.int64,
+        ages = np.asarray(
+            [float(ph_by_id[s].age or 0.0) for s in sample_ids], dtype=np.float64
         )
-        sex = np.asarray(
+        tissue = np.asarray(
             [
-                int(ph_by_id[s].sex_class_index)
-                if ph_by_id[s].sex_mask
-                else 0
+                int(ph_by_id[s].class_index) if ph_by_id[s].tissue_mask else 0
                 for s in sample_ids
             ],
             dtype=np.int64,
         )
+        sex = np.asarray(
+            [
+                int(ph_by_id[s].sex_class_index or 0) if ph_by_id[s].sex_mask else 0
+                for s in sample_ids
+            ],
+            dtype=np.int64,
+        )
+        age_mask = np.asarray([bool(ph_by_id[s].age_mask) for s in sample_ids], dtype=bool)
+        tissue_mask = np.asarray(
+            [bool(ph_by_id[s].tissue_mask) for s in sample_ids], dtype=bool
+        )
+        sex_mask = np.asarray([bool(ph_by_id[s].sex_mask) for s in sample_ids], dtype=bool)
         studies = np.asarray(
             [str(ph_by_id[s].study_id or "NA") for s in sample_ids],
             dtype=object,
         )
         fold_out = run_root / f"fold_{fold_i}"
+        print(
+            f"[cascade] fold {fold_i} train={len(train_ids)} test={len(test_ids)} "
+            f"loci={n_cols} epochs={max_epochs}",
+            flush=True,
+        )
         metrics = train_cascade_on_arrays(
             assignment=assignment,
             betas=betas,
@@ -668,21 +770,44 @@ def run_cascade_hub(
             max_epochs=max_epochs,
             seed=seed + fold_i,
             device_str=device_str,
+            age_mask=age_mask,
+            tissue_mask=tissue_mask,
+            sex_mask=sex_mask,
+            cpg_hidden_dim=cpg_hidden,
+            region_hidden_dim=region_hidden,
+            dropout=dropout,
+            skip_if_done=skip_if_done,
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
         fold_summaries.append(metrics)
 
-    report_dir = project_root / "reports" / "inspection" / "stage0_7f_rbs_gene_direct"
     report_dir.mkdir(parents=True, exist_ok=True)
     summary = {
-        "milestone": "7F",
+        "milestone": milestone_tag,
         "topology": "rbs_gene_direct",
+        "arm": "N-cascade-l1",
         "tbs_arm": False,
         "split_id": split_id,
         "matrix_id": matrix_id,
         "graph_id": graph_id,
         "max_loci": max_loci,
         "max_epochs": max_epochs,
+        "n_restarts": 1,
+        "remaining_ceiling": {
+            "n_loci_in_matrix": int(locus_index.shape[0]),
+            "n_loci_used": max_loci,
+            "note": (
+                "Prefix of matrix columns (not a claim that later CpGs are useless). "
+                "Full-matrix train and a 2nd restart are deferred."
+            ),
+        },
+        "encoder": {
+            "cpg_hidden_dim": cpg_hidden,
+            "region_hidden_dim": region_hidden,
+            "dropout": dropout,
+            "activation": "gelu",
+            "layer_norm": True,
+        },
         "assignment": {
             "n_genes": assignment.n_genes,
             "n_regions": assignment.n_regions,
@@ -694,8 +819,9 @@ def run_cascade_hub(
     }
     write_json(report_dir / "summary.json", summary)
     (report_dir / "analysis.md").write_text(
-        "# Stage 0 Milestone 7F — Hub cascade\n\n"
-        f"Split `{split_id}`; max_loci={max_loci}; max_epochs={max_epochs}. "
+        f"# Stage 0 Milestone {milestone_tag} — Hub cascade\n\n"
+        f"Split `{split_id}`; max_loci={max_loci}; max_epochs={max_epochs}; "
+        f"encoder {cpg_hidden}/{region_hidden}. "
         "No TBS arm. See `summary.json`.\n",
         encoding="utf-8",
     )
@@ -715,6 +841,8 @@ def train_cascade(
     overfit_fixture: bool = False,
     max_folds: int | None = None,
     max_train_samples: int | None = None,
+    report_dir: Path | None = None,
+    skip_if_done: bool = True,
 ) -> CascadeTrainResult:
     """CLI entry: fixture or Hub cascade on frozen 7E folds."""
     if overfit_fixture:
@@ -737,4 +865,6 @@ def train_cascade(
         device_str=device_str,
         max_folds=max_folds,
         max_train_samples=max_train_samples,
+        report_dir=report_dir,
+        skip_if_done=skip_if_done,
     )

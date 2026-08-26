@@ -71,6 +71,7 @@ def evaluate_late_fusion(
     sex_mask_test: np.ndarray | None,
     study_ids_test: np.ndarray | None = None,
     platforms_test: np.ndarray | None = None,
+    tissue_class_names: list[str] | None = None,
 ) -> dict[str, Any]:
     """Fit on train scores, evaluate on held-out scores."""
     models = fit_late_fusion_heads(
@@ -93,6 +94,7 @@ def evaluate_late_fusion(
         sex_mask=sex_mask_test,
         study_ids=study_ids_test,
         platforms=platforms_test,
+        tissue_class_names=tissue_class_names,
     )
     return {
         "metrics": metrics,

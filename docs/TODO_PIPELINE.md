@@ -737,7 +737,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 7G. Methylation-only full evaluation (close 7E gaps)
 
-- **Status:** `pending` (**current gate**)
+- **Status:** `in_progress` (**current gate**)
+- **Impl plan:** [`plans/milestone-7g-methylation-eval.md`](plans/milestone-7g-methylation-eval.md).
 - **Why:** The 90-cell 7E bake-off **finished**. Gaps were evaluation quality,
   not a crashed trainer: 2 epochs and 8 192 / 482 379 loci; late fusion was
   not neural MBS; T-mean-region was not a named cell; HGB stood in for

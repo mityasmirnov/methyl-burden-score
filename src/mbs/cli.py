@@ -1470,7 +1470,7 @@ def train_branch_cmd(  # noqa: PLR0917
 def train_cascade_cmd(  # noqa: PLR0917
     config: Annotated[
         Path,
-        typer.Option(help="Experiment YAML (default: stage0_7f_rbs_gene_direct.yaml)"),
+        typer.Option(help="Experiment YAML (7F smoke or 7G eval)"),
     ] = Path("configs/experiment/stage0_7f_rbs_gene_direct.yaml"),
     run_id: Annotated[str, typer.Option(help="Artifact run id")] = "stage0-7f-cascade-v1",
     device: Annotated[str, typer.Option(help="Torch device")] = "cpu",
@@ -1494,8 +1494,19 @@ def train_cascade_cmd(  # noqa: PLR0917
         int | None,
         typer.Option(help="Subsample train rows per fold (Hub smoke)"),
     ] = None,
+    report_dir: Annotated[
+        Path | None,
+        typer.Option(help="Inspection report directory (default from YAML / milestone)"),
+    ] = None,
+    skip_if_done: Annotated[
+        bool,
+        typer.Option(
+            "--skip-if-done/--force-retrain",
+            help="Skip folds that already have scores/score_manifest.json",
+        ),
+    ] = True,
 ) -> None:
-    """Milestone 7F RBS→gene cascade + leftover direct (no TBS scores)."""
+    """RBS→gene cascade + leftover direct (no TBS). 7F smoke or 7G Hub eval."""
     from mbs.training.cascade_loop import train_cascade
     from mbs.training.loop import load_experiment_config
 
@@ -1514,6 +1525,10 @@ def train_cascade_cmd(  # noqa: PLR0917
         if max_epochs is not None:
             budget["max_epochs"] = int(max_epochs)
         cfg["cv_budget"] = budget
+    resolved_report: Path | None = None
+    if report_dir is not None:
+        resolved_report = report_dir if report_dir.is_absolute() else paths.project_root / report_dir
+        resolved_report = _require_under_data(resolved_report.resolve(), "report_dir")
     result = train_cascade(
         project_root=paths.project_root,
         data_root=paths.data_root,
@@ -1525,6 +1540,8 @@ def train_cascade_cmd(  # noqa: PLR0917
         overfit_fixture=overfit_fixture,
         max_folds=max_folds,
         max_train_samples=max_train_samples,
+        report_dir=resolved_report,
+        skip_if_done=skip_if_done,
     )
     console.print_json(json.dumps(result.metrics, default=str))
     console.print(f"[green]report[/green] {result.report_dir}")
