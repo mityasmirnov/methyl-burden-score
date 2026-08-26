@@ -130,3 +130,69 @@ uv run pytest tests/unit
 5. Notebooks and exploratory reports.
 
 When these disagree, stop and report the inconsistency rather than guessing.
+
+## Cursor Cloud specific instructions
+
+This project is a pure Python CLI / library / batch pipeline (`mbs` command); there
+is no web app or long-running service. TensorBoard is the only server, started
+on demand during real training. The Cursor Cloud VM has **no GPU**, so
+`torch.cuda.is_available()` is `False` and everything runs on CPU (fixtures fall
+back automatically; pass `--device cpu` for real configs).
+
+### /data policy on the Cloud VM (required before running anything)
+
+`src/mbs/paths.py` requires `MBS_ROOT` and all data/cache/scratch/artifact roots
+to resolve under `/data`, but the git working tree lives at `/workspace`. Setup
+bind-mounts the working tree at `/data/projects/methyl-burden-score` (a bind
+mount, not a symlink, so `Path.resolve()` stays under `/data`; the path-policy
+checks and `tests/unit/test_cli.py` scratch fixtures depend on this). The bind
+mount is runtime state and is re-established by the startup update script; if it
+is ever missing, recreate it (idempotent, needs sudo):
+
+```bash
+bash scripts/cloud_data_setup.sh
+```
+
+Before running the CLI or tests, always activate from the /data project root:
+
+```bash
+cd /data/projects/methyl-burden-score
+source scripts/activate_data_environment.sh   # exports MBS_* under /data + PYTHONPATH=$MBS_ROOT/src
+```
+
+Running `mbs`/`pytest` from `/workspace` without the bind mount + activate makes
+path-policy checks and ~20 path/CLI tests fail with `Path policy failure` — that
+is a missing-activation symptom, not a code regression.
+
+### Dependencies
+
+`uv` lives at `~/.local/bin` (on `PATH` via `~/.bashrc`). The startup update
+script runs `uv sync --all-groups --extra training --extra analysis --frozen`.
+Notes:
+- Always use `--frozen`. The optional `cpgpt` extra maps to the empty vendored
+  submodule `vendor/cpgpt` (`[tool.uv.sources]`), which breaks a non-frozen
+  resolve. Keep `--frozen` and do **not** pass `--extra cpgpt` unless the
+  submodule is populated (`git submodule update --init vendor/cpgpt`).
+- The `training` extra (lightning/scikit-learn/tensorboard/torchmetrics/tqdm) is
+  required even for `mbs train flat --overfit-fixture` (`loop.py` imports
+  scikit-learn and `torch.utils.tensorboard`).
+- After a dependency change, re-run `uv sync ... --frozen`; when the running
+  `mbs` process is a training loop it does not hot-reload, restart it.
+
+### Checks that are enforced vs. pre-existing noise
+
+CI (`.github/workflows/ci.yml`) hard-fails only on `uv run ruff check --select
+E4,E7,E9,F .`, `uv run pytest tests/unit`, and `uv run pytest tests/integration
+-m "not slow"`; those pass cleanly here. The full `uv run ruff check .`, `uv run
+ruff format --check .`, and `uv run pyright` (strict) report pre-existing
+findings on `main` (newer ruff/pyright than the tree was written against) and CI
+marks format + pyright `continue-on-error`. Do not treat those pre-existing
+findings as regressions from your change.
+
+### Real end-to-end pipeline (beyond fixtures)
+
+`graph build`, `matrix convert*`, `features export-cpgpt`, and real training need
+external downloads (`make download-*`) and populated vendored submodules
+(`scripts/add_reference_submodules.sh` / `git submodule update --init`), none of
+which ship in the repo. The synthetic `--overfit-fixture` paths and
+`tests/fixtures/` exercise the model code without any real data.
