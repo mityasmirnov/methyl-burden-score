@@ -45,7 +45,9 @@ Keep Cursor session todos in sync (complete / cancel / start next).
 7D. Fold-fitted Level-1 normalization (**done**)
 7E. Development CV (architecture selection) (**done**)
 7E′. Hub multitask (age/tissue/sex/disease/cancer, masked) + analysis hygiene (**done**)
-7. Final study-grouped OOF cross-fitting (blocked until 7E)
+7F. RBS→gene cascade + direct leftover, no TBS scores (**current gate**)
+7G. Methylation-only full evaluation (close 7E gaps)
+7. Final study-grouped OOF cross-fitting (blocked until 7F and 7G)
 8. Optional layers only after 1–7
 
 Ordering after Milestone 6 is locked by
@@ -53,12 +55,14 @@ Ordering after Milestone 6 is locked by
 and [`docs/adr/0008-score-identifiability.md`](docs/adr/0008-score-identifiability.md).
 Programme brief:
 [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md).
-Do not retrain v0.1. 7A–7D and **7E′** are done. Do not start Milestone **7** before 7E.
-7E may include RBS/TBS arms on graph-v2.
+Do not retrain v0.1. 7A–7E and **7E′** are done. Do not start Milestone **7**
+before **7F and 7G**. 7E used graph-v2 RBS/TBS arms; **7F drops TBS scores**
+(leftover CpGs go direct). Architecture ranking uses methylation-input
+methods only (not metadata-only).
 
 Before starting **5c**, read `docs/EWAS_METADATA.md` and
 `reports/inspection/ewas_metadata_structure/summary.md`.
-Before starting **7E**, read ADRs 0005–0008, the 7A release under
-`$MBS_DATA_ROOT/canonical/releases/deepmat-data-v1/`,
-[`docs/plans/milestone-7e-development-cv.md`](docs/plans/milestone-7e-development-cv.md),
-and [`docs/plans/milestone-7e-prime-analysis-hygiene.md`](docs/plans/milestone-7e-prime-analysis-hygiene.md).
+Before starting **7F**, read ADRs 0005–0008, the 7E report
+`reports/inspection/stage0_7e_dev_cv/analysis.md`,
+[`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md)
+(§7F / §7G), and [`docs/plans/milestone-7e-prime-analysis-hygiene.md`](docs/plans/milestone-7e-prime-analysis-hygiene.md).

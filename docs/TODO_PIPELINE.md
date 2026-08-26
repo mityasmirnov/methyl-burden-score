@@ -12,21 +12,24 @@ True next milestone after bootstrap:
 > … → max-N flat age/tissue/sex (5d — **done**) → hierarchical residual
 > baseline (6 — **done**) → harmonized release + phenotype census (7A — **done**) →
 > nine-pack matrices (7B — **done**) → architecture corrections (7C —
-> **done**, fixture + Hub DeepRVAT A/B) → **development CV (7E — current gate)** →
-> Hub multitask + hygiene (**7E′**) → **final OOF cross-fitting (7)** → one
-> score matrix.
+> **done**, fixture + Hub DeepRVAT A/B) → development CV (7E — **done**) →
+> Hub multitask + hygiene (**7E′** — **done**) → **RBS→gene + direct topology
+> (7F — current gate)** → **methylation-only full eval (7G)** →
+> **final OOF cross-fitting (7)** → one score matrix.
 
-**Current gate:** Milestone **7E** (development CV / architecture selection).
+**Current gate:** Milestone **7F** (drop tile scores; RBS genome-wide then
+gene-associated RBS aggregation; leftover CpGs go **direct**).
 **ATS** = Age/Tissue/Sex frozen Hub GSM-union
 `matrix-hub-age-tissue-sex-full-v1` (13 548). Graph-v2 is **on disk**
 (`graph-grch38-gencode38-cgi-tile-v2`; inspection
 `reports/inspection/annotation_graph_cgi_tile_v2/`; plan
-[`plans/milestone-7c-graph-v2-topology.md`](plans/milestone-7c-graph-v2-topology.md)),
-so gene-only **and** independent RBS/TBS arms may start. Extra Hub-wide
-multitask + hygiene is **7E′** (required before Milestone **7**, does not
-block starting 7E). Readiness:
-[`plans/milestone-7e-development-cv.md`](plans/milestone-7e-development-cv.md);
-7E′: [`plans/milestone-7e-prime-analysis-hygiene.md`](plans/milestone-7e-prime-analysis-hygiene.md).
+[`plans/milestone-7c-graph-v2-topology.md`](plans/milestone-7c-graph-v2-topology.md)).
+7E selected `N-multipath-l1a` under a 2-epoch / 8 192-locus budget and
+linear fusion of **region means**, not neural scores — that is evidence, not
+the shipped topology. 7E′ hygiene is **done**. Readiness:
+[`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
+(§7F / §7G); 7E report
+[`reports/inspection/stage0_7e_dev_cv/analysis.md`](../reports/inspection/stage0_7e_dev_cv/analysis.md).
 
 **7A–7D** are `done` (7C = fixture + Hub smoke). Hub nine packs and 7B full
 matrices are in the live DuckDB release (`created_at` 2026-08-25T11:15Z:
@@ -36,19 +39,22 @@ matrix artifacts including all nine Hub full packs). EWAS_db is incomplete
 census: `reports/inspection/deepmat_data_v1/` (underscore; matches this
 refresh). Ignore `reports/inspection/deepmat-data-v1/` if it shows ~5 GSM
 (fixture leak into the CLI default hyphen path).
-**Do not retrain v0.1** or start Milestone **7** until **7E and 7E′** land
-([ADR 0007](adr/0007-crossfit-prerequisites.md),
+**Do not retrain v0.1** or start Milestone **7** until **7F and 7G** land
+(7A–7E′ are already `done`; [ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
 [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
-(glossary: ADR / MBS / RBS / TBS / Level-1 MAD / 3×2 / 5×6 OOF; when training
-runs; DeepRVAT-style joint aggregation + linear heads).
+(glossary: ADR / MBS / RBS / leftover-direct / Level-1 MAD / 3×2 / 5×6 OOF;
+when training runs; DeepRVAT-style joint aggregation + linear heads).
 
 **Training schedule:** 7A–7B data only; 7C–7D code/fixtures/smokes; **7E** =
-architecture selection on frozen ATS (3 folds × 2 restarts, independently
-trained arms, including graph-v2 RBS/TBS); **7E′** = Hub multitask
-(age/tissue/sex/**disease**/cancer with masked unknown≠control) + hygiene;
-**7** = final 5×6 OOF after 7E **and** 7E′. Neural arms train shared score
+architecture selection on frozen ATS (3×2, **done**); **7E′** = Hub multitask
++ hygiene (**done**); **7F** = RBS→gene cascade + direct leftover (no TBS
+scores); **7G** = methylation-only re-eval that closes 7E evaluation gaps;
+**7** = final 5×6 OOF after 7F **and** 7G. Neural arms train shared score
 aggregation **and** linear phenotype heads end-to-end (DeepRVAT pattern).
+Architecture comparison tables use **methylation-input methods only**.
+Metadata-only (study + platform IDs, no betas) is a leakage alarm from 7E′,
+not a competitor.
 
 Frozen references (do not overwrite): **deepMAT-flat-v0.1** /
 **deepMAT-hierarchical-v0.1** / **deepmat-data-age-tissue-sex-v1**. Hierarchical
@@ -641,9 +647,9 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Depends on:** (7C), (7D Level-1); graph-v2 on disk for multi-path arms.
 - **Plan:** [`plans/milestone-7e-development-cv.md`](plans/milestone-7e-development-cv.md);
   [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
-- **Next action:** Architecture selected (`N-multipath-l1a`). Readable analysis:
-  [`reports/inspection/stage0_7e_dev_cv/analysis.md`](../reports/inspection/stage0_7e_dev_cv/analysis.md).
-  Do not start Milestone **7** 5x6 OOF until 7E' hygiene is treated as done (it is).
+- **Next action:** 7E closed. Do **not** ship `N-multipath-l1a` as-is (TBS
+  dropped; late fusion was region means; 2-epoch / 8 192-locus budget).
+  Proceed to **7F**, then **7G**. Do not start Milestone **7** 5×6 OOF.
 
 ---
 
@@ -680,16 +686,84 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ---
 
+## 7F. RBS→gene cascade + direct leftover (no tile scores)
+
+- **Status:** `pending` (**current gate**)
+- **Why:** 7E’s winner fused gene + RBS + **TBS** + direct as linear models on
+  **presence-aware region means**, not saved neural scores. Tile scores
+  (TBS) are dropped: if a CpG is not assigned to a **regulatory** region, it
+  is a **direct** CpG, never nearest-gene and never a 50-CpG tile score
+  ([ADR 0004](adr/0004-unmapped-probe-retention.md) / no-nearest-gene in
+  [ADR 0006](adr/0006-multipath-noncoding-scores.md)). Graph-v2 tile nodes may
+  stay on disk unused.
+- **Locked topology (late fusion):**
+  1. **RBS across the genome** — observed CpGs that hit CGI / cCRE-like /
+     other regulatory regions → regulatory-region Deep Set (one score per
+     regulatory region).
+  2. **Gene aggregation** — those RBS that have a gene association are pooled
+     again to gene-level scores.
+  3. **Direct CpGs** — CpGs with **no** regulatory assignment are passed
+     through the direct branch in parallel (elastic-net / group-sparse or a
+     neural per-locus term on fold-normalized z). They are not tiled.
+  4. **Late fusion** concatenates **saved** genome-wide RBS, gene-aggregated
+     RBS, and direct contributions, then a linear (or boosted) phenotype
+     head. Fusion of region-mean tables is **not** sufficient.
+- **Done when:**
+  - Assignment + trainer implement the cascade above on frozen 7E folds
+    (`hub-ats-7e-3fold-v1`); fixture tests cover leftover→direct and
+    gene-associated RBS aggregation
+  - Per-sample RBS / gene-RBS / direct score matrices are written and fused
+    (not region-mean linear stand-ins)
+  - No TBS arm in the 7F model matrix
+  - Inspection report under `reports/inspection/stage0_7f_rbs_gene_direct/`
+- **Depends on:** (7E) folds + report; (7C) graph-v2; (7D) Level-1.
+- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
+  (§7F).
+
+---
+
+## 7G. Methylation-only full evaluation (close 7E gaps)
+
+- **Status:** `pending` (**blocked until 7F**)
+- **Why:** The 90-cell 7E bake-off **finished**. Gaps were evaluation quality,
+  not a crashed trainer: 2 epochs and 8 192 / 482 379 loci; late fusion was
+  not neural MBS; T-mean-region was not a named cell; HGB stood in for
+  LightGBM; neural AUROC was a binary helper; PCA-SVA not Bioconductor sva;
+  sex incomplete in the merged dump. Do **not** conclude “trees beat Deep
+  Sets” from that table.
+- **Comparators (methylation input only):** M-value ridge, penalised
+  (elastic-net / SGD), histogram gradient boosting or LightGBM, optional
+  train-fold PCA-SVA then linear. Same frozen 7E studies/folds. **Do not**
+  put metadata-only (study + platform, no methylation) in architecture
+  ranking tables. That control remains a 7E′ leakage alarm only.
+- **Done when:**
+  - 7F cascade retrained on the **same** frozen ATS folds with a documented
+    budget above 7E’s 2-epoch / 8 192-locus ceiling (or an explicit remaining
+    ceiling in the report)
+  - Classical M-value models use methylation matrices only; ROC for **sex**
+    and **tissue one-vs-rest** from the neural fusion scores (age stays MAE /
+    R², no ROC)
+  - Sex metrics present in the summary dump; region-mean transparent arm
+    named if kept
+  - Report under `reports/inspection/stage0_7g_methylation_eval/` names the
+    Milestone 7 topology from methylation-input methods only
+- **Depends on:** (7F).
+- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
+  (§7G).
+
+---
+
 ## 7. Run study-grouped cross-fitting (final OOF)
 
-- **Status:** `pending` (**blocked until 7A–7E′**)
-- **Done when:** Out-of-fold MBS scores (and RBS/TBS/direct contributions when
-  selected), age predictions, and tissue predictions are generated with leakage
-  controls (no sample/donor/replicate/held-out study scored by a model that saw
-  it). Scores are **orientation-aligned** (ADR 0008) before averaging. Persist
-  fold-specific normalization, presence/count/`norm_present` masks, complete
-  model lineage. Protocol: 5 outer folds × up to 6 restarts.
-- **Depends on:** (7A)–(7E′); architecture chosen in 7E; Hub multitask in 7E′.
+- **Status:** `pending` (**blocked until 7F and 7G**)
+- **Done when:** Out-of-fold gene-aggregated RBS (and genome-wide RBS + direct
+  contributions), age predictions, and tissue predictions are generated with
+  leakage controls (no sample/donor/replicate/held-out study scored by a
+  model that saw it). **No TBS scores.** Scores are **orientation-aligned**
+  (ADR 0008) before averaging. Persist fold-specific normalization,
+  presence/count/`norm_present` masks, complete model lineage. Protocol: 5
+  outer folds × up to 6 restarts.
+- **Depends on:** (7A)–(7E′), **7F**, **7G**; Hub multitask hygiene in 7E′.
 - **Note:** A 3-fold / 1-restart smoke of *existing* machinery is allowed for
   plumbing; it does not complete this milestone and must not overwrite v0.1
   freezes ([ADR 0007](adr/0007-crossfit-prerequisites.md)).
@@ -700,8 +774,9 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 - **Status:** `deferred`
 - **Rule:** Do not start these until milestones 1–7 produce a real OOF model
-  pipeline (7A–7E′ then 7). Full vision: [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md).
-  Graph-layer cCRE/tiles for scoring are **7C**, not this section.
+  pipeline (7A–7G then 7). Full vision: [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md).
+  Graph-layer cCRE for scoring is **7C/7F**, not this section. Tile **scores**
+  are out (7F); leftover CpGs are direct.
 
 ### Stage 1+ roadmap (deferred candidates)
 
