@@ -21,12 +21,12 @@ OOF cross-fit stays blocked until **7F and 7G** pass.
 
 | Term | Meaning |
 |------|---------|
-| **ADR** | Architecture Decision Record under `docs/adr/`. Binding design choice (e.g. [0006](../adr/0006-multipath-noncoding-scores.md) multi-path scores; [0007](../adr/0007-crossfit-prerequisites.md) 7A–7E before final OOF; [0008](../adr/0008-score-identifiability.md) score orientation). ADRs win when docs disagree. **7F** drops tile **scores**; leftover CpGs are direct. No-nearest-gene still binds. |
+| **ADR** | Architecture Decision Record under `docs/adr/`. Binding design choice (e.g. [0006](../adr/0006-multipath-noncoding-scores.md) multi-path scores; [0007](../adr/0007-crossfit-prerequisites.md) 7A–7E before final OOF; [0008](../adr/0008-score-identifiability.md) score orientation). ADRs win when docs disagree. **7F** drops tile **scores**; leftover CpGs are **direct**. Nearest-gene is allowed only to allocate already-typed **RBS** onto a gene (MBS), not to swallow unmapped CpGs ([ADR 0004](../adr/0004-unmapped-probe-retention.md)). |
 | **ATS** | Age/Tissue/Sex. Frozen Hub GSM-union `matrix-hub-age-tissue-sex-full-v1` (13 548 samples). Freeze: `deepmat-data-age-tissue-sex-v1`. Not all Hub GSM (34 234) and not EWAS_db. |
 | **MBS** | Gene methylation burden. In **7F** this is **gene-aggregated RBS**, not a separate gene Deep Set plus tiles. |
-| **RBS** | Regulatory Burden Score: CpG → non-gene regulatory regions (cCRE / enhancer / CGI / DMR / ChromHMM-like) → regulatory-region score. **7F step 1 is genome-wide RBS.** |
-| **TBS** | Tile Burden Score (graph-v2 50-CpG tiles). **Not used after 7E.** Leftover CpGs go **direct**. |
-| **Direct** | Per-locus contribution for CpGs **not assigned to a regulatory region**. No nearest-gene; no tile compression. |
+| **RBS** | Regulatory Burden Score: CpG → typed region (cCRE / enhancer / CGI / DMR / ChromHMM / similar / gene roles) → region score. Orphan RBS = region with no gene allocation. |
+| **TBS** | Tile Burden Score (graph-v2 50-CpG tiles). **Not used after 7E** — bins randomly aggregate leftover loci. Leftover CpGs go **direct**. |
+| **Direct** | Per-locus contribution for CpGs **not assigned to a typed region**. No tile compression. Unmapped CpGs are not collapsed into a nearest-gene proxy. |
 | **Metadata-only** | Predicts age/tissue/sex from **study ID + platform ID** (optionally tissue one-hots). **No methylation.** GEO series are often one tissue and one age band, so this looks strong. It is a **leakage alarm**, not a method to beat. Architecture tables in 7G exclude it. |
 | **Level-1 MAD** | Fold-fitted robust z on train-fold M-values: \(\mu=\mathrm{median}\), \(\sigma=1.4826\times\mathrm{MAD}\); Hub GMQN betas stay canonical. Novel loci: `z=0` + `norm_present=False`. |
 | **3×2 independently trained arms** | Milestone **7E** (done): 3 outer study-grouped folds × 2 random restarts; each architecture arm trained from scratch on the same folds (not eval-time branch masking). **7F/7G reuse those frozen folds.** |
@@ -135,7 +135,7 @@ Graph-v2 + independent RBS/TBS train-time masks are **done**
 | ClickHouse / TileDB now | No | No current bottleneck; TileDB only at first WGBS |
 | Phenotype SoT | Long-form + `sample_source_membership` | Multi-pack / multi-label GSMs |
 | Missing disease labels | Unknown, not automatic control | Pack semantics |
-| Noncoding | RBS genome-wide, then gene-associated RBS aggregated; leftover CpGs **direct**. No TBS scores. No nearest-gene | 7F revision of ADR 0006 tile path; ADR 0004 stands |
+| Noncoding | Typed region → RBS; leftover CpGs **direct** (no tiles). Nearest-gene allocates RBS→MBS only | 7F drops ADR 0006 tile scores; ADR 0004 still forbids collapsing unmapped CpGs |
 | Residual one-scalar | Frozen v0.1 only | Bottleneck, not biology test |
 | Normalization | Level-1 fold-fitted robust z required before 7E; AE later | GMQN already on Hub |
 | Final 5×6 | After 7F and 7G (7A–7E′ already done) | ADR 0007 spirit + 7E evaluation gaps |
@@ -145,7 +145,7 @@ Graph-v2 + independent RBS/TBS train-time masks are **done**
 | Score orientation | Anchor before OOF average | ADR 0008 |
 | Constraint vs MBS | Predictive representation ≠ LOEUF-like constraint | ADR 0008 |
 | Direct CpG v1 | Sparse elastic-net / group sparsity on fold-normalized z for **non-RBS** loci | Transparent leftover path |
-| Late fusion | Concatenate saved genome-wide RBS + gene-aggregated RBS + direct; then linear/boosted head | 7E region-mean linear fusion is not sufficient |
+| Late fusion | Concatenate saved orphan RBS + MBS (gene-aggregated RBS) + direct; then linear/boosted head | 7E region-mean linear fusion is not sufficient |
 | Level-1 z | Study-balanced median / 1.4826×MAD on train M | GMQN betas stay canonical |
 
 ## Schemas / contracts
@@ -448,17 +448,18 @@ Hub-wide disease/cancer heads: **7E′** (**done**).
 
 ### 7F — RBS→gene + direct leftover (**current gate**)
 
-Drop **TBS**. Assignment: regulatory region first; if a CpG is not in a
-regulatory region, it is **direct** (not a tile, not nearest gene).
+Drop **TBS** (random CpG-count bins). Assignment: typed region first
+(cCRE / enhancer / CGI / DMR / ChromHMM / similar / gene roles) → **RBS**.
+Unassigned CpGs are **direct**, not tiles. **Nearest-gene allocates RBS to
+genes** (MBS); it does not reassign leftover CpGs.
 
 ```text
-observed CpGs
-  ├─ in CGI / cCRE-like / other RBS regions
-  │     → genome-wide RBS Deep Set
-  │           └─ RBS with gene association → pool again to gene scores
-  └─ not in a regulatory region
-        → direct branch (parallel; passed through to fusion)
-late fusion: [genome-wide RBS | gene-aggregated RBS | direct] → heads
+CpG → cCRE / enhancer / CGI / DMR / ChromHMM / similar / typed gene region
+      → RBS
+        ├─ allocated to a gene (typed role and/or nearest-gene) → MBS
+        └─ no gene allocation → orphan RBS
+CpG with no region assignment → direct
+late fusion: [orphan RBS | MBS | direct] → heads
 ```
 
 Fusion must write per-sample score matrices and train the head on **those**,
@@ -500,7 +501,8 @@ model lineage. **No TBS.**
 - Advertising unimplemented CLI as shipped.
 - Retraining v0.1 or launching Milestone **7** before **7F and 7G**.
 - Treating metadata-only (study + platform) as a methylation method.
-- TBS scores or nearest-gene assignment for leftover CpGs.
+- TBS scores. Nearest-gene collapse of leftover **CpGs** (RBS→gene
+  allocation remains allowed).
 - Claiming 7E’s 2-epoch / region-mean fusion as the shipped architecture.
 
 ## Open questions

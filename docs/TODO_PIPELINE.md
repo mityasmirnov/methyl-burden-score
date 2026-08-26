@@ -690,28 +690,37 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 - **Status:** `pending` (**current gate**)
 - **Why:** 7E’s winner fused gene + RBS + **TBS** + direct as linear models on
-  **presence-aware region means**, not saved neural scores. Tile scores
-  (TBS) are dropped: if a CpG is not assigned to a **regulatory** region, it
-  is a **direct** CpG, never nearest-gene and never a 50-CpG tile score
-  ([ADR 0004](adr/0004-unmapped-probe-retention.md) / no-nearest-gene in
-  [ADR 0006](adr/0006-multipath-noncoding-scores.md)). Graph-v2 tile nodes may
-  stay on disk unused.
+  **presence-aware region means**, not saved neural scores. **Tiles are
+  dropped** because 50-CpG bins randomly aggregate leftover loci into a
+  feature that is not a typed region. Unassigned CpGs stay **direct**, not
+  tiles. **Nearest-gene is allowed** as the gene allocation of an already
+  typed RBS (how that region score becomes MBS). ADR 0004 still forbids
+  collapsing an unmapped *CpG* into a nearest-gene proxy instead of keeping
+  it on the direct path. Graph-v2 tile nodes may stay on disk unused.
 - **Locked topology (late fusion):**
-  1. **RBS across the genome** — observed CpGs that hit CGI / cCRE-like /
-     other regulatory regions → regulatory-region Deep Set (one score per
-     regulatory region).
-  2. **Gene aggregation** — those RBS that have a gene association are pooled
-     again to gene-level scores.
-  3. **Direct CpGs** — CpGs with **no** regulatory assignment are passed
-     through the direct branch in parallel (elastic-net / group-sparse or a
-     neural per-locus term on fold-normalized z). They are not tiled.
-  4. **Late fusion** concatenates **saved** genome-wide RBS, gene-aggregated
-     RBS, and direct contributions, then a linear (or boosted) phenotype
+  ```text
+  CpG → cCRE / enhancer / CGI / DMR / ChromHMM / similar / typed gene region
+        → RBS (one score per typed region)
+  then three families:
+    Direct  — CpG with no region assignment (not tiled)
+    RBS     — region score with no gene allocation
+    MBS     — gene score = pool of RBS allocated to that gene
+              (typed gene region and/or nearest-gene)
+  ```
+  1. **RBS** — observed CpGs that hit a typed region (cCRE / enhancer / CGI /
+     DMR / ChromHMM / similar / gene-body roles) → one score per region.
+  2. **MBS** — those RBS allocated to a gene (including nearest-gene) are
+     pooled to gene-level scores.
+  3. **Direct CpGs** — CpGs with **no** region assignment, in parallel
+     (elastic-net / group-sparse or a neural per-locus term on
+     fold-normalized z). Not tiled; not forced into a gene as a CpG.
+  4. **Late fusion** concatenates **saved** orphan RBS, MBS (gene-aggregated
+     RBS), and direct contributions, then a linear (or boosted) phenotype
      head. Fusion of region-mean tables is **not** sufficient.
 - **Done when:**
   - Assignment + trainer implement the cascade above on frozen 7E folds
     (`hub-ats-7e-3fold-v1`); fixture tests cover leftover→direct and
-    gene-associated RBS aggregation
+    RBS→gene aggregation (nearest-gene allocation of RBS is allowed)
   - Per-sample RBS / gene-RBS / direct score matrices are written and fused
     (not region-mean linear stand-ins)
   - No TBS arm in the 7F model matrix
