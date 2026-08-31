@@ -219,10 +219,17 @@ def fit_eval_mvalue_fold(
     if tissue_mt.any() and tissue_m.any():
         pred_t = tissue_model.predict(x_te[tissue_mt])
         yt = ph_te["tissue"][tissue_mt]
-        tissue_metrics = multiclass_metrics(yt, pred_t)
+        tissue_valid_classes = set(ph_tr["tissue"][tissue_m].tolist())
+        tissue_metrics = multiclass_metrics(yt, pred_t, valid_classes=tissue_valid_classes)
         out["tissue"] = {
             k: tissue_metrics[k]
-            for k in ("macro_f1", "balanced_accuracy", "accuracy")
+            for k in (
+                "macro_f1",
+                "balanced_accuracy",
+                "accuracy",
+                "n_classes_scored",
+                "excluded_zero_shot_test_counts",
+            )
             if k in tissue_metrics
         }
         if hasattr(tissue_model, "predict_proba"):

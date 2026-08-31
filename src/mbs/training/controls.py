@@ -150,12 +150,13 @@ def fit_metadata_only(
         )
         return regression_metrics(np.asarray(eval_y), model.predict(x_eval))
     model = LogisticRegression(max_iter=200).fit(x_train, y_arr)
+    train_classes = set(y_arr.astype(np.int64).tolist())
     if eval_y is None:
         pred = model.predict(x_train)
         return {
             k: v
-            for k, v in multiclass_metrics(y_arr, pred).items()
-            if k in {"macro_f1", "balanced_accuracy"}
+            for k, v in multiclass_metrics(y_arr, pred, valid_classes=train_classes).items()
+            if k in {"macro_f1", "balanced_accuracy", "n_classes_scored"}
         }
     x_eval, _ = _meta_design(
         eval_study_ids or (),
@@ -166,8 +167,10 @@ def fit_metadata_only(
     pred = model.predict(x_eval)
     return {
         k: v
-        for k, v in multiclass_metrics(np.asarray(eval_y), pred).items()
-        if k in {"macro_f1", "balanced_accuracy"}
+        for k, v in multiclass_metrics(
+            np.asarray(eval_y), pred, valid_classes=train_classes
+        ).items()
+        if k in {"macro_f1", "balanced_accuracy", "n_classes_scored"}
     }
 
 

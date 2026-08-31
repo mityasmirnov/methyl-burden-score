@@ -10,11 +10,13 @@ Checklist: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md).
 **Do not retrain v0.1.** Freeze those runs. **7A**, **7B**, **7C** (fixture
 acceptance), **7D**, **7E** (development CV), and **7E′** (Hub multitask +
 hygiene) are closed. **7F** (RBS→gene + direct leftover, no TBS scores) is
-**done**. **7G** (methylation-only full eval) is the **current coding gate**.
-The incomplete `EWAS_db` mirror must not block 7G.
+**done**. **7G** (methylation-only full eval) is **done**. **Milestone 7**
+(final OOF) is the **current coding gate**. Cascade tissue gap: see
+[`milestone-7g-cascade-tissue-investigation.md`](milestone-7g-cascade-tissue-investigation.md).
+The incomplete `EWAS_db` mirror must not block Milestone 7.
 
 This document is the coding brief for **7A–7G**. The expensive Milestone **7**
-OOF cross-fit stays blocked until **7F and 7G** pass.
+OOF cross-fit is unblocked now that **7F and 7G** passed.
 
 ## Glossary and training model
 
@@ -41,8 +43,8 @@ OOF cross-fit stays blocked until **7F and 7G** pass.
 | **7E** | **Done** — development CV on frozen ATS (2-epoch / 8 192-locus budget; linear region-mean fusion) |
 | **7E′** | **Done** — Hub multitask + hygiene |
 | **7F** | **Done.** RBS→gene cascade + direct leftover; saved neural scores fused |
-| **7G** | **Yes — current gate.** Methylation-only re-eval (closes 7E gaps) |
-| **7** | **Yes — final OOF** after 7F and 7G |
+| **7G** | **Done.** Methylation-only re-eval; winner `C-mvalue-enet`; cascade weak on tissue — probe planned |
+| **7** | **Yes — current gate.** Final OOF after 7F and 7G |
 
 Do not retrain frozen **v0.1** flat/hier runs.
 
@@ -469,30 +471,21 @@ Fusion must write per-sample score matrices and train the head on **those**,
 not on region-mean tables. Same frozen split `hub-ats-7e-3fold-v1`. Fixture
 tests required. Report: `reports/inspection/stage0_7f_rbs_gene_direct/`.
 
-### 7G — Methylation-only full evaluation (**current gate**)
+### 7G — Methylation-only full evaluation (**done**)
 
 Impl brief: [`milestone-7g-methylation-eval.md`](milestone-7g-methylation-eval.md).
+Report: [`reports/inspection/stage0_7g_methylation_eval/`](../../reports/inspection/stage0_7g_methylation_eval/analysis.md).
 
-Re-run the 7F cascade on the **same** frozen ATS folds with budget
-**65 536 loci / 15 epochs / 3×1** (above 7E’s 2-epoch / 8 192-locus ceiling;
-remaining ceiling 482 379 loci / no 2nd restart — named in the report).
-Compare **only** methods that take methylation (β/M/z) as input:
+Closed at **65 536 loci / 15 epochs / 3×1** on frozen `hub-ats-7e-3fold-v1`.
+Ranking winner (methylation-input only): **`C-mvalue-enet`** (tissue macro-F1
+0.334). **7F cascade** (`N-cascade-l1`) remains the product topology but reached
+only **~0.09** tissue macro-F1 vs **~0.33** for region means / M-value enet.
+Tissue-head investigation:
+[`milestone-7g-cascade-tissue-investigation.md`](milestone-7g-cascade-tissue-investigation.md).
 
-- 7F neural fusion (saved scores) — arm `N-cascade-l1`
-- M-value ridge / elastic-net (SGD if coordinate descent cannot finish)
-- Histogram GB (LightGBM stand-in; no new dep)
-- optional train-fold PCA-SVA then linear
-- gene-mean / **region-mean** (`T-mean-region`) / elastic-net transparent arms
+### Milestone 7 — Final OOF (**current gate**)
 
-Emit sex AUROC and tissue one-vs-rest ROC from the **neural** scores. Age:
-MAE in years and R² (no ROC). Do not rank metadata-only. Report:
-`reports/inspection/stage0_7g_methylation_eval/`. Winner of 7G is the
-topology for Milestone 7. Launch via
-`scripts/train_7g_methylation_eval_background.sh` (nohup; skip-if-done folds).
-
-### Milestone 7 — Final OOF
-
-After **7F and 7G**: 5 outer folds, up to 6 restarts; fold-specific
+After **7F and 7G** (both done): 5 outer folds, up to 6 restarts; fold-specific
 normalization and seed selection; **orientation-aligned** ensemble (ADR 0008).
 Persist sample×gene (gene-aggregated RBS) OOF, genome-wide RBS, direct,
 phenotype preds, fold assignments, presence/coverage/norm masks, complete

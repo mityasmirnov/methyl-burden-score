@@ -84,6 +84,11 @@ def evaluate_late_fusion(
         sex_mask=sex_mask_train,
     )
     preds = predict_linear_multitask(models, scores_test)
+    tissue_valid_classes = None
+    if tissue_train is not None and tissue_mask_train is not None:
+        tm = np.asarray(tissue_mask_train, dtype=bool)
+        if tm.any():
+            tissue_valid_classes = set(np.asarray(tissue_train, dtype=np.int64)[tm].tolist())
     metrics = evaluate_multitask_predictions(
         preds=preds,
         age=age_test,
@@ -95,6 +100,7 @@ def evaluate_late_fusion(
         study_ids=study_ids_test,
         platforms=platforms_test,
         tissue_class_names=tissue_class_names,
+        tissue_valid_classes=tissue_valid_classes,
     )
     return {
         "metrics": metrics,

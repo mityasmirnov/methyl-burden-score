@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Any, Literal
 
 import numpy as np
@@ -180,8 +181,15 @@ def evaluate_multitask_predictions(
     study_ids: np.ndarray | None = None,
     platforms: np.ndarray | None = None,
     tissue_class_names: list[str] | None = None,
+    tissue_valid_classes: Iterable[int] | None = None,
 ) -> dict[str, Any]:
-    """Holdout metrics for transparent / late-fusion linear heads."""
+    """Holdout metrics for transparent / late-fusion linear heads.
+
+    ``tissue_valid_classes`` should be the set of tissue class indices seen
+    during training for this fold; classes never seen in train cannot be
+    predicted correctly by construction and are excluded from macro-F1 /
+    balanced-accuracy (see ``multiclass_metrics``).
+    """
     from mbs.evaluation.metrics import binary_auroc_auprc  # noqa: PLC0415
 
     metrics: dict[str, Any] = {}
@@ -204,8 +212,15 @@ def evaluate_multitask_predictions(
             yp = preds["tissue"][m]
             metrics["tissue"] = {
                 k: v
-                for k, v in multiclass_metrics(yt, yp).items()
-                if k in {"macro_f1", "balanced_accuracy", "accuracy"}
+                for k, v in multiclass_metrics(yt, yp, valid_classes=tissue_valid_classes).items()
+                if k
+                in {
+                    "macro_f1",
+                    "balanced_accuracy",
+                    "accuracy",
+                    "n_classes_scored",
+                    "excluded_zero_shot_test_counts",
+                }
             }
             if (
                 "tissue_proba" in preds
@@ -221,7 +236,12 @@ def evaluate_multitask_predictions(
                 )
                 if curves:
                     metrics["tissue_roc"] = curves
-                    metrics["tissue"]["macro_ovr_auroc"] = float(
+                    # Mean AUROC over only the top-N most frequent classes
+                    # (see tissue_one_vs_rest_auroc); NOT the same class set as
+                    # macro_f1/balanced_accuracy above, which cover every class
+                    # present in y_true. Do not compare this value directly
+                    # against macro_f1 as if they shared a denominator.
+                    metrics["tissue"]["top5_ovr_auroc"] = float(
                         np.mean([c["auroc"] for c in curves])
                     )
             if study_ids is not None:
@@ -327,6 +347,11 @@ def run_mean_baseline(
         sex_mask=sex_mask_train,
     )
     preds = predict_linear_multitask(models, x_test)
+    tissue_valid_classes = None
+    if tissue_train is not None and tissue_mask_train is not None:
+        tm = np.asarray(tissue_mask_train, dtype=bool)
+        if tm.any():
+            tissue_valid_classes = set(np.asarray(tissue_train, dtype=np.int64)[tm].tolist())
     metrics = evaluate_multitask_predictions(
         preds=preds,
         age=age_test,
@@ -338,6 +363,7 @@ def run_mean_baseline(
         study_ids=study_ids_test,
         platforms=platforms_test,
         tissue_class_names=tissue_class_names,
+        tissue_valid_classes=tissue_valid_classes,
     )
     return {"kind": kind, "metrics": metrics, "n_features": int(x_train.shape[1])}
 
@@ -404,10 +430,20 @@ def run_elasticnet_baseline(
             if mt.any():
                 pred = model.predict(x_test[mt])
                 yt = np.asarray(tissue_test, dtype=np.int64)[mt]
+                tissue_valid_classes = set(np.asarray(tissue_train, dtype=np.int64)[m].tolist())
                 metrics["tissue"] = {
                     k: v
-                    for k, v in multiclass_metrics(yt, pred).items()
-                    if k in {"macro_f1", "balanced_accuracy", "accuracy"}
+                    for k, v in multiclass_metrics(
+                        yt, pred, valid_classes=tissue_valid_classes
+                    ).items()
+                    if k
+                    in {
+                        "macro_f1",
+                        "balanced_accuracy",
+                        "accuracy",
+                        "n_classes_scored",
+                        "excluded_zero_shot_test_counts",
+                    }
                 }
                 if study_ids_test is not None:
                     metrics["tissue_by_study"] = metrics_by_group(

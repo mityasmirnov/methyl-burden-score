@@ -291,6 +291,74 @@ def _fit_direct_columns(
         return np.zeros((n_all, 0), dtype=np.float32), []
     return np.concatenate(cols, axis=1), names
 
+def _tissue_class_weights(
+    tissue_train: np.ndarray,
+    tissue_mask_train: np.ndarray,
+    *,
+    n_classes: int,
+    device: torch.device,
+) -> torch.Tensor:
+    """Inverse-frequency weights over classes seen in train; absent classes -> 1.0."""
+    labels = tissue_train[tissue_mask_train]
+    weights = np.ones(n_classes, dtype=np.float64)
+    if labels.size > 0:
+        counts = np.bincount(labels, minlength=n_classes).astype(np.float64)
+        present = counts > 0
+        if present.any():
+            mean_count = counts[present].mean()
+            weights[present] = mean_count / counts[present]
+    return torch.tensor(weights, dtype=torch.float32, device=device)
+
+
+def _evaluate_cascade_validation(
+    model: CascadeDeepSet,
+    heads: MultitaskHeads,
+    assignment: CascadeAssignment,
+    betas_val: np.ndarray,
+    *,
+    ages_val: np.ndarray,
+    age_mask_val: np.ndarray,
+    tissue_val: np.ndarray,
+    tissue_mask_val: np.ndarray,
+    sex_val: np.ndarray,
+    sex_mask_val: np.ndarray,
+    device: torch.device,
+) -> dict[str, Any]:
+    """Cheap proxy metrics from the model's own heads on a held-out validation slice."""
+    from mbs.evaluation.metrics import multiclass_metrics, regression_metrics  # noqa: PLC0415
+
+    out: dict[str, Any] = {"tissue_macro_f1": None, "age_mae": None}
+    if betas_val.shape[0] == 0:
+        return out
+    mbs_v, present_v, _ = score_samples(model, assignment, betas_val, device=device)
+    mbs_t = torch.from_numpy(mbs_v).to(device)
+    present_t = torch.from_numpy(present_v).to(device)
+    heads.eval()
+    with torch.no_grad():
+        if bool(age_mask_val.any()):
+            age_pred = heads.forward_age(mbs_t, present_t).detach().cpu().numpy()
+            out["age_mae"] = regression_metrics(
+                ages_val[age_mask_val], age_pred[age_mask_val]
+            )["mae"]
+        if bool(tissue_mask_val.any()):
+            tissue_logits = heads.forward_tissue(mbs_t, present_t)
+            tissue_pred = tissue_logits.detach().cpu().numpy().argmax(axis=1)
+            out["tissue_macro_f1"] = multiclass_metrics(
+                tissue_val[tissue_mask_val], tissue_pred[tissue_mask_val]
+            )["macro_f1"]
+    return out
+
+
+def _validation_rank(val_metrics: dict[str, Any]) -> tuple[float, float]:
+    """Higher is better: (tissue macro-F1, -age MAE), missing -> worst."""
+    f1 = val_metrics.get("tissue_macro_f1")
+    mae = val_metrics.get("age_mae")
+    return (
+        float(f1) if f1 is not None else -1.0,
+        -float(mae) if mae is not None else -1e9,
+    )
+
+
 def train_cascade_on_arrays(
     *,
     assignment: CascadeAssignment,
@@ -315,6 +383,10 @@ def train_cascade_on_arrays(
     region_hidden_dim: int = 32,
     dropout: float = 0.1,
     skip_if_done: bool = False,
+    val_idx: np.ndarray | None = None,
+    age_loss_weight: float = 1.0,
+    tissue_loss_weight: float = 1.0,
+    sex_loss_weight: float = 1.0,
 ) -> dict[str, Any]:
     """Train CascadeDeepSet + MBS heads; write scores; late-fuse; return metrics."""
     score_dir = out_dir / "scores"
@@ -358,6 +430,34 @@ def train_cascade_on_arrays(
     sex_mask_a = (
         np.ones(n, dtype=bool) if sex_mask is None else np.asarray(sex_mask, dtype=bool)
     )
+    tissue_class_weights = _tissue_class_weights(
+        tissue[train_idx],
+        tissue_mask_a[train_idx],
+        n_classes=max(len(class_names), 2),
+        device=device,
+    )
+
+    val_idx_a = None if val_idx is None else np.asarray(val_idx, dtype=np.int64)
+    has_val = val_idx_a is not None and val_idx_a.size > 0
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ckpt_path = out_dir / "best.pt"
+
+    def _save_checkpoint() -> None:
+        torch.save(
+            {
+                "model": model.state_dict(),
+                "heads": heads.state_dict(),
+                "seed": seed,
+                "max_epochs": max_epochs,
+                "cpg_hidden_dim": cpg_hidden_dim,
+                "region_hidden_dim": region_hidden_dim,
+            },
+            ckpt_path,
+        )
+
+    best_rank: tuple[float, float] | None = None
+    best_epoch = -1
+    val_history: list[dict[str, Any]] = []
 
     for _epoch in range(max_epochs):
         model.train()
@@ -377,16 +477,18 @@ def train_cascade_on_arrays(
             if bool(age_mask_a[i]):
                 age_t = torch.tensor([float(ages[i])], device=device)
                 age_pred = heads.forward_age(mbs, present)
-                loss = loss + F.huber_loss(age_pred, age_t)
+                loss = loss + age_loss_weight * F.huber_loss(age_pred, age_t)
             if bool(tissue_mask_a[i]):
                 tissue_t = torch.tensor([int(tissue[i])], device=device, dtype=torch.long)
                 tissue_pred = heads.forward_tissue(mbs, present)
-                loss = loss + F.cross_entropy(tissue_pred, tissue_t)
+                loss = loss + tissue_loss_weight * F.cross_entropy(
+                    tissue_pred, tissue_t, weight=tissue_class_weights
+                )
             if bool(sex_mask_a[i]):
                 sex_t = torch.tensor([int(sex[i])], device=device, dtype=torch.long)
                 sex_pred = heads.forward_sex(mbs, present)
                 if sex_pred is not None:
-                    loss = loss + F.cross_entropy(sex_pred, sex_t)
+                    loss = loss + sex_loss_weight * F.cross_entropy(sex_pred, sex_t)
             opt.zero_grad(set_to_none=True)
             loss.backward()
             opt.step()
@@ -395,20 +497,44 @@ def train_cascade_on_arrays(
                 f"[cascade] {out_dir.name} epoch {_epoch + 1}/{max_epochs}",
                 flush=True,
             )
+        if has_val and val_idx_a is not None:
+            val_metrics = _evaluate_cascade_validation(
+                model,
+                heads,
+                assignment,
+                betas[val_idx_a],
+                ages_val=ages[val_idx_a],
+                age_mask_val=age_mask_a[val_idx_a],
+                tissue_val=tissue[val_idx_a],
+                tissue_mask_val=tissue_mask_a[val_idx_a],
+                sex_val=sex[val_idx_a],
+                sex_mask_val=sex_mask_a[val_idx_a],
+                device=device,
+            )
+            rank = _validation_rank(val_metrics)
+            val_history.append({"epoch": _epoch + 1, "rank": list(rank), **val_metrics})
+            if best_rank is None or rank > best_rank:
+                best_rank = rank
+                best_epoch = _epoch + 1
+                _save_checkpoint()
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    ckpt_path = out_dir / "best.pt"
-    torch.save(
-        {
-            "model": model.state_dict(),
-            "heads": heads.state_dict(),
-            "seed": seed,
-            "max_epochs": max_epochs,
-            "cpg_hidden_dim": cpg_hidden_dim,
-            "region_hidden_dim": region_hidden_dim,
-        },
-        ckpt_path,
-    )
+    checkpoint_selection: dict[str, Any] = {
+        "has_validation": has_val,
+        "n_val": int(val_idx_a.size) if val_idx_a is not None else 0,
+        "max_epochs": max_epochs,
+        "val_history": val_history,
+    }
+    if has_val and best_epoch > 0:
+        checkpoint_selection["best_epoch"] = best_epoch
+        checkpoint_selection["selection"] = "validation_tissue_macro_f1_then_age_mae"
+        # Reload the best-validation checkpoint (may not be the final epoch).
+        ckpt = torch.load(ckpt_path, map_location=device)
+        model.load_state_dict(ckpt["model"])
+        heads.load_state_dict(ckpt["heads"])
+    else:
+        checkpoint_selection["best_epoch"] = max_epochs
+        checkpoint_selection["selection"] = "final_epoch_no_validation"
+        _save_checkpoint()
 
     mbs_all, present_all, orphan_all = score_samples(model, assignment, betas, device=device)
     direct_all, direct_names = _fit_direct_columns(
@@ -473,6 +599,7 @@ def train_cascade_on_arrays(
     fused["fusion_n_features"] = int(x.shape[1])
     fused["skipped"] = False
     fused["checkpoint"] = str(ckpt_path)
+    fused["checkpoint_selection"] = checkpoint_selection
     write_json(metrics_path, fused)
     return fused
 
@@ -613,6 +740,11 @@ def run_cascade_hub(
     cpg_hidden = int(model_cfg.get("cpg_hidden_dim", 64))
     region_hidden = int(model_cfg.get("region_hidden_dim", 32))
     dropout = float(model_cfg.get("dropout", 0.1))
+    training_cfg = config.get("training", {})
+    age_loss_weight = float(training_cfg.get("age_loss_weight", 1.0))
+    tissue_loss_weight = float(training_cfg.get("tissue_loss_weight", 1.0))
+    sex_loss_weight = float(training_cfg.get("sex_loss_weight", 1.0))
+    lr = float(training_cfg.get("learning_rate", 1e-2))
     milestone = str(config.get("milestone", config.get("experiment", {}).get("name", "7F")))
     if "7g" in milestone.lower() or "7g" in run_id.lower():
         milestone_tag = "7G"
@@ -697,13 +829,18 @@ def run_cascade_hub(
 
     for fold_i, fold in enumerate(folds):
         train_ids = [s for s in fold["train_sample_ids"] if s in row_by_id and s in ph_by_id]
-        test_ids = [
-            s
-            for s in (
-                fold.get("external_test_sample_ids") or fold.get("validation_sample_ids") or []
-            )
-            if s in row_by_id and s in ph_by_id
-        ]
+        external_test_ids = fold.get("external_test_sample_ids") or []
+        validation_ids = fold.get("validation_sample_ids") or []
+        if external_test_ids:
+            # Real held-out test set; validation stays a separate slice for
+            # checkpoint selection (never used to pick the reported metrics).
+            test_ids = [s for s in external_test_ids if s in row_by_id and s in ph_by_id]
+            val_ids = [s for s in validation_ids if s in row_by_id and s in ph_by_id]
+        else:
+            # No external test in this fold; fall back to validation-as-test
+            # (legacy behavior) and skip validation-based checkpointing.
+            test_ids = [s for s in validation_ids if s in row_by_id and s in ph_by_id]
+            val_ids = []
         if max_train_samples is not None and len(train_ids) > int(max_train_samples):
             rng = np.random.default_rng(seed + fold_i)
             pick = rng.choice(len(train_ids), size=int(max_train_samples), replace=False)
@@ -711,17 +848,25 @@ def run_cascade_hub(
         if max_train_samples is not None and len(test_ids) > max(16, int(max_train_samples) // 4):
             n_te = max(16, int(max_train_samples) // 4)
             test_ids = test_ids[:n_te]
+        if max_train_samples is not None and len(val_ids) > max(16, int(max_train_samples) // 4):
+            n_va = max(16, int(max_train_samples) // 4)
+            val_ids = val_ids[:n_va]
         print(
-            f"[cascade] fold {fold_i} loading train={len(train_ids)} test={len(test_ids)} "
-            f"loci={n_cols} epochs={max_epochs}",
+            f"[cascade] fold {fold_i} loading train={len(train_ids)} val={len(val_ids)} "
+            f"test={len(test_ids)} loci={n_cols} epochs={max_epochs}",
             flush=True,
         )
         betas_tr, train_ids = _load_betas(train_ids)
+        if val_ids:
+            betas_va, val_ids = _load_betas(val_ids)
+        else:
+            betas_va = np.zeros((0, n_cols), dtype=betas_all.dtype)
         betas_te, test_ids = _load_betas(test_ids)
-        betas = np.concatenate([betas_tr, betas_te], axis=0)
-        sample_ids = train_ids + test_ids
+        betas = np.concatenate([betas_tr, betas_va, betas_te], axis=0)
+        sample_ids = train_ids + val_ids + test_ids
         train_idx = np.arange(len(train_ids), dtype=np.int64)
-        test_idx = np.arange(len(train_ids), len(sample_ids), dtype=np.int64)
+        val_idx = np.arange(len(train_ids), len(train_ids) + len(val_ids), dtype=np.int64)
+        test_idx = np.arange(len(train_ids) + len(val_ids), len(sample_ids), dtype=np.int64)
 
         ages = np.asarray(
             [float(ph_by_id[s].age or 0.0) for s in sample_ids], dtype=np.float64
@@ -751,8 +896,8 @@ def run_cascade_hub(
         )
         fold_out = run_root / f"fold_{fold_i}"
         print(
-            f"[cascade] fold {fold_i} train={len(train_ids)} test={len(test_ids)} "
-            f"loci={n_cols} epochs={max_epochs}",
+            f"[cascade] fold {fold_i} train={len(train_ids)} val={len(val_ids)} "
+            f"test={len(test_ids)} loci={n_cols} epochs={max_epochs}",
             flush=True,
         )
         metrics = train_cascade_on_arrays(
@@ -770,6 +915,7 @@ def run_cascade_hub(
             max_epochs=max_epochs,
             seed=seed + fold_i,
             device_str=device_str,
+            lr=lr,
             age_mask=age_mask,
             tissue_mask=tissue_mask,
             sex_mask=sex_mask,
@@ -777,6 +923,10 @@ def run_cascade_hub(
             region_hidden_dim=region_hidden,
             dropout=dropout,
             skip_if_done=skip_if_done,
+            val_idx=val_idx,
+            age_loss_weight=age_loss_weight,
+            tissue_loss_weight=tissue_loss_weight,
+            sex_loss_weight=sex_loss_weight,
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
         fold_summaries.append(metrics)

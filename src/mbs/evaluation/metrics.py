@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Any
 
 import numpy as np
@@ -153,8 +154,19 @@ def multiclass_metrics(
     y_pred: np.ndarray,
     *,
     n_classes: int | None = None,
+    valid_classes: Iterable[int] | None = None,
 ) -> dict[str, Any]:
-    """Macro-F1, balanced accuracy, and confusion matrix (list-of-lists)."""
+    """Macro-F1, balanced accuracy, and confusion matrix (list-of-lists).
+
+    ``valid_classes``, when given, restricts the macro-F1 / balanced-accuracy
+    average to those class indices only (typically: classes with at least one
+    training example in the fold being scored). A class held out in every
+    training study for this fold cannot be predicted correctly by any model;
+    silently including it in the macro average would penalize every arm by a
+    structural fold-construction artifact rather than model quality. Excluded
+    classes that still have test-set support are reported under
+    ``excluded_zero_shot_test_counts`` instead of being dropped unlabeled.
+    """
     yt = np.asarray(y_true).reshape(-1).astype(np.int64)
     yp = np.asarray(y_pred).reshape(-1).astype(np.int64)
     if yt.shape != yp.shape:
@@ -166,10 +178,18 @@ def multiclass_metrics(
     for t, p in zip(yt, yp, strict=True):
         if 0 <= t < k and 0 <= p < k:
             confusion[t, p] += 1
+    valid_set = None if valid_classes is None else {int(c) for c in valid_classes}
     recalls = []
     precisions = []
     f1s = []
+    scored_classes = []
+    excluded_zero_shot: dict[int, int] = {}
     for c in range(k):
+        if valid_set is not None and c not in valid_set:
+            n_true_c = int(confusion[c, :].sum())
+            if n_true_c > 0:
+                excluded_zero_shot[c] = n_true_c
+            continue
         tp = float(confusion[c, c])
         fn = float(confusion[c, :].sum() - tp)
         fp = float(confusion[:, c].sum() - tp)
@@ -179,13 +199,16 @@ def multiclass_metrics(
         recalls.append(recall)
         precisions.append(precision)
         f1s.append(f1)
+        scored_classes.append(c)
     return {
-        "macro_f1": float(np.mean(f1s)),
-        "balanced_accuracy": float(np.mean(recalls)),
+        "macro_f1": float(np.mean(f1s)) if f1s else 0.0,
+        "balanced_accuracy": float(np.mean(recalls)) if recalls else 0.0,
         "confusion_matrix": confusion.tolist(),
         "per_class_precision": precisions,
         "per_class_recall": recalls,
         "per_class_f1": f1s,
+        "n_classes_scored": len(scored_classes),
+        "excluded_zero_shot_test_counts": excluded_zero_shot,
     }
 
 

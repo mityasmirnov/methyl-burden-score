@@ -737,7 +737,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 7G. Methylation-only full evaluation (close 7E gaps)
 
-- **Status:** `in_progress` (**current gate**)
+- **Status:** `done`
 - **Impl plan:** [`plans/milestone-7g-methylation-eval.md`](plans/milestone-7g-methylation-eval.md).
 - **Why:** The 90-cell 7E bake-off **finished**. Gaps were evaluation quality,
   not a crashed trainer: 2 epochs and 8 192 / 482 379 loci; late fusion was
@@ -764,12 +764,16 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Depends on:** (7F).
 - **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
   (§7G).
+- **Report:** [`reports/inspection/stage0_7g_methylation_eval/analysis.md`](../reports/inspection/stage0_7g_methylation_eval/analysis.md)
+  — ranking winner **`C-mvalue-enet`** (tissue macro-F1); **7F cascade** weak on
+  tissue (~0.09 F1) at 65k/15ep. Follow-up:
+  [`plans/milestone-7g-cascade-tissue-investigation.md`](plans/milestone-7g-cascade-tissue-investigation.md).
 
 ---
 
 ## 7. Run study-grouped cross-fitting (final OOF)
 
-- **Status:** `pending` (**blocked until 7F and 7G**)
+- **Status:** `pending` (**current gate**; 7F and 7G done)
 - **Done when:** Out-of-fold gene-aggregated RBS (and genome-wide RBS + direct
   contributions), age predictions, and tissue predictions are generated with
   leakage controls (no sample/donor/replicate/held-out study scored by a

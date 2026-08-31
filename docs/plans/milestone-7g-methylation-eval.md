@@ -1,6 +1,7 @@
 # Plan: Milestone 7G — Methylation-only full evaluation
 
-Status: **in_progress** (implementation brief for Stage 0 Milestone **7G**).
+Status: **done** (closed 2026-08-27). Follow-up:
+[`milestone-7g-cascade-tissue-investigation.md`](milestone-7g-cascade-tissue-investigation.md).
 Report target: [`reports/inspection/stage0_7g_methylation_eval/`](../../reports/inspection/stage0_7g_methylation_eval/).
 Normative: [ADR 0006](../adr/0006-multipath-noncoding-scores.md),
 [ADR 0007](../adr/0007-crossfit-prerequisites.md),
@@ -100,6 +101,20 @@ bash scripts/status_7g_methylation_eval.sh
 - Metadata-only in ranking; TBS scores; Milestone **7** 5×6 OOF
 - Overwriting 7F report or v0.1 freezes
 
+## Outcome (2026-08-27)
+
+| Arm | Tissue macro-F1 | Sex AUROC | Age MAE | Age R² |
+|-----|-----------------|-----------|---------|--------|
+| **C-mvalue-enet** (ranking winner) | **0.334** | 0.894 | — | — |
+| T-mean-region | 0.330 | 0.908 | 7.95 | 0.802 |
+| N-cascade-l1 (7F topology) | 0.093 | 0.911 | 8.44 | 0.782 |
+
+Ranking rule (max tissue F1, then min age MAE) selects a **classical** arm, not
+the neural cascade. Milestone **7** OOF may still export 7F product scores; see
+tissue probe plan before claiming cascade parity on tissue.
+
 ## Open questions
 
-None (budget locked: 65 536 / 15 / 3×1).
+Resolved for 7G scope. Tissue-head gap →
+[`milestone-7g-cascade-tissue-investigation.md`](milestone-7g-cascade-tissue-investigation.md).
+Milestone **7** topology vs ranking winner may need an ADR.

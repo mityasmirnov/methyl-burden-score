@@ -78,9 +78,12 @@ def _metrics_from_fold_blob(blob: dict[str, Any]) -> dict[str, Any]:
     age = m.get("age") if isinstance(m.get("age"), dict) else None
     tissue = m.get("tissue") if isinstance(m.get("tissue"), dict) else None
     sex = m.get("sex") if isinstance(m.get("sex"), dict) else None
+    excluded = (tissue or {}).get("excluded_zero_shot_test_counts") or {}
     return {
         "tissue_macro_f1": (tissue or {}).get("macro_f1"),
         "tissue_balanced_accuracy": (tissue or {}).get("balanced_accuracy"),
+        "n_classes_scored": (tissue or {}).get("n_classes_scored"),
+        "n_excluded_zero_shot_samples": sum(int(v) for v in excluded.values()),
         "age_mae": (age or {}).get("mae"),
         "age_r2": (age or {}).get("r2"),
         "sex_auroc": (sex or {}).get("auroc"),
@@ -138,6 +141,8 @@ def aggregate_arms(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         mae, maes = _mean_std([r.get("age_mae") for r in items])
         r2, r2s = _mean_std([r.get("age_r2") for r in items])
         sex_a, sex_s = _mean_std([r.get("sex_auroc") for r in items])
+        n_scored, _ = _mean_std([r.get("n_classes_scored") for r in items])
+        n_excluded_total = sum(int(r.get("n_excluded_zero_shot_samples") or 0) for r in items)
         out.append(
             {
                 "arm": arm,
@@ -148,6 +153,8 @@ def aggregate_arms(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "tissue_macro_f1_sd": f1s,
                 "tissue_balanced_accuracy": bacc,
                 "tissue_balanced_accuracy_sd": baccs,
+                "tissue_n_classes_scored_mean": n_scored,
+                "tissue_n_excluded_zero_shot_samples": n_excluded_total,
                 "age_mae_years": mae,
                 "age_mae_years_sd": maes,
                 "age_r2": r2,
@@ -289,15 +296,27 @@ def write_analysis(
         "",
         "## Ranking (methylation-input only)",
         "",
-        "| Arm | Tissue macro-F1 | Balanced acc | Sex AUROC | Age MAE | Age R² |",
-        "|-----|-----------------|--------------|-----------|---------|--------|",
+        "Tissue macro-F1 / balanced accuracy exclude classes with zero training "
+        "examples in that fold (study-grouped folds can hold an entire rare "
+        "tissue class out of train; no model can predict those by "
+        "construction, so counting them would penalize every arm for a fold-"
+        "construction artifact rather than model quality). "
+        "`n classes scored` / `n excluded (zero-shot)` make the denominator "
+        "explicit per arm.",
+        "",
+        "| Arm | Tissue macro-F1 | Balanced acc | n classes scored | "
+        "n excluded (zero-shot) | Sex AUROC | Age MAE | Age R² |",
+        "|-----|-----------------|--------------|-------------------|"
+        "------------------------|-----------|---------|--------|",
     ]
     for r in means:
         lines.append(
-            "| {arm} | {f1} | {bacc} | {sex} | {mae} | {r2} |".format(
+            "| {arm} | {f1} | {bacc} | {nk} | {nex} | {sex} | {mae} | {r2} |".format(
                 arm=r["arm"],
                 f1=_fmt(r.get("tissue_macro_f1")),
                 bacc=_fmt(r.get("tissue_balanced_accuracy")),
+                nk=_fmt(r.get("tissue_n_classes_scored_mean")),
+                nex=r.get("tissue_n_excluded_zero_shot_samples", 0),
                 sex=_fmt(r.get("sex_auroc")),
                 mae=_fmt(r.get("age_mae_years")),
                 r2=_fmt(r.get("age_r2")),

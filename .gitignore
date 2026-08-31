@@ -88,6 +88,8 @@ secrets*
 reports/inspection/ewas_datahub_samples/**/*.RData
 # Regenerable GSM assignment lists (large); summary counts stay in git
 reports/inspection/stage0_7e_prime/hub_nine_pack_split.json
+# Per-sample transparent baseline dump (~30MB); regenerate via write_7g report
+reports/inspection/stage0_7g_methylation_eval/transparent_baselines.json
 
 # Generated project areas (repo-root only; do not ignore configs/data etc.)
 external_data/
