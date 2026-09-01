@@ -387,6 +387,7 @@ def train_cascade_on_arrays(
     age_loss_weight: float = 1.0,
     tissue_loss_weight: float = 1.0,
     sex_loss_weight: float = 1.0,
+    fusion: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Train CascadeDeepSet + MBS heads; write scores; late-fuse; return metrics."""
     score_dir = out_dir / "scores"
@@ -590,6 +591,7 @@ def train_cascade_on_arrays(
         sex_mask_test=sex_mask_a[test_idx],
         study_ids_test=study_ids[test_idx],
         tissue_class_names=list(class_names) if class_names else None,
+        fusion=fusion,
     )
     fused["n_orphan_rbs"] = int(assignment.n_orphan_rbs)
     fused["n_direct"] = int(assignment.n_direct)
@@ -745,6 +747,9 @@ def run_cascade_hub(
     tissue_loss_weight = float(training_cfg.get("tissue_loss_weight", 1.0))
     sex_loss_weight = float(training_cfg.get("sex_loss_weight", 1.0))
     lr = float(training_cfg.get("learning_rate", 1e-2))
+    fusion_cfg = config.get("fusion")
+    if fusion_cfg is not None and not isinstance(fusion_cfg, dict):
+        raise ValueError("config fusion must be a mapping")
     milestone = str(config.get("milestone", config.get("experiment", {}).get("name", "7F")))
     if "7g" in milestone.lower() or "7g" in run_id.lower():
         milestone_tag = "7G"
@@ -927,6 +932,7 @@ def run_cascade_hub(
             age_loss_weight=age_loss_weight,
             tissue_loss_weight=tissue_loss_weight,
             sex_loss_weight=sex_loss_weight,
+            fusion=fusion_cfg,
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
         fold_summaries.append(metrics)

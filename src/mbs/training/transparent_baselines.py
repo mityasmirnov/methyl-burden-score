@@ -6,11 +6,13 @@ from collections.abc import Iterable
 from typing import Any, Literal
 
 import numpy as np
-from sklearn.linear_model import ElasticNet, LogisticRegression, Ridge
+from sklearn.decomposition import PCA
+from sklearn.linear_model import ElasticNet, LogisticRegression, Ridge, SGDClassifier
 
 from mbs.evaluation.metrics import metrics_by_group, multiclass_metrics, regression_metrics
 
 MeanKind = Literal["gene", "region"]
+TissueSolver = Literal["logistic", "balanced_logistic", "sgd_ovr"]
 
 
 def presence_aware_means(
@@ -48,6 +50,27 @@ def presence_aware_means(
     return out.astype(np.float32, copy=False)
 
 
+def _fit_tissue_classifier(
+    x: np.ndarray,
+    y: np.ndarray,
+    *,
+    tissue_solver: TissueSolver = "logistic",
+) -> Any:
+    """Multiclass tissue head for transparent / late-fusion baselines."""
+    if tissue_solver == "logistic":
+        return LogisticRegression(max_iter=1000).fit(x, y)
+    if tissue_solver == "balanced_logistic":
+        return LogisticRegression(max_iter=1000, class_weight="balanced").fit(x, y)
+    if tissue_solver == "sgd_ovr":
+        return SGDClassifier(
+            loss="log_loss",
+            class_weight="balanced",
+            max_iter=1000,
+            random_state=0,
+        ).fit(x, y)
+    raise ValueError(f"unknown tissue_solver: {tissue_solver}")
+
+
 def fit_linear_multitask(
     x_train: np.ndarray,
     *,
@@ -57,17 +80,30 @@ def fit_linear_multitask(
     tissue_mask: np.ndarray | None,
     sex: np.ndarray | None,
     sex_mask: np.ndarray | None,
+    tissue_solver: TissueSolver = "logistic",
+    fusion_pca_components: int | None = None,
 ) -> dict[str, Any]:
     """Fit Ridge (age) / LogReg (tissue, sex) on fixed features."""
     models: dict[str, Any] = {}
     x = np.asarray(x_train, dtype=np.float64)
+    x_tissue = x
+    if fusion_pca_components is not None:
+        n_comp = min(int(fusion_pca_components), x.shape[0], x.shape[1])
+        if n_comp < 1:
+            raise ValueError("fusion_pca_components must be positive")
+        pca = PCA(n_components=n_comp, random_state=0)
+        pca.fit(x)
+        x_tissue = pca.transform(x)
+        models["_pca"] = pca
     if age is not None and age_mask is not None and bool(np.asarray(age_mask).any()):
         m = np.asarray(age_mask, dtype=bool)
         models["age"] = Ridge(alpha=1.0).fit(x[m], np.asarray(age, dtype=np.float64)[m])
     if tissue is not None and tissue_mask is not None and bool(np.asarray(tissue_mask).any()):
         m = np.asarray(tissue_mask, dtype=bool)
-        models["tissue"] = LogisticRegression(max_iter=500).fit(
-            x[m], np.asarray(tissue, dtype=np.int64)[m]
+        models["tissue"] = _fit_tissue_classifier(
+            x_tissue[m],
+            np.asarray(tissue, dtype=np.int64)[m],
+            tissue_solver=tissue_solver,
         )
     if sex is not None and sex_mask is not None and bool(np.asarray(sex_mask).any()):
         m = np.asarray(sex_mask, dtype=bool)
@@ -83,14 +119,17 @@ def predict_linear_multitask(
 ) -> dict[str, np.ndarray]:
     """Predict age / tissue / sex when the corresponding model was fit."""
     x_arr = np.asarray(x, dtype=np.float64)
+    x_tissue = x_arr
+    if "_pca" in models:
+        x_tissue = models["_pca"].transform(x_arr)
     out: dict[str, np.ndarray] = {}
     if "age" in models:
         out["age"] = np.asarray(models["age"].predict(x_arr), dtype=np.float64)
     if "tissue" in models:
-        out["tissue"] = np.asarray(models["tissue"].predict(x_arr), dtype=np.int64)
+        out["tissue"] = np.asarray(models["tissue"].predict(x_tissue), dtype=np.int64)
         if hasattr(models["tissue"], "predict_proba"):
             out["tissue_proba"] = np.asarray(
-                models["tissue"].predict_proba(x_arr), dtype=np.float64
+                models["tissue"].predict_proba(x_tissue), dtype=np.float64
             )
             out["tissue_classes"] = np.asarray(models["tissue"].classes_, dtype=np.int64)
     if "sex" in models:

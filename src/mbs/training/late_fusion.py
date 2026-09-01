@@ -31,6 +31,17 @@ def concatenate_score_blocks(
     return np.concatenate(mats, axis=1)
 
 
+def _fusion_kwargs(fusion: dict[str, Any] | None) -> dict[str, Any]:
+    if not fusion:
+        return {}
+    out: dict[str, Any] = {}
+    if "tissue_solver" in fusion:
+        out["tissue_solver"] = fusion["tissue_solver"]
+    if "pca_components" in fusion and fusion["pca_components"] is not None:
+        out["fusion_pca_components"] = int(fusion["pca_components"])
+    return out
+
+
 def fit_late_fusion_heads(
     scores_train: np.ndarray,
     *,
@@ -40,6 +51,7 @@ def fit_late_fusion_heads(
     tissue_mask: np.ndarray | None,
     sex: np.ndarray | None,
     sex_mask: np.ndarray | None,
+    fusion: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Train-fold linear heads on concatenated branch scores."""
     return fit_linear_multitask(
@@ -50,6 +62,7 @@ def fit_late_fusion_heads(
         tissue_mask=tissue_mask,
         sex=sex,
         sex_mask=sex_mask,
+        **_fusion_kwargs(fusion),
     )
 
 
@@ -72,6 +85,7 @@ def evaluate_late_fusion(
     study_ids_test: np.ndarray | None = None,
     platforms_test: np.ndarray | None = None,
     tissue_class_names: list[str] | None = None,
+    fusion: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Fit on train scores, evaluate on held-out scores."""
     models = fit_late_fusion_heads(
@@ -82,6 +96,7 @@ def evaluate_late_fusion(
         tissue_mask=tissue_mask_train,
         sex=sex_train,
         sex_mask=sex_mask_train,
+        fusion=fusion,
     )
     preds = predict_linear_multitask(models, scores_test)
     tissue_valid_classes = None
@@ -102,9 +117,11 @@ def evaluate_late_fusion(
         tissue_class_names=tissue_class_names,
         tissue_valid_classes=tissue_valid_classes,
     )
+    fusion_meta = dict(fusion or {})
     return {
         "metrics": metrics,
         "n_score_features": int(scores_train.shape[1]),
         "n_train": int(scores_train.shape[0]),
         "n_test": int(scores_test.shape[0]),
+        "fusion": fusion_meta,
     }

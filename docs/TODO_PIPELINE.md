@@ -14,11 +14,15 @@ True next milestone after bootstrap:
 > nine-pack matrices (7B — **done**) → architecture corrections (7C —
 > **done**, fixture + Hub DeepRVAT A/B) → development CV (7E — **done**) →
 > Hub multitask + hygiene (**7E′** — **done**) → **RBS→gene + direct topology
-> (7F — done)** → **methylation-only full eval (7G — current gate)** →
+> (7F — done)** → **methylation-only full eval (7G — done)** →
 > **final OOF cross-fitting (7)** → one score matrix.
 
-**Current gate:** Milestone **7G** (methylation-only full eval that closes 7E
-evaluation gaps). **7F** (RBS→gene + direct leftover, no TBS) is **done**
+**Current gate:** Milestone **7** (study-grouped 5×6 OOF cross-fitting).
+**7G** methylation eval and **tissue probe (P0–P3)** are **done**
+(`reports/inspection/stage0_7g_methylation_eval/`,
+`reports/inspection/stage0_7g_cascade_tissue_probe/`). Run narrowed cascade
+grid (P4–P5) per probe recommendation before committing OOF hyperparameters.
+**7F** (RBS→gene + direct leftover, no TBS) is **done**
 (`reports/inspection/stage0_7f_rbs_gene_direct/`; [ADR 0009](adr/0009-drop-tbs-scores.md)).
 **ATS** = Age/Tissue/Sex frozen Hub GSM-union
 `matrix-hub-age-tissue-sex-full-v1` (13 548). Graph-v2 is **on disk**
@@ -768,6 +772,12 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   — ranking winner **`C-mvalue-enet`** (tissue macro-F1); **7F cascade** weak on
   tissue (~0.09 F1) at 65k/15ep. Follow-up:
   [`plans/milestone-7g-cascade-tissue-investigation.md`](plans/milestone-7g-cascade-tissue-investigation.md).
+- **Tissue probe (P0–P3):** `done` — report
+  [`reports/inspection/stage0_7g_cascade_tissue_probe/`](../reports/inspection/stage0_7g_cascade_tissue_probe/analysis.md).
+  P0 replay ~0.09 F1; P1 balanced fusion modest lift; **P2 tissue-heavy loss
+  weights ~0.38 F1**; P3 region-mean ~0.39. Diagnosis: **task competition**
+  (equal loss weights), not fusion-only bottleneck. Milestone 7: run narrowed
+  grid (P4–P5) before full OOF.
 
 ---
 

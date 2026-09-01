@@ -1,6 +1,7 @@
 # Plan: 7G cascade tissue-head investigation (post-bake-off)
 
-Status: **pending** (scientific follow-up after Milestone **7G** closed).
+Status: **done** (2026-08-31; report
+`reports/inspection/stage0_7g_cascade_tissue_probe/`).
 Parent: [`milestone-7g-methylation-eval.md`](milestone-7g-methylation-eval.md),
 [`reports/inspection/stage0_7g_methylation_eval/analysis.md`](../../reports/inspection/stage0_7g_methylation_eval/analysis.md).
 Normative: [ADR 0007](../adr/0007-crossfit-prerequisites.md),
@@ -165,3 +166,15 @@ manifest hashes match.
 3. Run probe on CPU/GPU via background script; idempotent folds.
 4. If mean tissue F1 &lt; 0.20 after P5, draft ADR for Milestone 7 score vs
    phenotype strategy before starting 5×6 OOF.
+
+## Phase 2 (deferred, 2026-08-31)
+
+P0–P3 completed; **mean tissue F1 ~0.38 (P2)** clears the 0.20 gate. Deferred
+until programme review:
+
+- **P4** mean pooling (`cascade_loop.py` + `models.py`)
+- **P5** 30 epochs + early stop on val tissue F1
+- Narrow grid (fusion solver × loss weights × pooling)
+- ADR draft (product score export vs phenotype winner) — not triggered by gate
+
+Proceed per probe recommendation: narrowed grid before Milestone **7** OOF.
