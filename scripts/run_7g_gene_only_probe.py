@@ -260,6 +260,14 @@ def main() -> None:
     write_json(report_dir / "summary.json", summary)
     print(f"[gene-probe] wrote {report_dir / 'summary.json'}", flush=True)
 
+    report_script = paths.project_root / "scripts" / "write_7g_gene_only_probe_report.py"
+    if report_script.is_file():
+        subprocess.run(
+            ["uv", "run", "python", str(report_script), "--report-dir", str(report_dir)],
+            cwd=paths.project_root,
+            check=True,
+        )
+
 
 if __name__ == "__main__":
     try:

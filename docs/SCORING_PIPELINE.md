@@ -71,7 +71,7 @@ flowchart TB
 | Encoder | Train command | Pooling stages | Region annotations |
 |---------|---------------|----------------|-------------------|
 | **FlatDeepSet** | `mbs train flat` | CpG → **gene** | Collapsed in locus→gene index only |
-| **FlatDeepSetRegion** | Stage B **`N-light-type`** (planned) | CpG(+features) → **gene** | Per-CpG multi-hot regulatory type + observed |
+| **FlatDeepSetRegion** | Stage B **`N-light-type`** | `mbs train flat` (`topology: flat_region`) | CpG(+features) → **gene** | Per-CpG multi-hot regulatory type + observed |
 | **HierarchicalDeepSet** | `mbs train hierarchical` | CpG → **region** → **gene**; unmapped → **residual** scalar | Region-type embedding at region pool |
 | **CascadeDeepSet** | `mbs train cascade` | CpG → **region** → **RBS** → **gene** MBS; orphan RBS separate | Region-type embedding; orphan never pooled by type |
 
@@ -141,8 +141,8 @@ the full locus prefix or a **gene-only** column subset via the packed index.
 ```
 
 Skips the RBS intermediate hop; compares against full **CascadeDeepSet** in 7G′
-Stage B as arm **`N-light-type`**. Not yet a separate class in `models.py` — see
-[`milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md).
+Stage B as arm **`N-light-type`**. Implemented as `FlatDeepSetRegion` in
+`src/mbs/models.py` (`model.topology: flat_region` on `mbs train flat`).
 
 ### Hierarchical (`HierarchicalDeepSet`) — Milestone 6 / 7E
 

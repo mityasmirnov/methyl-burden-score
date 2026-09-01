@@ -34,7 +34,7 @@ from mbs.matrix.store import (
     read_sample_index,
 )
 from mbs.matrix.virtual_hub_store import open_betas_for_matrix
-from mbs.models import FlatDeepSet, SeedMaskedLinearHead, center_mask_scores
+from mbs.models import FlatDeepSet, FlatDeepSetRegion, SeedMaskedLinearHead, center_mask_scores
 from mbs.scoring.orientation import (
     accumulate_signed_gene_mean_m,
     flip_phenotype_head_weights_,
@@ -65,7 +65,14 @@ from mbs.training.dataset import (
     refit_level1_on_flat_records,
 )
 from mbs.training.encoder_config import resolve_encoder
-from mbs.training.features import build_static_column_table, cpg_input_dim
+from mbs.training.features import SampleFeatureBundle, build_static_column_table, cpg_input_dim
+from mbs.training.flat_region_features import (
+    FlatRegionGeneIndex,
+    build_flat_region_gene_index,
+    flat_region_input_dim,
+    gather_flat_region_features,
+)
+from mbs.training.cascade_assign import build_cascade_assignment
 from mbs.training.level1_norm import (
     Level1NormParams,
     fit_level1_from_betas,
@@ -122,6 +129,7 @@ class _PilotStore:
     locus_gene: LocusGeneIndex
     epsilon: float
     n_cols: int
+    flat_region_index: FlatRegionGeneIndex | None = None
 
 
 def resolve_device(device_str: str, *, require_cuda: bool = False) -> torch.device:
@@ -307,17 +315,39 @@ def _materialize_record(
 ) -> FlatSampleRecord:
     row = store.sample_row_by_id[phenotype.sample_id]
     beta_row = np.asarray(store.betas[row, : store.n_cols], dtype=np.float32)
-    rec = build_flat_sample(
-        phenotype=phenotype,
-        beta_row=beta_row,
-        static_by_col=store.static_by_col,
-        static_valid=store.static_valid,
-        locus_gene=store.locus_gene,
-        epsilon=store.epsilon,
-        include_m_value=include_m_value,
-        include_robust_z=include_robust_z,
-        level1_params=level1_params,
-    )
+    if store.flat_region_index is not None:
+        cpg_features, cpg_to_gene = gather_flat_region_features(
+            beta_row=beta_row,
+            index=store.flat_region_index,
+            epsilon=store.epsilon,
+        )
+        if cpg_features.shape[0] == 0:
+            raise ValueError(f"sample {phenotype.sample_id!r} has zero flat-region edges")
+        features = SampleFeatureBundle(
+            cpg_features=cpg_features,
+            cpg_to_gene=cpg_to_gene,
+            n_observed_edges=int(cpg_features.shape[0]),
+            n_dropped_nan_beta=0,
+            n_dropped_no_static=0,
+        )
+        rec = FlatSampleRecord(
+            sample_id=phenotype.sample_id,
+            donor_id=phenotype.donor_id,
+            class_index=phenotype.class_index,
+            features=features,
+        )
+    else:
+        rec = build_flat_sample(
+            phenotype=phenotype,
+            beta_row=beta_row,
+            static_by_col=store.static_by_col,
+            static_valid=store.static_valid,
+            locus_gene=store.locus_gene,
+            epsilon=store.epsilon,
+            include_m_value=include_m_value,
+            include_robust_z=include_robust_z,
+            level1_params=level1_params,
+        )
     _apply_feature_control_inplace(
         rec,
         control_mode,
@@ -1221,6 +1251,8 @@ def train_flat_baseline(
             task_kind = "multiclass"
 
         lr_edges, regions = load_graph_tables(data_root / "canonical" / "graphs" / graph_id)
+        topology = str(model_cfg.get("topology", "flat"))
+        flat_region_index: FlatRegionGeneIndex | None = None
         locus_gene = build_locus_gene_index(
             locus_index=locus_index,
             locus_region_edges=lr_edges,
@@ -1228,8 +1260,24 @@ def train_flat_baseline(
             max_loci=max_loci,
             region_systems=region_systems,
         )
-        gene_ids = locus_gene.gene_ids
-        n_genes = locus_gene.n_genes
+        if topology == "flat_region":
+            genes_path = data_root / "canonical" / "graphs" / graph_id / "genes.parquet"
+            genes_df = (
+                pd.read_parquet(genes_path) if genes_path.is_file() else pd.DataFrame()
+            )
+            cascade_assignment = build_cascade_assignment(
+                locus_index=locus_index,
+                locus_region_edges=lr_edges,
+                regions=regions,
+                genes=genes_df,
+                max_loci=max_loci,
+            )
+            flat_region_index = build_flat_region_gene_index(cascade_assignment)
+            gene_ids = flat_region_index.gene_ids
+            n_genes = flat_region_index.n_genes
+        else:
+            gene_ids = locus_gene.gene_ids
+            n_genes = locus_gene.n_genes
         n_classes = 1 if task_kind == "regression" else len(class_names)
         n_cols = locus_gene.n_study_loci if max_loci is None else int(max_loci)
 
@@ -1249,11 +1297,14 @@ def train_flat_baseline(
                 n_study_loci=n_cols,
             )
         epsilon = float(level1_epsilon)
-        input_dim = cpg_input_dim(
-            static_dim,
-            include_m_value=include_m_value,
-            include_robust_z=include_robust_z,
-        )
+        if topology == "flat_region" and flat_region_index is not None:
+            input_dim = flat_region_input_dim(len(flat_region_index.region_types))
+        else:
+            input_dim = cpg_input_dim(
+                static_dim,
+                include_m_value=include_m_value,
+                include_robust_z=include_robust_z,
+            )
         sample_row_by_id = {
             str(sid): int(row)
             for sid, row in zip(
@@ -1275,6 +1326,7 @@ def train_flat_baseline(
             locus_gene=locus_gene,
             epsilon=epsilon,
             n_cols=n_cols,
+            flat_region_index=flat_region_index,
         )
         if include_robust_z:
             if not train_phenotypes:
@@ -1458,7 +1510,9 @@ def train_flat_baseline(
 
     pool_name: PoolName = str(model_cfg.get("pooling", "max"))  # type: ignore[assignment]
     enc = resolve_encoder(model_cfg)
-    model = FlatDeepSet(
+    topology = str(model_cfg.get("topology", "flat"))
+    model_cls: type[FlatDeepSet] = FlatDeepSetRegion if topology == "flat_region" else FlatDeepSet
+    model = model_cls(
         input_dim,
         phi_hidden_dim=int(enc["cpg_hidden_dim"]),
         phi_layers=int(model_cfg.get("phi_layers", 2)),

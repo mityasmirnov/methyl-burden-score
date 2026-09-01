@@ -384,3 +384,93 @@ def run_classical_mvalue(
                 }
         payload["folds"].append(fold_out)
     return payload
+
+
+def run_classical_mvalue_enetS(
+    *,
+    data_root: Path,
+    fold_pack: dict[str, Any],
+    phenotypes: list[Any],
+    assignment: Any,
+    max_loci: int = 65536,
+    matrix_id: str = "matrix-hub-age-tissue-sex-full-v1",
+    max_seeds: int = 10_000,
+) -> dict[str, Any]:
+    """Fold-safe ``C-mvalue-enetS``: stability selection on outer-train only."""
+    from mbs.training.fold_safe_panel import select_fold_panel
+
+    matrix_paths = matrix_store_paths(data_root / "canonical" / "matrices" / matrix_id)
+    sample_index = read_sample_index(matrix_paths.sample_index_path)
+    n_cols = min(int(max_loci), int(read_locus_index(matrix_paths.locus_index_path).shape[0]))
+    row_by_id = {
+        str(sid): int(row)
+        for sid, row in zip(
+            sample_index["sample_id"].astype(str),
+            sample_index["row_index"].astype(int),
+            strict=True,
+        )
+    }
+    pheno_ids = {p.sample_id for p in phenotypes}
+    betas = open_betas_zarr(matrix_paths.betas_path)
+    m_all = np.asarray(
+        beta_to_m_value(
+            np.clip(np.asarray(betas[:, :n_cols], dtype=np.float32), 0, 1),
+            epsilon=EPSILON,
+        ),
+        dtype=np.float32,
+    )
+
+    def matrix_for(ids: list[str]) -> np.ndarray:
+        rows = np.asarray([row_by_id[s] for s in ids], dtype=np.int64)
+        return m_all[rows]
+
+    payload: dict[str, Any] = {
+        "arm": "C-mvalue-enetS",
+        "folds": [],
+        "note": "Fold-safe stability selection + graph expansion; enet on outer-train only.",
+    }
+    for fold_idx, fold in enumerate(fold_pack["folds"]):
+        train_ids = [s for s in fold["train_sample_ids"] if s in row_by_id and s in pheno_ids]
+        test_ids = [
+            s
+            for s in (fold.get("external_test_sample_ids") or [])
+            if s in row_by_id and s in pheno_ids
+        ]
+        if not test_ids:
+            test_ids = [
+                s for s in fold["validation_sample_ids"] if s in row_by_id and s in pheno_ids
+            ]
+        x_tr = matrix_for(train_ids)
+        x_te = matrix_for(test_ids)
+        ph_tr = _phenotype_arrays(phenotypes, train_ids)
+        ph_te = _phenotype_arrays(phenotypes, test_ids)
+        tissue_m = ph_tr["tissue_mask"]
+        if not bool(tissue_m.any()):
+            raise ValueError(f"fold {fold_idx}: no tissue labels on train")
+        panel_info = select_fold_panel(
+            x_train=x_tr[tissue_m],
+            y_train=ph_tr["tissue"][tissue_m],
+            assignment=assignment,
+            max_seeds=max_seeds,
+        )
+        panel = np.asarray(panel_info["panel_cols"], dtype=np.int64)
+        metrics = fit_eval_mvalue_fold(
+            x_tr[:, panel],
+            x_te[:, panel],
+            ph_tr,
+            ph_te,
+            "enet",
+            impute=True,
+        )
+        payload["folds"].append(
+            {
+                "fold": fold_idx,
+                "panel": panel_info,
+                "metrics": {
+                    k: metrics[k]
+                    for k in ("kind", "age", "tissue", "sex", "age_note")
+                    if k in metrics
+                },
+            }
+        )
+    return payload

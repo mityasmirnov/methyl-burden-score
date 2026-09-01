@@ -87,8 +87,9 @@ flowchart TB
 pooling**: methylation plus regulatory context per CpG, then a single gene-level
 pool — closer to DeepRVAT’s variant+annotation pattern than the two-hop
 RBS→gene cascade. It is **not** yet a separate class in `src/mbs/models.py`;
-7G′ Stage B implements it as **`N-light-type`**
-([`milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md)).
+7G′ Stage B implements it as arm **`N-light-type`** via
+`FlatDeepSetRegion` in `src/mbs/models.py` and `model.topology: flat_region`
+on `mbs train flat` ([`milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md)).
 
 Implementation references: `FlatDeepSet`, `HierarchicalDeepSet`, `CascadeDeepSet`
 in `src/mbs/models.py`.

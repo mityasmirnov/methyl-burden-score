@@ -147,6 +147,15 @@ class FlatDeepSet(nn.Module):
         }
 
 
+class FlatDeepSetRegion(FlatDeepSet):
+    """Annotation-augmented flat pooling: per-CpG M-value + regulatory type → gene MBS.
+
+    Programme name for 7G′ Stage B arm **N-light-type**. Input layout is
+    ``[M-value, region_type one-hot, observed]`` assembled in
+    ``training.flat_region_features`` — no RBS intermediate hop.
+    """
+
+
 class HierarchicalDeepSet(nn.Module):
     """CpG→region→gene hierarchy for annotated loci + residual path for unmapped.
 

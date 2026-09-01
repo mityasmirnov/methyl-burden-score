@@ -47,6 +47,8 @@ def write_cascade_score_dir(
     fold_id: str | None = None,
     restart_id: str | None = None,
     extra_manifest: dict[str, Any] | None = None,
+    direct_cpg: np.ndarray | None = None,
+    direct_locus_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """Persist sample×score Zarrs under ``out_dir`` (DATA_CONTRACT 7F layout)."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -70,6 +72,22 @@ def write_cascade_score_dir(
     _write_array(out_dir / "gene_present.zarr", present_a.astype(np.uint8))
     _write_array(out_dir / "rbs.zarr", rbs_a)
     _write_array(out_dir / "direct_contrib.zarr", direct_a)
+
+    if direct_cpg is not None:
+        dcpg_a = np.asarray(direct_cpg, dtype=np.float32)
+        if direct_locus_ids is None:
+            raise ValueError("direct_locus_ids required when direct_cpg is set")
+        if dcpg_a.shape != (n, len(direct_locus_ids)):
+            raise ValueError(
+                f"direct_cpg shape {dcpg_a.shape} != ({n}, {len(direct_locus_ids)})"
+            )
+        _write_array(out_dir / "direct_cpg.zarr", dcpg_a)
+        pd.DataFrame(
+            {
+                "locus_id": direct_locus_ids,
+                "col_index": np.arange(len(direct_locus_ids), dtype=np.int64),
+            }
+        ).to_parquet(out_dir / "direct_locus_index.parquet", index=False)
 
     pd.DataFrame({"sample_id": sample_ids, "row_index": np.arange(n, dtype=np.int64)}).to_parquet(
         out_dir / "sample_index.parquet", index=False
@@ -97,6 +115,9 @@ def write_cascade_score_dir(
     manifest["n_orphan_rbs"] = len(orphan_region_ids)
     manifest["n_direct_tasks"] = len(direct_task_names)
     manifest["tbs_arm"] = False
+    if direct_cpg is not None:
+        manifest["n_direct_loci"] = len(direct_locus_ids or [])
+        manifest["direct_cpg"] = True
     if extra_manifest:
         manifest.update(extra_manifest)
     (out_dir / "score_manifest.json").write_text(

@@ -798,9 +798,42 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ---
 
+## 7G′. Gene-only architecture selection + matched-panel benchmark
+
+- **Status:** Stage A `in_progress` · Stage B `pending`
+- **Plan:** [`plans/milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md)
+- **Runner (Stage A):** `scripts/run_7g_gene_only_probe.py` · background:
+  `scripts/train_7g_gene_only_probe_background.sh`
+- **Runner (Stage B):** `scripts/run_7g_prime_stage_b.py` · background:
+  `scripts/train_7g_prime_stage_b_background.sh`
+
+### Stage A — gene-only MBS architecture selection
+
+- **Done when:** Report under
+  `reports/inspection/stage0_7g_gene_only_probe/` with per-fold tables,
+  **`mbs_e2e`** primary ranking, locked pooling/epoch policy, orphan
+  `fusion_full` vs `fusion_mbs_direct` decision; arms `P2-G`, `P4-G`,
+  `P5-G-max`, optional `P5-G-mean`, `C-mvalue-*-G`, optional
+  `P2-orphan-ablation`. Real runs use **`--device cuda`**.
+- **Evidence:** (pending GPU report)
+
+### Stage B — fold-selected panel + full model
+
+- **Done when:** Report under
+  `reports/inspection/stage0_7g_prime_matched_probe/` with fold-safe
+  `C-mvalue-enetS`, `N-cascade-S`, **`N-light-type`** (`FlatDeepSetRegion`),
+  `N-full` / `N-mbs-direct-only`, and **`direct_cpg.zarr`** on cascade score
+  export when direct loci exist.
+- **Evidence:** (pending)
+
+- **Depends on:** (7G); Stage A lock for pooling/epochs.
+- **Blocks:** Milestone **7** 5×6 OOF.
+
+---
+
 ## 7. Run study-grouped cross-fitting (final OOF)
 
-- **Status:** `pending` (**current gate**; 7F and 7G done)
+- **Status:** `pending` (**blocked until 7G′ Stage A and B**)
 - **Done when:** Out-of-fold gene-aggregated RBS (and genome-wide RBS + direct
   contributions), age predictions, and tissue predictions are generated with
   leakage controls (no sample/donor/replicate/held-out study scored by a

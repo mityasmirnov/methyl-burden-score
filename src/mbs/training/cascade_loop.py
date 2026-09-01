@@ -506,6 +506,7 @@ def train_cascade_on_arrays(
     gene_linked_only: bool = False,
     primary_evaluation: PrimaryEvaluation = "late_fusion",
     extra_fusion_modes: tuple[FusionBlockMode, ...] = (),
+    locus_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """Train CascadeDeepSet + MBS heads; write scores; evaluate; return metrics."""
     score_dir = out_dir / "scores"
@@ -724,6 +725,16 @@ def train_cascade_on_arrays(
 
     gene_ids = list(assignment.gene_ids) if assignment.gene_ids else ["__none__"]
     orphan_ids = list(assignment.orphan_region_ids)
+    direct_cpg_all: np.ndarray | None = None
+    direct_locus_ids: list[str] | None = None
+    if assignment.direct_col_index.size and locus_ids is not None:
+        dcols = assignment.direct_col_index
+        block = betas[:, dcols]
+        obs = np.isfinite(block)
+        safe = np.where(obs, block, 0.5)
+        m_vals = beta_to_m_value(safe)
+        direct_cpg_all = np.where(obs, m_vals, np.nan).astype(np.float32)
+        direct_locus_ids = [str(locus_ids[int(c)]) for c in dcols.tolist()]
     write_cascade_score_dir(
         score_dir,
         sample_ids=sample_ids,
@@ -736,6 +747,8 @@ def train_cascade_on_arrays(
         direct_task_names=direct_names,
         fold_id=str(out_dir.name),
         restart_id=str(seed),
+        direct_cpg=direct_cpg_all,
+        direct_locus_ids=direct_locus_ids,
     )
 
     blocks = load_cascade_score_blocks(score_dir)
@@ -1175,6 +1188,7 @@ def run_cascade_hub(
             gene_linked_only=gene_linked_only,
             primary_evaluation=cast(PrimaryEvaluation, primary_evaluation),
             extra_fusion_modes=cast(tuple[FusionBlockMode, ...], extra_fusion_modes),
+            locus_ids=locus_index["locus_id"].astype(str).tolist()[:n_cols],
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
         fold_summaries.append(metrics)
