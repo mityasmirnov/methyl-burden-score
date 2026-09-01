@@ -15,30 +15,28 @@ True next milestone after bootstrap:
 > **done**, fixture + Hub DeepRVAT A/B) → development CV (7E — **done**) →
 > Hub multitask + hygiene (**7E′** — **done**) → **RBS→gene + direct topology
 > (7F — done)** → **methylation-only full eval (7G — done)** →
-> **Phase-2 cascade grid (7G-P4/P5 — in progress)** → **fold-safe selected
-> panel + association-product benchmark (7H — pending)** → **final OOF
-> cross-fitting (7)** → one score matrix.
+> **Phase-2 gene-only cascade grid (7G′ Stage A — pending)** → **fold-selected
+> panel + full model (7G′ Stage B — pending)** → **final OOF cross-fitting (7)**
+> → one score matrix.
 
-**Current gate:** **7G Phase 2** (P4 mean pooling, P5 30-epoch ceiling with
-validation-tissue early stopping, and the narrow fusion refit grid), followed by
-**7H** fold-safe selected-panel and association-product benchmarking. Final
-Milestone **7** study-grouped 5×6 OOF remains blocked.
-**7G** methylation eval and **tissue probe P0–P3** are done
-(`reports/inspection/stage0_7g_methylation_eval/`,
-`reports/inspection/stage0_7g_cascade_tissue_probe/`). P4/P5 code and configs
-are implemented; Phase-2 performance is done only after all three fold artifacts
-are present. 7H then compares deepMAT with `C-mvalue-enetS` on the exact same
-fold-selected, gene/region-expanded panel and fixes direct-CpG/orphan export
-semantics before OOF. Plan:
-[`plans/milestone-7h-fold-safe-probe-panel-benchmark.md`](plans/milestone-7h-fold-safe-probe-panel-benchmark.md);
-decision: [ADR 0010](adr/0010-score-export-vs-phenotype-comparator.md).
+**Current gate:** **7G′ Stage A** — corrected gene-only MBS benchmark
+(`P2-G`, `P4-G`, `P5-G`, `C-mvalue-enet-G` on identical gene-linked CpGs;
+MBS-only primary metrics). Then **7G′ Stage B** (fold-safe `C-mvalue-enetS`,
+full-model extension, `direct_cpg.zarr` contract). Final Milestone **7**
+5×6 OOF remains blocked.
+
+**7G** methylation eval and **tissue probe P0–P3** are done (historical evidence
+only — P2 ~0.38 used late fusion, not MBS-only). Plan:
+[`plans/milestone-7g-cascade-tissue-investigation.md`](plans/milestone-7g-cascade-tissue-investigation.md).
+Master brief:
+[`plans/milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md).
 
 **7F** (RBS→gene + direct leftover, no TBS) is **done**
 (`reports/inspection/stage0_7f_rbs_gene_direct/`; [ADR 0009](adr/0009-drop-tbs-scores.md)).
 Product scores remain gene-aggregated RBS (MBS), qualified per-region orphan
 RBS, and indexed direct CpGs — **no TBS**. The present 7F
-`direct_contrib.zarr` is phenotype-diagnostic and must not substitute for the
-7H association direct-CpG block.
+`direct_contrib.zarr` is a phenotype diagnostic (one task prediction per sample).
+Association export requires `direct_cpg.zarr` (7G′ Stage B).
 
 **ATS** = Age/Tissue/Sex frozen Hub GSM-union
 `matrix-hub-age-tissue-sex-full-v1` (13 548). Graph-v2 is **on disk**
@@ -60,7 +58,7 @@ matrix artifacts including all nine Hub full packs). EWAS_db is incomplete
 census: `reports/inspection/deepmat_data_v1/` (underscore; matches this
 refresh). Ignore `reports/inspection/deepmat-data-v1/` if it shows ~5 GSM
 (fixture leak into the CLI default hyphen path).
-**Do not retrain v0.1** or start Milestone **7** until **7G Phase 2 and 7H** land
+**Do not retrain v0.1** or start Milestone **7** until **7G′ Stage A and B** land
 (7A–7E′ are already `done`; [ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
 [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
@@ -71,9 +69,9 @@ when training runs; DeepRVAT-style joint aggregation + linear heads).
 architecture selection on frozen ATS (3×2, **done**); **7E′** = Hub multitask
 + hygiene (**done**); **7F** = RBS→gene cascade + direct leftover (no TBS
 scores); **7G** = methylation-only re-eval that closes 7E evaluation gaps;
-**7H** = fold-safe selected-panel/product-contract benchmark; **7** = final
-5×6 OOF after 7G Phase 2 **and** 7H. Neural arms train shared score
-aggregation **and** linear phenotype heads end-to-end (DeepRVAT pattern).
+**7G′** = gene-only architecture selection + fold-selected panel / full model;
+**7** = final 5×6 OOF after 7G′. Neural arms train shared score aggregation
+**and** linear phenotype heads end-to-end (DeepRVAT pattern).
 Architecture comparison tables use **methylation-input methods only**.
 Metadata-only (study + platform IDs, no betas) is a leakage alarm from 7E′,
 not a competitor.
@@ -789,12 +787,12 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   — ranking winner **`C-mvalue-enet`** (tissue macro-F1); **7F cascade** weak on
   tissue (~0.09 F1) at 65k/15ep. Follow-up:
   [`plans/milestone-7g-cascade-tissue-investigation.md`](plans/milestone-7g-cascade-tissue-investigation.md).
-- **Tissue probe (P0–P3):** `done` — report
+- **Tissue probe (P0–P3):** `done` (historical) — report
   [`reports/inspection/stage0_7g_cascade_tissue_probe/`](../reports/inspection/stage0_7g_cascade_tissue_probe/analysis.md).
-  P0 replay ~0.09 F1; P1 balanced fusion modest lift; **P2 tissue-heavy loss
-  weights ~0.38 F1**; P3 region-mean ~0.39. Diagnosis: **task competition**
-  (equal loss weights), not fusion-only bottleneck. Milestone 7: run narrowed
-  grid (P4–P5) before full OOF.
+  P0 ~0.09 F1 (late fusion); P2 ~0.38 F1 (**MBS train, late-fusion test** — not
+  a clean MBS-only vs enet comparison). **Corrected gene-only grid (P2-G …
+  P5-G, `C-mvalue-enet-G`)** is **7G′ Stage A** (pending). Then **7G′ Stage B**
+  before Milestone **7** OOF.
 
 ---
 
@@ -808,7 +806,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   (ADR 0008) before averaging. Persist fold-specific normalization,
   presence/count/`norm_present` masks, complete model lineage. Protocol: 5
   outer folds × up to 6 restarts.
-- **Depends on:** (7A)–(7E′), **7F**, **7G**; Hub multitask hygiene in 7E′.
+- **Depends on:** (7A)–(7E′), **7F**, **7G**, **7G′**; Hub multitask hygiene in 7E′.
 - **Note:** A 3-fold / 1-restart smoke of *existing* machinery is allowed for
   plumbing; it does not complete this milestone and must not overwrite v0.1
   freezes ([ADR 0007](adr/0007-crossfit-prerequisites.md)).

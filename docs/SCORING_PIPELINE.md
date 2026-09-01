@@ -16,7 +16,7 @@ MBS scoring function.
 | Flat vs hierarchical aggregation | Present (+ unassigned semantics) |
 | Phenotype masking / shared encoder | Present |
 | Today vs Milestone 7 OOF MBS | Present; 7 blocked until 7A–7E |
-| Current 7F cascade (MBS/orphan RBS/direct; no TBS) | Implemented; direct-CpG association block is a 7H gap |
+| Current 7F cascade (MBS/orphan RBS/direct; no TBS) | Implemented; `direct_cpg.zarr` is a 7G′ Stage B gap |
 | Numeric train metrics / loss curves | Out of scope here → `stage0_5d_max_n/`, TB |
 | Cross-fitting fold diagram | Deferred with §7 |
 
@@ -127,7 +127,8 @@ flowchart TD
 
 The diagram records the 7C experiment. ADR 0009 subsequently removed TBS from
 the product. The current cascade exports MBS, separate orphan-region scores and
-a direct phenotype contribution. Before final OOF, 7H must preserve direct CpG
+a direct phenotype contribution. Before final OOF, 7G′ Stage B must add
+`direct_cpg.zarr` (sample×locus); `direct_contrib.zarr` is diagnostic only.
 identity for association and replace unrestricted nearest-gene RBS allocation
 with evidence-backed edges.
 
@@ -173,7 +174,7 @@ Contracts: [`EWAS_METADATA.md`](EWAS_METADATA.md),
 - Study-grouped train / validation / external_test splits exist
   (`evaluation/splits.py`); hierarchical runs can reuse a flat `split.json`.
 
-**Deferred (Milestone 7 — blocked until 7G Phase 2 and 7H)**
+**Deferred (Milestone 7 — blocked until 7G′ Stage A and B)**
 
 - Full **out-of-fold** score matrix: every training sample scored only by models
   that never saw its study group; persisted OOF MBS, qualified per-region orphan

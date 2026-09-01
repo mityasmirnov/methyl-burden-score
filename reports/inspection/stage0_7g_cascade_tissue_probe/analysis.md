@@ -86,19 +86,32 @@ P2 reweighted training (0.376) lifts tissue F1 >=0.05 vs P0 -> **task competitio
 
 **Proceed with narrowed hyperparameter grid** (P4-P5 + fusion solver sweep) before Milestone 7 OOF; cascade may be salvageable for tissue with fusion/loss fixes.
 
+## Methodological correction (2026-09-01)
+
+**P2 F1 0.376 does not prove MBS-only CascadeDeepSet beats `C-mvalue-enet`
+(0.334).** Training supervises MBS heads only, but reported test metrics
+late-fuse `[orphan_rbs | mbs | direct_contrib]`. The comparator used all
+65 536 prefix columns, including CpGs that never affect MBS gradients.
+
+Corrected architecture selection (**7G′ Stage A**): `P2-G`, `P4-G`, `P5-G`, and
+`C-mvalue-enet-G` on the **identical gene-linked CpG panel** with **MBS-only
+primary metrics**. P0–P3 and any uncorrected P4/P5 numbers here are historical
+evidence only.
+
+Phenotype prediction and MBS export are two uses of the **same
+phenotype-trained model**, not separate topologies.
+
 ## Product scores versus phenotype comparator
 
 Product association export remains the deepMAT cascade: sample×gene MBS,
-qualified orphan RBS kept one region per column, and indexed direct CpGs. The
-current `direct_contrib.zarr` is a phenotype diagnostic, not yet the required
-sample×direct-CpG association block. Tissue benchmarking is separate:
-`C-mvalue-enet` remains the locked classical comparator (7G F1 0.334) until
-the same-panel 7H comparison. See ADR 0010.
+qualified orphan RBS (one column per `region_id`), and indexed direct CpGs
+(`direct_cpg.zarr` — **7G′ Stage B**). `direct_contrib.zarr` is a phenotype
+diagnostic (one task prediction per sample), not the association product.
 
-Current P2 F1 0.376 is numerically above the original C-mvalue-enet mean, but it
-was obtained after a targeted tissue-loss investigation. It does not replace
-the locked comparator or establish a final winner without P4/P5 and the
-fold-selected same-panel benchmark.
+`C-mvalue-enet` (0.334) remains the 7G bake-off reference on the 65k prefix.
+Fair comparison requires **C-mvalue-enet-G** (gene-linked panel) and later
+**C-mvalue-enetS** (fold-selected panel). See
+[`docs/plans/milestone-7g-prime-matched-probe-lightweight.md`](../../../docs/plans/milestone-7g-prime-matched-probe-lightweight.md).
 
 ## Artifacts
 

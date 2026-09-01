@@ -43,9 +43,10 @@ OOF cross-fit is unblocked now that **7F and 7G** passed.
 | **7E** | **Done** — development CV on frozen ATS (2-epoch / 8 192-locus budget; linear region-mean fusion) |
 | **7E′** | **Done** — Hub multitask + hygiene |
 | **7F** | **Done.** RBS→gene cascade + direct leftover; saved neural scores fused |
-| **7G** | **Done.** Methylation-only re-eval; winner `C-mvalue-enet`; cascade weak on tissue at equal weights — P2 probe ~0.38 F1 |
-| **7G′** | Fold-fitted matched probe set; enetS vs cascadeS vs lightweight annotated-CpG; orphan-skip ablation (**pending**) |
-| **7** | **Yes — current gate after 7G′.** Final OOF after 7F, 7G, Phase-2 probe, and 7G′ |
+| **7G** | **Done.** Methylation-only re-eval; winner `C-mvalue-enet` (0.334 tissue F1 on 65k prefix). P2 ~0.38 is **not** MBS-only (late-fusion test) |
+| **7G′ Stage A** | Gene-only MBS benchmark: `P2-G`/`P4-G`/`P5-G` vs `C-mvalue-enet-G` on identical gene-linked CpGs (**pending**) |
+| **7G′ Stage B** | Fold-selected `C-mvalue-enetS`, full model, `direct_cpg.zarr` (**pending**) |
+| **7** | **Blocked until 7G′.** Final OOF after 7F, 7G, and 7G′ |
 
 Do not retrain frozen **v0.1** flat/hier runs.
 
@@ -127,7 +128,7 @@ Graph-v2 + independent RBS/TBS train-time masks are **done**
 | **7E′** | Hub multitask (age/tissue/sex/disease/cancer, masked) + catalog/census hygiene (**done**) |
 | **7F** | RBS genome-wide → gene-associated RBS aggregation; leftover CpGs **direct**; no TBS scores; fuse **saved neural** scores (**done**) |
 | **7G** | Methylation-only re-eval on frozen 7E folds: longer train, ROC, M-value ridge/enet/trees/optional PCA-SVA; no metadata-only ranking (**done**) |
-| **7G′** | Matched-probe bake-off + lightweight annotated-CpG aggregator (**pending**; blocks Milestone **7**) |
+| **7G′** | Stage A: gene-only MBS vs `C-mvalue-enet-G`; Stage B: fold-selected panel, full model, `direct_cpg.zarr` (**pending**; blocks Milestone **7**) |
 | **7** | 5×6 OOF gene-RBS + orphan RBS + direct (no TBS) with leakage controls |
 
 ## Locked decisions

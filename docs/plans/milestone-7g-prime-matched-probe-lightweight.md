@@ -1,102 +1,192 @@
-# Plan: 7G′ matched-probe bake-off + lightweight annotated-CpG aggregator
+# Plan: 7G′ gene-only architecture selection + matched-panel benchmark
 
-Status: **pending** (after Phase-2 tissue probe P4–P5).
-Parent: [`milestone-7g-methylation-eval.md`](milestone-7g-methylation-eval.md),
-[`milestone-7g-cascade-tissue-investigation.md`](milestone-7g-cascade-tissue-investigation.md).
+Status: **pending** (blocks Milestone **7** final OOF).
+Parents: [`milestone-7g-cascade-tissue-investigation.md`](milestone-7g-cascade-tissue-investigation.md),
+[`milestone-7g-methylation-eval.md`](milestone-7g-methylation-eval.md).
 Normative: [ADR 0007](../adr/0007-crossfit-prerequisites.md),
 [ADR 0008](../adr/0008-score-identifiability.md),
 [ADR 0009](../adr/0009-drop-tbs-scores.md).
 
-## Problem statement
+Replaces the former **7H** plan
+([`milestone-7h-fold-safe-probe-panel-benchmark.md`](milestone-7h-fold-safe-probe-panel-benchmark.md)).
 
-7G compared **CascadeDeepSet** (graph aggregation → MBS / orphan RBS / direct)
-to **C-mvalue-enet** on the **same arbitrary 65 536 locus-index prefix**. That
-prefix is not biology-selected: enet uses 65k independent columns while the
-cascade compresses to genes. A fair bake-off requires both methods on the
-**same fold-fitted informative probe set**.
+## Executive decision
 
-## Scope and acceptance
+Architecture selection must compare **gene aggregation on the same gene-linked
+CpGs** that can actually reach MBS through the computational graph. The classical
+comparator receives **exactly those unique CpG columns**. Only after locking
+pooling and training policy should the model be extended with non-gene CpGs and
+qualified orphan-region scores.
 
-**Done when:**
+Phenotype prediction and MBS export are **two uses of the same
+phenotype-trained model**, not separate topologies. No ADR is required to
+separate them.
 
-- Per train fold, a persisted probe list (≤ ~10 000 loci) from C-mvalue-enet
-  importance + gene-sibling enrichment (no test-fold leakage).
-- **Matched arms** on frozen `hub-ats-7e-3fold-v1`:
-  - **C-mvalue-enetS** — SGD elastic-net on the selected loci only.
-  - **N-cascade-S** — cascade with Phase-2 locked hparams on the same loci.
-  - **N-annotated-deepset** — lightweight: `[M or B, one-hot region_type]` per
-    CpG → pool by gene → MBS; untyped → direct (no orphan-RBS block).
-  - **Orphan-skip ablation** — fusion `[MBS | direct]` vs full
-    `[orphan | MBS | direct]` on the same encoder.
-- Report under `reports/inspection/stage0_7g_prime_matched_probe/` with tissue
-  macro-F1, sex AUROC, age MAE/R² per fold; recommendation for Milestone **7**
-  OOF config.
+## Why P0–P3 / uncorrected P2 do not settle the question
 
-**Out of scope:** Milestone **7** 5×6 OOF; changing Hub GMQN; metadata-only arms.
+| Reported arm | Tissue F1 | What it actually measures |
+|--------------|-----------|---------------------------|
+| P0 | ~0.09 | Late-fused `[orphan \| MBS \| direct_contrib]` after equal-weight training |
+| P2 | ~0.38 | MBS-only **training**, but **late-fusion test** on full blocks |
+| P3 | ~0.39 | Transparent region means (no cascade train) |
+| `C-mvalue-enet` | 0.334 | All 65 536 prefix columns, including CpGs that never affect MBS gradients |
 
-## Locked decisions
+**P2 does not prove MBS-only CascadeDeepSet beats `C-mvalue-enet`.** It shows
+task reweighting improves the encoder; reported metrics still mix direct and
+orphan information at evaluation time.
 
-| Choice | Decision | Why |
-|--------|----------|-----|
-| Splits | Frozen `hub-ats-7e-3fold-v1` | Match 7G / probe |
-| Probe selection | Train-fold only; union top-\|coef\| across age/sex/tissue; cap ~10k | No leakage |
-| Enrichment | Add all matrix loci sharing a gene with any selected probe | Gene-level fairness |
-| Comparator | C-mvalue-enetS on **exact same** locus list | Apples-to-apples |
-| Lightweight arm | One-hot regulatory type + M/B per CpG → gene pool | DeepRVAT-like |
-| Orphan RBS | One column per region when kept; skip fusion block if not repeatable | User invariant |
-| Product export | Still MBS + optional orphan + direct after OOF | ADR 0009 |
+Current code facts (must stay documented until fixed):
 
-## Probe selection algorithm (sketch)
+- End-to-end loss uses **MBS heads only** (`cascade_loop.py`).
+- Test metrics always late-fuse `[orphan_rbs | mbs | direct_contrib]`.
+- Neural branch uses raw M-values; direct branch uses Level-1 robust z.
+- `direct_contrib.zarr` holds **one task prediction per sample**, not
+  sample×direct-CpG association features.
+- P4/P5 on `main` may be incomplete; treat committed Phase-2 numbers as
+  provisional until **gene-only** arms re-run.
 
-```text
-For each outer fold:
-  1. Fit C-mvalue-enet on train samples (M-values, median impute, StandardScaler).
-  2. Per task (age regressor, sex classifier, tissue classifier), take top-K
-     probes by |coefficient| (K chosen so union ≤ 10_000).
-  3. Enrich: for each selected probe, add other probes in matrix assigned to
-     the same gene (via locus→gene or graph assignment).
-  4. Persist locus_id list + content hash under fold artifact dir.
-  5. Subset betas to selected columns for both enetS and cascadeS.
+## Stage A — Gene-only MBS architecture selection (corrected P4/P5)
+
+### Gene-linked CpG definition
+
+From the assignment graph (after removing unrestricted nearest-gene allocation
+for architecture selection):
+
+```python
+gene_edge = (
+    assignment.region_to_gene[assignment.edge_region_index] >= 0
+)
+gene_cols = np.unique(
+    assignment.edge_col_index[gene_edge]
+)
 ```
 
-## Lightweight annotated-CpG aggregator
+Both CascadeDeepSet and the comparator use **exactly `gene_cols`**. Non-gene
+typed regions, orphan-region CpGs, and untyped CpGs are **excluded** from this
+phase (compute savings + fair loss path).
 
-DeepRVAT analog: variant-level features + context → gene score.
-
-```text
-x_{s,c} = [M_{s,c} or β_{s,c}, one_hot(region_type(c))]
-h_{s,c} = φ(x_{s,c})
-MBS_{s,g} = pool_{c ∈ gene(g)} h_{s,c}   # max or mean (match Phase-2 lock)
-```
-
-Untyped CpGs: fold-fitted direct elastic-net (same as 7F). No two-hop RBS→gene;
-no orphan-RBS export block in this arm (ablation vs full cascade).
-
-## Data / artifact flow
+### MBS-only architecture
 
 ```mermaid
-flowchart LR
-  folds[hub-ats-7e-3fold-v1]
-  mat[matrix-hub-age-tissue-sex-full-v1]
-  folds --> select[fold-fitted probe select]
-  mat --> select
-  select --> enetS[C-mvalue-enetS]
-  select --> cascadeS[N-cascade-S]
-  select --> lite[N-annotated-deepset]
-  enetS --> report[stage0_7g_prime_matched_probe]
-  cascadeS --> report
-  lite --> report
+flowchart TB
+  A["Exact gene-linked CpG set"] --> B["M-value or fold-normalized input"]
+  B --> C["Shared CpG encoder"]
+  C --> D["Pool within typed gene regions"]
+  D --> E["RBS with region-type context"]
+  E --> F["Pool by gene → MBS"]
+  F --> G["Linear age tissue sex heads"]
 ```
+
+### Matched comparator: `C-mvalue-enet-G`
+
+Same unique CpG columns as neural arms:
+
+- age: elastic-net **regression**;
+- sex: binary logistic elastic-net;
+- tissue: multinomial or one-vs-rest logistic elastic-net (not regression on
+  float class indices);
+- train-fold imputation + scaling only.
+
+### Revised arms
+
+| Arm | Pooling | Epoch policy | Primary metric |
+|-----|---------|--------------|----------------|
+| `P2-G` | max/max | 15 | End-to-end MBS heads **and** optional MBS linear probe |
+| `P4-G` | mean/mean | 15 | same |
+| `P5-G-max` | max/max | 30 ceiling + early stop | same |
+| `P5-G-mean` | mean/mean | Run if P4-G within ~0.03 F1 of P2-G | same |
+| `C-mvalue-enet-G` | — | fold-fitted enet | same CpG panel |
+
+Report **two neural metrics** separately:
+
+1. checkpoint end-to-end phenotype heads (MBS-only input path);
+2. CPU linear probe on saved MBS only (representation check — not “fusion”).
+
+Early-stop patience: simulate patience 5 on stored P2 validation histories
+before locking; if it would stop before observed best epochs (9/12/15), keep
+patience 8 or report both as ablations.
+
+**Done when:** report under
+`reports/inspection/stage0_7g_gene_only_probe/` with per-fold tables and locked
+pooling/loss/epoch policy.
+
+## Stage B — Fold-selected panel + full model extension
+
+After Stage A locks gene-level aggregation:
+
+### Fold-safe `C-mvalue-enetS`
+
+1. Outer-train only: repeated study-grouped inner CV stability selection.
+2. Rank probes by selection frequency, then |coefficient| per trait.
+3. Union ≤ ~10 000 seed CpGs (equal trait quotas initially).
+4. Expand: gene siblings for gene-linked seeds; same `region_id` for qualified
+   non-gene seeds; never unrestricted nearest-gene.
+5. Refit enet on expanded panel; evaluate once on outer test.
+
+Sensitivity arm `S-assoc`: univariate meta-analysis within studies only — not
+the primary selector.
+
+### Comparison arms (identical panel per fold)
+
+| Arm | Role |
+|-----|------|
+| `C-mvalue-enetS` | sparse linear on selected panel |
+| `N-cascade-S` | locked Stage-A cascade on same loci |
+| `N-light-type` | `[M, multi-hot regulatory annotation, observed]` → gene pool |
+| `N-mbs-direct-only` | MBS + direct; omit orphan block |
+| `N-full` | MBS + qualified orphan RBS + direct CpG features |
+
+### Full model after gene-architecture selection
+
+```mermaid
+flowchart TB
+  A["Observed CpGs"] --> B{"Routing"}
+  B --> C["Evidence-linked regions → MBS"]
+  B --> D["Qualified orphan region → one RBS column per region_id"]
+  B --> E["Remaining CpGs → direct values or sparse scores"]
+  C --> F["Concatenate feature columns + presence masks"]
+  D --> F
+  E --> F
+  F --> G["Trait-specific linear or sparse heads"]
+```
+
+Staged training: load winning gene encoder → add blocks frozen → train new
+heads → joint fine-tune → compare vs scratch.
+
+**Orphan RBS rules**
+
+- During Stage A: orphan CpGs belong to the **excluded non-gene set**.
+- Final model: one column per **qualified** multi-CpG `region_id`; never pool
+  globally or by `region_type`.
+- Unqualified singletons → direct.
+- Remove unrestricted same-chromosome nearest-gene allocation for final OOF
+  (current `cascade_assign.py` violates this).
+
+**Association product (Milestone 7 export)**
+
+```text
+mbs.zarr
+gene_present.zarr
+orphan_rbs.zarr          # possibly zero columns
+direct_cpg.zarr          # sample × retained locus (7G′ deliverable)
+direct_locus_index.parquet
+```
+
+`direct_contrib.zarr` remains a **phenotype diagnostic only**.
+
+**Done when:** report under
+`reports/inspection/stage0_7g_prime_matched_probe/` recommends one OOF config.
 
 ## Non-goals
 
-- Full 482 379 loci in one pass (unless explicitly budgeted later).
-- Retraining v0.1 or rewriting 7G bake-off tables.
-- ADR separating training from product use (same model serves both).
+- Milestone **7** 5×6 OOF before Stage A + B complete.
+- Retraining v0.1.
+- Claiming P0–P3 or uncorrected P2 as MBS-only architecture winners.
 
 ## Sequencing
 
-1. Complete Phase-2 probe (P4–P5 + fusion grid); lock OOF hparams in probe report.
-2. Implement probe selector + enetS runner + annotated-deepset module.
-3. Run 7G′ on GPU; write inspection report.
-4. Start Milestone **7** 5×6 OOF with locked cascade config + product score export.
+1. Implement gene-col filter + MBS-only evaluation mode in cascade trainer.
+2. Re-run Stage A (`P2-G` … `C-mvalue-enet-G`).
+3. Implement fold-safe panel selector + `direct_cpg.zarr` contract.
+4. Run Stage B.
+5. Start Milestone **7** OOF with locked config + full product export.

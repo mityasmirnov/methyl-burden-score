@@ -405,20 +405,20 @@ score_manifest.json
 ```
 
 The current 7F implementation names the orphan block `rbs.zarr` and writes
-`direct_contrib.zarr` per task. Milestone 7H must migrate/alias these names and
-add the indexed direct-CpG association block above. A per-task contribution is
-not a substitute for retained CpG identity.
+`direct_contrib.zarr` (one **task prediction per sample** — phenotype diagnostic
+only). **7G′ Stage B** must add `direct_cpg.zarr` (sample×locus association
+block). A per-task contribution is not a substitute for retained CpG identity.
 
 Product fusion uses **qualified orphan RBS + MBS + direct**; do not write a TBS
 score arm ([ADR 0009](adr/0009-drop-tbs-scores.md)). Orphan regions are separate
 `region_id` columns, never one global or per-type pool. Qualification requires
-a versioned multi-CpG interval; region→gene allocation requires explicit
-evidence rather than unrestricted nearest gene ([ADR 0010](adr/0010-score-export-vs-phenotype-comparator.md)).
+a versioned multi-CpG interval; unrestricted nearest-gene region allocation is
+not accepted for final OOF (see 7G′ plan).
 The score manifest records fold and restart membership, **score polarity /
 orientation anchor** ([ADR 0008](adr/0008-score-identifiability.md)), and
 fold-fitted normalizer hashes. Every sample must be traceable to models that
-excluded its study and replicate group. Milestone **7** (after 7G Phase 2 and 7H) is
-the OOF export gate. Averaging unaligned `MBS` and `1−MBS` folds is undefined.
+excluded its study and replicate group. Milestone **7** (after **7G′**) is the
+OOF export gate. Averaging unaligned `MBS` and `1−MBS` folds is undefined.
 OOF MBS is a **predictive** sample×gene representation, not a constraint or
 LOEUF analogue.
 

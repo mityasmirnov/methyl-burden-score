@@ -44,8 +44,37 @@ The score network is shared across CpGs, regions, genes, samples, and traits. Ph
 
 ## Current 7F product model and 7G comparator
 
-The shipped representation and the phenotype benchmark have different jobs
-([ADR 0010](adr/0010-score-export-vs-phenotype-comparator.md)).
+The phenotype-trained cascade serves **two uses of the same model**: (1) masked
+auxiliary phenotype prediction during training/selection; (2) export of
+sample×gene MBS and optional non-gene features for downstream association. These
+are not separate topologies.
+
+### Training vs evaluation (current hybrid — to be corrected)
+
+```mermaid
+flowchart TB
+  A["Gene-linked typed CpGs"] --> B["CascadeDeepSet"]
+  B --> C["MBS"]
+  C --> D["End-to-end phenotype loss age tissue sex"]
+  E["Untyped CpGs"] --> F["Separate elastic-net task predictions"]
+  C --> G["Current test metric late fusion"]
+  F --> G
+  H["Orphan RBS if any"] --> G
+```
+
+End-to-end training supervises **MBS only**. Current test reporting concatenates
+`[orphan_rbs | mbs | direct_contrib]` before linear heads — so **reported P2
+~0.38 F1 is not an MBS-only architecture result**. Corrected Phase-2 (**P2-G**,
+**P4-G**, **P5-G**) must evaluate on gene-linked CpGs only and report MBS-only
+metrics separately from any full-model fusion.
+
+**Architecture-selection phase (7G′ Stage A):** compare CascadeDeepSet vs
+`C-mvalue-enet-G` on the **identical gene-linked CpG columns** only. Exclude
+orphan regions and direct CpGs from both training input and primary metrics.
+
+**Full model (after Stage A):** concatenate additional **feature columns**
+(qualified orphan RBS, direct CpG values/scores) before trait heads — not extra
+sample rows. Staged fine-tune from the winning gene encoder.
 
 ### deepMAT cascade implementation
 
@@ -69,10 +98,8 @@ flowchart TD
 At the 7G checkpoint, the CpG encoder receives one M-value per observed locus;
 the richer beta/M/robust-z/static feature contract below is the intended final
 input, not yet the cascade's actual input. The CpG→region and region→gene pools
-are configurable as `max` or `mean` for P4. The end-to-end age/tissue/sex
-heads currently supervise the **MBS block**; orphan RBS and direct contributions
-enter the fold-fitted late-fusion benchmark afterward. This distinction matters
-when interpreting branch performance.
+are configurable as `max` or `mean` for P4. Disease/cancer heads exist in
+`MultitaskHeads` but are **not** wired in the current P4/P5 cascade loop.
 
 The product use is DeepRVAT-like:
 
@@ -84,34 +111,37 @@ The product use is DeepRVAT-like:
 4. perform downstream feature selection, association tests, and prediction on
    the reduced representation.
 
-The present 7F writer exports `direct_contrib.zarr` with one fitted contribution
-per training task, not one column per retained CpG. That is suitable for the
-7G phenotype bake-off but **does not yet satisfy** the intended association
-product. Milestone 7H must add an indexed direct-CpG block (or a lossless
-reference/view into the canonical matrix) before final OOF.
+The present 7F writer exports `direct_contrib.zarr` with one fitted **task
+prediction per sample**, not one column per retained CpG. That artifact is a
+phenotype diagnostic only. Downstream association requires
+`direct_cpg.zarr` (sample×locus) or a lossless canonical-matrix view — a **7G′
+Stage B** deliverable before final OOF.
 
-The shared aggregator does not consume raw probe or gene IDs, so it can score a
-new supported array or sequencing panel when observed CpGs map to the same
-canonical feature schema and annotation graph. This is not imputation:
-unobserved genes remain neutral with `present=false`. The **direct** branch is
-locus- and task-specific and is therefore not probe-ID agnostic.
+The shared CpG encoder does not consume raw probe IDs and can score new arrays
+when loci map to the canonical graph. Linear phenotype heads require a **stable
+canonical gene index** — the full phenotype model is probe-ID agnostic in the
+encoder path, not gene-ID agnostic in the head path. The **direct** branch is
+locus-specific and not probe-ID agnostic.
 
-### Best current phenotype competitor: C-mvalue-enet
+### Best current phenotype comparator: C-mvalue-enet (7G) and C-mvalue-enet-G (7G′ Stage A)
 
 ```mermaid
 flowchart TD
-  A["Same 65,536 CpG prefix"] --> B["Beta → M-value"]
+  A["65,536 prefix OR gene-linked panel G"] --> B["Beta → M-value"]
   B --> C["Train-fold median imputation"]
   C --> D["Train-fold StandardScaler"]
-  D --> E["SGD elastic-net head"]
+  D --> E["SGD elastic-net heads"]
   E --> F["Held-out study predictions"]
 ```
 
-`C-mvalue-enet` uses all 65,536 input columns. Its elastic-net penalty performs
-embedded shrinkage; it is **not** a preselected 10,000-probe model. Tissue and
-sex use logistic loss; age uses elastic-net regression. Current settings are
-`alpha=1e-4`, `l1_ratio=0.5`, 50 classifier iterations and 80 regressor
-iterations. It is the 7G tissue comparator, not the product score topology.
+**C-mvalue-enet** (7G bake-off): all 65 536 prefix columns — includes CpGs that
+never receive MBS gradients. Tissue macro-F1 **0.334**.
+
+**C-mvalue-enet-G** (corrected architecture selection): **exact same unique
+gene-linked CpG columns** as the neural gene-only arms. Tissue/sex must use
+logistic elastic-net, not regression on float class indices.
+
+Fair selected-panel comparison is **7G′ Stage B** (`C-mvalue-enetS`).
 
 ### Orphan regulatory regions
 
@@ -129,8 +159,8 @@ left **zero** orphan regions in the Hub smoke. Before final OOF:
 
 The lightweight ablation passes `[M-value, one-hot regulatory type, observed]`
 through a shared pre-aggregation adapter and compares **MBS + direct** against
-the full region encoder. See the fold-safe panel plan in
-[`milestone-7h-fold-safe-probe-panel-benchmark.md`](plans/milestone-7h-fold-safe-probe-panel-benchmark.md).
+the full region encoder. See **7G′ Stage B** in
+[`milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md).
 
 ## Input representation
 

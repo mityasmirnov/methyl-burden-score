@@ -301,9 +301,9 @@ def write_analysis(
                 "",
                 f"`C-mvalue-enet`: mean F1 "
                 f"{_fmt(locked_comparator.get('tissue_macro_f1'))}. "
-                "It remains the locked phenotype comparator until the 7H same-panel benchmark; "
-                "post-7G targeted arms are reported as salvage evidence, not retroactively "
-                "inserted into the 7G winner selection.",
+                "It remains the 7G bake-off reference on the 65k prefix until "
+                "**C-mvalue-enet-G** (gene-linked panel) and **7G′ Stage B** "
+                "(`C-mvalue-enetS`) complete.",
             ]
         )
     lines.extend(["", "## Per-fold tissue macro-F1", ""])
@@ -350,12 +350,19 @@ def write_analysis(
             "",
             recommendation,
             "",
+            "## Methodological note",
+            "",
+            "P2 trains on MBS only but current test metrics late-fuse "
+            "`[orphan_rbs | mbs | direct_contrib]`. P2 F1 above `C-mvalue-enet` "
+            "does **not** prove MBS-only aggregation wins. Corrected benchmark: "
+            "**7G′ Stage A** (`P2-G` … `C-mvalue-enet-G` on identical gene-linked CpGs).",
+            "",
             "## Product scores versus phenotype comparator",
             "",
-            "The product export remains the 7F cascade: **MBS + qualified orphan RBS + "
-            "direct loci**. Tissue ranking is a separate phenotype benchmark; "
-            "`C-mvalue-enet` remains the locked classical comparator until a cascade "
-            "arm beats it under the same folds and input panel. See ADR 0010.",
+            "The same phenotype-trained model exports MBS (+ optional orphan/direct) "
+            "**and** supports phenotype heads. Product export: 7F cascade topology. "
+            "`direct_contrib.zarr` is diagnostic only; association needs `direct_cpg.zarr` "
+            "(7G′ Stage B).",
             "",
             "## Artifacts",
             "",

@@ -150,43 +150,37 @@ manifest hashes match.
 
 ## Resolved findings and remaining checks
 
-1. **Resolved by ADR 0010:** product score export remains deepMAT
-   MBS/qualified orphan RBS/direct CpGs; phenotype comparators are ranked
-   separately. `C-mvalue-enet` remains the current tissue comparator.
-2. **Checkpoint policy resolved for P2:** selection is validation tissue
-   macro-F1 then age MAE; best epochs were 15, 12 and 9. P5 adds an auditable
-   early-stop record.
-3. **Study confounding remains interpretive:** the report includes per-fold
-   study/tissue composition; final claims remain held-out-study claims, not
-   population prevalence claims.
+1. **Product vs phenotype:** the same phenotype-trained model exports MBS (and
+   later orphan/direct features) **and** supports phenotype heads — not separate
+   topologies. `C-mvalue-enet` (0.334 tissue F1) used all 65 536 prefix columns.
+2. **P2 ~0.376 is not MBS-only evidence:** training supervises MBS; test metrics
+   late-fuse `[orphan_rbs | mbs | direct_contrib]`. Corrected arms are **P2-G**
+   … **P5-G** with **C-mvalue-enet-G** on identical gene-linked CpGs only.
+3. **Checkpoint policy:** P2 best epochs 15/12/9 on validation tissue F1.
+   Simulate patience 5 on stored val histories before locking; do not assume
+   earlier stop is better (val F1 poorly tracked external-test F1).
+4. **Study confounding:** per-fold composition tables remain interpretive only.
 
 ## Sequencing
 
-1. Close 7G in `TODO_PIPELINE.md` and commit inspection artifacts.
-2. Implement P0–P3 (smallest code diff) + report writer.
-3. Run probe on CPU/GPU via background script; idempotent folds.
-4. Run P4/P5 and refusion grid; lock the Phase-2 winner.
-5. Complete 7H before starting 5×6 OOF.
+1. P0–P3 remain **historical evidence** (committed report).
+2. Implement gene-col filter + MBS-only evaluation mode.
+3. Run **7G′ Stage A** (`P2-G`, `P4-G`, `P5-G`, `C-mvalue-enet-G`).
+4. Run **7G′ Stage B** (fold-selected panel, full model, `direct_cpg.zarr`).
+5. Start Milestone **7** 5×6 OOF.
 
-## Phase 2 (in progress)
+## Phase 2 → superseded by 7G′ Stage A
 
-P0–P3 completed; **mean tissue F1 0.376 (P2)** clears the 0.20 gate.
-Implementation now includes:
+The original P4/P5 grid (mean pooling, 30-epoch ceiling, fusion refit on saved
+scores) measured **late-fusion** performance on the full 65 536 prefix. That
+does not answer whether **gene-level aggregation** beats elastic-net on the
+same gene-linked CpGs.
 
-- **P4**: P2 loss weights with mean CpG→region and region→gene pooling;
-- **P5**: P2 loss weights, 30-epoch ceiling, validation-tissue macro-F1
-  checkpointing, patience 8 and minimum improvement 0.001;
-- narrow refusion cells: P2/P4/P5 saved scores with standard versus
-  class-balanced logistic tissue fusion;
-- strict three-fold completeness checks before an arm enters the report.
+**Corrected immediate benchmark:** see
+[`milestone-7g-prime-matched-probe-lightweight.md`](milestone-7g-prime-matched-probe-lightweight.md)
+Stage A. P0–P3 and any uncorrected P4/P5 numbers are provisional until gene-only
+arms complete.
 
-Performance remains **unknown** until all three P4 and P5 fold artifacts exist
-on the data/GPU host. P0–P3 results must not be relabelled as P4/P5 evidence.
-P2 validation F1 (about 0.229, 0.118 and 0.253) did not track external-test F1
-(0.308, 0.407 and 0.412) closely, so P5 early stopping is itself an ablation.
-Audit stop epochs and never assume that stopping earlier is better.
-
-ADR 0010 separates product score export from phenotype comparators. The next
-gate after Phase 2 is the fold-safe `C-mvalue-enetS`/deepMAT panel benchmark
-and direct-CpG association export in
-[`milestone-7h-fold-safe-probe-panel-benchmark.md`](milestone-7h-fold-safe-probe-panel-benchmark.md).
+During architecture selection, treat orphan-region CpGs as **non-gene excluded
+input**. In the full model, qualified orphan regions stay one column per
+`region_id`; unqualified regions route to direct.
