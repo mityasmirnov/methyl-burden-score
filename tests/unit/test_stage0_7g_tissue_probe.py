@@ -9,7 +9,10 @@ import pytest
 
 import mbs.training.cascade_loop as cascade_loop
 from mbs.training.cascade_assign import build_cascade_assignment
-from mbs.training.cascade_loop import make_synthetic_cascade_tables, train_cascade_on_arrays
+from mbs.training.cascade_loop import (
+    make_synthetic_cascade_tables,
+    train_cascade_on_arrays,
+)
 from mbs.training.late_fusion import evaluate_late_fusion
 from mbs.training.transparent_baselines import fit_linear_multitask, run_mean_baseline
 
@@ -96,6 +99,82 @@ def test_cascade_tissue_loss_weight_smoke(tmp_path: Path) -> None:
     )
     assert "metrics" in out
     assert (tmp_path / "p2fold" / "scores" / "score_manifest.json").is_file()
+
+
+def test_cascade_mean_pooling_smoke(tmp_path: Path) -> None:
+    tables = make_synthetic_cascade_tables(seed=5)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, max(3, (n * 2) // 3), dtype=np.int64)
+    test_idx = np.arange(train_idx[-1] + 1, n, dtype=np.int64)
+    if test_idx.size == 0:
+        test_idx = train_idx.copy()
+    out = train_cascade_on_arrays(
+        assignment=assignment,
+        betas=tables["betas"],
+        train_idx=train_idx,
+        test_idx=test_idx,
+        ages=tables["ages"],
+        tissue=tables["tissue"],
+        sex=tables["sex"],
+        study_ids=tables["study_ids"],
+        sample_ids=tables["sample_ids"],
+        class_names=tables["class_names"],
+        out_dir=tmp_path / "p4fold",
+        max_epochs=2,
+        seed=0,
+        device_str="cpu",
+        cpg_pool="mean",
+        region_pool="mean",
+        tissue_loss_weight=3.0,
+        age_loss_weight=0.3,
+    )
+    assert out.get("pooling") == {
+        "cpg_to_region": "mean",
+        "region_to_gene": "mean",
+    }
+
+
+def test_cascade_early_stop_smoke(tmp_path: Path) -> None:
+    tables = make_synthetic_cascade_tables(seed=6)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, max(2, n // 2), dtype=np.int64)
+    val_idx = np.arange(train_idx[-1] + 1, min(train_idx[-1] + 3, n), dtype=np.int64)
+    test_idx = np.arange(val_idx[-1] + 1, n, dtype=np.int64) if val_idx[-1] + 1 < n else val_idx
+    out = train_cascade_on_arrays(
+        assignment=assignment,
+        betas=tables["betas"],
+        train_idx=train_idx,
+        test_idx=test_idx,
+        ages=tables["ages"],
+        tissue=tables["tissue"],
+        sex=tables["sex"],
+        study_ids=tables["study_ids"],
+        sample_ids=tables["sample_ids"],
+        class_names=tables["class_names"],
+        out_dir=tmp_path / "p5fold",
+        max_epochs=20,
+        seed=0,
+        device_str="cpu",
+        val_idx=val_idx,
+        early_stopping_patience=2,
+        tissue_loss_weight=3.0,
+    )
+    sel = out.get("checkpoint_selection") or {}
+    assert sel.get("has_validation") is True
+    best = sel.get("best_epoch")
+    assert best is not None and int(best) <= 20
 
 
 def test_region_mean_baseline_smoke() -> None:

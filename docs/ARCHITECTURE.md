@@ -238,15 +238,54 @@ Batch tensors expose annotation-status masks
 full, mapped-only, and residual-only slices on the same folds as the flat
 baseline.
 
-**Target (Milestone 7C, [ADR 0006](adr/0006-multipath-noncoding-scores.md)):**
-replace one-scalar residual compression with **RBS** (non-gene regulatory
-regions), **TBS** (adaptive intergenic tiles), and an optional **direct CpG**
-branch. Eval-time masking of a jointly trained residual slot, or evaluating the
-**first 512 ordered** holdout samples, does **not** show that noncoding CpGs
-are uninformative. Flat vs hierarchical v0.1 (tissue 0.666 vs 0.598; age MAE
-22.0 vs 27.8 y) only shows hierarchical-v0.1 is currently weaker.
+**Shipped topology (Milestone 7F, [ADR 0009](adr/0009-drop-tbs-scores.md)):** tile
+**scores** are dropped; leftover CpGs stay **direct**. Product families are
+**MBS** (gene-aggregated RBS), **orphan RBS** (one score per typed region with
+no gene allocation — not pooled by type), and **direct** per-locus contributions.
 
-### Target multi-path phenotype model (7C)
+### CascadeDeepSet (7F product encoder)
+
+Typed regions only (no tile path inside the neural module):
+
+```math
+h_{s,c} = \phi_{\mathrm{cpg}}(x_{s,c})
+```
+
+```math
+v_{s,r} = \mathrm{pool}_{c \in r} h_{s,c} \quad (\mathrm{max\ or\ mean})
+```
+
+```math
+\mathrm{RBS}_{s,r} = \sigma(\rho_{\mathrm{region}}([v_{s,r}, e_{\mathrm{type}(r)}]))
+```
+
+```math
+\mathrm{MBS}_{s,g} = \mathrm{pool}_{r \rightarrow g} \mathrm{RBS}_{s,r}
+```
+
+Orphan regions (`region_to_gene = -1`) keep per-region RBS columns in
+`rbs.zarr`; only gene-allocated RBS enter MBS pooling. Leftover CpGs (no typed
+region) are scored outside this module via fold-fitted elastic-net on Level-1 z
+(`direct_contrib.zarr`). Late fusion concatenates
+`[orphan\_rbs | mbs | direct]` for optional phenotype heads.
+
+Implementation: `CascadeDeepSet` in `src/mbs/models.py`; trainer
+`src/mbs/training/cascade_loop.py`.
+
+### Intended use (DeepRVAT-style)
+
+Training is **end-to-end phenotype prediction** (age, sex, tissue, disease,
+cancer with masks). The same trained encoder is **probe-agnostic** after
+training: apply to 450K, EPIC, or WGBS without retraining on probe IDs. Export
+fewer features (genes + optional orphan regions + direct CpGs), then run
+downstream feature selection and association tests — analogous to DeepRVAT's
+gene-level scores after variant aggregation.
+
+A **lightweight** alternative (7G′ plan): per-CpG M-value or beta plus
+one-hot regulatory annotation → DeepSet pool by gene → MBS; closer to DeepRVAT's
+per-variant + context pattern than the two-hop RBS→gene cascade.
+
+### Legacy target multi-path (7C; TBS scores dropped in 7F)
 
 ```math
 \hat{y}_{s,k}

@@ -129,9 +129,11 @@ residual path (frozen baseline only).
 
 **Score topology from Milestone 7F** ([ADR 0009](adr/0009-drop-tbs-scores.md)):
 typed regions (gene roles + RBS) → region scores; allocate RBS to genes
-(typed role and/or nearest-gene of the **region**) → **MBS**; orphan RBS stay
-genome-wide; leftover CpGs (including former tile-only loci) → **direct**.
-Do not emit TBS scores. Do not nearest-gene leftover **CpGs**
+(typed role and/or nearest-gene of the **region**) → **MBS**; **orphan RBS**
+stay as **one column per orphan region** in `rbs.zarr` (not pooled together,
+not pooled by `region_type`); leftover CpGs → **direct**. Fusion may omit
+orphan columns when regions are not well-defined genome-wide repeats (7G′
+ablation). Do not emit TBS scores. Do not nearest-gene leftover **CpGs**
 ([ADR 0004](adr/0004-unmapped-probe-retention.md)).
 
 Any regulatory or tile edge requires an evidence type, source version, and

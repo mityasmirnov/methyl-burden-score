@@ -1,0 +1,37 @@
+# P5 variant: mean pooling + 30 epochs + early stop (run if P4 within ~0.03 F1 of P2).
+split_id: hub-ats-7e-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+milestone: 7G-tissue-probe-P5-mean
+report_dir: reports/inspection/stage0_7g_cascade_tissue_probe/_staging_p5_mean_train
+cv_budget:
+  max_loci: 65536
+  max_epochs: 30
+experiment:
+  name: stage0_7g_cascade_tissue_probe_p5_mean
+  seed: 42
+  stage: 0
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-age-tissue-sex-full-v1
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+model:
+  topology: rbs_gene_direct
+  tbs_arm: false
+  pooling: mean
+  neutral_score: 0.5
+  cpg_hidden_dim: 64
+  region_hidden_dim: 32
+  dropout: 0.1
+  activation: gelu
+  layer_norm: true
+training:
+  max_epochs: 30
+  early_stopping_patience: 5
+  learning_rate: 0.001
+  batch_size: 1
+  tissue_loss_weight: 3.0
+  age_loss_weight: 0.3
+  sex_loss_weight: 1.0
+device:
+  torch_device: cuda

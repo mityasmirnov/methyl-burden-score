@@ -1,15 +1,1999 @@
 {
-  "ewas_db_ingest": [
+  "age_distribution_by_study": [
     {
-      "n_assay_files": 84568,
-      "n_samples": 83635,
-      "n_studies": 855,
-      "source_release_id": "ewas-datahub-db-v1",
-      "source_system": "ewas_datahub_db",
-      "total_bytes": 602178018444494.0
+      "age_max": 58.0,
+      "age_mean": 33.958333333333336,
+      "age_min": 20.0,
+      "n_samples": 24,
+      "study_id": "GSE100386"
+    },
+    {
+      "age_max": 37.0,
+      "age_mean": 29.3125,
+      "age_min": 21.0,
+      "n_samples": 16,
+      "study_id": "GSE101641"
+    },
+    {
+      "age_max": 89.0,
+      "age_mean": 63.46979865771812,
+      "age_min": 22.0,
+      "n_samples": 149,
+      "study_id": "GSE101764"
+    },
+    {
+      "age_max": 76.0,
+      "age_mean": 38.270270270270274,
+      "age_min": 17.0,
+      "n_samples": 121,
+      "study_id": "GSE101961"
+    },
+    {
+      "age_max": 14.44,
+      "age_mean": 9.1345,
+      "age_min": 4.6,
+      "n_samples": 18,
+      "study_id": "GSE102177"
+    },
+    {
+      "age_max": 82.5836,
+      "age_mean": 63.96191707317072,
+      "age_min": 35.589,
+      "n_samples": 41,
+      "study_id": "GSE103659"
+    },
+    {
+      "age_max": 77.0,
+      "age_mean": 61.950819672131146,
+      "age_min": 27.0,
+      "n_samples": 61,
+      "study_id": "GSE103911"
+    },
+    {
+      "age_max": 18.0,
+      "age_mean": 10.25,
+      "age_min": 5.0,
+      "n_samples": 40,
+      "study_id": "GSE104087"
+    },
+    {
+      "age_max": 71.0,
+      "age_mean": 43.30612244897959,
+      "age_min": 20.0,
+      "n_samples": 49,
+      "study_id": "GSE104293"
+    },
+    {
+      "age_max": 74.0,
+      "age_mean": 34.1551724137931,
+      "age_min": 24.0,
+      "n_samples": 72,
+      "study_id": "GSE104471"
+    },
+    {
+      "age_max": 14.6,
+      "age_mean": 9.175000000000006,
+      "age_min": 6.4,
+      "n_samples": 48,
+      "study_id": "GSE104812"
+    },
+    {
+      "age_max": 18.0,
+      "age_mean": 18.0,
+      "age_min": 18.0,
+      "n_samples": 428,
+      "study_id": "GSE105018"
+    },
+    {
+      "age_max": 23.0,
+      "age_mean": 20.724770642201836,
+      "age_min": 19.0,
+      "n_samples": 107,
+      "study_id": "GSE105123"
+    },
+    {
+      "age_max": 66.0,
+      "age_mean": 40.185929648241206,
+      "age_min": 16.0,
+      "n_samples": 190,
+      "study_id": "GSE106648"
+    },
+    {
+      "age_max": 90.0,
+      "age_mean": 59.17,
+      "age_min": 13.0,
+      "n_samples": 40,
+      "study_id": "GSE107038"
+    },
+    {
+      "age_max": 42.0,
+      "age_mean": 42.0,
+      "age_min": 42.0,
+      "n_samples": 1,
+      "study_id": "GSE107143"
+    },
+    {
+      "age_max": 35.6658,
+      "age_mean": 25.22977802690582,
+      "age_min": 18.1945,
+      "n_samples": 103,
+      "study_id": "GSE107459"
+    },
+    {
+      "age_max": 29.0,
+      "age_mean": 24.714285714285715,
+      "age_min": 20.0,
+      "n_samples": 7,
+      "study_id": "GSE107737"
+    },
+    {
+      "age_max": 85.0,
+      "age_mean": 59.632850241545896,
+      "age_min": 42.0,
+      "n_samples": 85,
+      "study_id": "GSE108213"
+    },
+    {
+      "age_max": 87.0,
+      "age_mean": 69.97790055248619,
+      "age_min": 53.0,
+      "n_samples": 181,
+      "study_id": "GSE108462"
+    },
+    {
+      "age_max": 17.0,
+      "age_mean": 10.444444444444445,
+      "age_min": 5.0,
+      "n_samples": 27,
+      "study_id": "GSE109042"
+    },
+    {
+      "age_max": 18.0,
+      "age_mean": 11.620689655172415,
+      "age_min": 5.0,
+      "n_samples": 58,
+      "study_id": "GSE109446"
+    },
+    {
+      "age_max": 88.0,
+      "age_mean": 68.68345323741008,
+      "age_min": 36.0,
+      "n_samples": 259,
+      "study_id": "GSE111223"
+    },
+    {
+      "age_max": 92.0,
+      "age_mean": 69.4061433447099,
+      "age_min": 36.0,
+      "n_samples": 255,
+      "study_id": "GSE111629"
+    },
+    {
+      "age_max": 27.0,
+      "age_mean": 25.46153846153846,
+      "age_min": 22.0,
+      "n_samples": 6,
+      "study_id": "GSE112696"
+    },
+    {
+      "age_max": 59.0,
+      "age_mean": 40.40909090909091,
+      "age_min": 20.0,
+      "n_samples": 17,
+      "study_id": "GSE113725"
+    },
+    {
+      "age_max": 74.0,
+      "age_mean": 36.9375,
+      "age_min": 12.0,
+      "n_samples": 48,
+      "study_id": "GSE115797"
+    },
+    {
+      "age_max": 63.0,
+      "age_mean": 42.0,
+      "age_min": 24.0,
+      "n_samples": 6,
+      "study_id": "GSE115920"
+    },
+    {
+      "age_max": 67.0,
+      "age_mean": 32.432432432432435,
+      "age_min": 20.0,
+      "n_samples": 31,
+      "study_id": "GSE116378"
+    },
+    {
+      "age_max": 50.84,
+      "age_mean": 47.498571428571424,
+      "age_min": 44.6,
+      "n_samples": 45,
+      "study_id": "GSE116379"
+    },
+    {
+      "age_max": 80.0,
+      "age_mean": 64.15789473684211,
+      "age_min": 45.0,
+      "n_samples": 38,
+      "study_id": "GSE117050"
+    },
+    {
+      "age_max": 39.0,
+      "age_mean": 29.2,
+      "age_min": 23.0,
+      "n_samples": 4,
+      "study_id": "GSE120307"
+    },
+    {
+      "age_max": 103.0,
+      "age_mean": 45.888888888888886,
+      "age_min": 0.0,
+      "n_samples": 40,
+      "study_id": "GSE30870"
+    },
+    {
+      "age_max": 17.5,
+      "age_mean": 12.95,
+      "age_min": 3.5,
+      "n_samples": 10,
+      "study_id": "GSE32146"
+    },
+    {
+      "age_max": 76.0,
+      "age_mean": 21.346153846153847,
+      "age_min": 3.5,
+      "n_samples": 36,
+      "study_id": "GSE32148"
+    },
+    {
+      "age_max": 5.33333,
+      "age_mean": 2.9328905840707957,
+      "age_min": 0.25,
+      "n_samples": 97,
+      "study_id": "GSE36054"
+    },
+    {
+      "age_max": 54.0,
+      "age_mean": 36.55555555555556,
+      "age_min": 13.0,
+      "n_samples": 18,
+      "study_id": "GSE36278"
+    },
+    {
+      "age_max": 63.0,
+      "age_mean": 61.0,
+      "age_min": 60.0,
+      "n_samples": 2,
+      "study_id": "GSE40005"
+    },
+    {
+      "age_max": 101.0,
+      "age_mean": 65.40720221606648,
+      "age_min": 19.0,
+      "n_samples": 518,
+      "study_id": "GSE40279"
+    },
+    {
+      "age_max": 81.0,
+      "age_mean": 61.753846153846155,
+      "age_min": 35.0,
+      "n_samples": 46,
+      "study_id": "GSE40360"
+    },
+    {
+      "age_max": 79.0,
+      "age_mean": 36.095541401273884,
+      "age_min": 13.0,
+      "n_samples": 77,
+      "study_id": "GSE41826"
+    },
+    {
+      "age_max": 1.5,
+      "age_mean": 0.7307692307692307,
+      "age_min": 0.0,
+      "n_samples": 39,
+      "study_id": "GSE42700"
+    },
+    {
+      "age_max": 70.0,
+      "age_mean": 51.669793621013135,
+      "age_min": 18.0,
+      "n_samples": 448,
+      "study_id": "GSE42861"
+    },
+    {
+      "age_max": 17.0,
+      "age_mean": 14.666666666666666,
+      "age_min": 9.0,
+      "n_samples": 12,
+      "study_id": "GSE42921"
+    },
+    {
+      "age_max": 71.0,
+      "age_mean": 50.9,
+      "age_min": 37.0,
+      "n_samples": 4,
+      "study_id": "GSE43091"
+    },
+    {
+      "age_max": 105.0,
+      "age_mean": 83.68386388583974,
+      "age_min": 40.0,
+      "n_samples": 520,
+      "study_id": "GSE43414"
+    },
+    {
+      "age_max": 59.0,
+      "age_mean": 37.88,
+      "age_min": 26.0,
+      "n_samples": 50,
+      "study_id": "GSE43976"
+    },
+    {
+      "age_max": 87.0,
+      "age_mean": 23.677690714285713,
+      "age_min": 0.345205,
+      "n_samples": 6,
+      "study_id": "GSE44684"
+    },
+    {
+      "age_max": 29.0,
+      "age_mean": 28.0,
+      "age_min": 27.0,
+      "n_samples": 3,
+      "study_id": "GSE46648"
+    },
+    {
+      "age_max": 35.0,
+      "age_mean": 28.0,
+      "age_min": 24.0,
+      "n_samples": 11,
+      "study_id": "GSE47512"
+    },
+    {
+      "age_max": 45.0,
+      "age_mean": 37.391304347826086,
+      "age_min": 33.0,
+      "n_samples": 23,
+      "study_id": "GSE47627"
+    },
+    {
+      "age_max": 83.0,
+      "age_mean": 47.76439790575916,
+      "age_min": 23.0,
+      "n_samples": 85,
+      "study_id": "GSE48325"
+    },
+    {
+      "age_max": 79.0,
+      "age_mean": 55.723684210526315,
+      "age_min": 22.0,
+      "n_samples": 37,
+      "study_id": "GSE48472"
+    },
+    {
+      "age_max": 66.0,
+      "age_mean": 46.3,
+      "age_min": 30.0,
+      "n_samples": 20,
+      "study_id": "GSE49064"
+    },
+    {
+      "age_max": 87.0,
+      "age_mean": 66.79310344827586,
+      "age_min": 33.0,
+      "n_samples": 29,
+      "study_id": "GSE49149"
+    },
+    {
+      "age_max": 63.0,
+      "age_mean": 54.38461538461539,
+      "age_min": 40.0,
+      "n_samples": 13,
+      "study_id": "GSE49393"
+    },
+    {
+      "age_max": 89.1,
+      "age_mean": 47.11205673758865,
+      "age_min": 18.0,
+      "n_samples": 48,
+      "study_id": "GSE50498"
+    },
+    {
+      "age_max": 47.0,
+      "age_mean": 34.5,
+      "age_min": 28.0,
+      "n_samples": 10,
+      "study_id": "GSE50586"
+    },
+    {
+      "age_max": 28.0,
+      "age_mean": 8.9921875,
+      "age_min": 1.0,
+      "n_samples": 96,
+      "study_id": "GSE50759"
+    },
+    {
+      "age_max": 72.047,
+      "age_mean": 52.63641551246544,
+      "age_min": 34.379,
+      "n_samples": 548,
+      "study_id": "GSE51032"
+    },
+    {
+      "age_max": 18.0,
+      "age_mean": 14.0,
+      "age_min": 0.0,
+      "n_samples": 8,
+      "study_id": "GSE51180"
+    },
+    {
+      "age_max": 58.0,
+      "age_mean": 50.25,
+      "age_min": 46.0,
+      "n_samples": 4,
+      "study_id": "GSE51758"
+    },
+    {
+      "age_max": 66.0,
+      "age_mean": 36.201818181818176,
+      "age_min": 21.08,
+      "n_samples": 9,
+      "study_id": "GSE52113"
+    },
+    {
+      "age_max": 83.0,
+      "age_mean": 33.056603773584904,
+      "age_min": 9.0,
+      "n_samples": 50,
+      "study_id": "GSE52588"
+    },
+    {
+      "age_max": 84.0,
+      "age_mean": 51.59322033898305,
+      "age_min": 22.0,
+      "n_samples": 59,
+      "study_id": "GSE53051"
+    },
+    {
+      "age_max": 76.4983,
+      "age_mean": 65.34519333333334,
+      "age_min": 47.2772,
+      "n_samples": 20,
+      "study_id": "GSE53128"
+    },
+    {
+      "age_max": 56.0,
+      "age_mean": 30.794117647058822,
+      "age_min": 2.0,
+      "n_samples": 21,
+      "study_id": "GSE53162"
+    },
+    {
+      "age_max": 93.0,
+      "age_mean": 69.1780303030303,
+      "age_min": 35.0,
+      "n_samples": 197,
+      "study_id": "GSE53740"
+    },
+    {
+      "age_max": 68.0,
+      "age_mean": 52.34862385321101,
+      "age_min": 31.0,
+      "n_samples": 86,
+      "study_id": "GSE53840"
+    },
+    {
+      "age_max": 67.0,
+      "age_mean": 48.916666666666664,
+      "age_min": 29.0,
+      "n_samples": 20,
+      "study_id": "GSE53841"
+    },
+    {
+      "age_max": 57.0,
+      "age_mean": 45.75,
+      "age_min": 30.0,
+      "n_samples": 6,
+      "study_id": "GSE54643"
+    },
+    {
+      "age_max": 87.0,
+      "age_mean": 43.09090909090909,
+      "age_min": 26.0,
+      "n_samples": 4,
+      "study_id": "GSE54880"
+    },
+    {
+      "age_max": 74.8,
+      "age_mean": 52.41006160164266,
+      "age_min": 23.7,
+      "n_samples": 870,
+      "study_id": "GSE55763"
+    },
+    {
+      "age_max": 83.0,
+      "age_mean": 60.67327517842982,
+      "age_min": 44.0,
+      "n_samples": 912,
+      "study_id": "GSE56046"
+    },
+    {
+      "age_max": 75.0,
+      "age_mean": 25.553480475382003,
+      "age_min": 10.0,
+      "n_samples": 446,
+      "study_id": "GSE56105"
+    },
+    {
+      "age_max": 46.5,
+      "age_mean": 28.501986754966925,
+      "age_min": 19.2,
+      "n_samples": 96,
+      "study_id": "GSE56553"
+    },
+    {
+      "age_max": 79.0,
+      "age_mean": 58.581854043392504,
+      "age_min": 45.0,
+      "n_samples": 214,
+      "study_id": "GSE56581"
+    },
+    {
+      "age_max": 83.0,
+      "age_mean": 71.3,
+      "age_min": 63.0,
+      "n_samples": 10,
+      "study_id": "GSE57360"
+    },
+    {
+      "age_max": 65.0,
+      "age_mean": 45.541666666666664,
+      "age_min": 25.0,
+      "n_samples": 30,
+      "study_id": "GSE58622"
+    },
+    {
+      "age_max": 84.0,
+      "age_mean": 52.28235294117647,
+      "age_min": 22.0,
+      "n_samples": 247,
+      "study_id": "GSE59065"
+    },
+    {
+      "age_max": 12.0,
+      "age_mean": 2.928472833333335,
+      "age_min": 0.833333,
+      "n_samples": 56,
+      "study_id": "GSE59157"
+    },
+    {
+      "age_max": 68.4688,
+      "age_mean": 46.83248921933087,
+      "age_min": 26.0,
+      "n_samples": 123,
+      "study_id": "GSE59457"
+    },
+    {
+      "age_max": 59.0,
+      "age_mean": 39.625,
+      "age_min": 20.0,
+      "n_samples": 19,
+      "study_id": "GSE59505"
+    },
+    {
+      "age_max": 48.0,
+      "age_mean": 41.45454545454545,
+      "age_min": 37.0,
+      "n_samples": 8,
+      "study_id": "GSE59507"
+    },
+    {
+      "age_max": 105.0,
+      "age_mean": 83.84892897406989,
+      "age_min": 40.0,
+      "n_samples": 520,
+      "study_id": "GSE59685"
+    },
+    {
+      "age_max": 85.0,
+      "age_mean": 33.24242424242424,
+      "age_min": 6.0,
+      "n_samples": 122,
+      "study_id": "GSE60132"
+    },
+    {
+      "age_max": 79.0,
+      "age_mean": 51.40909090909091,
+      "age_min": 34.0,
+      "n_samples": 16,
+      "study_id": "GSE60274"
+    },
+    {
+      "age_max": 94.0,
+      "age_mean": 65.13888888888889,
+      "age_min": 20.0,
+      "n_samples": 47,
+      "study_id": "GSE61107"
+    },
+    {
+      "age_max": 83.0,
+      "age_mean": 58.63529411764706,
+      "age_min": 35.0,
+      "n_samples": 73,
+      "study_id": "GSE61151"
+    },
+    {
+      "age_max": 60.0,
+      "age_mean": 38.4375,
+      "age_min": 25.0,
+      "n_samples": 12,
+      "study_id": "GSE61195"
+    },
+    {
+      "age_max": 79.0,
+      "age_mean": 53.78048780487805,
+      "age_min": 31.0,
+      "n_samples": 15,
+      "study_id": "GSE61257"
+    },
+    {
+      "age_max": 86.0,
+      "age_mean": 58.920529801324506,
+      "age_min": 21.0,
+      "n_samples": 79,
+      "study_id": "GSE61258"
+    },
+    {
+      "age_max": 57.0,
+      "age_mean": 43.5,
+      "age_min": 31.0,
+      "n_samples": 10,
+      "study_id": "GSE61259"
+    },
+    {
+      "age_max": 73.0,
+      "age_mean": 42.53968253968254,
+      "age_min": 21.0,
+      "n_samples": 33,
+      "study_id": "GSE61380"
+    },
+    {
+      "age_max": 96.0,
+      "age_mean": 62.44654088050314,
+      "age_min": 25.0,
+      "n_samples": 87,
+      "study_id": "GSE61431"
+    },
+    {
+      "age_max": 67.0,
+      "age_mean": 44.73364485981308,
+      "age_min": 26.0,
+      "n_samples": 67,
+      "study_id": "GSE61446"
+    },
+    {
+      "age_max": 67.0,
+      "age_mean": 44.18079096045198,
+      "age_min": 26.0,
+      "n_samples": 71,
+      "study_id": "GSE61450"
+    },
+    {
+      "age_max": 67.0,
+      "age_mean": 44.31843575418994,
+      "age_min": 26.0,
+      "n_samples": 60,
+      "study_id": "GSE61452"
+    },
+    {
+      "age_max": 67.0,
+      "age_mean": 44.732394366197184,
+      "age_min": 26.0,
+      "n_samples": 71,
+      "study_id": "GSE61453"
+    },
+    {
+      "age_max": 73.0,
+      "age_mean": 48.216,
+      "age_min": 30.0,
+      "n_samples": 112,
+      "study_id": "GSE61496"
+    },
+    {
+      "age_max": 88.0,
+      "age_mean": 73.94827586206897,
+      "age_min": 67.0,
+      "n_samples": 58,
+      "study_id": "GSE62003"
+    },
+    {
+      "age_max": 0.583333,
+      "age_mean": 0.36284726041666665,
+      "age_min": 0.0833333,
+      "n_samples": 41,
+      "study_id": "GSE62219"
+    },
+    {
+      "age_max": 80.9,
+      "age_mean": 68.91666666666667,
+      "age_min": 46.5,
+      "n_samples": 30,
+      "study_id": "GSE63106"
+    },
+    {
+      "age_max": 64.0,
+      "age_mean": 54.76056338028169,
+      "age_min": 32.0,
+      "n_samples": 60,
+      "study_id": "GSE63347"
+    },
+    {
+      "age_max": 91.0,
+      "age_mean": 79.3157894736842,
+      "age_min": 68.0,
+      "n_samples": 19,
+      "study_id": "GSE63695"
+    },
+    {
+      "age_max": 104.0,
+      "age_mean": 78.33333333333333,
+      "age_min": 49.0,
+      "n_samples": 48,
+      "study_id": "GSE64490"
+    },
+    {
+      "age_max": 112.0,
+      "age_mean": 112.0,
+      "age_min": 112.0,
+      "n_samples": 56,
+      "study_id": "GSE64491"
+    },
+    {
+      "age_max": 69.5,
+      "age_mean": 32.08461538461538,
+      "age_min": 3.2,
+      "n_samples": 33,
+      "study_id": "GSE64495"
+    },
+    {
+      "age_max": 114.0,
+      "age_mean": 75.68250950570342,
+      "age_min": 15.0,
+      "n_samples": 256,
+      "study_id": "GSE64509"
+    },
+    {
+      "age_max": 28.0,
+      "age_mean": 21.5,
+      "age_min": 18.0,
+      "n_samples": 4,
+      "study_id": "GSE65078"
+    },
+    {
+      "age_max": 60.0,
+      "age_mean": 38.35294117647059,
+      "age_min": 22.0,
+      "n_samples": 17,
+      "study_id": "GSE65097"
+    },
+    {
+      "age_max": 12.0,
+      "age_mean": 10.930555555555555,
+      "age_min": 9.0,
+      "n_samples": 72,
+      "study_id": "GSE65163"
+    },
+    {
+      "age_max": 32.0,
+      "age_mean": 26.1,
+      "age_min": 21.0,
+      "n_samples": 14,
+      "study_id": "GSE65638"
+    },
+    {
+      "age_max": 78.0,
+      "age_mean": 56.36842105263158,
+      "age_min": 37.0,
+      "n_samples": 15,
+      "study_id": "GSE66313"
+    },
+    {
+      "age_max": 97.0,
+      "age_mean": 71.70046082949308,
+      "age_min": 18.0,
+      "n_samples": 160,
+      "study_id": "GSE66351"
+    },
+    {
+      "age_max": 25.0,
+      "age_mean": 9.911764705882353,
+      "age_min": 3.0,
+      "n_samples": 34,
+      "study_id": "GSE66555"
+    },
+    {
+      "age_max": 64.0,
+      "age_mean": 45.725,
+      "age_min": 29.0,
+      "n_samples": 15,
+      "study_id": "GSE67024"
+    },
+    {
+      "age_max": 5.0,
+      "age_mean": 1.9857723658536586,
+      "age_min": 0.0,
+      "n_samples": 34,
+      "study_id": "GSE67444"
+    },
+    {
+      "age_max": 64.0,
+      "age_mean": 64.0,
+      "age_min": 64.0,
+      "n_samples": 2,
+      "study_id": "GSE67484"
+    },
+    {
+      "age_max": 61.0,
+      "age_mean": 51.05357142857143,
+      "age_min": 39.0,
+      "n_samples": 36,
+      "study_id": "GSE67490"
+    },
+    {
+      "age_max": 93.0,
+      "age_mean": 57.40972222222222,
+      "age_min": 22.0,
+      "n_samples": 109,
+      "study_id": "GSE67530"
+    },
+    {
+      "age_max": 69.0,
+      "age_mean": 44.28771929824561,
+      "age_min": 23.0,
+      "n_samples": 198,
+      "study_id": "GSE67705"
+    },
+    {
+      "age_max": 85.0,
+      "age_mean": 59.63636363636363,
+      "age_min": 15.0,
+      "n_samples": 20,
+      "study_id": "GSE67748"
+    },
+    {
+      "age_max": 95.0,
+      "age_mean": 65.625,
+      "age_min": 15.0,
+      "n_samples": 33,
+      "study_id": "GSE67749"
+    },
+    {
+      "age_max": 63.4,
+      "age_mean": 48.803999999999995,
+      "age_min": 24.0,
+      "n_samples": 23,
+      "study_id": "GSE67751"
+    },
+    {
+      "age_max": 84.0,
+      "age_mean": 52.445859872611464,
+      "age_min": 19.0,
+      "n_samples": 94,
+      "study_id": "GSE67919"
+    },
+    {
+      "age_max": 49.0,
+      "age_mean": 43.333333333333336,
+      "age_min": 38.0,
+      "n_samples": 3,
+      "study_id": "GSE68304"
+    },
+    {
+      "age_max": 99.0,
+      "age_mean": 74.89189189189189,
+      "age_min": 39.0,
+      "n_samples": 185,
+      "study_id": "GSE69138"
+    },
+    {
+      "age_max": 49.0,
+      "age_mean": 43.5,
+      "age_min": 40.0,
+      "n_samples": 87,
+      "study_id": "GSE69270"
+    },
+    {
+      "age_max": 65.0,
+      "age_mean": 58.55555555555556,
+      "age_min": 55.0,
+      "n_samples": 3,
+      "study_id": "GSE69852"
+    },
+    {
+      "age_max": 52.0,
+      "age_mean": 41.723404255319146,
+      "age_min": 30.0,
+      "n_samples": 18,
+      "study_id": "GSE71244"
+    },
+    {
+      "age_max": 57.0,
+      "age_mean": 41.58064516129032,
+      "age_min": 23.0,
+      "n_samples": 12,
+      "study_id": "GSE71841"
+    },
+    {
+      "age_max": 87.0,
+      "age_mean": 54.22633744855967,
+      "age_min": 26.0,
+      "n_samples": 135,
+      "study_id": "GSE71955"
+    },
+    {
+      "age_max": 49.0,
+      "age_mean": 28.8,
+      "age_min": 21.0,
+      "n_samples": 19,
+      "study_id": "GSE72338"
+    },
+    {
+      "age_max": 5.0,
+      "age_mean": 3.8348214285714284,
+      "age_min": 3.0,
+      "n_samples": 93,
+      "study_id": "GSE72556"
+    },
+    {
+      "age_max": 77.0,
+      "age_mean": 41.21975308641975,
+      "age_min": 18.0,
+      "n_samples": 410,
+      "study_id": "GSE72680"
+    },
+    {
+      "age_max": 91.9,
+      "age_mean": 68.95922680412374,
+      "age_min": 35.1,
+      "n_samples": 162,
+      "study_id": "GSE72773"
+    },
+    {
+      "age_max": 91.9,
+      "age_mean": 71.99330357142857,
+      "age_min": 36.5,
+      "n_samples": 191,
+      "study_id": "GSE72774"
+    },
+    {
+      "age_max": 90.5,
+      "age_mean": 73.41538461538464,
+      "age_min": 44.7,
+      "n_samples": 164,
+      "study_id": "GSE72775"
+    },
+    {
+      "age_max": 86.1,
+      "age_mean": 67.65749999999998,
+      "age_min": 35.6,
+      "n_samples": 81,
+      "study_id": "GSE72776"
+    },
+    {
+      "age_max": 35.0,
+      "age_mean": 14.215332499999997,
+      "age_min": 3.17,
+      "n_samples": 32,
+      "study_id": "GSE72777"
+    },
+    {
+      "age_max": 114.0,
+      "age_mean": 63.2212389380531,
+      "age_min": 15.0,
+      "n_samples": 410,
+      "study_id": "GSE72778"
+    },
+    {
+      "age_max": 33.0,
+      "age_mean": 20.547619047619047,
+      "age_min": 14.0,
+      "n_samples": 152,
+      "study_id": "GSE73103"
+    },
+    {
+      "age_max": 94.0,
+      "age_mean": 77.71428571428571,
+      "age_min": 63.0,
+      "n_samples": 7,
+      "study_id": "GSE73626"
+    },
+    {
+      "age_max": 54.0,
+      "age_mean": 40.5625,
+      "age_min": 23.0,
+      "n_samples": 13,
+      "study_id": "GSE73747"
+    },
+    {
+      "age_max": 68.0,
+      "age_mean": 51.55555555555556,
+      "age_min": 37.0,
+      "n_samples": 4,
+      "study_id": "GSE73832"
+    },
+    {
+      "age_max": 84.3,
+      "age_mean": 65.56666666666666,
+      "age_min": 46.5,
+      "n_samples": 9,
+      "study_id": "GSE73895"
+    },
+    {
+      "age_max": 96.9808,
+      "age_mean": 39.3475045933203,
+      "age_min": -0.49863,
+      "n_samples": 620,
+      "study_id": "GSE74193"
+    },
+    {
+      "age_max": 80.0,
+      "age_mean": 49.0,
+      "age_min": 13.0,
+      "n_samples": 18,
+      "study_id": "GSE74214"
+    },
+    {
+      "age_max": 77.0,
+      "age_mean": 72.04054054054055,
+      "age_min": 65.0,
+      "n_samples": 163,
+      "study_id": "GSE74548"
+    },
+    {
+      "age_max": 62.0,
+      "age_mean": 49.42857142857143,
+      "age_min": 39.0,
+      "n_samples": 11,
+      "study_id": "GSE75405"
+    },
+    {
+      "age_max": 87.0,
+      "age_mean": 56.541666666666664,
+      "age_min": 27.0,
+      "n_samples": 48,
+      "study_id": "GSE75679"
+    },
+    {
+      "age_max": 73.0,
+      "age_mean": 60.76315789473684,
+      "age_min": 44.0,
+      "n_samples": 63,
+      "study_id": "GSE76938"
+    },
+    {
+      "age_max": 33.0,
+      "age_mean": 11.0,
+      "age_min": 0.0,
+      "n_samples": 4,
+      "study_id": "GSE77241"
+    },
+    {
+      "age_max": 66.0,
+      "age_mean": 51.8780487804878,
+      "age_min": 35.0,
+      "n_samples": 20,
+      "study_id": "GSE77269"
+    },
+    {
+      "age_max": 38.0,
+      "age_mean": 28.0,
+      "age_min": 19.0,
+      "n_samples": 9,
+      "study_id": "GSE77283"
+    },
+    {
+      "age_max": 85.0,
+      "age_mean": 64.1968253968254,
+      "age_min": 44.0,
+      "n_samples": 116,
+      "study_id": "GSE78743"
+    },
+    {
+      "age_max": 88.0,
+      "age_mean": 69.05263157894737,
+      "age_min": 36.0,
+      "n_samples": 243,
+      "study_id": "GSE78874"
+    },
+    {
+      "age_max": 77.0,
+      "age_mean": 59.44444444444444,
+      "age_min": 21.0,
+      "n_samples": 7,
+      "study_id": "GSE79064"
+    },
+    {
+      "age_max": 78.0,
+      "age_mean": 52.71559633027523,
+      "age_min": 18.0,
+      "n_samples": 31,
+      "study_id": "GSE79100"
+    },
+    {
+      "age_max": 51.0,
+      "age_mean": 30.23076923076923,
+      "age_min": 15.0,
+      "n_samples": 5,
+      "study_id": "GSE79122"
+    },
+    {
+      "age_max": 66.0,
+      "age_mean": 41.515151515151516,
+      "age_min": 20.0,
+      "n_samples": 66,
+      "study_id": "GSE79237"
+    },
+    {
+      "age_max": 70.8,
+      "age_mean": 57.824000000000005,
+      "age_min": 43.2,
+      "n_samples": 22,
+      "study_id": "GSE79329"
+    },
+    {
+      "age_max": 0.0,
+      "age_mean": 0.0,
+      "age_min": 0.0,
+      "n_samples": 10,
+      "study_id": "GSE79969"
+    },
+    {
+      "age_max": 18.0,
+      "age_mean": 10.638297872340425,
+      "age_min": 5.0,
+      "n_samples": 104,
+      "study_id": "GSE80261"
+    },
+    {
+      "age_max": 0.0,
+      "age_mean": 0.0,
+      "age_min": 0.0,
+      "n_samples": 33,
+      "study_id": "GSE80283"
+    },
+    {
+      "age_max": 0.0,
+      "age_mean": 0.0,
+      "age_min": 0.0,
+      "n_samples": 11,
+      "study_id": "GSE80310"
+    },
+    {
+      "age_max": 66.0,
+      "age_mean": 40.945945945945944,
+      "age_min": 18.0,
+      "n_samples": 74,
+      "study_id": "GSE80553"
+    },
+    {
+      "age_max": 108.0,
+      "age_mean": 85.05783132530121,
+      "age_min": 70.0,
+      "n_samples": 278,
+      "study_id": "GSE80970"
+    },
+    {
+      "age_max": 0.0,
+      "age_mean": 0.0,
+      "age_min": 0.0,
+      "n_samples": 10,
+      "study_id": "GSE82084"
+    },
+    {
+      "age_max": 46.0,
+      "age_mean": 32.280701754385966,
+      "age_min": 17.0,
+      "n_samples": 25,
+      "study_id": "GSE82218"
+    },
+    {
+      "age_max": 0.0,
+      "age_mean": 0.0,
+      "age_min": 0.0,
+      "n_samples": 159,
+      "study_id": "GSE82273"
+    },
+    {
+      "age_max": 5.0,
+      "age_mean": 4.333333333333333,
+      "age_min": 0.0,
+      "n_samples": 12,
+      "study_id": "GSE83334"
+    },
+    {
+      "age_max": 80.0,
+      "age_mean": 68.85185185185185,
+      "age_min": 51.0,
+      "n_samples": 14,
+      "study_id": "GSE83842"
+    },
+    {
+      "age_max": 64.0,
+      "age_mean": 52.0,
+      "age_min": 46.0,
+      "n_samples": 2,
+      "study_id": "GSE84003"
+    },
+    {
+      "age_max": 5.9,
+      "age_mean": 2.1513725490196074,
+      "age_min": 0.67,
+      "n_samples": 24,
+      "study_id": "GSE84624"
+    },
+    {
+      "age_max": 77.9,
+      "age_mean": 44.53715415019766,
+      "age_min": 19.2,
+      "n_samples": 238,
+      "study_id": "GSE84727"
+    },
+    {
+      "age_max": 67.0,
+      "age_mean": 61.0,
+      "age_min": 57.0,
+      "n_samples": 7,
+      "study_id": "GSE84749"
+    },
+    {
+      "age_max": 80.0,
+      "age_mean": 35.7,
+      "age_min": 19.0,
+      "n_samples": 9,
+      "study_id": "GSE85506"
+    },
+    {
+      "age_max": 62.0,
+      "age_mean": 38.92173913043478,
+      "age_min": 18.0,
+      "n_samples": 115,
+      "study_id": "GSE85566"
+    },
+    {
+      "age_max": 52.0,
+      "age_mean": 36.36363636363637,
+      "age_min": 21.0,
+      "n_samples": 10,
+      "study_id": "GSE85647"
+    },
+    {
+      "age_max": 77.3,
+      "age_mean": 41.92857142857144,
+      "age_min": 20.5,
+      "n_samples": 82,
+      "study_id": "GSE86961"
+    },
+    {
+      "age_max": 94.0,
+      "age_mean": 49.35568513119534,
+      "age_min": 15.0,
+      "n_samples": 299,
+      "study_id": "GSE87571"
+    },
+    {
+      "age_max": 60.0,
+      "age_mean": 53.795333333333325,
+      "age_min": 50.0,
+      "n_samples": 7,
+      "study_id": "GSE87582"
+    },
+    {
+      "age_max": 63.7,
+      "age_mean": 35.88717105263159,
+      "age_min": 18.3,
+      "n_samples": 223,
+      "study_id": "GSE87640"
+    },
+    {
+      "age_max": 79.0,
+      "age_mean": 37.425,
+      "age_min": 17.0,
+      "n_samples": 315,
+      "study_id": "GSE87648"
+    },
+    {
+      "age_max": 82.0,
+      "age_mean": 66.16666666666667,
+      "age_min": 54.0,
+      "n_samples": 12,
+      "study_id": "GSE87797"
+    },
+    {
+      "age_max": 82.0,
+      "age_mean": 37.20083682008368,
+      "age_min": 18.0,
+      "n_samples": 100,
+      "study_id": "GSE88883"
+    },
+    {
+      "age_max": 78.0,
+      "age_mean": 40.23684210526316,
+      "age_min": 18.0,
+      "n_samples": 38,
+      "study_id": "GSE88890"
+    },
+    {
+      "age_max": 88.0,
+      "age_mean": 66.01315789473684,
+      "age_min": 43.0,
+      "n_samples": 30,
+      "study_id": "GSE89181"
+    },
+    {
+      "age_max": 62.0,
+      "age_mean": 55.666666666666664,
+      "age_min": 52.0,
+      "n_samples": 3,
+      "study_id": "GSE89472"
+    },
+    {
+      "age_max": 72.0,
+      "age_mean": 46.21311475409836,
+      "age_min": 21.0,
+      "n_samples": 33,
+      "study_id": "GSE89702"
+    },
+    {
+      "age_max": 95.0,
+      "age_mean": 65.70588235294117,
+      "age_min": 25.0,
+      "n_samples": 13,
+      "study_id": "GSE89703"
+    },
+    {
+      "age_max": 73.0,
+      "age_mean": 46.041666666666664,
+      "age_min": 21.0,
+      "n_samples": 32,
+      "study_id": "GSE89705"
+    },
+    {
+      "age_max": 96.0,
+      "age_mean": 62.97402597402598,
+      "age_min": 25.0,
+      "n_samples": 49,
+      "study_id": "GSE89706"
+    },
+    {
+      "age_max": 36.0,
+      "age_mean": 30.11764705882353,
+      "age_min": 23.0,
+      "n_samples": 34,
+      "study_id": "GSE90060"
+    },
+    {
+      "age_max": 71.0,
+      "age_mean": 61.68181818181818,
+      "age_min": 52.0,
+      "n_samples": 16,
+      "study_id": "GSE92511"
+    },
+    {
+      "age_max": 73.0,
+      "age_mean": 43.41818181818182,
+      "age_min": 18.0,
+      "n_samples": 54,
+      "study_id": "GSE92767"
+    },
+    {
+      "age_max": 80.0,
+      "age_mean": 69.0,
+      "age_min": 61.0,
+      "n_samples": 3,
+      "study_id": "GSE93589"
+    },
+    {
+      "age_max": 78.0,
+      "age_mean": 61.42028985507246,
+      "age_min": 32.0,
+      "n_samples": 34,
+      "study_id": "GSE94785"
+    },
+    {
+      "age_max": 60.0,
+      "age_mean": 46.325,
+      "age_min": 35.0,
+      "n_samples": 120,
+      "study_id": "GSE94876"
+    },
+    {
+      "age_max": 87.0,
+      "age_mean": 54.96153846153846,
+      "age_min": 15.0,
+      "n_samples": 62,
+      "study_id": "GSE95049"
+    },
+    {
+      "age_max": 47.0,
+      "age_mean": 11.774539877300613,
+      "age_min": 1.0,
+      "n_samples": 144,
+      "study_id": "GSE97362"
+    },
+    {
+      "age_max": 77.3,
+      "age_mean": 41.432377049180346,
+      "age_min": 20.5,
+      "n_samples": 110,
+      "study_id": "GSE97466"
+    },
+    {
+      "age_max": 65.0,
+      "age_mean": 31.102272727272727,
+      "age_min": 15.0,
+      "n_samples": 88,
+      "study_id": "GSE98203"
+    },
+    {
+      "age_max": 69.0,
+      "age_mean": 46.91304347826087,
+      "age_min": 26.0,
+      "n_samples": 23,
+      "study_id": "GSE98876"
+    },
+    {
+      "age_max": 91.0,
+      "age_mean": 61.94915254237288,
+      "age_min": 21.0,
+      "n_samples": 57,
+      "study_id": "GSE99029"
+    },
+    {
+      "age_max": 67.0,
+      "age_mean": 57.0,
+      "age_min": 49.0,
+      "n_samples": 6,
+      "study_id": "GSE99624"
+    },
+    {
+      "age_max": 2.0,
+      "age_mean": 2.0,
+      "age_min": 2.0,
+      "n_samples": 91,
+      "study_id": "GSE99863"
+    },
+    {
+      "age_max": 23.9616,
+      "age_mean": 8.84250178645161,
+      "age_min": 0.0849315,
+      "n_samples": 194,
+      "study_id": "TARGET-AML"
+    },
+    {
+      "age_max": 20.4,
+      "age_mean": 3.457849730919542,
+      "age_min": 0.00821918,
+      "n_samples": 174,
+      "study_id": "TARGET-NBL"
+    },
+    {
+      "age_max": 32.4055,
+      "age_mean": 15.07549848837209,
+      "age_min": 3.5589,
+      "n_samples": 86,
+      "study_id": "TARGET-OS"
+    },
+    {
+      "age_max": 77.4521,
+      "age_mean": 46.96903625,
+      "age_min": 14.7479,
+      "n_samples": 80,
+      "study_id": "TCGA-ACC"
+    },
+    {
+      "age_max": 90.0603,
+      "age_mean": 68.33762990033223,
+      "age_min": 34.4027,
+      "n_samples": 259,
+      "study_id": "TCGA-BLCA"
+    },
+    {
+      "age_max": 90.0603,
+      "age_mean": 58.59947146226414,
+      "age_min": 27.0493,
+      "n_samples": 290,
+      "study_id": "TCGA-BRCA"
+    },
+    {
+      "age_max": 85.6384,
+      "age_mean": 48.6668649746193,
+      "age_min": 21.5205,
+      "n_samples": 197,
+      "study_id": "TCGA-CESC"
+    },
+    {
+      "age_max": 82.2986,
+      "age_mean": 63.55555555555554,
+      "age_min": 31.337,
+      "n_samples": 18,
+      "study_id": "TCGA-CHOL"
+    },
+    {
+      "age_max": 90.0603,
+      "age_mean": 67.19085778894473,
+      "age_min": 31.2082,
+      "n_samples": 153,
+      "study_id": "TCGA-COAD"
+    },
+    {
+      "age_max": 90.0603,
+      "age_mean": 64.33544594594595,
+      "age_min": 28.0055,
+      "n_samples": 190,
+      "study_id": "TCGA-ESCA"
+    },
+    {
+      "age_max": 78.7452,
+      "age_mean": 60.17185151515152,
+      "age_min": 23.3781,
+      "n_samples": 33,
+      "study_id": "TCGA-GBM"
+    },
+    {
+      "age_max": 88.2027,
+      "age_mean": 60.256466891891904,
+      "age_min": 20.0027,
+      "n_samples": 410,
+      "study_id": "TCGA-HNSC"
+    },
+    {
+      "age_max": 86.5507,
+      "age_mean": 51.84501833333332,
+      "age_min": 17.9616,
+      "n_samples": 60,
+      "study_id": "TCGA-KICH"
+    },
+    {
+      "age_max": 90.0603,
+      "age_mean": 63.00283093525183,
+      "age_min": 37.1123,
+      "n_samples": 321,
+      "study_id": "TCGA-KIRC"
+    },
+    {
+      "age_max": 88.0603,
+      "age_mean": 62.955984761904766,
+      "age_min": 31.4712,
+      "n_samples": 229,
+      "study_id": "TCGA-KIRP"
+    },
+    {
+      "age_max": 88.5644,
+      "age_mean": 55.13658274111675,
+      "age_min": 18.1808,
+      "n_samples": 188,
+      "study_id": "TCGA-LAML"
+    },
+    {
+      "age_max": 75.8493,
+      "age_mean": 43.957305882352955,
+      "age_min": 20.2192,
+      "n_samples": 221,
+      "study_id": "TCGA-LGG"
+    },
+    {
+      "age_max": 88.0,
+      "age_mean": 60.35549224952743,
+      "age_min": 16.0603,
+      "n_samples": 378,
+      "study_id": "TCGA-LIHC"
+    },
+    {
+      "age_max": 85.2986,
+      "age_mean": 64.2229154761905,
+      "age_min": 33.3671,
+      "n_samples": 153,
+      "study_id": "TCGA-LUAD"
+    },
+    {
+      "age_max": 85.074,
+      "age_mean": 68.40226961538465,
+      "age_min": 40.1178,
+      "n_samples": 237,
+      "study_id": "TCGA-LUSC"
+    },
+    {
+      "age_max": 81.9315,
+      "age_mean": 63.54466860465116,
+      "age_min": 28.7945,
+      "n_samples": 86,
+      "study_id": "TCGA-MESO"
+    },
+    {
+      "age_max": 88.9726,
+      "age_mean": 65.95293571428572,
+      "age_min": 35.9644,
+      "n_samples": 176,
+      "study_id": "TCGA-PAAD"
+    },
+    {
+      "age_max": 83.7123,
+      "age_mean": 47.38196410256409,
+      "age_min": 19.8356,
+      "n_samples": 153,
+      "study_id": "TCGA-PCPG"
+    },
+    {
+      "age_max": 72.8849,
+      "age_mean": 61.23360493827159,
+      "age_min": 43.5178,
+      "n_samples": 121,
+      "study_id": "TCGA-PRAD"
+    },
+    {
+      "age_max": 85.1452,
+      "age_mean": 85.1452,
+      "age_min": 85.1452,
+      "n_samples": 1,
+      "study_id": "TCGA-READ"
+    },
+    {
+      "age_max": 90.0603,
+      "age_mean": 61.11104444444446,
+      "age_min": 20.6301,
+      "n_samples": 243,
+      "study_id": "TCGA-SARC"
+    },
+    {
+      "age_max": 90.0603,
+      "age_mean": 59.76762378048781,
+      "age_min": 15.5726,
+      "n_samples": 328,
+      "study_id": "TCGA-SKCM"
+    },
+    {
+      "age_max": 90.0603,
+      "age_mean": 65.7019986979167,
+      "age_min": 30.0356,
+      "n_samples": 382,
+      "study_id": "TCGA-STAD"
+    },
+    {
+      "age_max": 67.8329,
+      "age_mean": 32.461002205882345,
+      "age_min": 14.5781,
+      "n_samples": 136,
+      "study_id": "TCGA-TGCT"
+    },
+    {
+      "age_max": 89.5397,
+      "age_mean": 48.400125519287805,
+      "age_min": 15.3753,
+      "n_samples": 247,
+      "study_id": "TCGA-THCA"
+    },
+    {
+      "age_max": 84.6384,
+      "age_mean": 58.54125839999999,
+      "age_min": 18.0055,
+      "n_samples": 125,
+      "study_id": "TCGA-THYM"
+    },
+    {
+      "age_max": 90.0575,
+      "age_mean": 65.33774687500001,
+      "age_min": 35.9233,
+      "n_samples": 224,
+      "study_id": "TCGA-UCEC"
+    },
+    {
+      "age_max": 90.0603,
+      "age_mean": 71.52155263157896,
+      "age_min": 51.5233,
+      "n_samples": 38,
+      "study_id": "TCGA-UCS"
+    },
+    {
+      "age_max": 86.2329,
+      "age_mean": 61.58863134328358,
+      "age_min": 22.6603,
+      "n_samples": 67,
+      "study_id": "TCGA-UVM"
     }
   ],
-  "generated_at": "2026-08-25T11:15:54Z",
+  "bmi_distribution_by_study": [
+    {
+      "bmi_max": 45.48,
+      "bmi_mean": 29.608986486486476,
+      "bmi_min": 20.59,
+      "n_samples": 121,
+      "study_id": "GSE101961"
+    },
+    {
+      "bmi_max": 27.225,
+      "bmi_mean": 23.02854984709479,
+      "bmi_min": 20.0943,
+      "n_samples": 107,
+      "study_id": "GSE105123"
+    },
+    {
+      "bmi_max": 43.06,
+      "bmi_mean": 27.96886699507388,
+      "bmi_min": 19.57,
+      "n_samples": 83,
+      "study_id": "GSE108213"
+    },
+    {
+      "bmi_max": 29.0,
+      "bmi_mean": 24.875217391304343,
+      "bmi_min": 22.09,
+      "n_samples": 23,
+      "study_id": "GSE47627"
+    },
+    {
+      "bmi_max": 70.2,
+      "bmi_mean": 37.59214659685865,
+      "bmi_min": 17.4,
+      "n_samples": 85,
+      "study_id": "GSE48325"
+    },
+    {
+      "bmi_max": 38.2947,
+      "bmi_mean": 26.538282978723416,
+      "bmi_min": 18.351,
+      "n_samples": 48,
+      "study_id": "GSE50498"
+    },
+    {
+      "bmi_max": 35.5,
+      "bmi_mean": 25.853535353535356,
+      "bmi_min": 16.8,
+      "n_samples": 77,
+      "study_id": "GSE53840"
+    },
+    {
+      "bmi_max": 32.5,
+      "bmi_mean": 24.45714285714286,
+      "bmi_min": 17.9,
+      "n_samples": 17,
+      "study_id": "GSE53841"
+    },
+    {
+      "bmi_max": 34.7,
+      "bmi_mean": 24.329139072847646,
+      "bmi_min": 19.8,
+      "n_samples": 96,
+      "study_id": "GSE56553"
+    },
+    {
+      "bmi_max": 30.0,
+      "bmi_mean": 25.523611111111123,
+      "bmi_min": 20.0,
+      "n_samples": 30,
+      "study_id": "GSE58622"
+    },
+    {
+      "bmi_max": 55.6,
+      "bmi_mean": 39.22439024390244,
+      "bmi_min": 21.4,
+      "n_samples": 15,
+      "study_id": "GSE61257"
+    },
+    {
+      "bmi_max": 66.9,
+      "bmi_mean": 30.019205298013226,
+      "bmi_min": 14.8,
+      "n_samples": 79,
+      "study_id": "GSE61258"
+    },
+    {
+      "bmi_max": 55.6,
+      "bmi_mean": 48.419999999999995,
+      "bmi_min": 43.0,
+      "n_samples": 10,
+      "study_id": "GSE61259"
+    },
+    {
+      "bmi_max": 73.617,
+      "bmi_mean": 46.65256542056075,
+      "bmi_min": 30.694,
+      "n_samples": 67,
+      "study_id": "GSE61446"
+    },
+    {
+      "bmi_max": 71.1211,
+      "bmi_mean": 45.726230508474586,
+      "bmi_min": 30.6939,
+      "n_samples": 71,
+      "study_id": "GSE61450"
+    },
+    {
+      "bmi_max": 73.617,
+      "bmi_mean": 46.6216648044693,
+      "bmi_min": 30.694,
+      "n_samples": 60,
+      "study_id": "GSE61452"
+    },
+    {
+      "bmi_max": 73.617,
+      "bmi_mean": 45.988929577464816,
+      "bmi_min": 34.647,
+      "n_samples": 71,
+      "study_id": "GSE61453"
+    },
+    {
+      "bmi_max": 53.0,
+      "bmi_mean": 41.31250000000001,
+      "bmi_min": 34.8,
+      "n_samples": 15,
+      "study_id": "GSE67024"
+    },
+    {
+      "bmi_max": 38.6,
+      "bmi_mean": 26.54642857142856,
+      "bmi_min": 19.4,
+      "n_samples": 36,
+      "study_id": "GSE67490"
+    },
+    {
+      "bmi_max": 53.4,
+      "bmi_mean": 29.459235668789823,
+      "bmi_min": 16.5,
+      "n_samples": 94,
+      "study_id": "GSE67919"
+    },
+    {
+      "bmi_max": 18.3791,
+      "bmi_mean": 16.82634821428573,
+      "bmi_min": 15.4379,
+      "n_samples": 93,
+      "study_id": "GSE72556"
+    },
+    {
+      "bmi_max": 72.9667,
+      "bmi_mean": 32.00539844559583,
+      "bmi_min": 17.7857,
+      "n_samples": 384,
+      "study_id": "GSE72680"
+    },
+    {
+      "bmi_max": 35.2956,
+      "bmi_mean": 26.002399999999998,
+      "bmi_min": 21.875,
+      "n_samples": 7,
+      "study_id": "GSE73626"
+    },
+    {
+      "bmi_max": 62.73,
+      "bmi_mean": 28.13585365853659,
+      "bmi_min": 14.59,
+      "n_samples": 18,
+      "study_id": "GSE74214"
+    },
+    {
+      "bmi_max": 53.74,
+      "bmi_mean": 27.429288702928876,
+      "bmi_min": 6.07,
+      "n_samples": 100,
+      "study_id": "GSE88883"
+    },
+    {
+      "bmi_max": 39.1801,
+      "bmi_mean": 30.283646666666673,
+      "bmi_min": 23.6253,
+      "n_samples": 12,
+      "study_id": "GSE89181"
+    },
+    {
+      "bmi_max": 68.3194,
+      "bmi_mean": 27.794798275862085,
+      "bmi_min": 17.0068,
+      "n_samples": 218,
+      "study_id": "TCGA-BLCA"
+    },
+    {
+      "bmi_max": 70.4923,
+      "bmi_mean": 28.376780838323345,
+      "bmi_min": 13.4176,
+      "n_samples": 167,
+      "study_id": "TCGA-CESC"
+    },
+    {
+      "bmi_max": 36.4299,
+      "bmi_mean": 28.115394117647064,
+      "bmi_min": 24.5779,
+      "n_samples": 17,
+      "study_id": "TCGA-CHOL"
+    },
+    {
+      "bmi_max": 271.863,
+      "bmi_mean": 31.777697872340404,
+      "bmi_min": 18.5185,
+      "n_samples": 115,
+      "study_id": "TCGA-COAD"
+    },
+    {
+      "bmi_max": 46.0294,
+      "bmi_mean": 26.647251724137927,
+      "bmi_min": 16.7276,
+      "n_samples": 29,
+      "study_id": "TCGA-DLBC"
+    },
+    {
+      "bmi_max": 60.2353,
+      "bmi_mean": 27.07260339805827,
+      "bmi_min": 13.399,
+      "n_samples": 178,
+      "study_id": "TCGA-ESCA"
+    },
+    {
+      "bmi_max": 414.894,
+      "bmi_mean": 31.77733187772927,
+      "bmi_min": 16.8242,
+      "n_samples": 166,
+      "study_id": "TCGA-KIRP"
+    },
+    {
+      "bmi_max": 61.6731,
+      "bmi_mean": 25.80938412698412,
+      "bmi_min": 14.5266,
+      "n_samples": 364,
+      "study_id": "TCGA-LIHC"
+    },
+    {
+      "bmi_max": 55.4734,
+      "bmi_mean": 27.731678074866302,
+      "bmi_min": 17.7778,
+      "n_samples": 187,
+      "study_id": "TCGA-SKCM"
+    },
+    {
+      "bmi_max": 50.6122,
+      "bmi_mean": 27.349973000000006,
+      "bmi_min": 17.5064,
+      "n_samples": 100,
+      "study_id": "TCGA-THYM"
+    },
+    {
+      "bmi_max": 213.499,
+      "bmi_mean": 33.983738095238095,
+      "bmi_min": 18.026,
+      "n_samples": 210,
+      "study_id": "TCGA-UCEC"
+    },
+    {
+      "bmi_max": 67.7512,
+      "bmi_mean": 29.245447058823537,
+      "bmi_min": 18.9292,
+      "n_samples": 34,
+      "study_id": "TCGA-UCS"
+    },
+    {
+      "bmi_max": 47.6615,
+      "bmi_mean": 27.60490697674419,
+      "bmi_min": 18.2222,
+      "n_samples": 43,
+      "study_id": "TCGA-UVM"
+    }
+  ],
+  "donor_replicate": {
+    "n_distinct_donors": 0,
+    "n_distinct_replicate_groups": 0,
+    "n_with_donor": 0,
+    "n_with_replicate": 0
+  },
+  "ewas_db_ingest": [
+    {
+      "n_assay_files": 102332,
+      "n_samples": 100992,
+      "n_studies": 1103,
+      "source_release_id": "ewas-datahub-db-v1",
+      "source_system": "ewas_datahub_db",
+      "total_bytes": 663657720598474.0
+    }
+  ],
+  "generated_at": "2026-09-01T13:31:14Z",
   "label_conflicts_head": [],
   "overlap_by_n_families": [
     {
@@ -398,12 +2382,12 @@
   "release_ewas_db": {
     "advertised_n": 1989,
     "mirror_complete": false,
-    "n_local_gsm": 92971,
-    "n_local_studies": 924,
+    "n_local_gsm": 130090,
+    "n_local_studies": 1338,
     "refresh_is_idempotent": true,
     "remote_index_fetched": false,
-    "total_bytes": 1067332702810
+    "total_bytes": 1433875099738
   },
-  "unique_gsm": 121931,
+  "unique_gsm": 147556,
   "unique_vs_row_sum_note": "unique GSM must be compared to pack-row sum; overlap makes them unequal"
 }
