@@ -44,8 +44,8 @@ OOF cross-fit is unblocked now that **7F and 7G** passed.
 | **7E′** | **Done** — Hub multitask + hygiene |
 | **7F** | **Done.** RBS→gene cascade + direct leftover; saved neural scores fused |
 | **7G** | **Done.** Methylation-only re-eval; winner `C-mvalue-enet` (0.334 tissue F1 on 65k prefix). P2 ~0.38 is **not** MBS-only (late-fusion test) |
-| **7G′ Stage A** | Gene-only MBS benchmark: `P2-G`/`P4-G`/`P5-G` vs `C-mvalue-enet-G` on identical gene-linked CpGs (**pending**) |
-| **7G′ Stage B** | Fold-selected `C-mvalue-enetS`, full model, `direct_cpg.zarr` (**pending**) |
+| **7G′ Stage A** | Gene-only MBS benchmark: `P2-G`/`P4-G`/`P5-G` vs `C-mvalue-*-G` on identical `gene_cols`; primary `mbs_e2e` (**pending**; runner landed) |
+| **7G′ Stage B** | Fold-selected `C-mvalue-enetS`, full model, orphan fusion ablation, `direct_cpg.zarr` (**pending**) |
 | **7** | **Blocked until 7G′.** Final OOF after 7F, 7G, and 7G′ |
 
 Do not retrain frozen **v0.1** flat/hier runs.
@@ -61,10 +61,14 @@ Exported product is the score matrix (gene-aggregated RBS ± genome-wide RBS ±
 direct); heads train the encoder but are not part of the exported scoring
 function
 ([`SCORING_PIPELINE.md`](../SCORING_PIPELINE.md),
-[`ARCHITECTURE.md`](../ARCHITECTURE.md)). Transparent 7E/7G baselines
-(gene/region mean, elastic-net, M-value ridge / trees) may fit a linear or
-boosted layer on fixed methylation features only; neural arms are joint
-DeepRVAT-style (shared φ/pool/ρ + linear heads). **TBS is not exported.**
+[`ARCHITECTURE.md`](../ARCHITECTURE.md) § Neural encoder family). Four neural
+encoders: **FlatDeepSet**, **FlatDeepSetRegion** (Stage B `N-light-type`),
+**HierarchicalDeepSet**, **CascadeDeepSet** — each trainable on **gene-only**
+or **full** CpG scope (7G′). Real Hub training uses **`--device cuda`**.
+Transparent 7E/7G baselines (gene/region mean, elastic-net, M-value ridge /
+trees) may fit a linear or boosted layer on fixed methylation features only;
+neural arms are joint DeepRVAT-style (shared φ/pool/ρ + linear heads). **TBS is
+not exported.**
 
 ## Readiness vs live catalog (2026-08-25)
 
@@ -128,7 +132,7 @@ Graph-v2 + independent RBS/TBS train-time masks are **done**
 | **7E′** | Hub multitask (age/tissue/sex/disease/cancer, masked) + catalog/census hygiene (**done**) |
 | **7F** | RBS genome-wide → gene-associated RBS aggregation; leftover CpGs **direct**; no TBS scores; fuse **saved neural** scores (**done**) |
 | **7G** | Methylation-only re-eval on frozen 7E folds: longer train, ROC, M-value ridge/enet/trees/optional PCA-SVA; no metadata-only ranking (**done**) |
-| **7G′** | Stage A: gene-only MBS vs `C-mvalue-enet-G`; Stage B: fold-selected panel, full model, `direct_cpg.zarr` (**pending**; blocks Milestone **7**) |
+| **7G′** | Stage A: gene-only MBS vs `C-mvalue-*-G` on `gene_cols` (all four neural encoders documented in [`ARCHITECTURE.md`](../ARCHITECTURE.md)); Stage B: fold-selected panel, full model, `direct_cpg.zarr`, orphan fusion ablation (**pending**; blocks Milestone **7**) |
 | **7** | 5×6 OOF gene-RBS + orphan RBS + direct (no TBS) with leakage controls |
 
 ## Locked decisions
@@ -142,7 +146,9 @@ Graph-v2 + independent RBS/TBS train-time masks are **done**
 | Noncoding | Typed region → RBS; leftover CpGs **direct** (no tiles). Nearest-gene allocates RBS→MBS only | 7F drops ADR 0006 tile scores; ADR 0004 still forbids collapsing unmapped CpGs |
 | Residual one-scalar | Frozen v0.1 only | Bottleneck, not biology test |
 | Normalization | Level-1 fold-fitted robust z required before 7E; AE later | GMQN already on Hub |
-| Final 5×6 | After 7F and 7G (7A–7E′ already done) | ADR 0007 spirit + 7E evaluation gaps |
+| Final 5×6 | After 7G′ Stage A and B (7A–7G done) | ADR 0007 |
+| Neural encoders | FlatDeepSet · FlatDeepSetRegion (Stage B) · HierarchicalDeepSet · CascadeDeepSet | [`ARCHITECTURE.md`](../ARCHITECTURE.md) |
+| Real training device | CUDA (`--device cuda`) | CPU only for fixtures / CI |
 | Architecture ranking | Methylation-input methods only | Metadata-only is a leakage alarm, not a competitor |
 | Flat vs hier compare | Parameter-matched topology in 7E | Width/activation/dropout differed in v0 |
 | Pack “prevalence” | Availability in Hub packs, not epidemiology | Heterogeneous contributed studies |

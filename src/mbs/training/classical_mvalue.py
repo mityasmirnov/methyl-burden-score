@@ -268,8 +268,13 @@ def run_classical_mvalue(
     phenotypes: list[Any],
     max_loci: int = 65536,
     matrix_id: str = "matrix-hub-age-tissue-sex-full-v1",
+    gene_cols: np.ndarray | None = None,
 ) -> dict[str, Any]:
-    """Run C-mvalue-* arms on frozen folds; methylation matrix only."""
+    """Run C-mvalue-* arms on frozen folds; methylation matrix only.
+
+    When ``gene_cols`` is set, slice to those column indices and suffix arm names
+  with ``-G`` (matched gene-linked panel for 7G′ Stage A).
+    """
     matrix_paths = matrix_store_paths(data_root / "canonical" / "matrices" / matrix_id)
     sample_index = read_sample_index(matrix_paths.sample_index_path)
     locus_index = read_locus_index(matrix_paths.locus_index_path)
@@ -294,22 +299,36 @@ def run_classical_mvalue(
         ),
         dtype=np.float32,
     )
+    if gene_cols is not None:
+        gene_cols_a = np.asarray(gene_cols, dtype=np.int64)
+        if gene_cols_a.size == 0:
+            raise ValueError("gene_cols must be non-empty when set")
+        if int(gene_cols_a.max()) >= n_cols or int(gene_cols_a.min()) < 0:
+            raise ValueError("gene_cols out of range for loaded locus prefix")
+        m_all = m_all[:, gene_cols_a]
+        arms_to_run = [(f"{name}-G", kind) for name, kind in CLASSICAL_ARMS]
+        panel_note = f" Gene-linked panel: {gene_cols_a.size} unique CpG columns."
+    else:
+        arms_to_run = list(CLASSICAL_ARMS)
+        panel_note = ""
 
     def matrix_for(ids: list[str]) -> np.ndarray:
         rows = np.asarray([row_by_id[s] for s in ids], dtype=np.int64)
         return m_all[rows]
 
     payload: dict[str, Any] = {
-        "n_loci_used": n_cols,
+        "n_loci_used": n_cols if gene_cols is None else int(np.asarray(gene_cols).size),
         "n_loci_in_matrix": n_loci_full,
         "note": (
             f"M-values on the same {n_cols}-locus prefix as the neural cascade. "
             "HistGradientBoosting stands in for LightGBM; PCA SVs for Bioconductor sva. "
             "Metadata-only omitted from ranking (7E′ leakage alarm only)."
+            f"{panel_note}"
         ),
         "folds": [],
         "roc": {},
-        "arms": [a for a, _ in CLASSICAL_ARMS],
+        "arms": [a for a, _ in arms_to_run],
+        "gene_linked_panel": gene_cols is not None,
     }
     for fold_idx, fold in enumerate(fold_pack["folds"]):
         train_ids = [s for s in fold["train_sample_ids"] if s in row_by_id and s in pheno_ids]
@@ -336,7 +355,7 @@ def run_classical_mvalue(
             "n_test": len(test_ids),
             "arms": {},
         }
-        for arm_name, kind in CLASSICAL_ARMS:
+        for arm_name, kind in arms_to_run:
             if kind == "sva":
                 xtr_i, xte_i = impute_median(x_tr, x_te)
                 xtr, xte = sva_residualize(xtr_i, xte_i)
@@ -356,7 +375,7 @@ def run_classical_mvalue(
                 if k in metrics
             }
             fold_out["arms"][arm_name] = slim
-            if fold_idx == 0 and arm_name == "C-mvalue-hgb":
+            if fold_idx == 0 and arm_name in ("C-mvalue-hgb", "C-mvalue-hgb-G"):
                 payload["roc"] = {
                     "tissue": slim.get("tissue_roc") or [],
                     "sex": slim.get("sex"),

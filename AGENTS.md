@@ -141,9 +141,13 @@ When these disagree, stop and report the inconsistency rather than guessing.
 
 This project is a pure Python CLI / library / batch pipeline (`mbs` command); there
 is no web app or long-running service. TensorBoard is the only server, started
-on demand during real training. The Cursor Cloud VM has **no GPU**, so
-`torch.cuda.is_available()` is `False` and everything runs on CPU (fixtures fall
-back automatically; pass `--device cpu` for real configs).
+on demand during real training. **On machines with a GPU**, always pass
+`--device cuda` (or `device.torch_device: cuda` in YAML) for real Hub matrix
+training — see [`docs/SCORING_PIPELINE.md`](docs/SCORING_PIPELINE.md) and
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). The Cursor Cloud VM has **no
+GPU**, so `torch.cuda.is_available()` is `False` and everything runs on CPU
+(fixtures fall back automatically; pass `--device cpu` for real configs on Cloud
+only).
 
 ### /data policy on the Cloud VM (required before running anything)
 

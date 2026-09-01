@@ -414,6 +414,12 @@ score arm ([ADR 0009](adr/0009-drop-tbs-scores.md)). Orphan regions are separate
 `region_id` columns, never one global or per-type pool. Qualification requires
 a versioned multi-CpG interval; unrestricted nearest-gene region allocation is
 not accepted for final OOF (see 7G′ plan).
+
+Neural **MBS** columns are produced by one of **FlatDeepSet**, **HierarchicalDeepSet**,
+or **CascadeDeepSet** (and planned **FlatDeepSetRegion** in Stage B); see
+[`ARCHITECTURE.md`](ARCHITECTURE.md). Stage A export may use gene-only training;
+Stage B / Milestone **7** use the locked full-panel encoder.
+
 The score manifest records fold and restart membership, **score polarity /
 orientation anchor** ([ADR 0008](adr/0008-score-identifiability.md)), and
 fold-fitted normalizer hashes. Every sample must be traceable to models that

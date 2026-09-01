@@ -1,6 +1,8 @@
 # Plan: 7G′ gene-only architecture selection + matched-panel benchmark
 
 Status: **pending** (blocks Milestone **7** final OOF).
+Normative encoder family: [`ARCHITECTURE.md`](../ARCHITECTURE.md) § Neural encoder family,
+[`SCORING_PIPELINE.md`](../SCORING_PIPELINE.md).
 Parents: [`milestone-7g-cascade-tissue-investigation.md`](milestone-7g-cascade-tissue-investigation.md),
 [`milestone-7g-methylation-eval.md`](milestone-7g-methylation-eval.md).
 Normative: [ADR 0007](../adr/0007-crossfit-prerequisites.md),
@@ -96,6 +98,9 @@ Same unique CpG columns as neural arms:
 | `P5-G-max` | max/max | 30 ceiling + early stop | same |
 | `P5-G-mean` | mean/mean | Run if P4-G within ~0.03 F1 of P2-G | same |
 | `C-mvalue-enet-G` | — | fold-fitted enet | same CpG panel |
+| `C-mvalue-ridge-G` | — | fold-fitted ridge | same CpG panel |
+| `C-mvalue-hgb-G` | — | fold-fitted HGB | same CpG panel |
+| `C-mvalue-sva-G` | — | PCA-SVA + ridge | same CpG panel |
 
 Report **two neural metrics** separately:
 
@@ -133,8 +138,8 @@ the primary selector.
 | `C-mvalue-enetS` | sparse linear on selected panel |
 | `N-cascade-S` | locked Stage-A cascade on same loci |
 | `N-light-type` | `[M, multi-hot regulatory annotation, observed]` → gene pool |
-| `N-mbs-direct-only` | MBS + direct; omit orphan block |
-| `N-full` | MBS + qualified orphan RBS + direct CpG features |
+| `N-mbs-direct-only` | MBS + direct; omit orphan block (`fusion_mbs_direct`) |
+| `N-full` | MBS + qualified orphan RBS + direct (`fusion_full`) |
 
 ### Full model after gene-architecture selection
 

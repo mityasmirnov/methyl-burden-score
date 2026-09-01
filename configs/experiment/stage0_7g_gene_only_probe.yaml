@@ -1,0 +1,43 @@
+# 7G′ Stage A gene-only probe + classical -G panel + orphan-RBS ablation.
+split_id: hub-ats-7e-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+milestone: 7G-gene-only-probe
+report_dir: reports/inspection/stage0_7g_gene_only_probe
+cv_budget:
+  max_loci: 65536
+experiment:
+  name: stage0_7g_gene_only_probe
+  seed: 42
+  stage: 0
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-age-tissue-sex-full-v1
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+arms:
+  - id: P2-G
+    kind: cascade_train
+    run_id: stage0-7g-gene-probe-P2-G
+    config: configs/experiment/stage0_7g_gene_only_probe_p2.yaml
+  - id: P4-G
+    kind: cascade_train
+    run_id: stage0-7g-gene-probe-P4-G
+    config: configs/experiment/stage0_7g_gene_only_probe_p4.yaml
+  - id: P5-G-max
+    kind: cascade_train
+    run_id: stage0-7g-gene-probe-P5-G-max
+    config: configs/experiment/stage0_7g_gene_only_probe_p5_max.yaml
+  - id: P5-G-mean
+    kind: cascade_train
+    run_id: stage0-7g-gene-probe-P5-G-mean
+    config: configs/experiment/stage0_7g_gene_only_probe_p5_mean.yaml
+    optional: true
+    gate_arm: P4-G
+    gate_metric: mbs_e2e.metrics.tissue.macro_f1
+    gate_reference_arm: P2-G
+    gate_max_delta: 0.03
+  - id: C-mvalue-classical-G
+    kind: classical_gene
+  - id: P2-orphan-ablation
+    kind: cascade_train
+    run_id: stage0-7g-gene-probe-P2-orphan-ablation
+    config: configs/experiment/stage0_7g_gene_only_probe_p2_orphan_ablation.yaml

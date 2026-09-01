@@ -165,11 +165,18 @@ manifest hashes match.
 
 1. P0–P3 remain **historical evidence** (committed report).
 2. Implement gene-col filter + MBS-only evaluation mode.
-3. Run **7G′ Stage A** (`P2-G`, `P4-G`, `P5-G`, `C-mvalue-enet-G`).
+3. Run **7G′ Stage A** on GPU (`P2-G` … `P5-G`, `C-mvalue-*-G`, optional orphan ablation).
 4. Run **7G′ Stage B** (fold-selected panel, full model, `direct_cpg.zarr`).
 5. Start Milestone **7** 5×6 OOF.
 
 ## Phase 2 → superseded by 7G′ Stage A
+
+Historical P4/P5 tissue-probe arms used **late fusion** on full score blocks.
+**Do not** treat their tissue F1 as MBS-only architecture evidence. Re-run under
+7G′ with `gene_linked_only` + `primary_evaluation: mbs_e2e` via
+[`scripts/run_7g_gene_only_probe.py`](../../scripts/run_7g_gene_only_probe.py)
+(**GPU required**: `--device cuda`). Encoder catalogue:
+[`ARCHITECTURE.md`](../ARCHITECTURE.md).
 
 The original P4/P5 grid (mean pooling, 30-epoch ceiling, fusion refit on saved
 scores) measured **late-fusion** performance on the full 65 536 prefix. That

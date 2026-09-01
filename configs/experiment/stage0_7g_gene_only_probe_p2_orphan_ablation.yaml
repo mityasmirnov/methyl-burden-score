@@ -1,0 +1,34 @@
+# Full-model orphan RBS ablation: compare fusion_full vs fusion_mbs_direct on P2 weights.
+split_id: hub-ats-7e-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+milestone: 7G-gene-only-P2-orphan-ablation
+report_dir: reports/inspection/stage0_7g_gene_only_probe/_staging_p2_orphan_ablation
+cv_budget:
+  max_loci: 65536
+  max_epochs: 15
+experiment:
+  name: stage0_7g_gene_only_probe_p2_orphan_ablation
+  seed: 42
+  stage: 0
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-age-tissue-sex-full-v1
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+model:
+  topology: rbs_gene_direct
+  pooling: max
+  cpg_hidden_dim: 64
+  region_hidden_dim: 32
+  dropout: 0.1
+training:
+  max_epochs: 15
+  learning_rate: 0.001
+  tissue_loss_weight: 3.0
+  age_loss_weight: 0.3
+  sex_loss_weight: 1.0
+  gene_linked_only: false
+  primary_evaluation: late_fusion
+  extra_fusion_modes:
+    - mbs_direct
+device:
+  torch_device: cuda

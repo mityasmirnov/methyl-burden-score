@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
+
+FusionBlockMode = Literal["full", "mbs_direct", "mbs_only"]
 
 import numpy as np
 import pandas as pd
@@ -115,9 +117,20 @@ def load_cascade_score_blocks(score_dir: Path) -> dict[str, np.ndarray]:
     return {"mbs": mbs, "orphan_rbs": rbs, "direct": direct}
 
 
-def fusion_feature_matrix(blocks: dict[str, np.ndarray]) -> np.ndarray:
-    """Column-stack [orphan_rbs | mbs | direct]; raises if a TBS key sneaks in."""
+def fusion_feature_matrix(
+    blocks: dict[str, np.ndarray],
+    *,
+    mode: FusionBlockMode = "full",
+) -> np.ndarray:
+    """Column-stack score blocks for late fusion (7F layout; no TBS)."""
     if "tbs" in blocks:
         raise ValueError("TBS arm is forbidden in 7F fusion matrix")
-    parts = [blocks["orphan_rbs"], blocks["mbs"], blocks["direct"]]
+    if mode == "full":
+        parts = [blocks["orphan_rbs"], blocks["mbs"], blocks["direct"]]
+    elif mode == "mbs_direct":
+        parts = [blocks["mbs"], blocks["direct"]]
+    elif mode == "mbs_only":
+        parts = [blocks["mbs"]]
+    else:
+        raise ValueError(f"unsupported fusion block mode: {mode!r}")
     return np.concatenate([np.asarray(p, dtype=np.float32) for p in parts], axis=1)

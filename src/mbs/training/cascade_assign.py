@@ -63,6 +63,60 @@ class CascadeAssignment:
         return [self.region_ids[i] for i in self.orphan_region_indices.tolist()]
 
 
+def gene_linked_col_index(assignment: CascadeAssignment) -> np.ndarray:
+    """Unique CpG column indices on edges allocated to a gene (MBS path)."""
+    if assignment.edge_col_index.size == 0:
+        return np.zeros(0, dtype=np.int64)
+    gene_edge = assignment.region_to_gene[assignment.edge_region_index] >= 0
+    if not np.any(gene_edge):
+        return np.zeros(0, dtype=np.int64)
+    return np.unique(assignment.edge_col_index[gene_edge]).astype(np.int64)
+
+
+def assignment_gene_linked_only(assignment: CascadeAssignment) -> CascadeAssignment:
+    """Restrict assignment to gene-linked typed edges; drop direct and orphan paths."""
+    if assignment.edge_col_index.size == 0:
+        return CascadeAssignment(
+            gene_ids=list(assignment.gene_ids),
+            region_ids=[],
+            region_type_id=np.zeros(0, dtype=np.int64),
+            region_to_gene=np.zeros(0, dtype=np.int64),
+            orphan_region_mask=np.zeros(0, dtype=bool),
+            edge_col_index=np.zeros(0, dtype=np.int64),
+            edge_region_index=np.zeros(0, dtype=np.int64),
+            direct_col_index=np.zeros(0, dtype=np.int64),
+            region_types=assignment.region_types,
+            n_study_loci=assignment.n_study_loci,
+            allocated_gene_id=[],
+        )
+    gene_edge_mask = assignment.region_to_gene[assignment.edge_region_index] >= 0
+    if not np.any(gene_edge_mask):
+        raise ValueError("no gene-linked edges in assignment")
+    edge_col = assignment.edge_col_index[gene_edge_mask]
+    edge_reg = assignment.edge_region_index[gene_edge_mask]
+    used_regions = np.unique(edge_reg.astype(np.int64, copy=False))
+    old_to_new = {int(old): i for i, old in enumerate(used_regions.tolist())}
+    new_region_ids = [assignment.region_ids[int(i)] for i in used_regions.tolist()]
+    new_region_type_id = assignment.region_type_id[used_regions]
+    new_region_to_gene = assignment.region_to_gene[used_regions]
+    new_orphan_mask = new_region_to_gene < 0
+    new_allocated = [assignment.allocated_gene_id[int(i)] for i in used_regions.tolist()]
+    new_edge_region = np.asarray([old_to_new[int(r)] for r in edge_reg], dtype=np.int64)
+    return CascadeAssignment(
+        gene_ids=list(assignment.gene_ids),
+        region_ids=new_region_ids,
+        region_type_id=new_region_type_id,
+        region_to_gene=new_region_to_gene,
+        orphan_region_mask=new_orphan_mask,
+        edge_col_index=edge_col.astype(np.int64, copy=False),
+        edge_region_index=new_edge_region,
+        direct_col_index=np.zeros(0, dtype=np.int64),
+        region_types=assignment.region_types,
+        n_study_loci=assignment.n_study_loci,
+        allocated_gene_id=new_allocated,
+    )
+
+
 def nearest_gene_on_chromosome(
     chromosome: str,
     midpoint: int,

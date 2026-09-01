@@ -42,6 +42,95 @@ MBS[s,g] in [0,1]
 
 The score network is shared across CpGs, regions, genes, samples, and traits. Phenotype-specific parameters exist only in downstream heads.
 
+## Neural encoder family
+
+Stage 0 trains **one shared aggregation function** per architecture arm. All
+neural encoders output sample×gene **MBS** in `[0,1]` plus a **presence** mask;
+phenotype heads are separate linear modules on centered MBS
+(`MultitaskHeads` in `src/mbs/training/multitask.py`).
+
+| Encoder | Aggregation path | Region / annotation features | CLI / trainer | Milestone |
+|---------|------------------|------------------------------|---------------|-----------|
+| **`FlatDeepSet`** | CpG → pool by **gene** → ρ → sigmoid MBS | Locus→gene index only (regions collapsed upstream) | `mbs train flat` · `training/loop.py` | 5, 5c, 5d, 7E |
+| **`FlatDeepSetRegion`** | CpG **(+ regulatory type features)** → pool by **gene** → MBS | Per-CpG multi-hot regulatory type + observed flag (no RBS hop) | Stage B arm **`N-light-type`** (planned) | 7G′ Stage B |
+| **`HierarchicalDeepSet`** | CpG → pool by **typed region** → φ_region(+ type emb) → pool by **gene** → MBS; **residual** path for unmapped CpGs | Region-type embedding at the region stage | `mbs train hierarchical` · `training/hier_loop.py` | 6, 7E |
+| **`CascadeDeepSet`** | CpG → pool by **typed region** → RBS → pool by **gene** → MBS; **orphan RBS** and **direct** scored outside the module | Region-type embedding at RBS; orphan columns never pooled by type | `mbs train cascade` · `training/cascade_loop.py` | 7F, 7G, 7G′ |
+
+```mermaid
+flowchart TB
+  subgraph flat [FlatDeepSet]
+    F1["CpG M-value (+ static feats)"] --> F2["φ_cpg"]
+    F2 --> F3["pool by gene"]
+    F3 --> F4["ρ → MBS"]
+  end
+  subgraph flatReg [FlatDeepSetRegion planned N-light-type]
+    R1["CpG M-value + type one-hot + observed"] --> R2["shared φ"]
+    R2 --> R3["pool by gene"]
+    R3 --> R4["ρ → MBS"]
+  end
+  subgraph hier [HierarchicalDeepSet]
+    H1["CpG features"] --> H2["pool by region"]
+    H2 --> H3["φ_region + type emb"]
+    H3 --> H4["pool by gene → MBS"]
+    H5["unmapped CpGs"] --> H6["residual pool → 1 scalar"]
+  end
+  subgraph cascade [CascadeDeepSet 7F product]
+    C1["typed CpG"] --> C2["pool by region"]
+    C2 --> C3["RBS per region"]
+    C3 --> C4["pool by gene → MBS"]
+    C3 --> C5["orphan RBS columns"]
+    C6["leftover CpGs"] --> C7["direct branch"]
+  end
+```
+
+**`FlatDeepSetRegion`** is the programme name for **annotation-augmented flat
+pooling**: methylation plus regulatory context per CpG, then a single gene-level
+pool — closer to DeepRVAT’s variant+annotation pattern than the two-hop
+RBS→gene cascade. It is **not** yet a separate class in `src/mbs/models.py`;
+7G′ Stage B implements it as **`N-light-type`**
+([`milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md)).
+
+Implementation references: `FlatDeepSet`, `HierarchicalDeepSet`, `CascadeDeepSet`
+in `src/mbs/models.py`.
+
+### Gene-only vs full CpG input
+
+Every neural encoder can be evaluated on two **input scopes** (independent of
+which architecture wins):
+
+| Scope | CpG set | Direct / orphan | Primary use |
+|-------|---------|-----------------|-------------|
+| **Gene-only (7G′ Stage A)** | `gene_cols` = unique columns on edges with `region_to_gene ≥ 0` | Excluded from encoder input and primary metrics | Fair architecture selection vs `C-mvalue-*-G` |
+| **Full model (7G′ Stage B → Milestone 7)** | Typed gene + qualified orphan regions + selected direct loci | Orphan RBS (one column per `region_id`), `direct_cpg.zarr` / fold-fitted direct | Product score export + phenotype fusion |
+
+Cascade trainer flags (`training/cascade_loop.py`, experiment YAML):
+
+- `gene_linked_only: true` → `assignment_gene_linked_only()` before train.
+- `primary_evaluation: mbs_e2e` → report end-to-end MBS heads (not late fusion).
+- `extra_fusion_modes: [mbs_direct]` → orphan-RBS ablation (`fusion_full` vs
+  `fusion_mbs_direct`).
+
+Flat and hierarchical arms use the same **locus prefix** (`cv_budget.max_loci`)
+or a fold-selected column list in Stage B; gene-only flat/hier runs restrict the
+packed `cpg_to_gene` / `cpg_to_region` edges to `gene_cols` the same way.
+
+### Compute: use GPU for real training
+
+Real Hub matrix training (≥8k–65k loci, multi-epoch) must run on **CUDA** for
+wall-clock feasibility. Pass `--device cuda` (or set `device.torch_device: cuda`
+in the experiment YAML). CI, `--overfit-fixture`, and Cloud smoke paths may use
+CPU when no GPU is present (`resolve_device(..., require_cuda=False)`).
+
+```bash
+# Real runs (always prefer GPU)
+uv run mbs train flat         --config … --device cuda
+uv run mbs train hierarchical --config … --device cuda
+uv run mbs train cascade      --config … --device cuda
+uv run python scripts/run_7g_gene_only_probe.py --device cuda
+```
+
+Do not launch multi-fold 65k-locus probes on CPU except for fixture debugging.
+
 ## Current 7F product model and 7G comparator
 
 The phenotype-trained cascade serves **two uses of the same model**: (1) masked
@@ -49,7 +138,7 @@ auxiliary phenotype prediction during training/selection; (2) export of
 sample×gene MBS and optional non-gene features for downstream association. These
 are not separate topologies.
 
-### Training vs evaluation (current hybrid — to be corrected)
+### Training vs evaluation (7G′ corrected metrics)
 
 ```mermaid
 flowchart TB
@@ -57,20 +146,21 @@ flowchart TB
   B --> C["MBS"]
   C --> D["End-to-end phenotype loss age tissue sex"]
   E["Untyped CpGs"] --> F["Separate elastic-net task predictions"]
-  C --> G["Current test metric late fusion"]
+  C --> G["Optional late fusion ablation"]
   F --> G
   H["Orphan RBS if any"] --> G
+  C --> I["Primary Stage A metric mbs_e2e"]
 ```
 
-End-to-end training supervises **MBS only**. Current test reporting concatenates
-`[orphan_rbs | mbs | direct_contrib]` before linear heads — so **reported P2
-~0.38 F1 is not an MBS-only architecture result**. Corrected Phase-2 (**P2-G**,
-**P4-G**, **P5-G**) must evaluate on gene-linked CpGs only and report MBS-only
-metrics separately from any full-model fusion.
+End-to-end training supervises **MBS only**. **Stage A** reports **`mbs_e2e`**
+(end-to-end heads on MBS) and **`mbs_linear_probe`** separately; **`fusion_full`**
+and **`fusion_mbs_direct`** (orphan ablation) are secondary. Historical P2
+~0.38 F1 used late fusion on full blocks — **not** valid MBS-only evidence.
 
-**Architecture-selection phase (7G′ Stage A):** compare CascadeDeepSet vs
-`C-mvalue-enet-G` on the **identical gene-linked CpG columns** only. Exclude
-orphan regions and direct CpGs from both training input and primary metrics.
+**Architecture-selection phase (7G′ Stage A):** compare **CascadeDeepSet** vs
+**`C-mvalue-*-G`** on the **identical gene-linked CpG columns**. Other neural
+encoders (**FlatDeepSet**, **HierarchicalDeepSet**, planned **FlatDeepSetRegion**)
+enter the same gate when re-run on `gene_cols`.
 
 **Full model (after Stage A):** concatenate additional **feature columns**
 (qualified orphan RBS, direct CpG values/scores) before trait heads — not extra
@@ -441,6 +531,8 @@ Static locus features are looked up after collation and are not copied into ever
 
 ## Training and scoring
 
+### Development vs final protocol
+
 Development protocol (Milestone **7E** architecture selection):
 
 ```text
@@ -450,22 +542,27 @@ study-grouped validation
 ```
 
 Minimum independently trained arms: transparent gene/region mean and
-elastic-net; parameter-matched flat gene-only; parameter-matched hierarchical
-gene-only; gene + direct; gene + RBS + TBS + direct; each neural arm with and
-without Level-1 robust-z; CpGPT inclusion as a separate ablation.
+elastic-net; **FlatDeepSet** (parameter-matched flat gene-only); **HierarchicalDeepSet**
+(mapped gene-only + residual); **CascadeDeepSet** (gene-only and full); gene +
+direct; gene + orphan RBS + direct; each neural arm with and without Level-1
+robust-z; CpGPT inclusion as a separate ablation. **7G′ Stage A** adds matched
+**`C-mvalue-*-G`** on `gene_cols`.
 
-Final Stage 0 protocol (Milestone **7**, after 7A–7E):
+Final Stage 0 protocol (Milestone **7**, after 7G′):
 
 ```text
 5 study-grouped outer folds
 up to 6 random restarts per fold
 ```
 
-Do not launch the final 5×6 protocol until catalog census, nine-pack matrices,
-multi-path architecture, Level-1 normalization, and 7E selection are done
+Do not launch the final 5×6 protocol until **7G′ Stage A and B** complete
 ([ADR 0007](adr/0007-crossfit-prerequisites.md)).
 
-Every stored training-sample MBS value is out-of-fold. Technical replicates and repeated donor measurements remain in one fold.
+Every stored training-sample MBS value is out-of-fold. Technical replicates and
+repeated donor measurements remain in one fold.
+
+**GPU:** all real-matrix neural training for the arms above uses **`--device cuda`**
+(see [Neural encoder family](#neural-encoder-family)).
 
 ## Deferred architecture
 

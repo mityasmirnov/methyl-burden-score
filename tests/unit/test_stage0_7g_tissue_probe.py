@@ -8,7 +8,12 @@ import numpy as np
 import pytest
 
 import mbs.training.cascade_loop as cascade_loop
-from mbs.training.cascade_assign import build_cascade_assignment
+from mbs.training.cascade_assign import (
+    assignment_gene_linked_only,
+    build_cascade_assignment,
+    gene_linked_col_index,
+)
+from mbs.training.cascade_scores import fusion_feature_matrix
 from mbs.training.cascade_loop import (
     make_synthetic_cascade_tables,
     train_cascade_on_arrays,
@@ -260,3 +265,77 @@ def test_mean_pooling_and_tissue_early_stop_are_wired(
         "cpg_to_region": "mean",
         "region_to_gene": "mean",
     }
+
+
+def test_gene_linked_col_index_and_subset() -> None:
+    tables = make_synthetic_cascade_tables(seed=9)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    gene_cols = gene_linked_col_index(assignment)
+    assert gene_cols.size > 0
+    gene_only = assignment_gene_linked_only(assignment)
+    assert gene_only.n_direct == 0
+    assert gene_only.edge_col_index.size > 0
+    assert np.all(gene_only.region_to_gene >= 0)
+    assert set(gene_only.edge_col_index.tolist()).issubset(set(gene_cols.tolist()))
+
+
+def test_fusion_block_modes() -> None:
+    blocks = {
+        "orphan_rbs": np.ones((4, 2), dtype=np.float32),
+        "mbs": np.ones((4, 3), dtype=np.float32) * 2,
+        "direct": np.ones((4, 1), dtype=np.float32) * 3,
+    }
+    full = fusion_feature_matrix(blocks, mode="full")
+    mbs_direct = fusion_feature_matrix(blocks, mode="mbs_direct")
+    mbs_only = fusion_feature_matrix(blocks, mode="mbs_only")
+    assert full.shape == (4, 6)
+    assert mbs_direct.shape == (4, 4)
+    assert mbs_only.shape == (4, 3)
+
+
+def test_gene_linked_mbs_e2e_primary_eval(tmp_path: Path) -> None:
+    tables = make_synthetic_cascade_tables(seed=10)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, max(3, (n * 2) // 3), dtype=np.int64)
+    test_idx = np.arange(train_idx[-1] + 1, n, dtype=np.int64)
+    if test_idx.size == 0:
+        test_idx = train_idx.copy()
+    out = train_cascade_on_arrays(
+        assignment=assignment,
+        betas=tables["betas"],
+        train_idx=train_idx,
+        test_idx=test_idx,
+        ages=tables["ages"],
+        tissue=tables["tissue"],
+        sex=tables["sex"],
+        study_ids=tables["study_ids"],
+        sample_ids=tables["sample_ids"],
+        class_names=tables["class_names"],
+        out_dir=tmp_path / "gene_g",
+        max_epochs=2,
+        seed=0,
+        device_str="cpu",
+        gene_linked_only=True,
+        primary_evaluation="mbs_e2e",
+        extra_fusion_modes=("mbs_direct",),
+    )
+    assert out["primary_evaluation"] == "mbs_e2e"
+    assert out["gene_linked_only"] is True
+    assert out["n_gene_cols"] > 0
+    evaluations = out["evaluations"]
+    assert "mbs_e2e" in evaluations
+    assert "mbs_linear_probe" in evaluations
+    assert "fusion_full" in evaluations
+    assert "fusion_mbs_direct" in evaluations
+    assert out["metrics"] == evaluations["mbs_e2e"]["metrics"]

@@ -19,11 +19,13 @@ True next milestone after bootstrap:
 > panel + full model (7G′ Stage B — pending)** → **final OOF cross-fitting (7)**
 > → one score matrix.
 
-**Current gate:** **7G′ Stage A** — corrected gene-only MBS benchmark
-(`P2-G`, `P4-G`, `P5-G`, `C-mvalue-enet-G` on identical gene-linked CpGs;
-MBS-only primary metrics). Then **7G′ Stage B** (fold-safe `C-mvalue-enetS`,
-full-model extension, `direct_cpg.zarr` contract). Final Milestone **7**
-5×6 OOF remains blocked.
+**Current gate:** **7G′ Stage A** — corrected gene-only MBS benchmark on
+**identical `gene_cols`**: neural encoders (**CascadeDeepSet** primary;
+**FlatDeepSet** / **HierarchicalDeepSet** / planned **FlatDeepSetRegion** when
+re-run) vs **`C-mvalue-*-G`**; primary metric **`mbs_e2e`**. Code + runner:
+`scripts/run_7g_gene_only_probe.py`. **Real runs use GPU** (`--device cuda`).
+Then **7G′ Stage B** (fold-safe `C-mvalue-enetS`, full model, orphan ablation,
+`direct_cpg.zarr`). Final Milestone **7** 5×6 OOF remains blocked.
 
 **7G** methylation eval and **tissue probe P0–P3** are done (historical evidence
 only — P2 ~0.38 used late fusion, not MBS-only). Plan:

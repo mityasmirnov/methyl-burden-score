@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import numpy as np
 import pandas as pd
@@ -21,8 +21,14 @@ from mbs.matrix.store import (
 )
 from mbs.models import CascadeDeepSet
 from mbs.segment_ops import PoolName
-from mbs.training.cascade_assign import CascadeAssignment, build_cascade_assignment
+from mbs.training.cascade_assign import (
+    CascadeAssignment,
+    assignment_gene_linked_only,
+    build_cascade_assignment,
+    gene_linked_col_index,
+)
 from mbs.training.cascade_scores import (
+    FusionBlockMode,
     fusion_feature_matrix,
     load_cascade_score_blocks,
     write_cascade_score_dir,
@@ -35,7 +41,10 @@ from mbs.training.locus_gene import load_graph_tables
 from mbs.training.loop import load_experiment_config, resolve_device
 from mbs.training.multitask import MultitaskHeads
 from mbs.training.phenotypes import load_multitask_phenotypes
+from mbs.training.transparent_baselines import evaluate_multitask_predictions
 from mbs.training.run_artifacts import run_dir
+
+PrimaryEvaluation = Literal["late_fusion", "mbs_e2e"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -360,6 +369,107 @@ def _validation_rank(val_metrics: dict[str, Any]) -> tuple[float, float]:
     )
 
 
+def _evaluate_mbs_e2e(
+    model: CascadeDeepSet,
+    heads: MultitaskHeads,
+    assignment: CascadeAssignment,
+    betas: np.ndarray,
+    *,
+    ages: np.ndarray,
+    age_mask: np.ndarray,
+    tissue: np.ndarray,
+    tissue_mask: np.ndarray,
+    sex: np.ndarray,
+    sex_mask: np.ndarray,
+    study_ids: np.ndarray,
+    class_names: list[str],
+    device: torch.device,
+) -> dict[str, Any]:
+    """End-to-end phenotype heads on MBS only (no late fusion)."""
+    mbs_all, present_all, _ = score_samples(model, assignment, betas, device=device)
+    mbs_t = torch.from_numpy(mbs_all).to(device)
+    present_t = torch.from_numpy(present_all).to(device)
+    heads.eval()
+    with torch.no_grad():
+        age_pred = heads.forward_age(mbs_t, present_t).detach().cpu().numpy()
+        tissue_logits = heads.forward_tissue(mbs_t, present_t)
+        tissue_pred = tissue_logits.detach().cpu().numpy().argmax(axis=1)
+        sex_pred: np.ndarray | None = None
+        if heads.sex_head is not None:
+            sex_logits = heads.forward_sex(mbs_t, present_t)
+            if sex_logits is not None:
+                sex_pred = sex_logits.detach().cpu().numpy().argmax(axis=1)
+    preds: dict[str, np.ndarray | None] = {
+        "age": age_pred,
+        "tissue": tissue_pred,
+        "sex": sex_pred,
+    }
+    tissue_valid_classes = None
+    tm = np.asarray(tissue_mask, dtype=bool)
+    if tm.any():
+        tissue_valid_classes = set(np.asarray(tissue, dtype=np.int64)[tm].tolist())
+    metrics = evaluate_multitask_predictions(
+        preds=preds,
+        age=ages,
+        age_mask=age_mask,
+        tissue=tissue,
+        tissue_mask=tissue_mask,
+        sex=sex,
+        sex_mask=sex_mask,
+        study_ids=study_ids,
+        tissue_class_names=list(class_names) if class_names else None,
+        tissue_valid_classes=tissue_valid_classes,
+    )
+    return {
+        "metrics": metrics,
+        "evaluation": "mbs_e2e",
+        "n_score_features": int(mbs_all.shape[1]),
+    }
+
+
+def _evaluate_fusion_mode(
+    blocks: dict[str, np.ndarray],
+    *,
+    mode: FusionBlockMode,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
+    ages: np.ndarray,
+    age_mask: np.ndarray,
+    tissue: np.ndarray,
+    tissue_mask: np.ndarray,
+    sex: np.ndarray,
+    sex_mask: np.ndarray,
+    study_ids: np.ndarray,
+    class_names: list[str],
+    fusion: dict[str, Any] | None,
+) -> dict[str, Any]:
+    x = fusion_feature_matrix(blocks, mode=mode)
+    x_tr = x[train_idx]
+    x_te = x[test_idx]
+    out = evaluate_late_fusion(
+        scores_train=x_tr,
+        scores_test=x_te,
+        age_train=ages[train_idx],
+        age_mask_train=age_mask[train_idx],
+        tissue_train=tissue[train_idx],
+        tissue_mask_train=tissue_mask[train_idx],
+        sex_train=sex[train_idx],
+        sex_mask_train=sex_mask[train_idx],
+        age_test=ages[test_idx],
+        age_mask_test=age_mask[test_idx],
+        tissue_test=tissue[test_idx],
+        tissue_mask_test=tissue_mask[test_idx],
+        sex_test=sex[test_idx],
+        sex_mask_test=sex_mask[test_idx],
+        study_ids_test=study_ids[test_idx],
+        tissue_class_names=list(class_names) if class_names else None,
+        fusion=fusion,
+    )
+    out["evaluation"] = f"fusion_{mode}"
+    out["fusion_block_mode"] = mode
+    return out
+
+
 def train_cascade_on_arrays(
     *,
     assignment: CascadeAssignment,
@@ -393,8 +503,11 @@ def train_cascade_on_arrays(
     early_stopping_patience: int | None = None,
     early_stopping_min_delta: float = 0.0,
     fusion: dict[str, Any] | None = None,
+    gene_linked_only: bool = False,
+    primary_evaluation: PrimaryEvaluation = "late_fusion",
+    extra_fusion_modes: tuple[FusionBlockMode, ...] = (),
 ) -> dict[str, Any]:
-    """Train CascadeDeepSet + MBS heads; write scores; late-fuse; return metrics."""
+    """Train CascadeDeepSet + MBS heads; write scores; evaluate; return metrics."""
     score_dir = out_dir / "scores"
     manifest_path = score_dir / "score_manifest.json"
     metrics_path = out_dir / "metrics.json"
@@ -408,6 +521,12 @@ def train_cascade_on_arrays(
         raise ValueError("early_stopping_patience must be >= 1 when enabled")
     if early_stopping_min_delta < 0:
         raise ValueError("early_stopping_min_delta must be non-negative")
+    if primary_evaluation not in ("late_fusion", "mbs_e2e"):
+        raise ValueError(f"unsupported primary_evaluation: {primary_evaluation!r}")
+
+    if gene_linked_only:
+        assignment = assignment_gene_linked_only(assignment)
+    gene_cols = gene_linked_col_index(assignment)
 
     _set_seed(seed)
     device = resolve_device(device_str, require_cuda=False)
@@ -620,40 +739,84 @@ def train_cascade_on_arrays(
     )
 
     blocks = load_cascade_score_blocks(score_dir)
-    x = fusion_feature_matrix(blocks)
     if "tbs" in blocks:
         raise RuntimeError("TBS leaked into 7F fusion")
-    x_tr = x[train_idx]
-    x_te = x[test_idx]
-    fused = evaluate_late_fusion(
-        scores_train=x_tr,
-        scores_test=x_te,
-        age_train=ages[train_idx],
-        age_mask_train=age_mask_a[train_idx],
-        tissue_train=tissue[train_idx],
-        tissue_mask_train=tissue_mask_a[train_idx],
-        sex_train=sex[train_idx],
-        sex_mask_train=sex_mask_a[train_idx],
-        age_test=ages[test_idx],
-        age_mask_test=age_mask_a[test_idx],
-        tissue_test=tissue[test_idx],
-        tissue_mask_test=tissue_mask_a[test_idx],
-        sex_test=sex[test_idx],
-        sex_mask_test=sex_mask_a[test_idx],
-        study_ids_test=study_ids[test_idx],
-        tissue_class_names=list(class_names) if class_names else None,
+
+    evaluations: dict[str, Any] = {}
+    evaluations["mbs_e2e"] = _evaluate_mbs_e2e(
+        model,
+        heads,
+        assignment,
+        betas,
+        ages=ages,
+        age_mask=age_mask_a,
+        tissue=tissue,
+        tissue_mask=tissue_mask_a,
+        sex=sex,
+        sex_mask=sex_mask_a,
+        study_ids=study_ids,
+        class_names=list(class_names),
+        device=device,
+    )
+    evaluations["mbs_linear_probe"] = _evaluate_fusion_mode(
+        blocks,
+        mode="mbs_only",
+        train_idx=train_idx,
+        test_idx=test_idx,
+        ages=ages,
+        age_mask=age_mask_a,
+        tissue=tissue,
+        tissue_mask=tissue_mask_a,
+        sex=sex,
+        sex_mask=sex_mask_a,
+        study_ids=study_ids,
+        class_names=list(class_names),
         fusion=fusion,
     )
-    fused["n_orphan_rbs"] = int(assignment.n_orphan_rbs)
-    fused["n_direct"] = int(assignment.n_direct)
-    fused["n_genes"] = int(assignment.n_genes)
-    fused["tbs_arm"] = False
-    fused["score_dir"] = str(score_dir)
-    fused["fusion_n_features"] = int(x.shape[1])
-    fused["skipped"] = False
-    fused["checkpoint"] = str(ckpt_path)
-    fused["checkpoint_selection"] = checkpoint_selection
-    fused["pooling"] = {"cpg_to_region": cpg_pool, "region_to_gene": region_pool}
+
+    fusion_modes: list[FusionBlockMode] = ["full"]
+    for mode in extra_fusion_modes:
+        if mode not in fusion_modes:
+            fusion_modes.append(mode)
+    for mode in fusion_modes:
+        key = f"fusion_{mode}"
+        evaluations[key] = _evaluate_fusion_mode(
+            blocks,
+            mode=mode,
+            train_idx=train_idx,
+            test_idx=test_idx,
+            ages=ages,
+            age_mask=age_mask_a,
+            tissue=tissue,
+            tissue_mask=tissue_mask_a,
+            sex=sex,
+            sex_mask=sex_mask_a,
+            study_ids=study_ids,
+            class_names=list(class_names),
+            fusion=fusion,
+        )
+
+    primary_key = "mbs_e2e" if primary_evaluation == "mbs_e2e" else "fusion_full"
+    primary_blob = evaluations[primary_key]
+    fused: dict[str, Any] = {
+        "metrics": primary_blob["metrics"],
+        "primary_evaluation": primary_evaluation,
+        "evaluations": evaluations,
+        "gene_linked_only": bool(gene_linked_only),
+        "n_gene_cols": int(gene_cols.size),
+        "n_orphan_rbs": int(assignment.n_orphan_rbs),
+        "n_direct": int(assignment.n_direct),
+        "n_genes": int(assignment.n_genes),
+        "tbs_arm": False,
+        "score_dir": str(score_dir),
+        "fusion_n_features": int(
+            evaluations.get("fusion_full", {}).get("n_score_features", 0)
+        ),
+        "skipped": False,
+        "checkpoint": str(ckpt_path),
+        "checkpoint_selection": checkpoint_selection,
+        "pooling": {"cpg_to_region": cpg_pool, "region_to_gene": region_pool},
+    }
     write_json(metrics_path, fused)
     return fused
 
@@ -816,6 +979,12 @@ def run_cascade_hub(
     fusion_cfg = config.get("fusion")
     if fusion_cfg is not None and not isinstance(fusion_cfg, dict):
         raise ValueError("config fusion must be a mapping")
+    gene_linked_only = bool(training_cfg.get("gene_linked_only", False))
+    primary_evaluation = str(training_cfg.get("primary_evaluation", "late_fusion"))
+    if primary_evaluation not in ("late_fusion", "mbs_e2e"):
+        raise ValueError(f"unsupported training.primary_evaluation: {primary_evaluation!r}")
+    extra_fusion_raw = training_cfg.get("extra_fusion_modes") or []
+    extra_fusion_modes = tuple(str(m) for m in extra_fusion_raw)
     milestone = str(config.get("milestone", config.get("experiment", {}).get("name", "7F")))
     if "7g" in milestone.lower() or "7g" in run_id.lower():
         milestone_tag = "7G"
@@ -1003,6 +1172,9 @@ def run_cascade_hub(
             early_stopping_patience=early_stopping_patience,
             early_stopping_min_delta=early_stopping_min_delta,
             fusion=fusion_cfg,
+            gene_linked_only=gene_linked_only,
+            primary_evaluation=cast(PrimaryEvaluation, primary_evaluation),
+            extra_fusion_modes=cast(tuple[FusionBlockMode, ...], extra_fusion_modes),
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
         fold_summaries.append(metrics)

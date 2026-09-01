@@ -1,9 +1,9 @@
 # Scoring pipeline: CpG → aggregation → phenotypes → MBS
 
 Stage 0 schema sketch for **deepMAT** (package/CLI: `mbs`). Normative contracts:
-[`ARCHITECTURE.md`](ARCHITECTURE.md), [`ANNOTATION_GRAPH.md`](ANNOTATION_GRAPH.md).
-Implementation brief: [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
-(historical docs trio: [`plans/docs-scoring-annotation-catalog.md`](plans/docs-scoring-annotation-catalog.md)).
+[`ARCHITECTURE.md`](ARCHITECTURE.md) (encoder family, gene-only vs full),
+[`ANNOTATION_GRAPH.md`](ANNOTATION_GRAPH.md).
+Implementation brief: [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 
 Phenotype heads train the shared encoder; they are **not** part of the exported
 MBS scoring function.
@@ -13,9 +13,12 @@ MBS scoring function.
 | Topic | Status |
 |-------|--------|
 | End-to-end mermaid + stage table | Present |
+| Four neural encoders (flat / flat+region / hier / cascade) | Present |
+| Gene-only vs full CpG scope (7G′) | Present |
+| GPU policy for real training | Present |
 | Flat vs hierarchical aggregation | Present (+ unassigned semantics) |
 | Phenotype masking / shared encoder | Present |
-| Today vs Milestone 7 OOF MBS | Present; 7 blocked until 7A–7E |
+| Today vs Milestone 7 OOF MBS | Present; 7 blocked until 7G′ |
 | Current 7F cascade (MBS/orphan RBS/direct; no TBS) | Implemented; `direct_cpg.zarr` is a 7G′ Stage B gap |
 | Numeric train metrics / loss curves | Out of scope here → `stage0_5d_max_n/`, TB |
 | Cross-fitting fold diagram | Deferred with §7 |
@@ -42,12 +45,64 @@ flowchart LR
 | Canonical matrix | Observed betas → Zarr + indices + manifest | `mbs matrix convert` / `convert-pack` |
 | Graph | Typed five-role regions + genes | `mbs graph build`, `canonical/graphs/…` |
 | Static features | Offline CpGPT locus vectors (lookup, not IDs) | `mbs features export-cpgpt` |
-| Pack | Ragged sample features + segment indices | `training/dataset.py`, `hier_dataset.py` |
-| Encoder | `FlatDeepSet` or `HierarchicalDeepSet` → `[B,G]` MBS + `present` | `src/mbs/models.py` |
+| Pack | Ragged sample features + segment indices | `training/dataset.py`, `hier_dataset.py`, cascade assignment |
+| Encoder | One of four DeepSet encoders → `[B,G]` MBS + `present` | `src/mbs/models.py` |
 | Heads + loss | Linear age/tissue/(sex) modules; masks gate loss | `training/multitask.py` |
-| Train | Study-grouped split, checkpoints, metrics | `mbs train flat` / `hierarchical` |
+| Train | Study-grouped split, checkpoints, metrics (**GPU** on real data) | `mbs train flat` / `hierarchical` / `cascade` |
 
-## Aggregation: flat vs hierarchical
+## Neural encoders (four architectures)
+
+All encoders share: permutation-invariant pooling, neutral `MBS=0.5` when
+`present=False`, and masked linear phenotype heads. See
+[`ARCHITECTURE.md` § Neural encoder family](ARCHITECTURE.md#neural-encoder-family).
+
+```mermaid
+flowchart TB
+  subgraph encoders [Encoder choice same phenotype heads]
+    FD["FlatDeepSet\nCpG → gene"]
+    FDR["FlatDeepSetRegion\nCpG + type → gene\nStage B N-light-type"]
+    HD["HierarchicalDeepSet\nCpG → region → gene\n+ residual"]
+    CD["CascadeDeepSet\nCpG → RBS → MBS\n+ orphan + direct"]
+  end
+  encoders --> MBS["MBS s g + present"]
+  MBS --> Heads["MultitaskHeads"]
+```
+
+| Encoder | Train command | Pooling stages | Region annotations |
+|---------|---------------|----------------|-------------------|
+| **FlatDeepSet** | `mbs train flat` | CpG → **gene** | Collapsed in locus→gene index only |
+| **FlatDeepSetRegion** | Stage B **`N-light-type`** (planned) | CpG(+features) → **gene** | Per-CpG multi-hot regulatory type + observed |
+| **HierarchicalDeepSet** | `mbs train hierarchical` | CpG → **region** → **gene**; unmapped → **residual** scalar | Region-type embedding at region pool |
+| **CascadeDeepSet** | `mbs train cascade` | CpG → **region** → **RBS** → **gene** MBS; orphan RBS separate | Region-type embedding; orphan never pooled by type |
+
+### Gene-only vs full input (7G′)
+
+| Mode | When | CpGs in encoder | Comparator |
+|------|------|-----------------|------------|
+| **Gene-only** | 7G′ Stage A architecture selection | `gene_cols` only (typed edges allocated to a gene) | `C-mvalue-ridge-G`, `-enet-G`, `-hgb-G`, `-sva-G` on same columns |
+| **Full** | 7G′ Stage B + Milestone 7 OOF | Fold-selected panel + qualified orphan regions + direct loci | `C-mvalue-enetS`, `N-cascade-S`, fusion ablations |
+
+Cascade config keys: `training.gene_linked_only`, `training.primary_evaluation`
+(`mbs_e2e` vs `late_fusion`), `training.extra_fusion_modes` (orphan ablation:
+`fusion_full` vs `fusion_mbs_direct`). Runner:
+`scripts/run_7g_gene_only_probe.py`.
+
+### Compute policy
+
+**Always use GPU** for real Hub training (multi-fold, ≥8k loci). CPU is for
+fixtures, unit tests, and smoke only.
+
+```bash
+uv run mbs train flat         --config … --device cuda
+uv run mbs train hierarchical --config … --device cuda
+uv run mbs train cascade      --config … --device cuda
+uv run python scripts/run_7g_gene_only_probe.py --device cuda
+```
+
+Set `device.torch_device: cuda` in experiment YAML when using config-driven
+training without an explicit CLI flag.
+
+## Aggregation detail: flat vs hierarchical vs cascade
 
 Both paths consume **ragged** CpG sets (permutation-invariant pooling). Empty
 genes score `MBS=0.5` with `present=False` (missing ≠ low burden).
@@ -76,9 +131,20 @@ CpG features → φ → elementwise max by gene → ρ → sigmoid MBS[s,g]
 ```
 
 Regions are collapsed when building the locus→gene index (`training/locus_gene.py`).
-This is the DeepRVAT-style reference retained for every comparison.
+This is the DeepRVAT-style reference retained for every comparison. Trains on
+the full locus prefix or a **gene-only** column subset via the packed index.
 
-### Hierarchical (`HierarchicalDeepSet`) — frozen v0.1
+### Flat with region annotations (`FlatDeepSetRegion` — Stage B)
+
+```text
+[M-value, multi-hot regulatory type, observed] → shared φ → pool by gene → ρ → MBS
+```
+
+Skips the RBS intermediate hop; compares against full **CascadeDeepSet** in 7G′
+Stage B as arm **`N-light-type`**. Not yet a separate class in `models.py` — see
+[`milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md).
+
+### Hierarchical (`HierarchicalDeepSet`) — Milestone 6 / 7E
 
 ```text
 CpG → max within typed region → φ_region(+ region-type emb) → max within gene → ρ → MBS
@@ -95,6 +161,20 @@ not nearest-gene assigned and not pooled under `__unassigned__`. Eval reports
 bottleneck**, not noncoding biology ([ADR 0006](adr/0006-multipath-noncoding-scores.md)).
 
 See [`plans/milestone-6-hierarchical-region-model.md`](plans/milestone-6-hierarchical-region-model.md).
+
+### Cascade product encoder (`CascadeDeepSet`) — Milestone 7F / 7G / 7G′
+
+```text
+CpG M-value → pool within typed region → RBS (region-type context)
+  → pool by gene → MBS
+orphan regions → one RBS column per region_id (not pooled by type)
+leftover CpGs → fold-fitted direct branch (outside the neural module)
+```
+
+Trainer: `training/cascade_loop.py`. Evaluation modes: `mbs_e2e` (Stage A
+primary), `mbs_linear_probe`, `fusion_full`, `fusion_mbs_direct` (orphan
+ablation). Late-fusion diagnostic: `direct_contrib.zarr` (one task pred/sample);
+association product needs **`direct_cpg.zarr`** (Stage B).
 
 ```mermaid
 flowchart TD
@@ -129,8 +209,7 @@ The diagram records the 7C experiment. ADR 0009 subsequently removed TBS from
 the product. The current cascade exports MBS, separate orphan-region scores and
 a direct phenotype contribution. Before final OOF, 7G′ Stage B must add
 `direct_cpg.zarr` (sample×locus); `direct_contrib.zarr` is diagnostic only.
-identity for association and replace unrestricted nearest-gene RBS allocation
-with evidence-backed edges.
+Replace unrestricted nearest-gene RBS allocation with evidence-backed edges.
 
 Train branches independently for ablations; do not rely on eval-time masking
 alone. v0.1 residual-only used ~108k loci → one scalar and the **first 512
@@ -193,10 +272,13 @@ Contracts: [`EWAS_METADATA.md`](EWAS_METADATA.md),
 ## Related commands
 
 ```bash
+# Real Hub runs — always prefer GPU
 uv run mbs matrix convert-pack --phenotype-family age --all-studies ...
 uv run mbs phenotypes build-multitask-table
-uv run mbs train flat --config configs/experiment/stage0_flat_deeprvat_full.yaml
-uv run mbs train hierarchical --config configs/experiment/stage0_hier_deeprvat_full.yaml
+uv run mbs train flat         --config configs/experiment/stage0_flat_deeprvat_full.yaml --device cuda
+uv run mbs train hierarchical --config configs/experiment/stage0_hier_deeprvat_full.yaml --device cuda
+uv run mbs train cascade      --config configs/experiment/stage0_7g_gene_only_probe_p2.yaml --device cuda
+uv run python scripts/run_7g_gene_only_probe.py --device cuda
 uv run mbs monitor --run-id <run_id>
 ```
 
