@@ -182,6 +182,9 @@ Implementation now includes:
 
 Performance remains **unknown** until all three P4 and P5 fold artifacts exist
 on the data/GPU host. P0–P3 results must not be relabelled as P4/P5 evidence.
+P2 validation F1 (about 0.229, 0.118 and 0.253) did not track external-test F1
+(0.308, 0.407 and 0.412) closely, so P5 early stopping is itself an ablation.
+Audit stop epochs and never assume that stopping earlier is better.
 
 ADR 0010 separates product score export from phenotype comparators. The next
 gate after Phase 2 is the fold-safe `C-mvalue-enetS`/deepMAT panel benchmark

@@ -49,6 +49,12 @@ has three completed fold artifacts on the data/GPU host.
 This is encouraging, but it is three folds, one restart and a post-7G targeted
 loss adjustment. It supports “salvageable,” not a new locked winner.
 
+Checkpoint selection is also noisy: P2 best validation F1 was approximately
+0.229, 0.118 and 0.253, whereas external-test F1 was 0.308, 0.407 and 0.412.
+P5 therefore tests whether a longer ceiling helps; its early stopping must be
+audited rather than assumed beneficial. Patience 8 is deliberately longer than
+the observed gaps between P2 improvements.
+
 ## Diagnosis
 
 **Primary:** `task_competition`

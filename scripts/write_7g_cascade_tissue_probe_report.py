@@ -319,12 +319,20 @@ def write_analysis(
     lines.extend(diagnosis_bullets)
     lines.extend(["", "## Checkpoint audit (trained cascade arms)", ""])
     if ckpt_rows:
-        lines.append("| Arm | Fold | Best epoch | Epochs run | Selection | Early stopped |")
-        lines.append("|-----|------|------------|------------|-----------|---------------|")
+        lines.append(
+            "| Arm | Fold | Best epoch | Epochs run | Best val tissue F1 | "
+            "Selection | Early stopped |"
+        )
+        lines.append(
+            "|-----|------|------------|------------|---------------------|"
+            "-----------|---------------|"
+        )
         for r in ckpt_rows:
             lines.append(
                 f"| {r['arm_id']} | {r['fold_id']} | {r.get('best_epoch', '—')} | "
-                f"{r.get('epochs_completed', '—')} | {r.get('selection', '—')} | "
+                f"{r.get('epochs_completed', '—')} | "
+                f"{_fmt(r.get('val_tissue_macro_f1_at_best'))} | "
+                f"{r.get('selection', '—')} | "
                 f"{(r.get('early_stopping') or {}).get('stopped_early', False)} |"
             )
     else:
