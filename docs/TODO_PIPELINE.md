@@ -15,15 +15,31 @@ True next milestone after bootstrap:
 > **done**, fixture + Hub DeepRVAT A/B) → development CV (7E — **done**) →
 > Hub multitask + hygiene (**7E′** — **done**) → **RBS→gene + direct topology
 > (7F — done)** → **methylation-only full eval (7G — done)** →
-> **final OOF cross-fitting (7)** → one score matrix.
+> **Phase-2 cascade grid (7G-P4/P5 — in progress)** → **fold-safe selected
+> panel + association-product benchmark (7H — pending)** → **final OOF
+> cross-fitting (7)** → one score matrix.
 
-**Current gate:** Milestone **7** (study-grouped 5×6 OOF cross-fitting).
-**7G** methylation eval and **tissue probe (P0–P3)** are **done**
+**Current gate:** **7G Phase 2** (P4 mean pooling, P5 30-epoch ceiling with
+validation-tissue early stopping, and the narrow fusion refit grid), followed by
+**7H** fold-safe selected-panel and association-product benchmarking. Final
+Milestone **7** study-grouped 5×6 OOF remains blocked.
+**7G** methylation eval and **tissue probe P0–P3** are done
 (`reports/inspection/stage0_7g_methylation_eval/`,
-`reports/inspection/stage0_7g_cascade_tissue_probe/`). Run narrowed cascade
-grid (P4–P5) per probe recommendation before committing OOF hyperparameters.
+`reports/inspection/stage0_7g_cascade_tissue_probe/`). P4/P5 code and configs
+are implemented; Phase-2 performance is done only after all three fold artifacts
+are present. 7H then compares deepMAT with `C-mvalue-enetS` on the exact same
+fold-selected, gene/region-expanded panel and fixes direct-CpG/orphan export
+semantics before OOF. Plan:
+[`plans/milestone-7h-fold-safe-probe-panel-benchmark.md`](plans/milestone-7h-fold-safe-probe-panel-benchmark.md);
+decision: [ADR 0010](adr/0010-score-export-vs-phenotype-comparator.md).
+
 **7F** (RBS→gene + direct leftover, no TBS) is **done**
 (`reports/inspection/stage0_7f_rbs_gene_direct/`; [ADR 0009](adr/0009-drop-tbs-scores.md)).
+Product scores remain gene-aggregated RBS (MBS), qualified per-region orphan
+RBS, and indexed direct CpGs — **no TBS**. The present 7F
+`direct_contrib.zarr` is phenotype-diagnostic and must not substitute for the
+7H association direct-CpG block.
+
 **ATS** = Age/Tissue/Sex frozen Hub GSM-union
 `matrix-hub-age-tissue-sex-full-v1` (13 548). Graph-v2 is **on disk**
 (`graph-grch38-gencode38-cgi-tile-v2`; inspection
@@ -44,7 +60,7 @@ matrix artifacts including all nine Hub full packs). EWAS_db is incomplete
 census: `reports/inspection/deepmat_data_v1/` (underscore; matches this
 refresh). Ignore `reports/inspection/deepmat-data-v1/` if it shows ~5 GSM
 (fixture leak into the CLI default hyphen path).
-**Do not retrain v0.1** or start Milestone **7** until **7F and 7G** land
+**Do not retrain v0.1** or start Milestone **7** until **7G Phase 2 and 7H** land
 (7A–7E′ are already `done`; [ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
 [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
@@ -55,7 +71,8 @@ when training runs; DeepRVAT-style joint aggregation + linear heads).
 architecture selection on frozen ATS (3×2, **done**); **7E′** = Hub multitask
 + hygiene (**done**); **7F** = RBS→gene cascade + direct leftover (no TBS
 scores); **7G** = methylation-only re-eval that closes 7E evaluation gaps;
-**7** = final 5×6 OOF after 7F **and** 7G. Neural arms train shared score
+**7H** = fold-safe selected-panel/product-contract benchmark; **7** = final
+5×6 OOF after 7G Phase 2 **and** 7H. Neural arms train shared score
 aggregation **and** linear phenotype heads end-to-end (DeepRVAT pattern).
 Architecture comparison tables use **methylation-input methods only**.
 Metadata-only (study + platform IDs, no betas) is a leakage alarm from 7E′,

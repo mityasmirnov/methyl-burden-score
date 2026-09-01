@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run Milestone 7G cascade tissue probe arms P0–P3 (idempotent)."""
+"""Run Milestone 7G cascade tissue probe arms P0–P5 (idempotent)."""
 
 from __future__ import annotations
 
@@ -85,13 +85,22 @@ def verify_baseline_run(paths: DataPaths, run_id: str, n_folds: int = 3) -> None
             )
 
 
-def load_cascade_arm_folds(paths: DataPaths, run_id: str) -> list[dict[str, Any]]:
+def load_cascade_arm_folds(
+    paths: DataPaths,
+    run_id: str,
+    *,
+    expected_folds: int | None = None,
+) -> list[dict[str, Any]]:
     run_root = paths.artifact_root / "runs" / run_id
     folds: list[dict[str, Any]] = []
     for fold_dir in sorted(run_root.glob("fold_*")):
         metrics_path = fold_dir / "metrics.json"
         if metrics_path.is_file():
             folds.append(json.loads(metrics_path.read_text(encoding="utf-8")))
+    if expected_folds is not None and len(folds) != expected_folds:
+        raise RuntimeError(
+            f"run {run_id!r} has {len(folds)} completed folds; expected {expected_folds}"
+        )
     return folds
 
 
@@ -169,16 +178,15 @@ def run_transparent_region_arm(
     return out_folds
 
 
-def train_p2_arm(
+def train_cascade_arm(
     *,
     paths: DataPaths,
-    config: dict[str, Any],
     config_path: Path,
     run_id: str,
     device: str,
     staging_report_dir: Path,
 ) -> None:
-    """P2: cascade train with tissue-heavy loss weights."""
+    """Train one Phase-2 cascade arm with its resolved config."""
     cmd = [
         "uv",
         "run",
@@ -195,7 +203,7 @@ def train_p2_arm(
         str(staging_report_dir),
         "--skip-if-done",
     ]
-    print(f"[probe P2] {' '.join(cmd)}", flush=True)
+    print(f"[probe train] {' '.join(cmd)}", flush=True)
     subprocess.run(cmd, cwd=paths.project_root, check=True)
 
 
@@ -241,7 +249,19 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--device", default="cuda")
-    parser.add_argument("--skip-p2", action="store_true", help="Skip P2 retrain (smoke / no GPU)")
+    parser.add_argument(
+        "--skip-train",
+        "--skip-p2",
+        dest="skip_train",
+        action="store_true",
+        help="Skip all cascade_train arms (report/refusion smoke or no GPU)",
+    )
+    parser.add_argument(
+        "--arm",
+        action="append",
+        default=[],
+        help="Run only the named arm; repeat for multiple arms",
+    )
     args = parser.parse_args()
 
     paths = DataPaths.from_environment()
@@ -274,14 +294,24 @@ def main() -> None:
     _samples, phenotypes = samples_from_phenotype_table(pheno_path, ontology_path=ont_path)
     _, class_names = load_multitask_phenotypes(pheno_path)
 
+    requested_arms = set(args.arm)
+    known_arms = {str(arm["id"]) for arm in arms}
+    unknown_arms = sorted(requested_arms - known_arms)
+    if unknown_arms:
+        raise ValueError(f"unknown --arm values: {unknown_arms}")
+
     for arm in arms:
         arm_id = str(arm["id"])
+        if requested_arms and arm_id not in requested_arms:
+            continue
         kind = str(arm["kind"])
         print(f"[probe] arm {arm_id} kind={kind}", flush=True)
         if kind == "cascade_replay":
             run_id = str(arm.get("run_id", baseline_run_id))
             verify_baseline_run(paths, run_id, n_folds=len(fold_pack["folds"]))
-            folds = load_cascade_arm_folds(paths, run_id)
+            folds = load_cascade_arm_folds(
+                paths, run_id, expected_folds=len(fold_pack["folds"])
+            )
             write_per_arm(report_dir, arm_id, folds, extra={"run_id": run_id, "kind": kind})
         elif kind == "fusion_only":
             source_run_id = str(arm.get("source_run_id", baseline_run_id))
@@ -303,8 +333,8 @@ def main() -> None:
                 extra={"source_run_id": source_run_id, "fusion": fusion, "kind": kind},
             )
         elif kind == "cascade_train":
-            if args.skip_p2:
-                print("[probe] skipping P2 (--skip-p2)", flush=True)
+            if args.skip_train:
+                print(f"[probe] skipping {arm_id} (--skip-train)", flush=True)
                 continue
             run_id = str(arm.get("run_id", "stage0-7g-tissue-probe-P2"))
             arm_config_rel = Path(
@@ -315,17 +345,18 @@ def main() -> None:
                 if arm_config_rel.is_absolute()
                 else paths.project_root / arm_config_rel
             )
-            staging = report_dir / "_staging_p2_train"
+            staging = report_dir / f"_staging_{arm_id}_train"
             staging.mkdir(parents=True, exist_ok=True)
-            train_p2_arm(
+            train_cascade_arm(
                 paths=paths,
-                config=load_experiment_config(arm_config_path),
                 config_path=arm_config_path,
                 run_id=run_id,
                 device=args.device,
                 staging_report_dir=staging,
             )
-            folds = load_cascade_arm_folds(paths, run_id)
+            folds = load_cascade_arm_folds(
+                paths, run_id, expected_folds=len(fold_pack["folds"])
+            )
             write_per_arm(report_dir, arm_id, folds, extra={"run_id": run_id, "kind": kind})
         elif kind == "transparent_region":
             folds = run_transparent_region_arm(

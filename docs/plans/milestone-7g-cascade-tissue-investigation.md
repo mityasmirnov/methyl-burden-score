@@ -1,7 +1,7 @@
 # Plan: 7G cascade tissue-head investigation (post-bake-off)
 
-Status: **done** (2026-08-31; report
-`reports/inspection/stage0_7g_cascade_tissue_probe/`).
+Status: **in progress** (P0–P3 complete 2026-08-31; P4/P5 implementation
+landed, three-fold GPU results pending).
 Parent: [`milestone-7g-methylation-eval.md`](milestone-7g-methylation-eval.md),
 [`reports/inspection/stage0_7g_methylation_eval/analysis.md`](../../reports/inspection/stage0_7g_methylation_eval/analysis.md).
 Normative: [ADR 0007](../adr/0007-crossfit-prerequisites.md),
@@ -148,33 +148,42 @@ manifest hashes match.
 - Claiming tissue parity with `C-mvalue-enet` without meeting the same masks
   and folds.
 
-## Open questions
+## Resolved findings and remaining checks
 
-1. **Milestone 7 topology vs ranking winner:** 7G ranking picked
-   `C-mvalue-enet` (not a cascade). Does Milestone 7 OOF require an ADR to
-   separate **product score export** (7F topology) from **phenotype benchmark
-   winner** (classical enet)?
-2. **Checkpoint policy:** 7G may have selected checkpoints favoring age; confirm
-   per-fold `metrics.json` best-epoch vs tissue F1 curve before P2.
-3. **Study confounding:** tissue labels correlate with study; probe should include
-   per-fold study composition table (read-only) to interpret gains.
+1. **Resolved by ADR 0010:** product score export remains deepMAT
+   MBS/qualified orphan RBS/direct CpGs; phenotype comparators are ranked
+   separately. `C-mvalue-enet` remains the current tissue comparator.
+2. **Checkpoint policy resolved for P2:** selection is validation tissue
+   macro-F1 then age MAE; best epochs were 15, 12 and 9. P5 adds an auditable
+   early-stop record.
+3. **Study confounding remains interpretive:** the report includes per-fold
+   study/tissue composition; final claims remain held-out-study claims, not
+   population prevalence claims.
 
 ## Sequencing
 
 1. Close 7G in `TODO_PIPELINE.md` and commit inspection artifacts.
 2. Implement P0–P3 (smallest code diff) + report writer.
 3. Run probe on CPU/GPU via background script; idempotent folds.
-4. If mean tissue F1 &lt; 0.20 after P5, draft ADR for Milestone 7 score vs
-   phenotype strategy before starting 5×6 OOF.
+4. Run P4/P5 and refusion grid; lock the Phase-2 winner.
+5. Complete 7H before starting 5×6 OOF.
 
-## Phase 2 (deferred, 2026-08-31)
+## Phase 2 (in progress)
 
-P0–P3 completed; **mean tissue F1 ~0.38 (P2)** clears the 0.20 gate. Deferred
-until programme review:
+P0–P3 completed; **mean tissue F1 0.376 (P2)** clears the 0.20 gate.
+Implementation now includes:
 
-- **P4** mean pooling (`cascade_loop.py` + `models.py`)
-- **P5** 30 epochs + early stop on val tissue F1
-- Narrow grid (fusion solver × loss weights × pooling)
-- ADR draft (product score export vs phenotype winner) — not triggered by gate
+- **P4**: P2 loss weights with mean CpG→region and region→gene pooling;
+- **P5**: P2 loss weights, 30-epoch ceiling, validation-tissue macro-F1
+  checkpointing, patience 8 and minimum improvement 0.001;
+- narrow refusion cells: P2/P4/P5 saved scores with standard versus
+  class-balanced logistic tissue fusion;
+- strict three-fold completeness checks before an arm enters the report.
 
-Proceed per probe recommendation: narrowed grid before Milestone **7** OOF.
+Performance remains **unknown** until all three P4 and P5 fold artifacts exist
+on the data/GPU host. P0–P3 results must not be relabelled as P4/P5 evidence.
+
+ADR 0010 separates product score export from phenotype comparators. The next
+gate after Phase 2 is the fold-safe `C-mvalue-enetS`/deepMAT panel benchmark
+and direct-CpG association export in
+[`milestone-7h-fold-safe-probe-panel-benchmark.md`](milestone-7h-fold-safe-probe-panel-benchmark.md).

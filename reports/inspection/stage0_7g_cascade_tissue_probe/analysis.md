@@ -2,6 +2,10 @@
 
 Frozen split `hub-ats-7e-3fold-v1`; budget **65536 loci / 15 epochs / 1 restart**.
 
+**Phase-2 status:** P4/P5 code and configs are implemented, but this committed
+report contains **P0–P3 results only**. P4/P5 performance is unknown until each
+has three completed fold artifacts on the data/GPU host.
+
 ## Per-arm summary
 
 | Arm | Tissue macro-F1 | Balanced acc | Sex AUROC | Age MAE | Age R² |
@@ -32,6 +36,18 @@ Frozen split `hub-ats-7e-3fold-v1`; budget **65536 loci / 15 epochs / 1 restart*
 - fold 0: F1=0.322, sex AUROC=0.860, age MAE=8.888
 - fold 1: F1=0.403, sex AUROC=0.951, age MAE=7.405
 - fold 2: F1=0.442, sex AUROC=0.913, age MAE=7.546
+
+## Paired comparison with locked 7G tissue comparator
+
+| Fold | C-mvalue-enet | P2 cascade | P2 − C | P3 region mean |
+|------|---------------|------------|--------|----------------|
+| 0 | 0.303 | 0.308 | +0.005 | 0.322 |
+| 1 | 0.335 | 0.407 | +0.072 | 0.403 |
+| 2 | 0.364 | 0.412 | +0.048 | 0.442 |
+| Mean | 0.334 | 0.376 | +0.042 | 0.389 |
+
+This is encouraging, but it is three folds, one restart and a post-7G targeted
+loss adjustment. It supports “salvageable,” not a new locked winner.
 
 ## Diagnosis
 
@@ -64,9 +80,33 @@ P2 reweighted training (0.376) lifts tissue F1 >=0.05 vs P0 -> **task competitio
 
 **Proceed with narrowed hyperparameter grid** (P4-P5 + fusion solver sweep) before Milestone 7 OOF; cascade may be salvageable for tissue with fusion/loss fixes.
 
+## Product scores versus phenotype comparator
+
+Product association export remains the deepMAT cascade: sample×gene MBS,
+qualified orphan RBS kept one region per column, and indexed direct CpGs. The
+current `direct_contrib.zarr` is a phenotype diagnostic, not yet the required
+sample×direct-CpG association block. Tissue benchmarking is separate:
+`C-mvalue-enet` remains the locked classical comparator (7G F1 0.334) until
+the same-panel 7H comparison. See ADR 0010.
+
+Current P2 F1 0.376 is numerically above the original C-mvalue-enet mean, but it
+was obtained after a targeted tissue-loss investigation. It does not replace
+the locked comparator or establish a final winner without P4/P5 and the
+fold-selected same-panel benchmark.
+
 ## Artifacts
 
 - Config: `stage0_7g_cascade_tissue_probe`
 - `arm_means.json`, `per_arm/*.json`, `figures/tissue_f1_bars.png`
 
-Phase-2 (P4-P5, narrow grid) deferred until this probe is reviewed.
+Phase-2 command after the implementation commit:
+
+```bash
+bash scripts/run_7g_cascade_tissue_probe.sh --device cuda \
+  --arm P2-fusion-balanced \
+  --arm P4-pooling-mean --arm P4-fusion-balanced \
+  --arm P5-epochs-30 --arm P5-fusion-balanced
+```
+
+Do not mark Phase 2 complete or lock OOF hyperparameters until the regenerated
+report contains all P4/P5 folds.

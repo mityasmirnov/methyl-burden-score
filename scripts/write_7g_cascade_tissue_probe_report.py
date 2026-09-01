@@ -32,6 +32,11 @@ ARM_LABELS = {
     "P1-fusion-tissue-heavy": "Balanced logistic + PCA(32) on saved scores",
     "P2-end2end-tissue-weight": "tissue_loss_weight=3, age_loss_weight=0.3",
     "P3-region-head-bypass": "T-mean-region transparent (no cascade train)",
+    "P2-fusion-balanced": "P2 scores + balanced logistic fusion",
+    "P4-pooling-mean": "P2 weights + mean/mean pooling",
+    "P4-fusion-balanced": "P4 scores + balanced logistic fusion",
+    "P5-epochs-30": "P2 weights + 30-epoch cap + early stop",
+    "P5-fusion-balanced": "P5 scores + balanced logistic fusion",
 }
 
 
@@ -90,6 +95,31 @@ def aggregate_arm(arm_id: str, folds: list[dict[str, Any]]) -> dict[str, Any]:
         "sex_auroc": sex_mean,
         "per_fold": per_fold,
         "n_folds": len(folds),
+    }
+
+
+def load_locked_tissue_comparator(report_dir: Path) -> dict[str, Any] | None:
+    """Load the committed 7G C-mvalue-enet cells for paired context."""
+    path = report_dir.parent / "stage0_7g_methylation_eval" / "classical_baselines.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    per_fold: list[dict[str, Any]] = []
+    for fold in payload.get("folds") or []:
+        blob = (fold.get("arms") or {}).get("C-mvalue-enet") or {}
+        tissue = blob.get("tissue") or {}
+        per_fold.append(
+            {
+                "fold_id": fold.get("fold"),
+                "tissue_macro_f1": tissue.get("macro_f1"),
+            }
+        )
+    mean, std = _mean_std([row.get("tissue_macro_f1") for row in per_fold])
+    return {
+        "arm": "C-mvalue-enet",
+        "tissue_macro_f1": mean,
+        "tissue_macro_f1_std": std,
+        "per_fold": per_fold,
     }
 
 
@@ -187,7 +217,12 @@ def milestone7_recommendation(
 
 def checkpoint_audit(arm_means: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for arm_id in ("P0-baseline", "P2-end2end-tissue-weight"):
+    for arm_id in (
+        "P0-baseline",
+        "P2-end2end-tissue-weight",
+        "P4-pooling-mean",
+        "P5-epochs-30",
+    ):
         arm = arm_means.get(arm_id)
         if not arm:
             continue
@@ -200,10 +235,10 @@ def checkpoint_audit(arm_means: dict[str, dict[str, Any]]) -> list[dict[str, Any
                     "best_epoch": sel.get("best_epoch"),
                     "selection": sel.get("selection"),
                     "val_tissue_macro_f1_at_best": (
-                        (sel.get("val_history") or [{}])[-1].get("tissue_macro_f1")
-                        if sel.get("val_history")
-                        else None
+                        (sel.get("best_validation_metrics") or {}).get("tissue_macro_f1")
                     ),
+                    "epochs_completed": sel.get("epochs_completed"),
+                    "early_stopping": sel.get("early_stopping"),
                 }
             )
     return rows
@@ -214,7 +249,7 @@ def plot_tissue_bars(arm_means: list[dict[str, Any]], path: Path) -> None:
     f1s = [a.get("tissue_macro_f1") or float("nan") for a in arm_means]
     stds = [a.get("tissue_macro_f1_std") or 0.0 for a in arm_means]
     y = np.arange(len(names))
-    fig, ax = plt.subplots(figsize=(8, 4.5))
+    fig, ax = plt.subplots(figsize=(8.5, max(4.5, 0.55 * len(names))))
     ax.barh(y, f1s, xerr=stds, color="#3b6d9a", capsize=3)
     ax.set_yticks(y, names, fontsize=9)
     ax.set_xlabel("Tissue macro-F1 (mean ± std, 3 folds)")
@@ -238,12 +273,14 @@ def write_analysis(
     recommendation: str,
     study_rows: list[dict[str, Any]],
     ckpt_rows: list[dict[str, Any]],
+    locked_comparator: dict[str, Any] | None,
     cfg: dict[str, Any],
 ) -> None:
     lines = [
-        "# Stage 0 - 7G cascade tissue probe (P0-P3)",
+        "# Stage 0 - 7G cascade tissue probe (P0-P5)",
         "",
-        "Frozen split `hub-ats-7e-3fold-v1`; budget **65536 loci / 15 epochs / 1 restart**.",
+        "Frozen split `hub-ats-7e-3fold-v1`; **65536 loci / 1 restart**. "
+        "P0-P4 use 15 epochs; P5 uses a 30-epoch ceiling with validation-tissue early stopping.",
         "",
         "## Per-arm summary",
         "",
@@ -256,6 +293,19 @@ def write_analysis(
             f"{_fmt(a.get('tissue_balanced_accuracy'))} | {_fmt(a.get('sex_auroc'))} | "
             f"{_fmt(a.get('age_mae_years'))} | {_fmt(a.get('age_r2'))} |"
         )
+    if locked_comparator is not None:
+        lines.extend(
+            [
+                "",
+                "## Locked 7G tissue comparator",
+                "",
+                f"`C-mvalue-enet`: mean F1 "
+                f"{_fmt(locked_comparator.get('tissue_macro_f1'))}. "
+                "It remains the locked phenotype comparator until the 7H same-panel benchmark; "
+                "post-7G targeted arms are reported as salvage evidence, not retroactively "
+                "inserted into the 7G winner selection.",
+            ]
+        )
     lines.extend(["", "## Per-fold tissue macro-F1", ""])
     for a in arm_means:
         lines.append(f"### {a['arm_id']}")
@@ -267,14 +317,15 @@ def write_analysis(
         lines.append("")
     lines.extend(["## Diagnosis", "", f"**Primary:** `{diagnosis}`", ""])
     lines.extend(diagnosis_bullets)
-    lines.extend(["", "## Checkpoint audit (P0 / P2)", ""])
+    lines.extend(["", "## Checkpoint audit (trained cascade arms)", ""])
     if ckpt_rows:
-        lines.append("| Arm | Fold | Best epoch | Selection |")
-        lines.append("|-----|------|------------|-----------|")
+        lines.append("| Arm | Fold | Best epoch | Epochs run | Selection | Early stopped |")
+        lines.append("|-----|------|------------|------------|-----------|---------------|")
         for r in ckpt_rows:
             lines.append(
                 f"| {r['arm_id']} | {r['fold_id']} | {r.get('best_epoch', '—')} | "
-                f"{r.get('selection', '—')} |"
+                f"{r.get('epochs_completed', '—')} | {r.get('selection', '—')} | "
+                f"{(r.get('early_stopping') or {}).get('stopped_early', False)} |"
             )
     else:
         lines.append("_No checkpoint metadata found._")
@@ -291,12 +342,20 @@ def write_analysis(
             "",
             recommendation,
             "",
+            "## Product scores versus phenotype comparator",
+            "",
+            "The product export remains the 7F cascade: **MBS + qualified orphan RBS + "
+            "direct loci**. Tissue ranking is a separate phenotype benchmark; "
+            "`C-mvalue-enet` remains the locked classical comparator until a cascade "
+            "arm beats it under the same folds and input panel. See ADR 0010.",
+            "",
             "## Artifacts",
             "",
             f"- Config: `{cfg.get('experiment', {}).get('name', 'stage0_7g_cascade_tissue_probe')}`",
             "- `arm_means.json`, `per_arm/*.json`, `figures/tissue_f1_bars.png`",
             "",
-            "Phase-2 (P4-P5, narrow grid) deferred until this probe is reviewed.",
+            "Phase-2 is complete only when P4 and P5 each have all three fold artifacts. "
+            "Do not infer their performance from P0-P3.",
             "",
         ]
     )
@@ -346,6 +405,7 @@ def main() -> None:
     recommendation = milestone7_recommendation(arm_means_map, diagnosis)
     study_rows = study_composition_table(fold_pack, phenotypes)
     ckpt_rows = checkpoint_audit(arm_means_map)
+    locked_comparator = load_locked_tissue_comparator(report_dir)
 
     write_json(
         report_dir / "arm_means.json",
@@ -356,6 +416,7 @@ def main() -> None:
             "f1_gate": F1_GATE,
             "study_composition": study_rows,
             "checkpoint_audit": ckpt_rows,
+            "locked_tissue_comparator": locked_comparator,
         },
     )
     plot_tissue_bars(arm_means_list, fig_dir / "tissue_f1_bars.png")
@@ -367,6 +428,7 @@ def main() -> None:
         recommendation=recommendation,
         study_rows=study_rows,
         ckpt_rows=ckpt_rows,
+        locked_comparator=locked_comparator,
         cfg=cfg,
     )
     print(f"wrote {report_dir / 'analysis.md'}", flush=True)

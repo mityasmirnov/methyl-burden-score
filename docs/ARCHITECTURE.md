@@ -42,6 +42,96 @@ MBS[s,g] in [0,1]
 
 The score network is shared across CpGs, regions, genes, samples, and traits. Phenotype-specific parameters exist only in downstream heads.
 
+## Current 7F product model and 7G comparator
+
+The shipped representation and the phenotype benchmark have different jobs
+([ADR 0010](adr/0010-score-export-vs-phenotype-comparator.md)).
+
+### deepMAT cascade implementation
+
+The current cascade implementation in `CascadeDeepSet` is:
+
+```mermaid
+flowchart TD
+  A["Observed CpG M-value"] --> B["Shared CpG MLP 1→64→64"]
+  B --> C["Pool CpGs by typed region"]
+  C --> D["Region-type embedding + shared MLP 72→32→32"]
+  D --> E["Sigmoid RBS score"]
+  E --> F{"Evidence-backed gene allocation?"}
+  F -->|yes| G["Pool RBS by gene → MBS"]
+  F -->|no| H["One column per qualified orphan region"]
+  I["Leftover CpG"] --> J["Current: fold-fitted task contribution"]
+  G --> K["Saved product features"]
+  H --> K
+  J --> K
+```
+
+At the 7G checkpoint, the CpG encoder receives one M-value per observed locus;
+the richer beta/M/robust-z/static feature contract below is the intended final
+input, not yet the cascade's actual input. The CpG→region and region→gene pools
+are configurable as `max` or `mean` for P4. The end-to-end age/tissue/sex
+heads currently supervise the **MBS block**; orphan RBS and direct contributions
+enter the fold-fitted late-fusion benchmark afterward. This distinction matters
+when interpreting branch performance.
+
+The product use is DeepRVAT-like:
+
+1. train the identity-free shared aggregation function using masked auxiliary
+   phenotypes;
+2. cross-fit and export sample×gene MBS plus any qualified orphan-region and
+   direct-CpG values/identifiers;
+3. discard the training heads for product association work;
+4. perform downstream feature selection, association tests, and prediction on
+   the reduced representation.
+
+The present 7F writer exports `direct_contrib.zarr` with one fitted contribution
+per training task, not one column per retained CpG. That is suitable for the
+7G phenotype bake-off but **does not yet satisfy** the intended association
+product. Milestone 7H must add an indexed direct-CpG block (or a lossless
+reference/view into the canonical matrix) before final OOF.
+
+The shared aggregator does not consume raw probe or gene IDs, so it can score a
+new supported array or sequencing panel when observed CpGs map to the same
+canonical feature schema and annotation graph. This is not imputation:
+unobserved genes remain neutral with `present=false`. The **direct** branch is
+locus- and task-specific and is therefore not probe-ID agnostic.
+
+### Best current phenotype competitor: C-mvalue-enet
+
+```mermaid
+flowchart TD
+  A["Same 65,536 CpG prefix"] --> B["Beta → M-value"]
+  B --> C["Train-fold median imputation"]
+  C --> D["Train-fold StandardScaler"]
+  D --> E["SGD elastic-net head"]
+  E --> F["Held-out study predictions"]
+```
+
+`C-mvalue-enet` uses all 65,536 input columns. Its elastic-net penalty performs
+embedded shrinkage; it is **not** a preselected 10,000-probe model. Tissue and
+sex use logistic loss; age uses elastic-net regression. Current settings are
+`alpha=1e-4`, `l1_ratio=0.5`, 50 classifier iterations and 80 regressor
+iterations. It is the 7G tissue comparator, not the product score topology.
+
+### Orphan regulatory regions
+
+Orphan RBS must never be pooled into one genome-wide scalar or pooled merely by
+region type. Each eligible `region_id` is a separate feature. The current 7F
+code satisfies that column-level rule, but its unrestricted nearest-gene fallback
+left **zero** orphan regions in the Hub smoke. Before final OOF:
+
+- only versioned, well-defined multi-CpG regions may become orphan RBS;
+- a region enters MBS only through an explicit evidence-backed region→gene edge;
+- singleton or unstructured non-gene loci stay direct (or are omitted in the
+  lightweight arm);
+- if no orphan region passes eligibility, export an empty block rather than a
+  global fallback score.
+
+The lightweight ablation passes `[M-value, one-hot regulatory type, observed]`
+through a shared pre-aggregation adapter and compares **MBS + direct** against
+the full region encoder. See the fold-safe panel plan in
+[`milestone-7h-fold-safe-probe-panel-benchmark.md`](plans/milestone-7h-fold-safe-probe-panel-benchmark.md).
+
 ## Input representation
 
 Initial CpG input:

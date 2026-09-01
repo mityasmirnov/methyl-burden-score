@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -20,6 +20,7 @@ from mbs.matrix.store import (
     read_sample_index,
 )
 from mbs.models import CascadeDeepSet
+from mbs.segment_ops import PoolName
 from mbs.training.cascade_assign import CascadeAssignment, build_cascade_assignment
 from mbs.training.cascade_scores import (
     fusion_feature_matrix,
@@ -382,11 +383,15 @@ def train_cascade_on_arrays(
     cpg_hidden_dim: int = 64,
     region_hidden_dim: int = 32,
     dropout: float = 0.1,
+    cpg_pool: PoolName = "max",
+    region_pool: PoolName = "max",
     skip_if_done: bool = False,
     val_idx: np.ndarray | None = None,
     age_loss_weight: float = 1.0,
     tissue_loss_weight: float = 1.0,
     sex_loss_weight: float = 1.0,
+    early_stopping_patience: int | None = None,
+    early_stopping_min_delta: float = 0.0,
     fusion: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Train CascadeDeepSet + MBS heads; write scores; late-fuse; return metrics."""
@@ -399,6 +404,11 @@ def train_cascade_on_arrays(
         cached["score_dir"] = str(score_dir)
         return cached
 
+    if early_stopping_patience is not None and early_stopping_patience < 1:
+        raise ValueError("early_stopping_patience must be >= 1 when enabled")
+    if early_stopping_min_delta < 0:
+        raise ValueError("early_stopping_min_delta must be non-negative")
+
     _set_seed(seed)
     device = resolve_device(device_str, require_cuda=False)
     n_region_types = max(len(assignment.region_types), 1)
@@ -408,6 +418,8 @@ def train_cascade_on_arrays(
         n_region_types,
         cpg_hidden_dim=int(cpg_hidden_dim),
         region_hidden_dim=int(region_hidden_dim),
+        cpg_pool=cpg_pool,
+        region_pool=region_pool,
         dropout=float(dropout),
         activation="gelu",
         layer_norm=True,
@@ -452,6 +464,8 @@ def train_cascade_on_arrays(
                 "max_epochs": max_epochs,
                 "cpg_hidden_dim": cpg_hidden_dim,
                 "region_hidden_dim": region_hidden_dim,
+                "cpg_pool": cpg_pool,
+                "region_pool": region_pool,
             },
             ckpt_path,
         )
@@ -459,8 +473,14 @@ def train_cascade_on_arrays(
     best_rank: tuple[float, float] | None = None
     best_epoch = -1
     val_history: list[dict[str, Any]] = []
+    best_early_stop_f1 = -float("inf")
+    epochs_without_tissue_improvement = 0
+    epochs_completed = 0
+    stopped_early = False
+    stop_epoch: int | None = None
 
     for _epoch in range(max_epochs):
+        epochs_completed = _epoch + 1
         model.train()
         heads.train()
         order = train_idx.copy()
@@ -519,15 +539,46 @@ def train_cascade_on_arrays(
                 best_epoch = _epoch + 1
                 _save_checkpoint()
 
+            tissue_f1 = val_metrics.get("tissue_macro_f1")
+            if early_stopping_patience is not None and tissue_f1 is not None:
+                tissue_f1_f = float(tissue_f1)
+                if tissue_f1_f > best_early_stop_f1 + early_stopping_min_delta:
+                    best_early_stop_f1 = tissue_f1_f
+                    epochs_without_tissue_improvement = 0
+                else:
+                    epochs_without_tissue_improvement += 1
+                if epochs_without_tissue_improvement >= early_stopping_patience:
+                    stopped_early = True
+                    stop_epoch = _epoch + 1
+        if stopped_early:
+            print(
+                f"[cascade] {out_dir.name} early stop at epoch {stop_epoch}; "
+                f"best validation tissue macro-F1={best_early_stop_f1:.4f}",
+                flush=True,
+            )
+            break
+
     checkpoint_selection: dict[str, Any] = {
         "has_validation": has_val,
         "n_val": int(val_idx_a.size) if val_idx_a is not None else 0,
         "max_epochs": max_epochs,
+        "epochs_completed": epochs_completed,
         "val_history": val_history,
+        "early_stopping": {
+            "enabled": early_stopping_patience is not None,
+            "monitor": "validation_tissue_macro_f1",
+            "patience": early_stopping_patience,
+            "min_delta": early_stopping_min_delta,
+            "stopped_early": stopped_early,
+            "stop_epoch": stop_epoch,
+        },
     }
     if has_val and best_epoch > 0:
         checkpoint_selection["best_epoch"] = best_epoch
         checkpoint_selection["selection"] = "validation_tissue_macro_f1_then_age_mae"
+        checkpoint_selection["best_validation_metrics"] = next(
+            row for row in val_history if int(row["epoch"]) == best_epoch
+        )
         # Reload the best-validation checkpoint (may not be the final epoch).
         ckpt = torch.load(ckpt_path, map_location=device)
         model.load_state_dict(ckpt["model"])
@@ -602,6 +653,7 @@ def train_cascade_on_arrays(
     fused["skipped"] = False
     fused["checkpoint"] = str(ckpt_path)
     fused["checkpoint_selection"] = checkpoint_selection
+    fused["pooling"] = {"cpg_to_region": cpg_pool, "region_to_gene": region_pool}
     write_json(metrics_path, fused)
     return fused
 
@@ -742,10 +794,24 @@ def run_cascade_hub(
     cpg_hidden = int(model_cfg.get("cpg_hidden_dim", 64))
     region_hidden = int(model_cfg.get("region_hidden_dim", 32))
     dropout = float(model_cfg.get("dropout", 0.1))
+    pool_names = {"sum", "mean", "sqrt_sum", "max"}
+    default_pool = str(model_cfg.get("pooling", "max"))
+    cpg_pool_name = str(model_cfg.get("cpg_pool", default_pool))
+    region_pool_name = str(model_cfg.get("region_pool", default_pool))
+    if cpg_pool_name not in pool_names or region_pool_name not in pool_names:
+        raise ValueError(
+            "model pooling must be one of sum, mean, sqrt_sum, max; "
+            f"found cpg_pool={cpg_pool_name!r}, region_pool={region_pool_name!r}"
+        )
+    cpg_pool = cast(PoolName, cpg_pool_name)
+    region_pool = cast(PoolName, region_pool_name)
     training_cfg = config.get("training", {})
     age_loss_weight = float(training_cfg.get("age_loss_weight", 1.0))
     tissue_loss_weight = float(training_cfg.get("tissue_loss_weight", 1.0))
     sex_loss_weight = float(training_cfg.get("sex_loss_weight", 1.0))
+    patience_raw = training_cfg.get("early_stopping_patience")
+    early_stopping_patience = None if patience_raw is None else int(patience_raw)
+    early_stopping_min_delta = float(training_cfg.get("early_stopping_min_delta", 0.0))
     lr = float(training_cfg.get("learning_rate", 1e-2))
     fusion_cfg = config.get("fusion")
     if fusion_cfg is not None and not isinstance(fusion_cfg, dict):
@@ -927,11 +993,15 @@ def run_cascade_hub(
             cpg_hidden_dim=cpg_hidden,
             region_hidden_dim=region_hidden,
             dropout=dropout,
+            cpg_pool=cpg_pool,
+            region_pool=region_pool,
             skip_if_done=skip_if_done,
             val_idx=val_idx,
             age_loss_weight=age_loss_weight,
             tissue_loss_weight=tissue_loss_weight,
             sex_loss_weight=sex_loss_weight,
+            early_stopping_patience=early_stopping_patience,
+            early_stopping_min_delta=early_stopping_min_delta,
             fusion=fusion_cfg,
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
@@ -963,6 +1033,15 @@ def run_cascade_hub(
             "dropout": dropout,
             "activation": "gelu",
             "layer_norm": True,
+            "cpg_pool": cpg_pool,
+            "region_pool": region_pool,
+        },
+        "training": {
+            "age_loss_weight": age_loss_weight,
+            "tissue_loss_weight": tissue_loss_weight,
+            "sex_loss_weight": sex_loss_weight,
+            "early_stopping_patience": early_stopping_patience,
+            "early_stopping_min_delta": early_stopping_min_delta,
         },
         "assignment": {
             "n_genes": assignment.n_genes,

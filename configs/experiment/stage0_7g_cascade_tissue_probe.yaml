@@ -1,4 +1,4 @@
-# Milestone 7G cascade tissue-head probe (P0–P3).
+# Milestone 7G cascade tissue-head probe (P0–P5 + narrow refusion grid).
 split_id: hub-ats-7e-3fold-v1
 sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
 milestone: 7G-tissue-probe
@@ -49,3 +49,26 @@ arms:
   - id: P3-region-head-bypass
     kind: transparent_region
     arm: T-mean-region
+  - id: P2-fusion-balanced
+    kind: fusion_only
+    source_run_id: stage0-7g-tissue-probe-P2
+    fusion:
+      tissue_solver: balanced_logistic
+  - id: P4-pooling-mean
+    kind: cascade_train
+    run_id: stage0-7g-tissue-probe-P4-mean
+    config: configs/experiment/stage0_7g_cascade_tissue_probe_p4.yaml
+  - id: P4-fusion-balanced
+    kind: fusion_only
+    source_run_id: stage0-7g-tissue-probe-P4-mean
+    fusion:
+      tissue_solver: balanced_logistic
+  - id: P5-epochs-30
+    kind: cascade_train
+    run_id: stage0-7g-tissue-probe-P5-epochs30
+    config: configs/experiment/stage0_7g_cascade_tissue_probe_p5.yaml
+  - id: P5-fusion-balanced
+    kind: fusion_only
+    source_run_id: stage0-7g-tissue-probe-P5-epochs30
+    fusion:
+      tissue_solver: balanced_logistic

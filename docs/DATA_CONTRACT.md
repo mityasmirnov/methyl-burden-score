@@ -390,23 +390,34 @@ The batch stores observed sample–CpG pairs, not a padded whole-manifest matrix
 Out-of-fold scores are stored as:
 
 ```text
-mbs.zarr                  [n_samples, n_genes]   # gene-aggregated RBS (7F+)
+mbs.zarr                  [n_samples, n_genes]   # gene-aggregated RBS
 gene_present.zarr         [n_samples, n_genes]
 gene_observed_count.zarr  [n_samples, n_genes]
-rbs.zarr                  optional [n_samples, n_orphan_or_all_rbs]
-tbs.zarr                  unused after 7F (ADR 0009); may be absent
-direct_contrib.zarr       optional per-task direct CpG contributions
+orphan_rbs.zarr           [n_samples, n_qualified_regions] # may have zero columns
+region_index.parquet      region_id per orphan-RBS column
+direct_cpg.zarr           [n_samples, n_direct_loci]        # or lossless matrix view
+direct_locus_index.parquet
+direct_contrib.zarr       optional per-task benchmark diagnostic
+tbs.zarr                  forbidden after 7F (ADR 0009)
 sample_index.parquet
 gene_index.parquet
 score_manifest.json
 ```
 
-From Milestone **7F**, product fusion uses saved **orphan RBS + MBS + direct**
-matrices ([ADR 0009](adr/0009-drop-tbs-scores.md)); do not write a TBS score
-arm. The score manifest records fold and restart membership, **score polarity /
+The current 7F implementation names the orphan block `rbs.zarr` and writes
+`direct_contrib.zarr` per task. Milestone 7H must migrate/alias these names and
+add the indexed direct-CpG association block above. A per-task contribution is
+not a substitute for retained CpG identity.
+
+Product fusion uses **qualified orphan RBS + MBS + direct**; do not write a TBS
+score arm ([ADR 0009](adr/0009-drop-tbs-scores.md)). Orphan regions are separate
+`region_id` columns, never one global or per-type pool. Qualification requires
+a versioned multi-CpG interval; region→gene allocation requires explicit
+evidence rather than unrestricted nearest gene ([ADR 0010](adr/0010-score-export-vs-phenotype-comparator.md)).
+The score manifest records fold and restart membership, **score polarity /
 orientation anchor** ([ADR 0008](adr/0008-score-identifiability.md)), and
 fold-fitted normalizer hashes. Every sample must be traceable to models that
-excluded its study and replicate group. Milestone **7** (after 7F and 7G) is
+excluded its study and replicate group. Milestone **7** (after 7G Phase 2 and 7H) is
 the OOF export gate. Averaging unaligned `MBS` and `1−MBS` folds is undefined.
 OOF MBS is a **predictive** sample×gene representation, not a constraint or
 LOEUF analogue.

@@ -5,7 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+import pytest
 
+import mbs.training.cascade_loop as cascade_loop
 from mbs.training.cascade_assign import build_cascade_assignment
 from mbs.training.cascade_loop import make_synthetic_cascade_tables, train_cascade_on_arrays
 from mbs.training.late_fusion import evaluate_late_fusion
@@ -122,3 +124,60 @@ def test_region_mean_baseline_smoke() -> None:
     )
     assert out["kind"] == "region"
     assert "tissue" in out["metrics"]
+
+
+def test_mean_pooling_and_tissue_early_stop_are_wired(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tables = make_synthetic_cascade_tables(seed=8)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, 6, dtype=np.int64)
+    val_idx = np.arange(6, 9, dtype=np.int64)
+    test_idx = np.arange(9, n, dtype=np.int64)
+
+    def _constant_validation(*args: object, **kwargs: object) -> dict[str, float]:
+        del args, kwargs
+        return {"tissue_macro_f1": 0.25, "age_mae": 10.0}
+
+    monkeypatch.setattr(
+        cascade_loop,
+        "_evaluate_cascade_validation",
+        _constant_validation,
+    )
+    out = train_cascade_on_arrays(
+        assignment=assignment,
+        betas=tables["betas"],
+        train_idx=train_idx,
+        val_idx=val_idx,
+        test_idx=test_idx,
+        ages=tables["ages"],
+        tissue=tables["tissue"],
+        sex=tables["sex"],
+        study_ids=tables["study_ids"],
+        sample_ids=tables["sample_ids"],
+        class_names=tables["class_names"],
+        out_dir=tmp_path / "phase2",
+        max_epochs=8,
+        seed=0,
+        device_str="cpu",
+        cpg_pool="mean",
+        region_pool="mean",
+        early_stopping_patience=2,
+        early_stopping_min_delta=0.0,
+    )
+    selection = out["checkpoint_selection"]
+    assert selection["epochs_completed"] == 3
+    assert selection["early_stopping"]["stopped_early"] is True
+    assert selection["early_stopping"]["stop_epoch"] == 3
+    assert selection["best_epoch"] == 1
+    assert out["pooling"] == {
+        "cpg_to_region": "mean",
+        "region_to_gene": "mean",
+    }

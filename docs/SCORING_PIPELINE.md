@@ -16,7 +16,7 @@ MBS scoring function.
 | Flat vs hierarchical aggregation | Present (+ unassigned semantics) |
 | Phenotype masking / shared encoder | Present |
 | Today vs Milestone 7 OOF MBS | Present; 7 blocked until 7A–7E |
-| Target multi-path (RBS/TBS/direct) | Documented; implement in 7C |
+| Current 7F cascade (MBS/orphan RBS/direct; no TBS) | Implemented; direct-CpG association block is a 7H gap |
 | Numeric train metrics / loss curves | Out of scope here → `stage0_5d_max_n/`, TB |
 | Cross-fitting fold diagram | Deferred with §7 |
 
@@ -111,7 +111,7 @@ flowchart TD
   ResSlot --> Panel
 ```
 
-### Target multi-path (Milestone 7C)
+### Historical 7C multi-path and current 7F product
 
 ```mermaid
 flowchart TD
@@ -124,6 +124,12 @@ flowchart TD
   TilePath --> Heads2
   Direct --> Heads2
 ```
+
+The diagram records the 7C experiment. ADR 0009 subsequently removed TBS from
+the product. The current cascade exports MBS, separate orphan-region scores and
+a direct phenotype contribution. Before final OOF, 7H must preserve direct CpG
+identity for association and replace unrestricted nearest-gene RBS allocation
+with evidence-backed edges.
 
 Train branches independently for ablations; do not rely on eval-time masking
 alone. v0.1 residual-only used ~108k loci → one scalar and the **first 512
@@ -167,11 +173,11 @@ Contracts: [`EWAS_METADATA.md`](EWAS_METADATA.md),
 - Study-grouped train / validation / external_test splits exist
   (`evaluation/splits.py`); hierarchical runs can reuse a flat `split.json`.
 
-**Deferred (Milestone 7 — blocked until 7A–7E)**
+**Deferred (Milestone 7 — blocked until 7G Phase 2 and 7H)**
 
 - Full **out-of-fold** score matrix: every training sample scored only by models
-  that never saw its study group; persisted OOF MBS (+ optional RBS/TBS/direct,
-  phenotype preds).
+  that never saw its study group; persisted OOF MBS, qualified per-region orphan
+  RBS, indexed direct CpGs, and optional phenotype predictions. No TBS.
 - Protocol: [`EXPERIMENT_PROTOCOL.md`](EXPERIMENT_PROTOCOL.md) § out-of-fold;
   gates: [`TODO_PIPELINE.md`](TODO_PIPELINE.md) §7A–7E then §7;
   [ADR 0007](adr/0007-crossfit-prerequisites.md).
