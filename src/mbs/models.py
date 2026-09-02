@@ -408,10 +408,10 @@ class CascadeDeepSet(nn.Module):
             activation=activation,
         )
 
-    def forward(
+    def forward_from_cpg_hidden(
         self,
+        cpg_hidden: Tensor,
         *,
-        cpg_features: Tensor,
         cpg_to_region: Tensor,
         region_type: Tensor,
         region_to_gene: Tensor,
@@ -419,6 +419,7 @@ class CascadeDeepSet(nn.Module):
         n_gene_instances: int,
         orphan_region_indices: Tensor | None = None,
     ) -> CascadeModelOutput:
+        """Region→gene path given per-edge CpG encoder outputs (one sample)."""
         if region_type.shape != (n_regions,):
             raise ValueError(
                 f"region_type must have shape ({n_regions},), found {tuple(region_type.shape)}"
@@ -429,17 +430,16 @@ class CascadeDeepSet(nn.Module):
                 f"expected {n_regions}, found {region_to_gene.shape[0]}"
             )
 
-        device = cpg_features.device if cpg_features.numel() else region_type.device
-        dtype = cpg_features.dtype if cpg_features.numel() else torch.float32
+        device = cpg_hidden.device if cpg_hidden.numel() else region_type.device
+        dtype = cpg_hidden.dtype if cpg_hidden.numel() else torch.float32
 
-        if cpg_features.shape[0] == 0 or n_regions == 0:
+        if cpg_hidden.shape[0] == 0 or n_regions == 0:
             rbs = torch.full((n_regions,), self.neutral_score, device=device, dtype=dtype)
             rbs_present = torch.zeros(n_regions, dtype=torch.bool, device=device)
             mbs = torch.full((n_gene_instances,), self.neutral_score, device=device, dtype=dtype)
             present = torch.zeros(n_gene_instances, dtype=torch.bool, device=device)
             logits = torch.zeros(n_gene_instances, device=device, dtype=dtype)
         else:
-            cpg_hidden = self.cpg_encoder(cpg_features)
             region_pooled, rbs_present = segment_pool(
                 cpg_hidden,
                 cpg_to_region,
@@ -512,6 +512,52 @@ class CascadeDeepSet(nn.Module):
             "orphan_present": orphan_present,
             "logits": logits,
         }
+
+    def forward(
+        self,
+        *,
+        cpg_features: Tensor,
+        cpg_to_region: Tensor,
+        region_type: Tensor,
+        region_to_gene: Tensor,
+        n_regions: int,
+        n_gene_instances: int,
+        orphan_region_indices: Tensor | None = None,
+    ) -> CascadeModelOutput:
+        if region_type.shape != (n_regions,):
+            raise ValueError(
+                f"region_type must have shape ({n_regions},), found {tuple(region_type.shape)}"
+            )
+        if region_to_gene.shape != (n_regions,):
+            raise ValueError(
+                "region_to_gene must have one entry per region: "
+                f"expected {n_regions}, found {region_to_gene.shape[0]}"
+            )
+
+        device = cpg_features.device if cpg_features.numel() else region_type.device
+        dtype = cpg_features.dtype if cpg_features.numel() else torch.float32
+
+        if cpg_features.shape[0] == 0 or n_regions == 0:
+            return self.forward_from_cpg_hidden(
+                torch.zeros(0, self.cpg_hidden_dim, device=device, dtype=dtype),
+                cpg_to_region=cpg_to_region,
+                region_type=region_type,
+                region_to_gene=region_to_gene,
+                n_regions=n_regions,
+                n_gene_instances=n_gene_instances,
+                orphan_region_indices=orphan_region_indices,
+            )
+
+        cpg_hidden = self.cpg_encoder(cpg_features)
+        return self.forward_from_cpg_hidden(
+            cpg_hidden,
+            cpg_to_region=cpg_to_region,
+            region_type=region_type,
+            region_to_gene=region_to_gene,
+            n_regions=n_regions,
+            n_gene_instances=n_gene_instances,
+            orphan_region_indices=orphan_region_indices,
+        )
 
 
 class SeedMaskedLinearHead(nn.Module):

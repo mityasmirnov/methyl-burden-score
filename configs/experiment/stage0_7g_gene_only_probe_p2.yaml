@@ -25,6 +25,7 @@ model:
   dropout: 0.1
 training:
   max_epochs: 15
+  batch_size: auto
   learning_rate: 0.001
   tissue_loss_weight: 3.0
   age_loss_weight: 0.3

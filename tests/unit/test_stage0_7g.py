@@ -11,6 +11,7 @@ from mbs.training.cascade_assign import build_cascade_assignment
 from mbs.training.cascade_loop import (
     _evaluations_incomplete,
     make_synthetic_cascade_tables,
+    resolve_cascade_train_batch_size,
     train_cascade_on_arrays,
 )
 from mbs.training.late_fusion import evaluate_late_fusion
@@ -219,3 +220,63 @@ def test_ranking_arms_exclude_metadata_only() -> None:
     assert "C-metadata" not in RANKING_ARMS
     assert "T-mean-region" in RANKING_ARMS
     assert "N-cascade-l1" in RANKING_ARMS
+
+
+def test_resolve_cascade_train_batch_size_gpu_share(monkeypatch) -> None:
+    class _CudaDev:
+        type = "cuda"
+
+    total = 40 * 1024**3
+    monkeypatch.setattr(
+        "mbs.training.cascade_loop.torch.cuda.mem_get_info",
+        lambda _d: (total, total),
+    )
+    monkeypatch.delenv("MBS_CASCADE_GPU_SHARE", raising=False)
+    monkeypatch.setenv("MBS_CASCADE_GPU_RESERVED_MIB", "0")
+    n_cols, n_edges = 1000, 5000
+    one = resolve_cascade_train_batch_size(
+        _CudaDev(), n_cols=n_cols, n_edges=n_edges, requested="auto", gpu_share=1, max_batch=512
+    )
+    two = resolve_cascade_train_batch_size(
+        _CudaDev(), n_cols=n_cols, n_edges=n_edges, requested="auto", gpu_share=2, max_batch=512
+    )
+    assert two <= one
+    assert two >= 1
+    monkeypatch.setenv("MBS_CASCADE_GPU_SHARE", "3")
+    three = resolve_cascade_train_batch_size(
+        _CudaDev(), n_cols=n_cols, n_edges=n_edges, requested="auto", gpu_share=1, max_batch=512
+    )
+    assert three <= two
+
+
+def test_cascade_batched_train_smoke(tmp_path: Path) -> None:
+    tables = make_synthetic_cascade_tables(seed=11)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, max(2, (n * 2) // 3), dtype=np.int64)
+    test_idx = np.arange(train_idx[-1] + 1, n, dtype=np.int64)
+    if test_idx.size == 0:
+        test_idx = train_idx.copy()
+    out = train_cascade_on_arrays(
+        assignment=assignment,
+        betas=tables["betas"],
+        train_idx=train_idx,
+        test_idx=test_idx,
+        ages=tables["ages"],
+        tissue=tables["tissue"],
+        sex=tables["sex"],
+        study_ids=tables["study_ids"],
+        sample_ids=tables["sample_ids"],
+        class_names=tables["class_names"],
+        out_dir=tmp_path / "batched",
+        max_epochs=2,
+        seed=3,
+        device_str="cpu",
+        train_batch_size=4,
+    )
+    assert out.get("evaluations", {}).get("mbs_e2e", {}).get("eval_split") == "test"

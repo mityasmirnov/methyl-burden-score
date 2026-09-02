@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, cast
@@ -156,6 +157,164 @@ def _dense_cpg_features(
     return m.astype(np.float32).reshape(-1, 1)
 
 
+def _dense_cpg_features_batch(
+    betas_rows: np.ndarray,
+    *,
+    col_indices: np.ndarray | None = None,
+    epsilon: float = 0.001,
+) -> np.ndarray:
+    """M-value features [batch, n_edges, 1]; optional column subset."""
+    b = np.asarray(betas_rows, dtype=np.float64)
+    if b.ndim == 1:
+        b = b.reshape(1, -1)
+    if col_indices is not None:
+        b = b[:, np.asarray(col_indices, dtype=np.int64)]
+    finite = np.isfinite(b)
+    safe = np.where(finite, np.clip(b, epsilon, 1.0 - epsilon), 0.5)
+    m = beta_to_m_value(safe, epsilon=epsilon)
+    m = np.where(finite, m, 0.0)
+    return m.astype(np.float32)[..., np.newaxis]
+
+
+@dataclass(frozen=True, slots=True)
+class _CascadeGraphTensors:
+    cpg_to_region: torch.Tensor
+    region_type: torch.Tensor
+    region_to_gene: torch.Tensor
+    orphan_idx: torch.Tensor
+    n_regions: int
+    n_gene_instances: int
+    edge_cols: np.ndarray
+
+
+def _cascade_graph_tensors(
+    assignment: CascadeAssignment,
+    *,
+    device: torch.device,
+) -> _CascadeGraphTensors:
+    cols = assignment.edge_col_index
+    return _CascadeGraphTensors(
+        cpg_to_region=torch.from_numpy(assignment.edge_region_index.astype(np.int64)).to(device),
+        region_type=torch.from_numpy(assignment.region_type_id.astype(np.int64)).to(device),
+        region_to_gene=torch.from_numpy(assignment.region_to_gene.astype(np.int64)).to(device),
+        orphan_idx=torch.from_numpy(assignment.orphan_region_indices).to(device),
+        n_regions=int(assignment.n_regions),
+        n_gene_instances=max(int(assignment.n_genes), 1),
+        edge_cols=cols,
+    )
+
+
+def resolve_cascade_train_batch_size(
+    device: torch.device,
+    *,
+    n_cols: int,
+    n_edges: int,
+    requested: int | str | None = None,
+    max_batch: int = 64,
+    gpu_share: int = 1,
+) -> int:
+    """Resolve train/score micro-batch size: 1 on CPU; ``auto`` splits VRAM fairly.
+
+    When several cascade jobs share one GPU (e.g. P4 ∥ P5), set ``gpu_share`` or
+    env ``MBS_CASCADE_GPU_SHARE`` to the number of concurrent trainers. Reserve
+    headroom for sibling jobs (encoder parity, etc.) via
+    ``MBS_CASCADE_GPU_RESERVED_MIB`` (default 2048).
+    """
+    if requested is not None and requested != "auto":
+        size = int(requested)
+        if size < 1:
+            raise ValueError(f"training.batch_size must be >= 1, found {size}")
+        return size
+    if device.type != "cuda":
+        return 1
+    share_env = os.environ.get("MBS_CASCADE_GPU_SHARE")
+    if share_env is not None:
+        gpu_share = max(1, int(share_env))
+    else:
+        gpu_share = max(1, int(gpu_share))
+    reserved_mib = int(os.environ.get("MBS_CASCADE_GPU_RESERVED_MIB", "2048"))
+    reserved_bytes = reserved_mib * 1024 * 1024
+    _free_bytes, total_bytes = torch.cuda.mem_get_info(device)
+    # Fair split of total VRAM — do not use full ``free`` when jobs start together.
+    budget_bytes = max(
+        float(total_bytes) * 0.80 - float(reserved_bytes),
+        float(total_bytes) * 0.25,
+    ) / float(gpu_share)
+    # ponytail: linear estimate; scales with edge count (Epic/WGS) not just n_cols.
+    n_edges_eff = max(int(n_edges), 1, int(n_cols))
+    hidden = 64
+    per_sample = float(n_edges_eff * hidden * 4 + n_cols * 4 + 48_000_000)
+    batch = max(1, min(int(max_batch), int(budget_bytes / per_sample)))
+    return batch
+
+
+def _forward_batch(
+    model: CascadeDeepSet,
+    assignment: CascadeAssignment,
+    betas_batch: np.ndarray,
+    *,
+    device: torch.device,
+    graph: _CascadeGraphTensors | None = None,
+) -> dict[str, torch.Tensor]:
+    """Batched CpG encoder + per-sample region path; returns stacked MBS tensors."""
+    betas_batch = np.asarray(betas_batch, dtype=np.float64)
+    if betas_batch.ndim == 1:
+        betas_batch = betas_batch.reshape(1, -1)
+    batch_size = int(betas_batch.shape[0])
+    graph = graph or _cascade_graph_tensors(assignment, device=device)
+    cols = graph.edge_cols
+    if cols.size == 0 or graph.n_regions == 0:
+        mbs = torch.full(
+            (batch_size, graph.n_gene_instances),
+            0.5,
+            device=device,
+            dtype=torch.float32,
+        )
+        present = torch.zeros(
+            batch_size, graph.n_gene_instances, dtype=torch.bool, device=device
+        )
+        n_orphan = int(assignment.n_orphan_rbs)
+        orphan = torch.full((batch_size, n_orphan), 0.5, device=device, dtype=torch.float32)
+        return {"mbs": mbs, "present": present, "orphan_rbs": orphan}
+
+    feats = _dense_cpg_features_batch(betas_batch, col_indices=cols)
+    feats_t = torch.from_numpy(feats).to(device=device, dtype=torch.float32)
+    n_edges = int(feats_t.shape[1])
+    cpg_hidden = model.cpg_encoder(feats_t.reshape(batch_size * n_edges, 1)).view(
+        batch_size, n_edges, -1
+    )
+
+    mbs_rows: list[torch.Tensor] = []
+    present_rows: list[torch.Tensor] = []
+    orphan_rows: list[torch.Tensor] = []
+    for b in range(batch_size):
+        out = model.forward_from_cpg_hidden(
+            cpg_hidden[b],
+            cpg_to_region=graph.cpg_to_region,
+            region_type=graph.region_type,
+            region_to_gene=graph.region_to_gene,
+            n_regions=graph.n_regions,
+            n_gene_instances=graph.n_gene_instances,
+            orphan_region_indices=graph.orphan_idx,
+        )
+        mbs_rows.append(out["mbs"])
+        present_rows.append(out["present"])
+        if assignment.n_orphan_rbs:
+            orphan_rows.append(out["orphan_rbs"])
+
+    mbs = torch.stack(mbs_rows, dim=0)
+    present = torch.stack(present_rows, dim=0)
+    orphan = (
+        torch.stack(orphan_rows, dim=0)
+        if orphan_rows
+        else torch.zeros(batch_size, 0, device=device, dtype=torch.float32)
+    )
+    if assignment.n_genes == 0:
+        mbs = torch.full((batch_size, 1), 0.5, device=device, dtype=torch.float32)
+        present = torch.zeros(batch_size, 1, dtype=torch.bool, device=device)
+    return {"mbs": mbs, "present": present, "orphan_rbs": orphan}
+
+
 def _forward_sample(
     model: CascadeDeepSet,
     assignment: CascadeAssignment,
@@ -163,26 +322,12 @@ def _forward_sample(
     *,
     device: torch.device,
 ) -> dict[str, torch.Tensor]:
-    feats = _dense_cpg_features(beta_row)
-    cols = assignment.edge_col_index
-    if cols.size == 0:
-        cpg_features = torch.zeros(0, feats.shape[1], device=device, dtype=torch.float32)
-        cpg_to_region = torch.zeros(0, device=device, dtype=torch.long)
-    else:
-        cpg_features = torch.from_numpy(feats[cols]).to(device)
-        cpg_to_region = torch.from_numpy(assignment.edge_region_index.astype(np.int64)).to(device)
-    region_type = torch.from_numpy(assignment.region_type_id.astype(np.int64)).to(device)
-    region_to_gene = torch.from_numpy(assignment.region_to_gene.astype(np.int64)).to(device)
-    orphan_idx = torch.from_numpy(assignment.orphan_region_indices).to(device)
-    return model(
-        cpg_features=cpg_features,
-        cpg_to_region=cpg_to_region,
-        region_type=region_type,
-        region_to_gene=region_to_gene,
-        n_regions=assignment.n_regions,
-        n_gene_instances=max(assignment.n_genes, 1),
-        orphan_region_indices=orphan_idx,
-    )
+    out = _forward_batch(model, assignment, beta_row, device=device)
+    return {
+        "mbs": out["mbs"][0],
+        "present": out["present"][0],
+        "orphan_rbs": out["orphan_rbs"][0],
+    }
 
 
 def score_samples(
@@ -191,6 +336,7 @@ def score_samples(
     betas: np.ndarray,
     *,
     device: torch.device,
+    batch_size: int = 1,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Return mbs, gene_present, orphan_rbs for all sample rows."""
     model.eval()
@@ -200,21 +346,31 @@ def score_samples(
     mbs_out = np.full((n, n_genes), 0.5, dtype=np.float32)
     present_out = np.zeros((n, n_genes), dtype=bool)
     orphan_out = np.full((n, n_orphan), 0.5, dtype=np.float32)
+    graph = _cascade_graph_tensors(assignment, device=device)
+    step = max(1, int(batch_size))
     with torch.no_grad():
-        for i in range(n):
-            out = _forward_sample(model, assignment, betas[i], device=device)
+        for start in range(0, n, step):
+            end = min(n, start + step)
+            out = _forward_batch(
+                model,
+                assignment,
+                betas[start:end],
+                device=device,
+                graph=graph,
+            )
             m = out["mbs"].detach().cpu().numpy().astype(np.float32)
             p = out["present"].detach().cpu().numpy().astype(bool)
             if assignment.n_genes == 0:
-                mbs_out[i, 0] = 0.5
-                present_out[i, 0] = False
+                mbs_out[start:end, 0] = 0.5
+                present_out[start:end, 0] = False
             else:
-                mbs_out[i, : assignment.n_genes] = m[: assignment.n_genes]
-                present_out[i, : assignment.n_genes] = p[: assignment.n_genes]
+                mbs_out[start:end, : assignment.n_genes] = m[:, : assignment.n_genes]
+                present_out[start:end, : assignment.n_genes] = p[:, : assignment.n_genes]
             if n_orphan:
-                orphan_out[i] = out["orphan_rbs"].detach().cpu().numpy().astype(np.float32)
+                orphan_out[start:end] = (
+                    out["orphan_rbs"].detach().cpu().numpy().astype(np.float32)
+                )
     if assignment.n_genes == 0:
-        # Keep a single neutral gene column for head plumbing.
         return mbs_out, present_out, orphan_out
     return mbs_out[:, : assignment.n_genes], present_out[:, : assignment.n_genes], orphan_out
 
@@ -333,6 +489,7 @@ def _evaluate_cascade_validation(
     sex_val: np.ndarray,
     sex_mask_val: np.ndarray,
     device: torch.device,
+    batch_size: int = 1,
 ) -> dict[str, Any]:
     """Cheap proxy metrics from the model's own heads on a held-out validation slice."""
     from mbs.evaluation.metrics import multiclass_metrics, regression_metrics  # noqa: PLC0415
@@ -340,7 +497,9 @@ def _evaluate_cascade_validation(
     out: dict[str, Any] = {"tissue_macro_f1": None, "age_mae": None}
     if betas_val.shape[0] == 0:
         return out
-    mbs_v, present_v, _ = score_samples(model, assignment, betas_val, device=device)
+    mbs_v, present_v, _ = score_samples(
+        model, assignment, betas_val, device=device, batch_size=batch_size
+    )
     mbs_t = torch.from_numpy(mbs_v).to(device)
     present_t = torch.from_numpy(present_v).to(device)
     heads.eval()
@@ -386,11 +545,14 @@ def _evaluate_mbs_e2e(
     study_ids: np.ndarray,
     class_names: list[str],
     device: torch.device,
+    batch_size: int = 1,
 ) -> dict[str, Any]:
     """End-to-end phenotype heads on MBS only (no late fusion); test split only."""
     test_idx_a = np.asarray(test_idx, dtype=np.int64)
     betas_te = betas[test_idx_a]
-    mbs_te, present_te, _ = score_samples(model, assignment, betas_te, device=device)
+    mbs_te, present_te, _ = score_samples(
+        model, assignment, betas_te, device=device, batch_size=batch_size
+    )
     mbs_t = torch.from_numpy(mbs_te).to(device)
     present_t = torch.from_numpy(present_te).to(device)
     heads.eval()
@@ -529,6 +691,8 @@ def train_cascade_on_arrays(
     extra_fusion_modes: tuple[FusionBlockMode, ...] = (),
     locus_ids: list[str] | None = None,
     eval_only: bool = False,
+    train_batch_size: int | str | None = "auto",
+    gpu_share: int = 1,
 ) -> dict[str, Any]:
     """Train CascadeDeepSet + MBS heads; write scores; evaluate; return metrics."""
     score_dir = out_dir / "scores"
@@ -600,6 +764,25 @@ def train_cascade_on_arrays(
         n_classes=max(len(class_names), 2),
         device=device,
     )
+    batch_size = resolve_cascade_train_batch_size(
+        device,
+        n_cols=int(betas.shape[1]),
+        n_edges=int(assignment.edge_col_index.size),
+        requested=train_batch_size,
+        gpu_share=gpu_share,
+    )
+    graph_tensors = _cascade_graph_tensors(assignment, device=device)
+    share_note = ""
+    if device.type == "cuda":
+        share_env = os.environ.get("MBS_CASCADE_GPU_SHARE")
+        effective_share = max(1, int(share_env)) if share_env else max(1, int(gpu_share))
+        if effective_share > 1:
+            share_note = f" gpu_share={effective_share}"
+    print(
+        f"[cascade] {out_dir.name} train_batch_size={batch_size} "
+        f"n_edges={assignment.edge_col_index.size} device={device.type}{share_note}",
+        flush=True,
+    )
 
     val_idx_a = None if val_idx is None else np.asarray(val_idx, dtype=np.int64)
     has_val = val_idx_a is not None and val_idx_a.size > 0
@@ -647,29 +830,48 @@ def train_cascade_on_arrays(
             heads.train()
             order = train_idx.copy()
             np.random.shuffle(order)
-            for i in order.tolist():
-                if not (bool(age_mask_a[i]) or bool(tissue_mask_a[i]) or bool(sex_mask_a[i])):
+            batch_starts = range(0, int(order.size), batch_size)
+            for start in batch_starts:
+                batch_idx = order[start : start + batch_size]
+                active = [
+                    int(i)
+                    for i in batch_idx.tolist()
+                    if bool(age_mask_a[i]) or bool(tissue_mask_a[i]) or bool(sex_mask_a[i])
+                ]
+                if not active:
                     continue
-                out = _forward_sample(model, assignment, betas[i], device=device)
-                mbs = out["mbs"].unsqueeze(0)
-                present = out["present"].unsqueeze(0)
+                active_a = np.asarray(active, dtype=np.int64)
+                out = _forward_batch(
+                    model,
+                    assignment,
+                    betas[active_a],
+                    device=device,
+                    graph=graph_tensors,
+                )
+                mbs = out["mbs"]
+                present = out["present"]
                 if assignment.n_genes == 0:
-                    mbs = torch.full((1, 1), 0.5, device=device)
-                    present = torch.zeros(1, 1, dtype=torch.bool, device=device)
+                    mbs = torch.full((len(active), 1), 0.5, device=device)
+                    present = torch.zeros(len(active), 1, dtype=torch.bool, device=device)
                 loss = torch.zeros((), device=device)
-                if bool(age_mask_a[i]):
-                    age_t = torch.tensor([float(ages[i])], device=device)
-                    age_pred = heads.forward_age(mbs, present)
+                age_m = age_mask_a[active_a]
+                if bool(age_m.any()):
+                    age_t = torch.tensor(ages[active_a][age_m], device=device, dtype=torch.float32)
+                    age_pred = heads.forward_age(mbs[age_m], present[age_m])
                     loss = loss + age_loss_weight * F.huber_loss(age_pred, age_t)
-                if bool(tissue_mask_a[i]):
-                    tissue_t = torch.tensor([int(tissue[i])], device=device, dtype=torch.long)
-                    tissue_pred = heads.forward_tissue(mbs, present)
+                tissue_m = tissue_mask_a[active_a]
+                if bool(tissue_m.any()):
+                    tissue_t = torch.tensor(
+                        tissue[active_a][tissue_m], device=device, dtype=torch.long
+                    )
+                    tissue_pred = heads.forward_tissue(mbs[tissue_m], present[tissue_m])
                     loss = loss + tissue_loss_weight * F.cross_entropy(
                         tissue_pred, tissue_t, weight=tissue_class_weights
                     )
-                if bool(sex_mask_a[i]):
-                    sex_t = torch.tensor([int(sex[i])], device=device, dtype=torch.long)
-                    sex_pred = heads.forward_sex(mbs, present)
+                sex_m = sex_mask_a[active_a]
+                if bool(sex_m.any()):
+                    sex_t = torch.tensor(sex[active_a][sex_m], device=device, dtype=torch.long)
+                    sex_pred = heads.forward_sex(mbs[sex_m], present[sex_m])
                     if sex_pred is not None:
                         loss = loss + sex_loss_weight * F.cross_entropy(sex_pred, sex_t)
                 opt.zero_grad(set_to_none=True)
@@ -693,6 +895,7 @@ def train_cascade_on_arrays(
                     sex_val=sex[val_idx_a],
                     sex_mask_val=sex_mask_a[val_idx_a],
                     device=device,
+                    batch_size=batch_size,
                 )
                 rank = _validation_rank(val_metrics)
                 val_history.append({"epoch": _epoch + 1, "rank": list(rank), **val_metrics})
@@ -753,7 +956,9 @@ def train_cascade_on_arrays(
     if eval_only and manifest_path.is_file():
         pass
     else:
-        mbs_all, present_all, orphan_all = score_samples(model, assignment, betas, device=device)
+        mbs_all, present_all, orphan_all = score_samples(
+            model, assignment, betas, device=device, batch_size=batch_size
+        )
         direct_all, direct_names = _fit_direct_columns(
             betas_train=betas[train_idx],
             betas_all=betas,
@@ -817,6 +1022,7 @@ def train_cascade_on_arrays(
         study_ids=study_ids,
         class_names=list(class_names),
         device=device,
+        batch_size=batch_size,
     )
     evaluations["mbs_linear_probe"] = _evaluate_fusion_mode(
         blocks,
@@ -1037,6 +1243,15 @@ def run_cascade_hub(
     early_stopping_patience = None if patience_raw is None else int(patience_raw)
     early_stopping_min_delta = float(training_cfg.get("early_stopping_min_delta", 0.0))
     lr = float(training_cfg.get("learning_rate", 1e-2))
+    train_batch_size_raw = training_cfg.get("batch_size", "auto")
+    train_batch_size: int | str | None
+    if train_batch_size_raw is None:
+        train_batch_size = "auto"
+    elif isinstance(train_batch_size_raw, str):
+        train_batch_size = train_batch_size_raw
+    else:
+        train_batch_size = int(train_batch_size_raw)
+    gpu_share = max(1, int(training_cfg.get("gpu_share", 1)))
     fusion_cfg = config.get("fusion")
     if fusion_cfg is not None and not isinstance(fusion_cfg, dict):
         raise ValueError("config fusion must be a mapping")
@@ -1253,6 +1468,8 @@ def run_cascade_hub(
             extra_fusion_modes=cast(tuple[FusionBlockMode, ...], extra_fusion_modes),
             locus_ids=locus_index["locus_id"].astype(str).tolist()[:n_cols],
             eval_only=eval_only,
+            train_batch_size=train_batch_size,
+            gpu_share=gpu_share,
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
         fold_summaries.append(metrics)
