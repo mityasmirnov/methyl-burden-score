@@ -35,6 +35,7 @@ from mbs.matrix.store import (
 )
 from mbs.matrix.virtual_hub_store import open_betas_for_matrix
 from mbs.models import FlatDeepSet, FlatDeepSetRegion, SeedMaskedLinearHead, center_mask_scores
+from mbs.release import validate_multitask_head_eligibility
 from mbs.scoring.orientation import (
     accumulate_signed_gene_mean_m,
     flip_phenotype_head_weights_,
@@ -47,6 +48,7 @@ from mbs.static_features.store import (
     read_loci_index,
     static_feature_store_paths,
 )
+from mbs.training.cascade_assign import build_cascade_assignment, gene_linked_col_index
 from mbs.training.controls import (
     apply_feature_control,
     evaluate_metadata_only_ceiling,
@@ -72,7 +74,6 @@ from mbs.training.flat_region_features import (
     flat_region_input_dim,
     gather_flat_region_features,
 )
-from mbs.training.cascade_assign import build_cascade_assignment, gene_linked_col_index
 from mbs.training.level1_norm import (
     Level1NormParams,
     fit_level1_from_betas,
@@ -1533,6 +1534,7 @@ def train_flat_baseline(
     enc = resolve_encoder(model_cfg)
     topology = str(model_cfg.get("topology", "flat"))
     model_cls: type[FlatDeepSet] = FlatDeepSetRegion if topology == "flat_region" else FlatDeepSet
+    eligibility_meta: dict[str, Any] = {}
     model = model_cls(
         input_dim,
         phi_hidden_dim=int(enc["cpg_hidden_dim"]),
@@ -1565,6 +1567,20 @@ def train_flat_baseline(
             len(cancer_maps.label_names)
             if cancer_maps is not None and cancer_maps.label_names
             else int(can_cfg.get("n_labels", 0) or 0)
+        )
+        loss_cfg_early = config.get("loss", {})
+        lambda_dis_early = float(loss_cfg_early.get("lambda_disease", 1.0))
+        lambda_can_early = float(loss_cfg_early.get("lambda_cancer", 1.0))
+        dis_enabled = n_dis > 0 or (want_disease and lambda_dis_early > 0)
+        can_enabled = n_can > 0 or (want_cancer and lambda_can_early > 0)
+        skip_elig = overfit_fixture or not bool(train_cfg.get("check_trait_eligibility", True))
+        eligibility_meta = validate_multitask_head_eligibility(
+            data_root=data_root,
+            disease_enabled=dis_enabled,
+            cancer_enabled=can_enabled,
+            disease_family=str(dis_cfg.get("eligibility_family") or "disease"),
+            cancer_family=str(can_cfg.get("eligibility_family") or "cancer"),
+            skip_check=skip_elig,
         )
         head = MultitaskHeads(
             n_genes,
@@ -1987,6 +2003,8 @@ def train_flat_baseline(
         metrics_out["disease_labels"] = list(disease_maps.label_names)
     if cancer_maps is not None:
         metrics_out["cancer_labels"] = list(cancer_maps.label_names)
+    if eligibility_meta:
+        metrics_out["eligibility"] = eligibility_meta
     if overfit_fixture and history:
         metrics_out["overfit_train_accuracy"] = history[-1]["train_accuracy"]
         metrics_out["overfit_ok"] = bool(history[-1]["train_accuracy"] >= 0.999)

@@ -9,6 +9,14 @@ from pathlib import Path
 WARN_RE = re.compile(r"^WARN: failed (?P<study>[^/]+)/(?P<file>.+)$")
 STUDY_PROGRESS_RE = re.compile(r"^\[(?P<current>\d+)/(?P<total>\d+)\] (?P<study>\S+)$")
 PARSE_ARTIFACT_NAMES = frozenset({"(.+?)", "(.+)"})
+GSM_TXT_RE = re.compile(r"^GSM[0-9]+\.txt$")
+
+
+def is_retryable_ewas_db_filename(name: str) -> bool:
+    """True for real GSM beta files; false for HTML href parser artifacts."""
+    if name in PARSE_ARTIFACT_NAMES:
+        return False
+    return GSM_TXT_RE.match(name) is not None
 
 
 def parse_ewas_db_download_log(log_path: Path) -> tuple[dict[str, list[str]], dict[str, int | None]]:
@@ -42,6 +50,8 @@ def ewas_db_failures_still_missing(
         missing: list[str] = []
         study_dir = ewas_db_root / study
         for name in files:
+            if not is_retryable_ewas_db_filename(name):
+                continue
             path = study_dir / name
             if not path.is_file() or path.stat().st_size == 0:
                 missing.append(name)

@@ -16,9 +16,12 @@ from mbs.paths import DataPaths
 from mbs.release import (
     RELEASE_ID,
     compute_trait_eligibility,
+    head_ranking_eligible,
+    head_training_allowed,
     refresh_release,
     release_paths,
     scan_ewas_db_tree,
+    validate_multitask_head_eligibility,
     validate_release,
     validate_release_manifest,
 )
@@ -237,6 +240,81 @@ def test_disease_unknown_not_control() -> None:
     assert int(row["n_controls"]) == 1
     assert int(row["n_unknown"]) == 1
     assert not bool(row["eligible_core_task"])
+
+
+def _eligibility_frame(*rows: dict[str, object]) -> pd.DataFrame:
+    defaults = {
+        "phenotype_id": "disease",
+        "phenotype_family": "disease",
+        "eligible_core_task": False,
+        "eligible_auxiliary_task": False,
+    }
+    return pd.DataFrame([{**defaults, **row} for row in rows])
+
+
+def test_head_training_allowed_core_or_aux() -> None:
+    elig = _eligibility_frame(
+        {"eligible_core_task": True},
+        {
+            "phenotype_id": "cancer",
+            "phenotype_family": "cancer",
+            "eligible_auxiliary_task": True,
+        },
+    )
+    assert head_training_allowed(elig, phenotype_id="disease", phenotype_family="disease")
+    assert head_training_allowed(elig, phenotype_id="cancer", phenotype_family="cancer")
+    assert not head_training_allowed(elig, phenotype_id="disease", phenotype_family="cancer")
+
+
+def test_head_ranking_eligible_core_only() -> None:
+    elig = _eligibility_frame({"eligible_auxiliary_task": True})
+    assert head_training_allowed(elig, phenotype_id="disease", phenotype_family="disease")
+    assert not head_ranking_eligible(elig, phenotype_id="disease", phenotype_family="disease")
+
+
+def test_validate_multitask_head_eligibility_raises_when_both_false(
+    release_workspace: Path,
+) -> None:
+    paths = DataPaths.from_environment()
+    paths.ensure_directories()
+    rp = release_paths(paths.data_root)
+    rp.catalog_tables.mkdir(parents=True, exist_ok=True)
+    frame = _eligibility_frame({})
+    frame.to_parquet(rp.catalog_tables / "trait_eligibility.parquet", index=False)
+    with pytest.raises(ValueError, match="disease head not eligible"):
+        validate_multitask_head_eligibility(
+            data_root=paths.data_root,
+            disease_enabled=True,
+            cancer_enabled=False,
+        )
+
+
+def test_validate_multitask_head_eligibility_allows_aux(release_workspace: Path) -> None:
+    paths = DataPaths.from_environment()
+    paths.ensure_directories()
+    rp = release_paths(paths.data_root)
+    rp.catalog_tables.mkdir(parents=True, exist_ok=True)
+    frame = _eligibility_frame({"eligible_auxiliary_task": True})
+    frame.to_parquet(rp.catalog_tables / "trait_eligibility.parquet", index=False)
+    meta = validate_multitask_head_eligibility(
+        data_root=paths.data_root,
+        disease_enabled=True,
+        cancer_enabled=False,
+    )
+    assert meta["disease"]["training_allowed"] is True
+    assert meta["disease"]["ranking_eligible"] is False
+
+
+def test_validate_multitask_head_eligibility_skip_check() -> None:
+    assert (
+        validate_multitask_head_eligibility(
+            data_root=Path("/nonexistent"),
+            disease_enabled=True,
+            cancer_enabled=True,
+            skip_check=True,
+        )
+        == {}
+    )
 
 
 def test_validate_release_fails_without_manifest(release_workspace: Path) -> None:

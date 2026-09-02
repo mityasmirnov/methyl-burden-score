@@ -11,16 +11,18 @@ are training-ready. Gate: **7G′** gene-only architecture selection.
 
 ## 1. Download reliability (EWAS_db)
 
-**Problem:** ~79% through the study list; **4 224** GSM files still missing
-after logged `wget` failures; **~1 474** bogus `(.+?)` filenames from HTML href
-parser leakage ([`ewas_db_download_failures.md`](../../reports/inspection/deepmat_data_v1/ewas_db_download_failures.md)).
+**Problem:** ~79% through the study list; retry manifest previously listed
+**~2 710** real missing GSM (after filtering **~1 474** bogus `(.+?)` parser
+artifacts from historical logs). See
+[`ewas_db_download_failures.md`](../../reports/inspection/deepmat_data_v1/ewas_db_download_failures.md).
 
 | Action | Impact | Effort |
 |--------|--------|--------|
-| Filter `list_hrefs` to drop regex artifacts and non-`GSM*.txt` names | Cuts false failures; faster retries | Small |
-| Port disease-pack resilient `wget` flags (`--retry-connrefused`, longer timeouts) into `mirror_ewas_db` | Fewer transient CNCB drops | Small |
-| Run `make retry-ewas-db-failures` after mirror pass | Recovers real missing GSM without full re-crawl | Ops |
-| Post-download hook (done): summarize + `catalog refresh-release` | Catalog stays aligned with disk | Done |
+| Filter retry manifest + mirror crawl to `GSM[0-9]+.txt` only | Cuts false failures; faster retries | **Done** |
+| Resilient `wget` flags in `mirror_ewas_db` + study + retry scripts | Fewer transient CNCB drops | **Done** |
+| Run `make retry-ewas-db-failures` after mirror pass | Recovers real missing GSM without full re-crawl | Ops (background) |
+| Post-download hook: summarize + `make catalog-refresh-release` | Catalog stays aligned with disk | **Done** |
+| Trainer guard: disease/cancer heads require `trait_eligibility` core or aux | Prevents ineligible-head metric inflation | **Done** |
 | Optional: parallel wget per study (cap concurrency) | Faster mirror without hammering CNCB | Medium |
 
 EWAS_db is **not** a 7A/7B/7G gate ([ADR 0007](../adr/0007-crossfit-prerequisites.md))
@@ -33,15 +35,19 @@ columns empty; EWAS_db-only samples lack Hub phenotype rows.
 
 | Action | Impact | Effort |
 |--------|--------|--------|
-| Run `make catalog-refresh-release` after large ingest (hook now calls subset) | Consistent census + eligibility | Done (partial) |
-| Extend post hook to `validate-release` + `phenotype-census` + `trait-eligibility` | Single command = full 7A reports | Small |
+| Run `make catalog-refresh-release` after large ingest (hook now calls full Makefile target) | Consistent census + eligibility | **Done** |
+| Extend post hook to `validate-release` + `phenotype-census` + `trait-eligibility` | Single command = full 7A reports | **Done** (via `make catalog-refresh-release`) |
 | Ingest EWAS_db sample metadata where available (Atlas study/cohort joins) | Labels for ~113k EWAS_db-only GSM | Medium |
 | Registry `sample_count` from matrix sample indexes | Honest N in `phenotype_registry.yaml` | Small |
 | Normalize `450K` → `HM450` on catalog refresh | Fewer platform string splits | Small |
 
 **Use now:** `trait_eligibility` + `v_sample_pack_overlap` to restrict heads
-(disease/cancer need cases+controls; tissue needs class support). Do not treat
-missing disease/cancer as controls ([`DATA_CONTRACT.md`](../DATA_CONTRACT.md)).
+(disease/cancer need cases+controls; tissue needs class support). Multitask flat
+training (`mbs train flat`) enforces eligibility for disease/cancer heads via
+`validate_multitask_head_eligibility` unless `training.check_trait_eligibility:
+false` or `--overfit-fixture`. Aux-only heads train but stamp
+`metrics.eligibility.*.ranking_eligible=false`. Do not treat missing
+disease/cancer as controls ([`DATA_CONTRACT.md`](../DATA_CONTRACT.md)).
 
 ## 3. Training matrices and compute
 

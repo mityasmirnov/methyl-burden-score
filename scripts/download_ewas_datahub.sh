@@ -85,9 +85,10 @@ mirror_ewas_db() {
     i=$((i + 1))
     mkdir -p "$dest/$study"
     printf '[%s/%s] %s\n' "$i" "${#studies[@]}" "$study"
-    mapfile -t files < <(list_hrefs "${root_url}${study}/" | grep -Ev '/$')
+    mapfile -t files < <(list_hrefs "${root_url}${study}/" | grep -Ev '/$' | grep -E '^GSM[0-9]+\.txt$')
     for f in "${files[@]}"; do
-      wget -c -q -O "$dest/$study/$f" "${root_url}${study}/${f}" || {
+      wget -c --tries=3 --retry-connrefused --waitretry=10 --timeout=60 --read-timeout=120 -q \
+        -O "$dest/$study/$f" "${root_url}${study}/${f}" || {
         printf 'WARN: failed %s/%s\n' "$study" "$f" >&2
       }
     done

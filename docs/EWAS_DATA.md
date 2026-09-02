@@ -160,8 +160,15 @@ hashes). Snapshot from the 2026-09-02 `deepmat-data-v1` refresh:
 
 Download failure audit (2026-09-02):
 [`reports/inspection/deepmat_data_v1/ewas_db_download_failures.md`](../reports/inspection/deepmat_data_v1/ewas_db_download_failures.md)
-— **4 224** GSM still missing; **~1 474** bogus `(.+?)` parser artifacts.
-Retry: `make retry-ewas-db-failures`.
+— **~2 710** real GSM in retry manifest after filtering **~1 474** historical
+`(.+?)` parser artifacts (logged failures still report both). Mirror crawl and
+retry manifest keep only `GSM[0-9]+.txt`. Resilient wget:
+`--retry-connrefused --waitretry=10 --timeout=60 --read-timeout=120`.
+
+```bash
+make summarize-ewas-db-failures   # refresh manifest (no (.+?) rows)
+make retry-ewas-db-failures       # or nohup in background; post-hook refreshes catalog
+```
 
 Empty study dirs (wget not started or not finished) are skipped and do **not**
 count toward `n_local_studies`. More study dirs may exist on disk than 883; only

@@ -702,6 +702,87 @@ def compute_trait_eligibility(
     return pd.DataFrame(rows)
 
 
+def head_training_allowed(
+    eligibility: pd.DataFrame,
+    *,
+    phenotype_id: str,
+    phenotype_family: str,
+) -> bool:
+    """True when catalog allows training this head (core or auxiliary)."""
+    row = eligibility.loc[
+        (eligibility["phenotype_id"] == phenotype_id)
+        & (eligibility["phenotype_family"] == phenotype_family)
+    ]
+    if row.empty:
+        return False
+    record = row.iloc[0]
+    return bool(record["eligible_core_task"]) or bool(record["eligible_auxiliary_task"])
+
+
+def head_ranking_eligible(
+    eligibility: pd.DataFrame,
+    *,
+    phenotype_id: str,
+    phenotype_family: str,
+) -> bool:
+    """True only for core-eligible heads (architecture ranking tables)."""
+    row = eligibility.loc[
+        (eligibility["phenotype_id"] == phenotype_id)
+        & (eligibility["phenotype_family"] == phenotype_family)
+    ]
+    if row.empty:
+        return False
+    return bool(row.iloc[0]["eligible_core_task"])
+
+
+def validate_multitask_head_eligibility(
+    *,
+    data_root: Path,
+    disease_enabled: bool,
+    cancer_enabled: bool,
+    disease_family: str = "disease",
+    cancer_family: str = "cancer",
+    skip_check: bool = False,
+) -> dict[str, Any]:
+    """Validate disease/cancer heads against trait_eligibility; return metrics metadata."""
+    if skip_check or (not disease_enabled and not cancer_enabled):
+        return {}
+    path = release_paths(data_root).catalog_tables / "trait_eligibility.parquet"
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"trait_eligibility missing at {path}; run mbs catalog refresh-release"
+        )
+    elig = pd.read_parquet(path)
+    meta: dict[str, Any] = {}
+    if disease_enabled:
+        if not head_training_allowed(elig, phenotype_id="disease", phenotype_family=disease_family):
+            raise ValueError(
+                f"disease head not eligible for family {disease_family!r}; "
+                "see reports/inspection/deepmat_data_v1/trait_eligibility.md"
+            )
+        meta["disease"] = {
+            "phenotype_family": disease_family,
+            "training_allowed": True,
+            "ranking_eligible": head_ranking_eligible(
+                elig, phenotype_id="disease", phenotype_family=disease_family
+            ),
+        }
+    if cancer_enabled:
+        if not head_training_allowed(elig, phenotype_id="cancer", phenotype_family=cancer_family):
+            raise ValueError(
+                f"cancer head not eligible for family {cancer_family!r}; "
+                "see reports/inspection/deepmat_data_v1/trait_eligibility.md"
+            )
+        meta["cancer"] = {
+            "phenotype_family": cancer_family,
+            "training_allowed": True,
+            "ranking_eligible": head_ranking_eligible(
+                elig, phenotype_id="cancer", phenotype_family=cancer_family
+            ),
+        }
+    return meta
+
+
 def validate_release_manifest(manifest: dict[str, Any]) -> None:
     required = [
         "artifact_version",

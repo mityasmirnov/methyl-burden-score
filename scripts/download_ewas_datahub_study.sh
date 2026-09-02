@@ -38,7 +38,7 @@ download_study() {
   local dest="$TARGET/EWAS_db/${study}"
   mkdir -p "$dest"
   printf '=== EWAS_db/%s -> %s ===\n' "$study" "$dest"
-  mapfile -t files < <(list_hrefs "$root_url" | grep -Ev '/$' || true)
+  mapfile -t files < <(list_hrefs "$root_url" | grep -Ev '/$' | grep -E '^GSM[0-9]+\.txt$' || true)
   if [[ "${#files[@]}" -eq 0 ]]; then
     printf 'ERROR: no files listed for %s at %s\n' "$study" "$root_url" >&2
     return 1
@@ -48,7 +48,8 @@ download_study() {
   for f in "${files[@]}"; do
     i=$((i + 1))
     printf '  [%s/%s] %s\n' "$i" "${#files[@]}" "$f"
-    wget -c -q -O "$dest/$f" "${root_url}${f}" || {
+    wget -c --tries=3 --retry-connrefused --waitretry=10 --timeout=60 --read-timeout=120 -q \
+      -O "$dest/$f" "${root_url}${f}" || {
       printf 'WARN: failed %s/%s\n' "$study" "$f" >&2
     }
   done

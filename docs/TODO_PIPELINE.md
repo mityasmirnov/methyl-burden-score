@@ -173,7 +173,9 @@ uv run mbs catalog phenotype-census
 uv run mbs catalog trait-eligibility
 # or: make catalog-refresh-release
 make summarize-ewas-db-failures
-make retry-ewas-db-failures
+make retry-ewas-db-failures   # filters (.+?) artifacts; background-safe
+# Multitask flat training checks trait_eligibility for disease/cancer heads
+# (override: training.check_trait_eligibility: false)
 uv run mbs inspect source --source-id cpgcorpus
 uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
 uv run mbs inspect ewas-metadata

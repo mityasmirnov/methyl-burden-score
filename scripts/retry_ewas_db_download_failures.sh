@@ -31,7 +31,7 @@ tail -n +2 "$MANIFEST" | while IFS=$'\t' read -r study file; do
   fi
   url="${HTTP_ROOT}/${study}/${file}"
   log "wget $study/$file"
-  wget -c --tries=3 --retry-connrefused --waitretry=10 --timeout=60 \
+  wget -c --tries=3 --retry-connrefused --waitretry=10 --timeout=60 --read-timeout=120 \
     -q -O "$out" "$url" >>"$LOG" 2>&1 || {
     printf 'WARN: failed %s/%s\n' "$study" "$file" | tee -a "$LOG" >&2
   }

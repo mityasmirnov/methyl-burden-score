@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from mbs.ewas_download import ewas_db_failures_still_missing, parse_ewas_db_download_log
+from mbs.ewas_download import (
+    ewas_db_failures_still_missing,
+    is_retryable_ewas_db_filename,
+    parse_ewas_db_download_log,
+)
 
 
 def test_parse_ewas_db_download_log(tmp_path: Path) -> None:
@@ -28,12 +32,31 @@ def test_parse_ewas_db_download_log(tmp_path: Path) -> None:
     assert by_study["GSE200"] == ["(.+?)"]
 
 
+def test_is_retryable_ewas_db_filename() -> None:
+    assert is_retryable_ewas_db_filename("GSM123456.txt")
+    assert not is_retryable_ewas_db_filename("(.+?)")
+    assert not is_retryable_ewas_db_filename("(.+)")
+    assert not is_retryable_ewas_db_filename("present.txt")
+    assert not is_retryable_ewas_db_filename("index.html")
+
+
 def test_ewas_db_failures_still_missing(tmp_path: Path) -> None:
     root = tmp_path / "EWAS_db"
     study = root / "GSE1"
     study.mkdir(parents=True)
-    (study / "present.txt").write_text("ok\n", encoding="utf-8")
-    (study / "empty.txt").write_text("", encoding="utf-8")
-    by_study = {"GSE1": ["present.txt", "empty.txt", "absent.txt"]}
+    (study / "GSM1.txt").write_text("ok\n", encoding="utf-8")
+    (study / "GSM2.txt").write_text("", encoding="utf-8")
+    by_study = {
+        "GSE1": ["GSM1.txt", "GSM2.txt", "GSM3.txt"],
+        "GSE2": ["(.+?)", "GSM9.txt"],
+    }
     missing = ewas_db_failures_still_missing(root, by_study)
-    assert missing["GSE1"] == ["empty.txt", "absent.txt"]
+    assert missing["GSE1"] == ["GSM2.txt", "GSM3.txt"]
+    assert missing["GSE2"] == ["GSM9.txt"]
+
+
+def test_ewas_db_failures_still_missing_skips_artifacts_only(tmp_path: Path) -> None:
+    root = tmp_path / "EWAS_db"
+    (root / "GSE200").mkdir(parents=True)
+    by_study = {"GSE200": ["(.+?)"]}
+    assert ewas_db_failures_still_missing(root, by_study) == {}
