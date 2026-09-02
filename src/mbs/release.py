@@ -124,6 +124,11 @@ def release_paths(data_root: Path, release_id: str = RELEASE_ID) -> ReleasePaths
     )
 
 
+def release_inspection_report_dir(project_root: Path, release_id: str = RELEASE_ID) -> Path:
+    """Inspection reports use underscore slug (``deepmat_data_v1``), not release id hyphen."""
+    return project_root / "reports" / "inspection" / release_id.replace("-", "_")
+
+
 def path_size_digest(relative_path: str, byte_size: int) -> str:
     """Content-address of path+size (no full-file hash)."""
     return hashlib.sha256(f"{relative_path}:{byte_size}".encode()).hexdigest()

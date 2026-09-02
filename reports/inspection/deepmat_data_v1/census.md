@@ -1,7 +1,7 @@
 # Phenotype census (deepmat-data-v1)
 
-- Generated: `2026-09-01T13:31:14Z`
-- Unique GSM (`sample`): **147556**
+- Generated: `2026-09-02T10:50:27Z`
+- Unique GSM (`sample`): **149256**
 - Pack membership row sum: **47843**
 - Pack row sum counts Hub membership only; unique GSM also includes EWAS_db-only samples. Pack row sum can exceed unique Hub GSMs when samples appear in multiple packs.
 
@@ -35,8 +35,8 @@ Rows: 0 (capped at 50 in report).
 
 ## EWAS_db ingest
 
-- Local studies: `1338` / advertised `1989` (mirror_complete=False)
-- Local GSM files: `130090`
+- Local studies: `1353` / advertised `1989` (mirror_complete=False)
+- Local GSM files: `132301`
 
 ## Donor / replicate (when present)
 

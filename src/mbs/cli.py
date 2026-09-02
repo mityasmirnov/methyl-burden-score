@@ -36,6 +36,7 @@ from mbs.paths import DataPaths, PathPolicyError
 from mbs.release import (
     RELEASE_ID,
     refresh_release,
+    release_inspection_report_dir,
     release_paths,
     validate_release,
     write_phenotype_census_report,
@@ -219,7 +220,7 @@ def catalog_refresh_release(
     resolved_report = (
         report_dir.resolve()
         if report_dir is not None
-        else paths.project_root / "reports" / "inspection" / release_id
+        else release_inspection_report_dir(paths.project_root, release_id)
     )
     _require_under_data(resolved_report, "report_dir")
     result = refresh_release(
@@ -285,7 +286,7 @@ def catalog_phenotype_census(
     resolved_report = (
         report_dir.resolve()
         if report_dir is not None
-        else paths.project_root / "reports" / "inspection" / release_id
+        else release_inspection_report_dir(paths.project_root, release_id)
     )
     _require_under_data(resolved_report, "report_dir")
     manifest = None
@@ -320,7 +321,7 @@ def catalog_trait_eligibility(
     resolved_report = (
         report_dir.resolve()
         if report_dir is not None
-        else paths.project_root / "reports" / "inspection" / release_id
+        else release_inspection_report_dir(paths.project_root, release_id)
     )
     _require_under_data(resolved_report, "report_dir")
     out = write_trait_eligibility_report(database=rp.catalog_db, report_dir=resolved_report)

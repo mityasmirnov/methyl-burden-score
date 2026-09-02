@@ -142,20 +142,26 @@ Authoritative on-disk snapshot:
 | Atlas batch TSVs | **Complete** (~0.26 GiB) |
 | EPICv2 manifests | **Complete** |
 | `EWAS_db/` All Data | **In progress** — see ingest counts below (~990 GiB betas under `ewas_datahub/`) |
-| Host disk | `/data` ~2 T free at last check — packs are fine; watch space as `EWAS_db` grows |
+| Host disk | `/data` ~2 T free at last check — watch space as `EWAS_db` grows (~1.4 TiB) |
 
 ### EWAS_db ingest counts (what the release manifest reports)
 
 `mbs catalog refresh-release` does a **shallow directory listing** of
 `$MBS_DATA_ROOT/raw/ewas_datahub/EWAS_db/` (no beta reads, no per-file content
-hashes). Snapshot from the 2026-08-24 `deepmat-data-v1` refresh:
+hashes). Snapshot from the 2026-09-02 `deepmat-data-v1` refresh:
 
 | Field | Value | Meaning |
 |-------|-------|---------|
-| `n_local_studies` | **883** | Study dirs under `EWAS_db/` that contain at least one `*.txt` GSM beta file |
-| `n_local_gsm` | **87 153** | Total `*.txt` GSM files found across those studies |
-| `advertised_n` | **1989** | Study count advertised by the remote EWAS_db index (or the last successful `--fetch-remote-index` fetch; default constant is 1989) |
+| `n_local_studies` | **1 353** | Study dirs under `EWAS_db/` that contain at least one `*.txt` GSM beta file |
+| `n_local_gsm` | **132 289** | Total `*.txt` GSM files found across those studies |
+| `n_samples` (catalog) | **149 244** | Unique GSM in release (Hub packs + EWAS_db-only) |
+| `advertised_n` | **1 989** | Study count advertised by the remote EWAS_db index |
 | `mirror_complete` | **false** | `n_local_studies < advertised_n` — All-Data mirror is still downloading |
+
+Download failure audit (2026-09-02):
+[`reports/inspection/deepmat_data_v1/ewas_db_download_failures.md`](../reports/inspection/deepmat_data_v1/ewas_db_download_failures.md)
+— **4 224** GSM still missing; **~1 474** bogus `(.+?)` parser artifacts.
+Retry: `make retry-ewas-db-failures`.
 
 Empty study dirs (wget not started or not finished) are skipped and do **not**
 count toward `n_local_studies`. More study dirs may exist on disk than 883; only
@@ -185,11 +191,24 @@ nohup bash scripts/download_disease_pack_resilient.sh \
   > "$MBS_ARTIFACT_ROOT/logs/downloads/disease_resilient_nohup.log" 2>&1 &
 ```
 
-EWAS_db resume:
+EWAS_db resume (post-download hook refreshes catalog + failure summary):
 
 ```bash
 nohup bash scripts/download_ewas_datahub.sh EWAS_db \
   > "$MBS_ARTIFACT_ROOT/logs/downloads/ewas_datahub_EWAS_db.log" 2>&1 &
+```
+
+After the mirror finishes (or on demand), the download script runs
+`scripts/post_ewas_datahub_download.sh`: parses `WARN: failed` lines into
+`reports/inspection/deepmat_data_v1/ewas_db_download_failures.{json,md}`,
+writes `artifacts/logs/downloads/ewas_db_retry_manifest.tsv`, then
+`mbs catalog refresh-release`. Skip the hook with `EWAS_DATAHUB_SKIP_POST_HOOK=1`.
+
+Retry only missing GSM files:
+
+```bash
+make summarize-ewas-db-failures
+bash scripts/retry_ewas_db_download_failures.sh
 ```
 
 Phenotype sample counts (unique GSM): age 8,374; tissue 5,323; sex 2,978;

@@ -131,4 +131,9 @@ case "$MODE" in
     ;;
 esac
 
+if [[ "${EWAS_DATAHUB_SKIP_POST_HOOK:-0}" != "1" && ( "$MODE" == "EWAS_db" || "$MODE" == "all" ) ]]; then
+  EWAS_DATAHUB_LOG="${EWAS_DATAHUB_LOG:-$LOGDIR/ewas_datahub_EWAS_db.log}" \
+    bash "$SCRIPT_DIR/post_ewas_datahub_download.sh"
+fi
+
 printf 'EWAS DataHub download finished: %s\n' "$TARGET"

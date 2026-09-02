@@ -53,10 +53,10 @@ the shipped topology (7F replaces it). 7E′ hygiene is **done**. Readiness:
 [`reports/inspection/stage0_7f_rbs_gene_direct/analysis.md`](../reports/inspection/stage0_7f_rbs_gene_direct/analysis.md).
 
 **7A–7D** are `done` (7C = fixture + Hub smoke). Hub nine packs and 7B full
-matrices are in the live DuckDB release (`created_at` 2026-08-25T11:15Z:
-**121 931** samples, **1 325** studies, **216 476** phenotype rows, **20**
+matrices are in the live DuckDB release (refresh 2026-09-02:
+**149 244** samples, **1 584** studies, **216 476** phenotype rows, **21**
 matrix artifacts including all nine Hub full packs). EWAS_db is incomplete
-(**924**/1989 studies, **92 971** GSM files) and **not** a gate. Authoritative
+(**1 353**/1 989 studies, **132 289** GSM files) and **not** a gate. Authoritative
 census: `reports/inspection/deepmat_data_v1/` (underscore; matches this
 refresh). Ignore `reports/inspection/deepmat-data-v1/` if it shows ~5 GSM
 (fixture leak into the CLI default hyphen path).
@@ -85,10 +85,10 @@ near-chance on an ordered 512-sample prefix is **not** evidence that noncoding
 CpGs lack signal.
 
 Hub **disease** profile zip is complete (2026-08-11). `EWAS_db` All-Data
-mirror remains in progress (**924** local studies / 1989 advertised;
-**92 971** GSM files in the 11:15Z catalog) and is **not** a gate for 7E or
-Milestone 7; re-run `mbs catalog refresh-release` as more `EWAS_db/{GSE}/`
-dirs arrive.
+mirror remains in progress (**1 353** local studies / 1 989 advertised;
+**132 289** GSM files; failure manifest + post-download hook — see
+[`EWAS_DATA.md`](EWAS_DATA.md)) and is **not** a gate for 7G′ or Milestone 7;
+re-run `make catalog-refresh-release` as more `EWAS_db/{GSE}/` dirs arrive.
 
 Primary open data source going forward: **EWAS Data Hub**
 ([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
@@ -154,8 +154,10 @@ historical CpGCorpus inspection and is not re-opened.
   `scripts/download_disease_pack_resilient.sh` (exact remote size + EOCD).
   Earlier failures were CNCB connection drops / bogus HTTP 416, not disk
   space. Cancer pack was already OK. **EWAS_db** All-Data download still
-  running (`download_ewas_datahub.sh EWAS_db`; ~1049/1989 studies). Inventory:
-  [`EWAS_DATA.md`](EWAS_DATA.md), [`DATA_CATALOG.md`](DATA_CATALOG.md),
+  running (`download_ewas_datahub.sh EWAS_db`; ~1 582/1 989 studies visited).
+  Post-download hook + failure audit:
+  [`plans/data-infrastructure-improvements.md`](plans/data-infrastructure-improvements.md).
+  Inventory: [`EWAS_DATA.md`](EWAS_DATA.md), [`DATA_CATALOG.md`](DATA_CATALOG.md),
   `reports/inspection/raw_inventory/`.
 
 ### Useful commands (already safe to re-run)
@@ -170,6 +172,8 @@ uv run mbs catalog validate-release
 uv run mbs catalog phenotype-census
 uv run mbs catalog trait-eligibility
 # or: make catalog-refresh-release
+make summarize-ewas-db-failures
+make retry-ewas-db-failures
 uv run mbs inspect source --source-id cpgcorpus
 uv run mbs inspect cpgcorpus-gpl --gse GSE125367 --gpl GPL21145
 uv run mbs inspect ewas-metadata

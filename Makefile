@@ -8,7 +8,7 @@ SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
 CACHE_ROOT ?= $(PROJECT_ROOT)/cache
 ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
-.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build catalog-refresh-release agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info 7b-status 7b-convert-bg
+.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build catalog-refresh-release summarize-ewas-db-failures retry-ewas-db-failures agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info 7b-status 7b-convert-bg
 
 help:
 	@printf '%s\n' \
@@ -87,6 +87,12 @@ catalog-refresh-release:
 	uv run mbs catalog validate-release
 	uv run mbs catalog phenotype-census
 	uv run mbs catalog trait-eligibility
+
+summarize-ewas-db-failures:
+	uv run python scripts/summarize_ewas_db_download_failures.py
+
+retry-ewas-db-failures:
+	bash scripts/retry_ewas_db_download_failures.sh
 
 7b-status:
 	bash scripts/status_7b_hub_matrices.sh

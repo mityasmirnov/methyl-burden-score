@@ -6,11 +6,10 @@ harmonization used by Stage 0. Download policy:
 [`EWAS_METADATA.md`](EWAS_METADATA.md). Registry:
 [`configs/data/phenotype_registry.yaml`](../configs/data/phenotype_registry.yaml).
 
-**Last refreshed:** 2026-08-24 via
-[`reports/inspection/raw_inventory/`](../reports/inspection/raw_inventory/)
-(`scripts/write_raw_inventory_refresh.py`). Sample-info Ns from
-`canonical/phenotypes/*_sample_info.parquet` (same refresh). Host disk at
-refresh: **~2.0 T free** on `/data` (~92% used) — not a download blocker.
+**Last refreshed:** 2026-09-02 (`mbs catalog refresh-release` +
+[`reports/inspection/deepmat_data_v1/`](../reports/inspection/deepmat_data_v1/)).
+Raw tree inventory: 2026-08-24 via
+[`reports/inspection/raw_inventory/`](../reports/inspection/raw_inventory/).
 
 ```bash
 uv run python scripts/write_raw_inventory_refresh.py
@@ -29,9 +28,9 @@ Do not recursively dump `$MBS_DATA_ROOT` into chat; use these reports.
 | Unique GSM / studies / primary column | Present (+ sample-count figure) |
 | Converted matrices + multitask masks | Present (5d evidence) |
 | Trait harmonization rules | Present |
-| EWAS_db per-study progress | **In progress** (raw dirs ~1049/1989; catalog ingest **924** studies / **92 971** GSM) |
+| EWAS_db per-study progress | **In progress** (~1 582/1 989 study dirs visited; catalog **1 353** studies / **132 289** GSM); failure audit: [`ewas_db_download_failures.md`](../reports/inspection/deepmat_data_v1/ewas_db_download_failures.md) |
 | Disease / cancer / blood / brain / BMI / ancestry full matrices | **7B done** (`matrix-hub-*-full-v1` + stage0_7b report) |
-| Harmonized DuckDB release | **7A done** (`deepmat-data-v1/`); census refresh follow-ons remain |
+| Harmonized DuckDB release | **7A done** (`deepmat-data-v1/`); refresh via `make catalog-refresh-release` |
 | Unique GSM vs pack-row sum | Memberships ≠ people; 7A census + refresh follow-ons |
 
 ## Source lanes
@@ -67,15 +66,16 @@ ADR: [`adr/0002-ewas-datahub-primary-source.md`](adr/0002-ewas-datahub-primary-s
 | `ewas_atlas/` | 0.26 GiB |
 | **all `raw/`** | **997.30 GiB** |
 
-`EWAS_db` study directories present: **1049 / 1989** advertised remote (~52.7%).
-The 2026-08-25 catalog ingest listed **924** studies / **92 971** GSM files
-(dirs without usable GSM files are not rows). Most of `ewas_datahub/` is
-per-study `EWAS_db` text (~917 GiB); Hub profile
-zips are ~73 GiB total. Download still running:
+`EWAS_db` study directories on disk: **~1 582 / 1 989** advertised remote
+(~79.5% of index visited). Catalog ingest (2026-09-02): **1 353** studies /
+**132 289** GSM files (dirs without usable `*.txt` are skipped). Most of
+`ewas_datahub/` is per-study `EWAS_db` text (~1.4 TiB). Hub profile zips are
+~73 GiB total. Download still running:
 `bash scripts/download_ewas_datahub.sh EWAS_db` (log
-`$MBS_ARTIFACT_ROOT/logs/downloads/ewas_datahub_EWAS_db.log`). Some GSM
-`wget` attempts fail transiently (`WARN: failed`); the script continues and
-resume re-tries.
+`$MBS_ARTIFACT_ROOT/logs/downloads/ewas_datahub_EWAS_db.log`). Failures are
+summarized to `reports/inspection/deepmat_data_v1/ewas_db_download_failures.*`;
+retry via `make retry-ewas-db-failures`. Post-download hook runs catalog
+refresh automatically (see [`EWAS_DATA.md`](EWAS_DATA.md)).
 
 ## Hub phenotype packs
 
@@ -220,17 +220,17 @@ Wave-1 training focus: age, tissue (+ sex in 5d). Disease/cancer heads follow
 
 ## Known gaps
 
-- **EWAS_db mirror incomplete** (catalog 2026-08-25T11:15Z: **924**/1989 study
-  dirs, **92 971** GSM files; still downloading; not a 7E gate).
+- **EWAS_db mirror incomplete** (catalog 2026-09-02: **1 353**/1 989 study
+  dirs with GSM, **132 289** files; **4 224** still missing per failure
+  manifest; not a 7G′ gate). See
+  [`plans/data-infrastructure-improvements.md`](plans/data-infrastructure-improvements.md).
 - Blood primary phenotype sparsity; do not treat as pack-wide cell-type labels
   without another column strategy.
 - Registry `sample_count: null` on most pack entries until convert registers N
   (refresh after 7B: prefer unique GSM from full-matrix sample indexes).
-- 7A census refresh follow-ons (metadata-only predictability, donor/replicate,
-  within-study age/BMI ranges) — see programme brief. Underscore census
-  (`reports/inspection/deepmat_data_v1/`) matches the live DuckDB
-  (**121 931** GSM / **1 325** studies). Ignore the hyphen CLI-default dir if
-  N≈5 (test fixture leak).
+- 7A census (`reports/inspection/deepmat_data_v1/`) matches live DuckDB
+  (**149 244** GSM / **1 584** studies as of 2026-09-02). Ignore the hyphen
+  CLI-default dir if N≈5 (test fixture leak).
 - `v_replicate_groups` is empty; `locus`/`gene`/`region` DuckDB tables are empty
   by design (graph stays on disk).
 - 7B full-pack `platform_id` is `450K`; frozen 5d ATS is `HM450` — same universe,
@@ -243,14 +243,14 @@ Wave-1 training focus: age, tissue (+ sex in 5d). Disease/cancer heads follow
 
 ## Proposed improvements
 
-1. Milestone **7E** ATS development CV (current gate; graph-v2 unblocks RBS/TBS).
-2. Milestone **7E′** Hub multitask (age/tissue/sex/disease/cancer, masked) +
-   hygiene — see [`plans/milestone-7e-prime-analysis-hygiene.md`](plans/milestone-7e-prime-analysis-hygiene.md).
-3. Alias Hub `platform=450K` → `HM450` on catalog refresh (EPIC is not in these
-   nine zips; EPIC coverage is in the annotation graph / EWAS_db `add_txt_850`).
-4. Populate registry `sample_count` from unique GSM when exporting sample-info.
-5. Let EWAS_db finish (or pause if disk approaches capacity); re-run
-   `mbs catalog refresh-release` — optional, not a 7E gate.
+Prioritized plan:
+[`plans/data-infrastructure-improvements.md`](plans/data-infrastructure-improvements.md).
+
+1. Fix EWAS_db `list_hrefs` parser; resilient wget; retry manifest workflow.
+2. Complete **7G′ Stage A/B** before Milestone 7 OOF.
+3. Full `make catalog-refresh-release` after large EWAS_db ingest batches.
+4. Alias Hub `platform=450K` → `HM450` on catalog refresh.
+5. Populate registry `sample_count` from unique GSM when exporting sample-info.
 
 ## Related
 
