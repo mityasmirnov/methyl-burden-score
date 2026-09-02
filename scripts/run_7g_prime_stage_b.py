@@ -78,6 +78,7 @@ def main() -> None:
     folds_path = paths.artifact_root / "splits" / split_id / "folds.json"
     fold_pack = load_frozen_folds(folds_path)
 
+    print(f"[stage-b] split={split_id} max_loci={max_loci} device={args.device}", flush=True)
     matrix_paths = matrix_store_paths(paths.data_root / "canonical" / "matrices" / matrix_id)
     sample_index = read_sample_index(matrix_paths.sample_index_path)
     locus_index = read_locus_index(matrix_paths.locus_index_path)
@@ -100,7 +101,9 @@ def main() -> None:
             strict=True,
         )
     }
+    print(f"[stage-b] loading betas[:, :{n_cols}] into RAM…", flush=True)
     betas_all = np.asarray(open_betas_zarr(matrix_paths.betas_path)[:, :n_cols], dtype=np.float32)
+    print(f"[stage-b] betas shape={betas_all.shape}", flush=True)
     locus_ids = locus_index["locus_id"].astype(str).tolist()[:n_cols]
 
     lock_path = paths.project_root / str(
@@ -112,6 +115,7 @@ def main() -> None:
 
     results: dict[str, Any] = {"milestone": "7G-prime-stage-B", "lock_from_stage_a": lock, "folds": []}
 
+    print("[stage-b] arm C-mvalue-enetS (fold-safe panel selector)…", flush=True)
     enetS_payload = run_classical_mvalue_enetS(
         data_root=paths.data_root,
         fold_pack=fold_pack,

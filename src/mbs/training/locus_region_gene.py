@@ -330,3 +330,34 @@ def build_locus_region_gene_index(
         region_types=type_vocab,
         region_systems=systems,
     )
+
+
+def locus_region_gene_col_filter(
+    locus_region: LocusRegionGeneIndex,
+    cols: np.ndarray,
+) -> LocusRegionGeneIndex:
+    """Keep typed edges on ``cols`` only; drop residual path (7G′ gene_cols parity)."""
+    allowed = frozenset(int(c) for c in np.asarray(cols, dtype=np.int64).tolist())
+    if not allowed:
+        raise ValueError("cols must be non-empty")
+    mask = np.fromiter(
+        (int(c) in allowed for c in locus_region.edge_col_index),
+        dtype=bool,
+        count=locus_region.n_edges,
+    )
+    edge_col = locus_region.edge_col_index[mask]
+    edge_reg = locus_region.edge_region_index[mask]
+    return LocusRegionGeneIndex(
+        gene_ids=locus_region.gene_ids,
+        edge_col_index=edge_col,
+        edge_region_index=edge_reg,
+        region_type_id=locus_region.region_type_id,
+        region_to_gene=locus_region.region_to_gene,
+        region_ids=locus_region.region_ids,
+        residual_col_index=np.zeros(0, dtype=np.int64),
+        column_annotation_status=locus_region.column_annotation_status,
+        n_study_loci=locus_region.n_study_loci,
+        n_typed_edges=int(edge_col.shape[0]),
+        region_types=locus_region.region_types,
+        region_systems=locus_region.region_systems,
+    )

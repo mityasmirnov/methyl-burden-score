@@ -10,7 +10,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from mbs.evaluation.metrics import evaluate_multitask_predictions
+from mbs.training.transparent_baselines import evaluate_multitask_predictions
 from mbs.models import FlatDeepSetRegion
 from mbs.training.cascade_assign import CascadeAssignment, assignment_col_subset
 from mbs.training.cascade_loop import _tissue_class_weights

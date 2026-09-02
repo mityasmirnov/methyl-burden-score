@@ -12,6 +12,8 @@ from typing import Any
 import numpy as np
 
 from mbs.annotation.manifest import write_json
+from mbs.inspection.arm_glossary import arm_description, render_arm_glossary_section
+from mbs.inspection.comparable_metrics import load_comparable_rows, render_comparable_ranking_section
 from mbs.paths import DataPaths
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,6 +44,34 @@ def _mean_std(vals: list[float | None]) -> tuple[float | None, float | None]:
     return float(arr.mean()), float(arr.std(ddof=1)) if arr.size > 1 else 0.0
 
 
+
+def _cascade_metric_means(
+    folds: list[dict[str, Any]],
+    mode: str,
+    *metric_keys: str,
+) -> tuple[float | None, float | None]:
+    path = ".".join((mode, "metrics", *metric_keys))
+    per = [_metric_from_fold(f, path) for f in folds]
+    return _mean_std(per)
+
+
+def _classical_metric_means(
+    payload: dict[str, Any],
+    arm_name: str,
+    *metric_keys: str,
+) -> tuple[float | None, float | None]:
+    per: list[float | None] = []
+    for fold in payload.get("folds") or []:
+        blob = (fold.get("arms") or {}).get(arm_name) or {}
+        cur: Any = blob
+        for key in metric_keys:
+            if not isinstance(cur, dict):
+                cur = None
+                break
+            cur = cur.get(key)
+        per.append(float(cur) if cur is not None else None)
+    return _mean_std(per)
+
 def _metric_from_fold(blob: dict[str, Any], metric_path: str) -> float | None:
     parts = metric_path.split(".")
     eval_keys = ("mbs_e2e", "mbs_linear_probe", "fusion_full", "fusion_mbs_direct")
@@ -66,19 +96,11 @@ def _metric_from_fold(blob: dict[str, Any], metric_path: str) -> float | None:
 
 
 def _cascade_tissue_f1(folds: list[dict[str, Any]], mode: str = "mbs_e2e") -> tuple[float | None, float | None]:
-    path = f"{mode}.metrics.tissue.macro_f1"
-    per = [_metric_from_fold(f, path) for f in folds]
-    return _mean_std(per)
+    return _cascade_metric_means(folds, mode, "tissue", "macro_f1")
 
 
 def _classical_tissue_f1(payload: dict[str, Any], arm_name: str) -> tuple[float | None, float | None]:
-    per: list[float | None] = []
-    for fold in payload.get("folds") or []:
-        blob = (fold.get("arms") or {}).get(arm_name) or {}
-        tissue = blob.get("tissue") or {}
-        per.append(tissue.get("macro_f1"))
-    return _mean_std(per)
-
+    return _classical_metric_means(payload, arm_name, "tissue", "macro_f1")
 
 def load_per_arm(report_dir: Path) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
@@ -162,7 +184,7 @@ def orphan_ablation_section(payload: dict[str, Any] | None) -> str:
     return "\n".join(lines)
 
 
-def write_analysis(report_dir: Path, *, lock: dict[str, Any]) -> None:
+def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths | None = None) -> None:
     arms = load_per_arm(report_dir)
     cascade_rows: list[dict[str, Any]] = []
     for arm_id in CASCADE_ARMS:
@@ -172,12 +194,20 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any]) -> None:
         folds = payload.get("folds") or []
         e2e, e2e_std = _cascade_tissue_f1(folds, "mbs_e2e")
         probe, _ = _cascade_tissue_f1(folds, "mbs_linear_probe")
+        age_mae, _ = _cascade_metric_means(folds, "mbs_e2e", "age", "mae")
+        age_r2, _ = _cascade_metric_means(folds, "mbs_e2e", "age", "r2")
+        sex_auroc, _ = _cascade_metric_means(folds, "mbs_e2e", "sex", "auroc")
+        if sex_auroc is None:
+            sex_auroc, _ = _cascade_metric_means(folds, "mbs_e2e", "sex", "macro_f1")
         cascade_rows.append(
             {
                 "arm_id": arm_id,
                 "mbs_e2e_f1": e2e,
                 "mbs_e2e_std": e2e_std,
                 "mbs_linear_probe_f1": probe,
+                "age_mae": age_mae,
+                "age_r2": age_r2,
+                "sex_auroc": sex_auroc,
                 "n_folds": len(folds),
             }
         )
@@ -187,13 +217,35 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any]) -> None:
     if classical_payload:
         for arm_name in CLASSICAL_SUFFIXES:
             f1, f1_std = _classical_tissue_f1(classical_payload, arm_name)
+            age_mae, _ = _classical_metric_means(classical_payload, arm_name, "age", "mae")
+            age_r2, _ = _classical_metric_means(classical_payload, arm_name, "age", "r2")
+            sex_auroc, _ = _classical_metric_means(classical_payload, arm_name, "sex", "auroc")
             classical_rows.append(
-                {"arm_id": arm_name, "tissue_f1": f1, "tissue_f1_std": f1_std}
+                {
+                    "arm_id": arm_name,
+                    "tissue_f1": f1,
+                    "tissue_f1_std": f1_std,
+                    "age_mae": age_mae,
+                    "age_r2": age_r2,
+                    "sex_auroc": sex_auroc,
+                }
             )
 
     if not lock:
         lock = build_lock_recommendation(cascade_rows, classical_rows)
     write_json(report_dir / "lock_recommendation.json", lock)
+
+    glossary_ids: list[str] = list(CASCADE_ARMS) + list(CLASSICAL_SUFFIXES) + [
+        "C-mvalue-classical-G",
+        "P2-orphan-ablation",
+        "C-mvalue-enetS",
+        "N-cascade-S",
+        "N-light-type",
+        "N-full",
+        "N-mbs-direct-only",
+    ]
+    if lock.get("locked_cascade_arm"):
+        glossary_ids.insert(0, str(lock["locked_cascade_arm"]))
 
     lines = [
         "# 7G′ Stage A — gene-only MBS architecture selection",
@@ -201,28 +253,60 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any]) -> None:
         "Primary metric: **`mbs_e2e`** tissue macro-F1 (end-to-end MBS heads; not late fusion).",
         "Classical comparator: **`C-mvalue-*-G`** on identical `gene_cols`.",
         "",
+    ]
+    lines.extend(
+        render_arm_glossary_section(
+            glossary_ids,
+            extra_eval_modes=("mbs_e2e", "mbs_linear_probe", "fusion_full", "fusion_mbs_direct"),
+        )
+    )
+    if paths is not None:
+        classical_path = (
+            report_dir.parent / "stage0_7g_methylation_eval" / "classical_baselines.json"
+        )
+        comp_rows = load_comparable_rows(
+            paths.artifact_root,
+            classical_baselines_path=classical_path,
+        )
+        write_json(report_dir / "comparable_ranking.json", {"rows": comp_rows})
+        lines.extend(render_comparable_ranking_section(comp_rows))
+    lines.extend(
+        [
         "## Cascade arms (gene-linked CpGs only)",
         "",
-        "| Arm | mbs_e2e F1 | mbs_linear_probe F1 | folds |",
-        "|-----|-----------:|--------------------:|------:|",
-    ]
+        "Primary **`mbs_e2e`**; secondary **`mbs_linear_probe`**. Age/sex from **`mbs_e2e`** heads.",
+        "",
+        "| Arm | mbs_e2e F1 | linear probe F1 | age MAE | age R² | sex AUROC/F1 | folds |",
+        "|-----|-----------:|----------------:|--------:|-------:|-------------:|------:|",
+        ]
+    )
     for row in sorted(cascade_rows, key=lambda r: r.get("mbs_e2e_f1") or -1.0, reverse=True):
+        sex_disp = row.get("sex_auroc")
         lines.append(
             f"| {row['arm_id']} | {_fmt(row.get('mbs_e2e_f1'))} "
             f"(±{_fmt(row.get('mbs_e2e_std'))}) | "
-            f"{_fmt(row.get('mbs_linear_probe_f1'))} | {row.get('n_folds', 0)} |"
+            f"{_fmt(row.get('mbs_linear_probe_f1'))} | "
+            f"{_fmt(row.get('age_mae'))} | {_fmt(row.get('age_r2'))} | "
+            f"{_fmt(sex_disp)} | {row.get('n_folds', 0)} |"
         )
     lines.extend(
         [
             "",
             "## Classical arms (-G panel)",
             "",
-            "| Arm | tissue macro-F1 |",
-            "|-----|----------------:|",
+            "Same **56 214 gene-linked CpGs** as neural arms: ridge, elastic-net, HGB, PCA-SVA+ridge.",
+            "",
+            "| Arm | tissue F1 | age MAE | age R² | sex AUROC |",
+            "|-----|----------:|--------:|-------:|----------:|",
         ]
     )
     for row in sorted(classical_rows, key=lambda r: r.get("tissue_f1") or -1.0, reverse=True):
-        lines.append(f"| {row['arm_id']} | {_fmt(row.get('tissue_f1'))} (±{_fmt(row.get('tissue_f1_std'))}) |")
+        lines.append(
+            f"| {row['arm_id']} | {_fmt(row.get('tissue_f1'))} "
+            f"(±{_fmt(row.get('tissue_f1_std'))}) | "
+            f"{_fmt(row.get('age_mae'))} | {_fmt(row.get('age_r2'))} | "
+            f"{_fmt(row.get('sex_auroc'))} |"
+        )
 
     lines.extend(
         [
@@ -232,8 +316,8 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any]) -> None:
             f"- **Cascade arm:** `{lock.get('locked_cascade_arm')}`",
             f"- **Pooling (CpG / region):** `{lock.get('pooling_cpg')}` / `{lock.get('pooling_region')}`",
             f"- **Epoch ceiling:** {lock.get('max_epochs')}",
-            f"- **Best classical:** `{lock.get('best_classical_arm')}`",
-            f"- **Cascade clearly ahead (≥{CLEAR_AHEAD_DELTA} F1):** {lock.get('cascade_clearly_ahead')}",
+            f"- **Best classical (-G):** `{lock.get('best_classical_arm')}`",
+            f"- **Cascade clearly ahead (≥{CLEAR_AHEAD_DELTA} tissue F1):** {lock.get('cascade_clearly_ahead')}",
             "",
         ]
     )
@@ -252,6 +336,14 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any]) -> None:
     lines.append(orphan_ablation_section(arms.get("P2-orphan-ablation")))
     lines.extend(
         [
+            "## Parallel / follow-on work",
+            "",
+            "- **Stage A finish:** classical `-G` (CPU) + orphan ablation (GPU) — can run in parallel.",
+            "- **Encoder parity (optional):** FlatDeepSet + HierarchicalDeepSet on same `gene_cols` if cascade "
+            "does not lead classical by ≥0.03 F1.",
+            "- **Stage B (after lock):** fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type`, "
+            "`direct_cpg.zarr`, full-model fusion arms.",
+            "",
             "## Next",
             "",
             "- Stage B: fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type` (FlatDeepSetRegion), "
@@ -293,7 +385,7 @@ def main() -> None:
             f1, _ = _classical_tissue_f1(cp, arm_name)
             classical_rows.append({"arm_id": arm_name, "tissue_f1": f1})
     lock = build_lock_recommendation(cascade_rows, classical_rows)
-    write_analysis(report_dir, lock=lock)
+    write_analysis(report_dir, lock=lock, paths=paths)
     print(f"wrote {report_dir / 'analysis.md'}", flush=True)
 
 

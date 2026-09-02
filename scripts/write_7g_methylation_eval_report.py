@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from mbs.annotation.manifest import write_json
+from mbs.inspection.arm_glossary import arm_description, render_arm_glossary_section
 from mbs.paths import DataPaths
 from mbs.training.classical_mvalue import run_classical_mvalue
 from mbs.training.dev_cv import load_frozen_folds, samples_from_phenotype_table
@@ -35,17 +36,6 @@ DEFAULT_RUN = "stage0-7g-cascade-v1"
 DEFAULT_ONTOLOGY = "canonical/phenotypes/tissue_ontology_age_tissue_sex_full_v1.yaml"
 MAX_LOCI = 65536
 
-ARM_LABELS = {
-    "N-cascade-l1": "Cascade RBS→gene + direct (Level-1 on direct)",
-    "T-mean-gene": "Gene-mean linear (transparent)",
-    "T-mean-region": "Region-mean linear (transparent)",
-    "T-enet": "Gene-mean elastic-net (transparent)",
-    "C-mvalue-ridge": "M-value ridge / SGD-L2 logistic",
-    "C-mvalue-enet": "M-value SGD elastic-net / logistic",
-    "C-mvalue-hgb": "M-value HistGradientBoosting",
-    "C-mvalue-sva": "M-value PCA-SVA + ridge / logistic",
-}
-
 RANKING_ARMS = (
     "N-cascade-l1",
     "T-mean-gene",
@@ -56,6 +46,8 @@ RANKING_ARMS = (
     "C-mvalue-hgb",
     "C-mvalue-sva",
 )
+
+ARM_LABELS = {arm: arm_description(arm) for arm in RANKING_ARMS}
 
 
 def _mean_std(xs: list[float | None]) -> tuple[float | None, float | None]:
@@ -294,6 +286,11 @@ def write_analysis(
         "",
         "No TBS arm (ADR 0009).",
         "",
+    ]
+    glossary_arms = [r["arm"] for r in means] + list(RANKING_ARMS)
+    lines.extend(render_arm_glossary_section(glossary_arms))
+    lines.extend(
+        [
         "## Ranking (methylation-input only)",
         "",
         "Tissue macro-F1 / balanced accuracy exclude classes with zero training "
@@ -308,7 +305,8 @@ def write_analysis(
         "n excluded (zero-shot) | Sex AUROC | Age MAE | Age R² |",
         "|-----|-----------------|--------------|-------------------|"
         "------------------------|-----------|---------|--------|",
-    ]
+        ]
+    )
     for r in means:
         lines.append(
             "| {arm} | {f1} | {bacc} | {nk} | {nex} | {sex} | {mae} | {r2} |".format(

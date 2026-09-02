@@ -1,36 +1,22 @@
 {
   "arms": [
     {
-      "age_mae_years": 8.44121099584143,
-      "age_mae_years_sd": 1.0835875565772526,
-      "age_r2": 0.7815138623580463,
-      "age_r2_sd": 0.024931094661291155,
-      "arm": "N-cascade-l1",
-      "family": "neural",
-      "label": "Cascade RBS\u2192gene + direct (Level-1 on direct)",
-      "n_cells": 3,
-      "sex_auroc": 0.9107586282312486,
-      "sex_auroc_sd": 0.09238258716455819,
-      "tissue_balanced_accuracy": 0.12501752349471096,
-      "tissue_balanced_accuracy_sd": 0.027988162145866313,
-      "tissue_macro_f1": 0.09284990115347659,
-      "tissue_macro_f1_sd": 0.014477644639434335
-    },
-    {
       "age_mae_years": 8.909279128749207,
       "age_mae_years_sd": 0.7418912629203234,
       "age_r2": 0.7549969499629233,
       "age_r2_sd": 0.012027419438842378,
       "arm": "T-mean-gene",
       "family": "transparent",
-      "label": "Gene-mean linear (transparent)",
+      "label": "Presence-aware **gene-mean** M-values \u2192 fold-fitted linear multitask heads.",
       "n_cells": 3,
       "sex_auroc": 0.8802908784043334,
       "sex_auroc_sd": 0.053705933539098354,
       "tissue_balanced_accuracy": 0.3535800330589203,
       "tissue_balanced_accuracy_sd": 0.06847133071999058,
       "tissue_macro_f1": 0.32313157032861745,
-      "tissue_macro_f1_sd": 0.05591717828656817
+      "tissue_macro_f1_sd": 0.05591717828656817,
+      "tissue_n_classes_scored_mean": null,
+      "tissue_n_excluded_zero_shot_samples": 0
     },
     {
       "age_mae_years": 7.946098900533088,
@@ -39,14 +25,16 @@
       "age_r2_sd": 0.03028974183649723,
       "arm": "T-mean-region",
       "family": "transparent",
-      "label": "Region-mean linear (transparent)",
+      "label": "Presence-aware **region-mean** M-values \u2192 linear heads (strong tissue baseline).",
       "n_cells": 3,
       "sex_auroc": 0.908254300612426,
       "sex_auroc_sd": 0.045600401556789315,
       "tissue_balanced_accuracy": 0.3592508909308059,
       "tissue_balanced_accuracy_sd": 0.06526196058017,
       "tissue_macro_f1": 0.32962579239371875,
-      "tissue_macro_f1_sd": 0.06742705325752604
+      "tissue_macro_f1_sd": 0.06742705325752604,
+      "tissue_n_classes_scored_mean": null,
+      "tissue_n_excluded_zero_shot_samples": 0
     },
     {
       "age_mae_years": 19.153222485919013,
@@ -55,14 +43,16 @@
       "age_r2_sd": 0.1047367042735809,
       "arm": "T-enet",
       "family": "transparent",
-      "label": "Gene-mean elastic-net (transparent)",
+      "label": "Transparent elastic-net on gene- or region-aggregated M-value features.",
       "n_cells": 3,
       "sex_auroc": null,
       "sex_auroc_sd": null,
       "tissue_balanced_accuracy": 0.36528459816459047,
       "tissue_balanced_accuracy_sd": 0.07121080843538972,
       "tissue_macro_f1": 0.33368057838595416,
-      "tissue_macro_f1_sd": 0.06595845291411159
+      "tissue_macro_f1_sd": 0.06595845291411159,
+      "tissue_n_classes_scored_mean": null,
+      "tissue_n_excluded_zero_shot_samples": 0
     },
     {
       "age_mae_years": 6.372181507263112,
@@ -71,14 +61,16 @@
       "age_r2_sd": 0.03228918875223063,
       "arm": "C-mvalue-ridge",
       "family": "classical",
-      "label": "M-value ridge / SGD-L2 logistic",
+      "label": "All prefix loci \u2192 M-value \u2192 train-fold impute/scale \u2192 ridge (age) / SGD-L2 logistic (tissue, sex).",
       "n_cells": 3,
       "sex_auroc": 0.910046680762556,
       "sex_auroc_sd": 0.05031647490812918,
       "tissue_balanced_accuracy": 0.31257607001460425,
       "tissue_balanced_accuracy_sd": 0.03627208514796917,
       "tissue_macro_f1": 0.2877600211212419,
-      "tissue_macro_f1_sd": 0.028355408781965814
+      "tissue_macro_f1_sd": 0.028355408781965814,
+      "tissue_n_classes_scored_mean": null,
+      "tissue_n_excluded_zero_shot_samples": 0
     },
     {
       "age_mae_years": null,
@@ -87,14 +79,16 @@
       "age_r2_sd": null,
       "arm": "C-mvalue-enet",
       "family": "classical",
-      "label": "M-value SGD elastic-net / logistic",
+      "label": "All prefix loci \u2192 M-value \u2192 elastic-net regression (age) / logistic enet (tissue, sex); **7G bake-off tissue winner** (F1\u22480.334 on 65k).",
       "n_cells": 3,
       "sex_auroc": 0.8941321032557528,
       "sex_auroc_sd": 0.02994190350028143,
       "tissue_balanced_accuracy": 0.3766176408828256,
       "tissue_balanced_accuracy_sd": 0.028568531739644014,
       "tissue_macro_f1": 0.3340839315800285,
-      "tissue_macro_f1_sd": 0.030823072545455844
+      "tissue_macro_f1_sd": 0.030823072545455844,
+      "tissue_n_classes_scored_mean": null,
+      "tissue_n_excluded_zero_shot_samples": 0
     },
     {
       "age_mae_years": 8.756040882363074,
@@ -103,14 +97,16 @@
       "age_r2_sd": 0.049107980485101836,
       "arm": "C-mvalue-hgb",
       "family": "classical",
-      "label": "M-value HistGradientBoosting",
+      "label": "M-value \u2192 HistGradientBoosting (stands in for LightGBM) per trait.",
       "n_cells": 3,
       "sex_auroc": 0.9433140428241301,
       "sex_auroc_sd": 0.05663373229740737,
       "tissue_balanced_accuracy": 0.10235426978592999,
       "tissue_balanced_accuracy_sd": 0.059431011481600675,
       "tissue_macro_f1": 0.07732726334143138,
-      "tissue_macro_f1_sd": 0.06676522454785337
+      "tissue_macro_f1_sd": 0.06676522454785337,
+      "tissue_n_classes_scored_mean": null,
+      "tissue_n_excluded_zero_shot_samples": 0
     },
     {
       "age_mae_years": 12.49750404554203,
@@ -119,14 +115,16 @@
       "age_r2_sd": 0.8167745628495324,
       "arm": "C-mvalue-sva",
       "family": "classical",
-      "label": "M-value PCA-SVA + ridge / logistic",
+      "label": "M-value \u2192 PCA surrogate components (Bioconductor `sva` stand-in) \u2192 ridge/logistic.",
       "n_cells": 3,
       "sex_auroc": 0.8521351437333898,
       "sex_auroc_sd": 0.07868612631655865,
       "tissue_balanced_accuracy": 0.3257538852278961,
       "tissue_balanced_accuracy_sd": 0.040974422510481286,
       "tissue_macro_f1": 0.3005647073158158,
-      "tissue_macro_f1_sd": 0.041735164171241755
+      "tissue_macro_f1_sd": 0.041735164171241755,
+      "tissue_n_classes_scored_mean": null,
+      "tissue_n_excluded_zero_shot_samples": 0
     }
   ],
   "winner": {
@@ -136,7 +134,7 @@
     "age_r2_sd": null,
     "arm": "C-mvalue-enet",
     "family": "classical",
-    "label": "M-value SGD elastic-net / logistic",
+    "label": "All prefix loci \u2192 M-value \u2192 elastic-net regression (age) / logistic enet (tissue, sex); **7G bake-off tissue winner** (F1\u22480.334 on 65k).",
     "n_cells": 3,
     "reason": "max mean tissue macro-F1, then min mean age MAE among methylation-input methods",
     "sex_auroc": 0.8941321032557528,
@@ -144,6 +142,8 @@
     "tissue_balanced_accuracy": 0.3766176408828256,
     "tissue_balanced_accuracy_sd": 0.028568531739644014,
     "tissue_macro_f1": 0.3340839315800285,
-    "tissue_macro_f1_sd": 0.030823072545455844
+    "tissue_macro_f1_sd": 0.030823072545455844,
+    "tissue_n_classes_scored_mean": null,
+    "tissue_n_excluded_zero_shot_samples": 0
   }
 }

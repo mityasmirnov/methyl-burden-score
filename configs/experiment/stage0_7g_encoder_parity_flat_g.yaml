@@ -1,0 +1,79 @@
+# 7G′ optional encoder parity: FlatDeepSet on identical gene_cols (matches P4-G budget).
+split_id: hub-ats-7e-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+cv_budget:
+  max_loci: 65536
+  max_epochs: 15
+experiment:
+  name: stage0_7g_encoder_parity_flat_g
+  seed: 42
+  stage: 0
+features:
+  methylation:
+    beta: true
+    epsilon: 0.001
+    m_value: true
+    robust_deviation: true
+    sigma_min: 1.0e-06
+  static_feature_set: none
+heads:
+  age:
+    enabled: true
+    huber_delta: 1.0
+    linear: true
+    loss: huber
+    target_standardization: train_fold
+  sex:
+    enabled: true
+    linear: true
+    loss: cross_entropy
+    n_classes: 2
+  tissue:
+    class_weighting: train_fold_balanced
+    enabled: true
+    linear: true
+    loss: cross_entropy
+    ontology: harmonized
+loss:
+  lambda_age: 0.3
+  lambda_sex: 1.0
+  lambda_tissue: 3.0
+model:
+  encoder:
+    activation: gelu
+    cpg_hidden_dim: 64
+    dropout: 0.1
+    layer_norm: true
+  neutral_score: 0.5
+  output_activation: sigmoid
+  phi_hidden_dimension: 64
+  phi_layers: 2
+  pooling: mean
+  rho_hidden_dimension: 10
+  rho_layers: 3
+  type: flat_deepset
+pilot:
+  auto_split: false
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+  matrix_id: matrix-hub-age-tissue-sex-full-v1
+  mode: multitask_hub
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+  split_id: hub-ats-7e-3fold-v1
+  static_feature_set: none
+  tissue_ontology: canonical/phenotypes/tissue_ontology_age_tissue_sex_full_v1.yaml
+stage0:
+  use_cpgpt_static_features: false
+training:
+  batch_size: 4
+  batch_token_budget: 500000
+  early_stopping_patience: 5
+  gene_linked_only: true
+  gradient_clip_norm: 2.0
+  learning_rate: 0.001
+  max_epochs: 15
+  optimizer: adamw
+  precision: bf16-mixed
+  require_cuda: true
+  weight_decay: 0.0001
+device:
+  torch_device: cuda

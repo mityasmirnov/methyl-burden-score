@@ -1,0 +1,214 @@
+{
+  "rows": [
+    {
+      "arm": "P0-baseline",
+      "eval_mode": "fusion_full",
+      "n_folds": 3,
+      "panel": "65k prefix",
+      "per_fold_f1": [
+        0.07641774735990732,
+        0.10372876523366645,
+        0.09840319086685599
+      ],
+      "run_id": "stage0-7g-cascade-v1",
+      "tissue_macro_f1": 0.09284990115347659,
+      "tissue_macro_f1_std": 0.014477644639434335
+    },
+    {
+      "arm": "P0-baseline",
+      "eval_mode": "mbs_e2e",
+      "n_folds": 0,
+      "panel": "65k prefix",
+      "per_fold_f1": [
+        null,
+        null,
+        null
+      ],
+      "run_id": "stage0-7g-cascade-v1",
+      "tissue_macro_f1": null,
+      "tissue_macro_f1_std": null
+    },
+    {
+      "arm": "P2-end2end-tissue-weight",
+      "eval_mode": "fusion_full",
+      "n_folds": 3,
+      "panel": "65k prefix",
+      "per_fold_f1": [
+        0.3082188408562417,
+        0.4074238911011689,
+        0.41222189278981647
+      ],
+      "run_id": "stage0-7g-tissue-probe-P2",
+      "tissue_macro_f1": 0.37595487491574237,
+      "tissue_macro_f1_std": 0.05871016042929402
+    },
+    {
+      "arm": "P2-end2end-tissue-weight",
+      "eval_mode": "mbs_e2e",
+      "n_folds": 0,
+      "panel": "65k prefix",
+      "per_fold_f1": [
+        null,
+        null,
+        null
+      ],
+      "run_id": "stage0-7g-tissue-probe-P2",
+      "tissue_macro_f1": null,
+      "tissue_macro_f1_std": null
+    },
+    {
+      "arm": "P4-pooling-mean",
+      "eval_mode": "fusion_full",
+      "n_folds": 3,
+      "panel": "65k prefix",
+      "per_fold_f1": [
+        0.3001969331267973,
+        0.39925217818623626,
+        0.38039855990697097
+      ],
+      "run_id": "stage0-7g-tissue-probe-P4",
+      "tissue_macro_f1": 0.3599492237400015,
+      "tissue_macro_f1_std": 0.05259863977042249
+    },
+    {
+      "arm": "P4-pooling-mean",
+      "eval_mode": "mbs_e2e",
+      "n_folds": 0,
+      "panel": "65k prefix",
+      "per_fold_f1": [
+        null,
+        null,
+        null
+      ],
+      "run_id": "stage0-7g-tissue-probe-P4",
+      "tissue_macro_f1": null,
+      "tissue_macro_f1_std": null
+    },
+    {
+      "arm": "P5-epochs-30",
+      "eval_mode": "fusion_full",
+      "n_folds": 3,
+      "panel": "65k prefix",
+      "per_fold_f1": [
+        0.3045359121961098,
+        0.4036585258944274,
+        0.36108047808312727
+      ],
+      "run_id": "stage0-7g-tissue-probe-P5",
+      "tissue_macro_f1": 0.3564249720578882,
+      "tissue_macro_f1_std": 0.04972502829420766
+    },
+    {
+      "arm": "P5-epochs-30",
+      "eval_mode": "mbs_e2e",
+      "n_folds": 3,
+      "panel": "65k prefix",
+      "per_fold_f1": [
+        0.7032585724836533,
+        0.6285470790546605,
+        0.6899310396449471
+      ],
+      "run_id": "stage0-7g-tissue-probe-P5",
+      "tissue_macro_f1": 0.6739122303944202,
+      "tissue_macro_f1_std": 0.039848506872293
+    },
+    {
+      "arm": "P2-G",
+      "eval_mode": "fusion_full",
+      "n_folds": 3,
+      "panel": "gene-linked",
+      "per_fold_f1": [
+        0.32096542301562914,
+        0.40246499700355304,
+        0.4161844471381233
+      ],
+      "run_id": "stage0-7g-gene-probe-P2-G",
+      "tissue_macro_f1": 0.3798716223857685,
+      "tissue_macro_f1_std": 0.051473401589313045
+    },
+    {
+      "arm": "P2-G",
+      "eval_mode": "mbs_e2e",
+      "n_folds": 3,
+      "panel": "gene-linked",
+      "per_fold_f1": [
+        0.6934659697198496,
+        0.6482633089927422,
+        0.7044958950135133
+      ],
+      "run_id": "stage0-7g-gene-probe-P2-G",
+      "tissue_macro_f1": 0.6820750579087017,
+      "tissue_macro_f1_std": 0.029796653949107556
+    },
+    {
+      "arm": "P4-G",
+      "eval_mode": "fusion_full",
+      "n_folds": 3,
+      "panel": "gene-linked",
+      "per_fold_f1": [
+        0.31856692018756033,
+        0.40458100964402033,
+        0.40023191323824797
+      ],
+      "run_id": "stage0-7g-gene-probe-P4-G",
+      "tissue_macro_f1": 0.37445994768994284,
+      "tissue_macro_f1_std": 0.04845360205829123
+    },
+    {
+      "arm": "P4-G",
+      "eval_mode": "mbs_e2e",
+      "n_folds": 3,
+      "panel": "gene-linked",
+      "per_fold_f1": [
+        0.7020947546431862,
+        0.6368405141384236,
+        0.7449048813467178
+      ],
+      "run_id": "stage0-7g-gene-probe-P4-G",
+      "tissue_macro_f1": 0.6946133833761091,
+      "tissue_macro_f1_std": 0.05441925258637011
+    },
+    {
+      "arm": "P5-G-mean",
+      "eval_mode": "mbs_e2e",
+      "n_folds": 3,
+      "panel": "gene-linked",
+      "per_fold_f1": [
+        0.6665606375218779,
+        0.6465671840697211,
+        0.7042836978193389
+      ],
+      "run_id": "stage0-7g-gene-probe-P5-G-mean",
+      "tissue_macro_f1": 0.6724705064703126,
+      "tissue_macro_f1_std": 0.0293085977674335
+    },
+    {
+      "arm": "C-mvalue-enet",
+      "eval_mode": "classical",
+      "n_folds": 3,
+      "panel": "65k prefix",
+      "per_fold_f1": [
+        0.30279626878569504,
+        0.3350351315316885,
+        0.364420394422702
+      ],
+      "run_id": "",
+      "tissue_macro_f1": 0.3340839315800285,
+      "tissue_macro_f1_std": 0.030823072545455844
+    },
+    {
+      "arm": "C-mvalue-enet-G",
+      "eval_mode": "classical",
+      "n_folds": 0,
+      "panel": "gene-linked",
+      "per_fold_f1": [
+        null,
+        null,
+        null
+      ],
+      "run_id": "",
+      "tissue_macro_f1": null,
+      "tissue_macro_f1_std": null
+    }
+  ]
+}

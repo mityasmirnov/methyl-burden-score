@@ -13,6 +13,7 @@ from mbs.training.locus_region_gene import VALID_REGION_SYSTEMS, region_systems_
 __all__ = (
     "LocusGeneIndex",
     "build_locus_gene_index",
+    "locus_gene_col_filter",
     "load_graph_tables",
     "region_systems_from_arm",
 )
@@ -132,6 +133,24 @@ def build_locus_gene_index(
         edge_col_index=edge_col,
         edge_gene_index=edge_gene,
         n_study_loci=n_study_loci,
+    )
+
+
+def locus_gene_col_filter(locus_gene: LocusGeneIndex, cols: np.ndarray) -> LocusGeneIndex:
+    """Keep only edges whose study column is in ``cols`` (7G′ gene_cols parity)."""
+    allowed = frozenset(int(c) for c in np.asarray(cols, dtype=np.int64).tolist())
+    if not allowed:
+        raise ValueError("cols must be non-empty")
+    mask = np.fromiter(
+        (int(c) in allowed for c in locus_gene.edge_col_index),
+        dtype=bool,
+        count=locus_gene.n_edges,
+    )
+    return LocusGeneIndex(
+        gene_ids=locus_gene.gene_ids,
+        edge_col_index=locus_gene.edge_col_index[mask],
+        edge_gene_index=locus_gene.edge_gene_index[mask],
+        n_study_loci=locus_gene.n_study_loci,
     )
 
 

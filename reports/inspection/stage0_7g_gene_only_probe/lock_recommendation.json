@@ -1,0 +1,10 @@
+{
+  "best_classical_arm": null,
+  "cascade_clearly_ahead": null,
+  "locked_cascade_arm": "P4-G",
+  "max_epochs": 15,
+  "pooling_cpg": "mean",
+  "pooling_region": "mean",
+  "primary_metric": "mbs_e2e.metrics.tissue.macro_f1",
+  "recommend_encoder_parity": false
+}

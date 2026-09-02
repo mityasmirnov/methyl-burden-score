@@ -72,7 +72,7 @@ from mbs.training.flat_region_features import (
     flat_region_input_dim,
     gather_flat_region_features,
 )
-from mbs.training.cascade_assign import build_cascade_assignment
+from mbs.training.cascade_assign import build_cascade_assignment, gene_linked_col_index
 from mbs.training.level1_norm import (
     Level1NormParams,
     fit_level1_from_betas,
@@ -83,6 +83,7 @@ from mbs.training.locus_gene import (
     LocusGeneIndex,
     build_locus_gene_index,
     load_graph_tables,
+    locus_gene_col_filter,
     region_systems_from_arm,
 )
 from mbs.training.multitask import MultitaskHeads, masked_multitask_loss
@@ -1260,6 +1261,26 @@ def train_flat_baseline(
             max_loci=max_loci,
             region_systems=region_systems,
         )
+        gene_linked_only = bool(train_cfg.get("gene_linked_only", False))
+        if gene_linked_only:
+            genes_path = data_root / "canonical" / "graphs" / graph_id / "genes.parquet"
+            genes_df = (
+                pd.read_parquet(genes_path) if genes_path.is_file() else pd.DataFrame()
+            )
+            cascade_assignment = build_cascade_assignment(
+                locus_index=locus_index,
+                locus_region_edges=lr_edges,
+                regions=regions,
+                genes=genes_df,
+                max_loci=max_loci,
+            )
+            gene_cols = gene_linked_col_index(cascade_assignment)
+            locus_gene = locus_gene_col_filter(locus_gene, gene_cols)
+            print(  # noqa: T201
+                f"[flat] gene_linked_only panel: {gene_cols.size} CpG columns, "
+                f"{locus_gene.n_edges} edges",
+                flush=True,
+            )
         if topology == "flat_region":
             genes_path = data_root / "canonical" / "graphs" / graph_id / "genes.parquet"
             genes_df = (

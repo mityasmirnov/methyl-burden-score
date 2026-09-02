@@ -32,6 +32,21 @@ if [[ -f "$LATEST_PID" ]]; then
 else
   printf 'pidfile: (none)\n'
 fi
+RUNNING="$(pgrep -af 'run_7g_gene_only_probe.py' 2>/dev/null | grep -v status_7g || true)"
+if [[ -n "$RUNNING" ]]; then
+  printf '%s\n' '--- active arm jobs ---'
+  printf '%s\n' "$RUNNING"
+fi
+CLASSICAL_LOG="$REPO_ROOT/scratch/logs/gene_probe_classical_g.log"
+if [[ -f "$CLASSICAL_LOG" ]]; then
+  printf 'classical log: %s\n' "$CLASSICAL_LOG"
+  tail -n 3 "$CLASSICAL_LOG" 2>/dev/null || true
+fi
+if [[ -f "$REPORT/per_arm/C-mvalue-classical-G.json" ]]; then
+  printf 'classical per_arm: present\n'
+else
+  printf 'classical per_arm: pending\n'
+fi
 if [[ -f "$LATEST_LOG" ]]; then
   printf 'log: %s\n' "$LATEST_LOG"
   printf '%s\n' '--- last 20 log lines ---'

@@ -1,0 +1,26 @@
+# 7G′ optional encoder parity probe (Flat-G + Hier-G on gene_cols).
+split_id: hub-ats-7e-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+milestone: 7G-encoder-parity
+report_dir: reports/inspection/stage0_7g_encoder_parity
+lock_from_stage_a: reports/inspection/stage0_7g_gene_only_probe/lock_recommendation.json
+cv_budget:
+  max_loci: 65536
+  max_epochs: 15
+experiment:
+  name: stage0_7g_encoder_parity
+  seed: 42
+  stage: 0
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-age-tissue-sex-full-v1
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+arms:
+  - id: Flat-G
+    kind: flat_train
+    run_prefix: stage0-7g-encoder-parity-Flat-G
+    config: configs/experiment/stage0_7g_encoder_parity_flat_g.yaml
+  - id: Hier-G
+    kind: hier_train
+    run_prefix: stage0-7g-encoder-parity-Hier-G
+    config: configs/experiment/stage0_7g_encoder_parity_hier_g.yaml

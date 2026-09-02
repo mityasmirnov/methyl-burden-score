@@ -18,10 +18,9 @@ from mbs.matrix.store import matrix_store_paths, read_locus_index
 from mbs.paths import DataPaths
 from mbs.training.cascade_assign import build_cascade_assignment, gene_linked_col_index
 from mbs.training.classical_mvalue import run_classical_mvalue
-from mbs.training.dev_cv import load_frozen_folds
+from mbs.training.dev_cv import load_frozen_folds, samples_from_phenotype_table
 from mbs.training.loop import load_experiment_config
 from mbs.training.locus_gene import load_graph_tables
-from mbs.training.phenotypes import load_multitask_phenotypes
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "configs/experiment/stage0_7g_gene_only_probe.yaml"
@@ -130,6 +129,34 @@ def write_per_arm(report_dir: Path, arm_id: str, payload: dict[str, Any]) -> Non
     write_json(per_arm / f"{arm_id}.json", payload)
 
 
+def _slim_cascade_fold(blob: dict[str, Any]) -> dict[str, Any]:
+    """Drop val_history and ROC curves from fold metrics for compact per_arm JSON."""
+    out = dict(blob)
+    ckpt = out.get("checkpoint_selection")
+    if isinstance(ckpt, dict) and "val_history" in ckpt:
+        out["checkpoint_selection"] = {k: v for k, v in ckpt.items() if k != "val_history"}
+    evaluations = out.get("evaluations")
+    if isinstance(evaluations, dict):
+        slim_eval: dict[str, Any] = {}
+        for key, ev in evaluations.items():
+            if not isinstance(ev, dict):
+                slim_eval[key] = ev
+                continue
+            slim_ev = dict(ev)
+            metrics = slim_ev.get("metrics")
+            if isinstance(metrics, dict):
+                slim_m = dict(metrics)
+                slim_m.pop("tissue_roc", None)
+                slim_m.pop("tissue_by_study", None)
+                sex = slim_m.get("sex")
+                if isinstance(sex, dict):
+                    slim_m["sex"] = {k: v for k, v in sex.items() if k not in {"fpr", "tpr"}}
+                slim_ev["metrics"] = slim_m
+            slim_eval[key] = slim_ev
+        out["evaluations"] = slim_eval
+    return out
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
@@ -162,7 +189,7 @@ def main() -> None:
     )
     pheno_path = pheno_rel if pheno_rel.is_absolute() else paths.data_root / pheno_rel
     ont_path = paths.data_root / DEFAULT_ONTOLOGY
-    _, phenotypes = load_multitask_phenotypes(pheno_path)
+    _samples, phenotypes = samples_from_phenotype_table(pheno_path, ontology_path=ont_path)
 
     requested = set(args.arm)
     known = {str(a["id"]) for a in arms}
@@ -180,7 +207,7 @@ def main() -> None:
         if arm.get("optional"):
             gate_arm = str(arm.get("gate_arm", ""))
             ref_arm = str(arm.get("gate_reference_arm", ""))
-            metric = str(arm.get("gate_metric", "mbs_e2e.tissue.macro_f1"))
+            metric = str(arm.get("gate_metric", "mbs_e2e.metrics.tissue.macro_f1"))
             max_delta = float(arm.get("gate_max_delta", 0.03))
             gate_folds = completed.get(gate_arm) or load_cascade_arm_folds(
                 paths, str((next(a for a in arms if str(a["id"]) == gate_arm))["run_id"])
@@ -223,7 +250,7 @@ def main() -> None:
                     "arm_id": arm_id,
                     "kind": kind,
                     "run_id": arm["run_id"],
-                    "folds": folds,
+                    "folds": [_slim_cascade_fold(f) for f in folds],
                     "mean_mbs_e2e_tissue_f1": _mean_metric(folds, "mbs_e2e.metrics.tissue.macro_f1"),
                     "mean_mbs_linear_probe_tissue_f1": _mean_metric(
                         folds, "mbs_linear_probe.metrics.tissue.macro_f1"

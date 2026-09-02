@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from mbs.annotation.manifest import write_json
+from mbs.inspection.arm_glossary import arm_description, render_arm_glossary_section
+from mbs.inspection.comparable_metrics import load_comparable_rows, render_comparable_ranking_section
 from mbs.paths import DataPaths
 from mbs.training.dev_cv import load_frozen_folds, samples_from_phenotype_table
 from mbs.training.loop import load_experiment_config
@@ -28,15 +30,23 @@ DEFAULT_ONTOLOGY = "canonical/phenotypes/tissue_ontology_age_tissue_sex_full_v1.
 F1_GATE = 0.20
 
 ARM_LABELS = {
-    "P0-baseline": "Replay 7G N-cascade-l1 (late fusion)",
-    "P1-fusion-tissue-heavy": "Balanced logistic + PCA(32) on saved scores",
-    "P2-end2end-tissue-weight": "tissue_loss_weight=3, age_loss_weight=0.3",
-    "P3-region-head-bypass": "T-mean-region transparent (no cascade train)",
-    "P2-fusion-balanced": "P2 scores + balanced logistic fusion",
-    "P4-pooling-mean": "P2 weights + mean/mean pooling",
-    "P4-fusion-balanced": "P4 scores + balanced logistic fusion",
-    "P5-epochs-30": "P2 weights + 30-epoch cap + early stop",
-    "P5-fusion-balanced": "P5 scores + balanced logistic fusion",
+    arm_id: arm_description(arm_id)
+    for arm_id in (
+        "P0-baseline",
+        "P1-fusion-tissue-heavy",
+        "P2-end2end-tissue-weight",
+        "P3-region-head-bypass",
+        "P2-fusion-balanced",
+        "P4-pooling-mean",
+        "P4-fusion-balanced",
+        "P5-epochs-30",
+        "P5-fusion-balanced",
+        "C-mvalue-enet",
+        "C-mvalue-enet-G",
+        "C-mvalue-enetS",
+        "P2-G",
+        "P4-G",
+    )
 }
 
 
@@ -275,6 +285,7 @@ def write_analysis(
     ckpt_rows: list[dict[str, Any]],
     locked_comparator: dict[str, Any] | None,
     cfg: dict[str, Any],
+    comparable_rows: list[dict[str, Any]] | None = None,
 ) -> None:
     lines = [
         "# Stage 0 - 7G cascade tissue probe (P0-P5)",
@@ -282,11 +293,26 @@ def write_analysis(
         "Frozen split `hub-ats-7e-3fold-v1`; **65536 loci / 1 restart**. "
         "P0-P4 use 15 epochs; P5 uses a 30-epoch ceiling with validation-tissue early stopping.",
         "",
+    ]
+    glossary_ids = [a["arm_id"] for a in arm_means] + [
+        "C-mvalue-enet",
+        "C-mvalue-enet-G",
+        "C-mvalue-enetS",
+        "P2-G",
+        "P4-G",
+        "N-cascade-l1",
+    ]
+    lines.extend(render_arm_glossary_section(glossary_ids))
+    if comparable_rows:
+        lines.extend(render_comparable_ranking_section(comparable_rows))
+    lines.extend(
+        [
         "## Per-arm summary",
         "",
         "| Arm | Tissue macro-F1 | Balanced acc | Sex AUROC | Age MAE | Age R² |",
         "|-----|-----------------|--------------|-----------|---------|--------|",
-    ]
+        ]
+    )
     for a in arm_means:
         lines.append(
             f"| {a['arm_id']} | {_fmt(a.get('tissue_macro_f1'))} | "
@@ -309,6 +335,9 @@ def write_analysis(
     lines.extend(["", "## Per-fold tissue macro-F1", ""])
     for a in arm_means:
         lines.append(f"### {a['arm_id']}")
+        lines.append("")
+        lines.append(f"_{ARM_LABELS.get(a['arm_id'], arm_description(a['arm_id']))}_")
+        lines.append("")
         for fold in a.get("per_fold") or []:
             lines.append(
                 f"- fold {fold.get('fold_id')}: F1={_fmt(fold.get('tissue_macro_f1'))}, "
@@ -421,6 +450,12 @@ def main() -> None:
     study_rows = study_composition_table(fold_pack, phenotypes)
     ckpt_rows = checkpoint_audit(arm_means_map)
     locked_comparator = load_locked_tissue_comparator(report_dir)
+    classical_path = report_dir.parent / "stage0_7g_methylation_eval" / "classical_baselines.json"
+    comparable_rows = load_comparable_rows(
+        paths.artifact_root,
+        classical_baselines_path=classical_path,
+    )
+    write_json(report_dir / "comparable_ranking.json", {"rows": comparable_rows})
 
     write_json(
         report_dir / "arm_means.json",
@@ -445,6 +480,7 @@ def main() -> None:
         ckpt_rows=ckpt_rows,
         locked_comparator=locked_comparator,
         cfg=cfg,
+        comparable_rows=comparable_rows,
     )
     print(f"wrote {report_dir / 'analysis.md'}", flush=True)
 

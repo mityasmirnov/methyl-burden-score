@@ -289,6 +289,11 @@ def run_classical_mvalue(
             strict=True,
         )
     }
+    if phenotypes and isinstance(phenotypes[0], (str, dict)):
+        raise TypeError(
+            "phenotypes must be SamplePhenotype records; "
+            "use samples_from_phenotype_table() and unpack as (_, phenotypes)"
+        )
     pheno_ids = {p.sample_id for p in phenotypes}
     print(f"[classical] loading betas[:, :{n_cols}] once…", flush=True)
     betas = open_betas_zarr(matrix_paths.betas_path)

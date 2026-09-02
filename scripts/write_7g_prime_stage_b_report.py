@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 from mbs.annotation.manifest import write_json
+from mbs.inspection.arm_glossary import render_arm_glossary_section
 from mbs.paths import DataPaths
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,17 +27,36 @@ def main() -> None:
     if not summary_path.is_file():
         raise FileNotFoundError(summary_path)
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    stage_b_arms = [
+        "C-mvalue-enetS",
+        "N-cascade-S",
+        "N-light-type",
+        "N-full",
+        "N-mbs-direct-only",
+    ]
+    lock = summary.get("lock_from_stage_a") or {}
+    if lock.get("locked_cascade_arm"):
+        stage_b_arms.insert(0, str(lock["locked_cascade_arm"]))
     lines = [
         "# 7G′ Stage B — fold-selected panel + full model",
         "",
-        "Arms: `C-mvalue-enetS`, `N-cascade-S`, `N-light-type` (FlatDeepSetRegion), "
-        "`N-full`, `N-mbs-direct-only`.",
+        "Primary comparison: identical fold-selected CpG panels across classical and neural arms.",
         "",
-        f"Lock from Stage A: `{json.dumps(summary.get('lock_from_stage_a', {}), sort_keys=True)}`",
+    ]
+    lines.extend(
+        render_arm_glossary_section(
+            stage_b_arms,
+            extra_eval_modes=("fusion_full", "fusion_mbs_direct"),
+        )
+    )
+    lines.extend(
+        [
+        f"Lock from Stage A: `{json.dumps(lock, sort_keys=True)}`",
         "",
         "## Per-fold panels",
         "",
     ]
+    )
     for fold in summary.get("folds") or []:
         panel = fold.get("panel") or {}
         lines.append(

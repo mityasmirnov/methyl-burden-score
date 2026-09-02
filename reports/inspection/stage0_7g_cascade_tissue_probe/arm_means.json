@@ -4,7 +4,7 @@
       "age_mae_years": 8.44121099584143,
       "age_r2": 0.7815138623580463,
       "arm_id": "P0-baseline",
-      "label": "Replay 7G N-cascade-l1 (late fusion)",
+      "label": "Replay 7G product cascade (`N-cascade-l1`): train + **late fusion** `[orphan_rbs | mbs | direct_contrib]` on all 65\u202f536 prefix loci.",
       "n_folds": 3,
       "per_fold": [
         {
@@ -44,7 +44,7 @@
       "age_mae_years": 8.44121099584143,
       "age_r2": 0.7815138623580463,
       "arm_id": "P1-fusion-tissue-heavy",
-      "label": "Balanced logistic + PCA(32) on saved scores",
+      "label": "**Fusion-only** on saved P0 scores: balanced logistic tissue head + PCA(32); no retrain.",
       "n_folds": 3,
       "per_fold": [
         {
@@ -84,7 +84,7 @@
       "age_mae_years": 8.682160519195527,
       "age_r2": 0.7669452095468814,
       "arm_id": "P2-end2end-tissue-weight",
-      "label": "tissue_loss_weight=3, age_loss_weight=0.3",
+      "label": "Cascade **retrain** with tissue_loss_weight=3, age_loss_weight=0.3; test via **late fusion** (not MBS-only).",
       "n_folds": 3,
       "per_fold": [
         {
@@ -95,144 +95,7 @@
             "has_validation": true,
             "max_epochs": 15,
             "n_val": 1443,
-            "selection": "validation_tissue_macro_f1_then_age_mae",
-            "val_history": [
-              {
-                "age_mae": 25.043643119168237,
-                "epoch": 1,
-                "rank": [
-                  0.19517392760865926,
-                  -25.043643119168237
-                ],
-                "tissue_macro_f1": 0.19517392760865926
-              },
-              {
-                "age_mae": 24.110976116652978,
-                "epoch": 2,
-                "rank": [
-                  0.16823880571169633,
-                  -24.110976116652978
-                ],
-                "tissue_macro_f1": 0.16823880571169633
-              },
-              {
-                "age_mae": 22.4629020761459,
-                "epoch": 3,
-                "rank": [
-                  0.2032980780847188,
-                  -22.4629020761459
-                ],
-                "tissue_macro_f1": 0.2032980780847188
-              },
-              {
-                "age_mae": 19.660587093705974,
-                "epoch": 4,
-                "rank": [
-                  0.166117824438655,
-                  -19.660587093705974
-                ],
-                "tissue_macro_f1": 0.166117824438655
-              },
-              {
-                "age_mae": 18.470215002501675,
-                "epoch": 5,
-                "rank": [
-                  0.14888423980317791,
-                  -18.470215002501675
-                ],
-                "tissue_macro_f1": 0.14888423980317791
-              },
-              {
-                "age_mae": 17.454923969398067,
-                "epoch": 6,
-                "rank": [
-                  0.1759874236767422,
-                  -17.454923969398067
-                ],
-                "tissue_macro_f1": 0.1759874236767422
-              },
-              {
-                "age_mae": 17.278990861080064,
-                "epoch": 7,
-                "rank": [
-                  0.20761769743483258,
-                  -17.278990861080064
-                ],
-                "tissue_macro_f1": 0.20761769743483258
-              },
-              {
-                "age_mae": 15.452961004777698,
-                "epoch": 8,
-                "rank": [
-                  0.19125869220859695,
-                  -15.452961004777698
-                ],
-                "tissue_macro_f1": 0.19125869220859695
-              },
-              {
-                "age_mae": 14.125649157839575,
-                "epoch": 9,
-                "rank": [
-                  0.19293779720748233,
-                  -14.125649157839575
-                ],
-                "tissue_macro_f1": 0.19293779720748233
-              },
-              {
-                "age_mae": 15.145237087683363,
-                "epoch": 10,
-                "rank": [
-                  0.16640483776164625,
-                  -15.145237087683363
-                ],
-                "tissue_macro_f1": 0.16640483776164625
-              },
-              {
-                "age_mae": 14.66527013793882,
-                "epoch": 11,
-                "rank": [
-                  0.18696638094068946,
-                  -14.66527013793882
-                ],
-                "tissue_macro_f1": 0.18696638094068946
-              },
-              {
-                "age_mae": 14.007441834516328,
-                "epoch": 12,
-                "rank": [
-                  0.20325565920696212,
-                  -14.007441834516328
-                ],
-                "tissue_macro_f1": 0.20325565920696212
-              },
-              {
-                "age_mae": 13.439018971102456,
-                "epoch": 13,
-                "rank": [
-                  0.17010741456666933,
-                  -13.439018971102456
-                ],
-                "tissue_macro_f1": 0.17010741456666933
-              },
-              {
-                "age_mae": 13.446492105713867,
-                "epoch": 14,
-                "rank": [
-                  0.1612312226315843,
-                  -13.446492105713867
-                ],
-                "tissue_macro_f1": 0.1612312226315843
-              },
-              {
-                "age_mae": 13.477788769565322,
-                "epoch": 15,
-                "rank": [
-                  0.22858665039008363,
-                  -13.477788769565322
-                ],
-                "tissue_macro_f1": 0.22858665039008363
-              }
-            ]
+            "selection": "validation_tissue_macro_f1_then_age_mae"
           },
           "fold_id": 0,
           "sex_auroc": 0.8179021033321362,
@@ -247,144 +110,7 @@
             "has_validation": true,
             "max_epochs": 15,
             "n_val": 1294,
-            "selection": "validation_tissue_macro_f1_then_age_mae",
-            "val_history": [
-              {
-                "age_mae": 23.504999103524895,
-                "epoch": 1,
-                "rank": [
-                  0.08744963461787962,
-                  -23.504999103524895
-                ],
-                "tissue_macro_f1": 0.08744963461787962
-              },
-              {
-                "age_mae": 25.312139104796458,
-                "epoch": 2,
-                "rank": [
-                  0.103507541790573,
-                  -25.312139104796458
-                ],
-                "tissue_macro_f1": 0.103507541790573
-              },
-              {
-                "age_mae": 22.123016818921066,
-                "epoch": 3,
-                "rank": [
-                  0.08687008010846162,
-                  -22.123016818921066
-                ],
-                "tissue_macro_f1": 0.08687008010846162
-              },
-              {
-                "age_mae": 21.234889698989246,
-                "epoch": 4,
-                "rank": [
-                  0.11126587776007445,
-                  -21.234889698989246
-                ],
-                "tissue_macro_f1": 0.11126587776007445
-              },
-              {
-                "age_mae": 19.166561802021608,
-                "epoch": 5,
-                "rank": [
-                  0.10421472449938034,
-                  -19.166561802021608
-                ],
-                "tissue_macro_f1": 0.10421472449938034
-              },
-              {
-                "age_mae": 19.8186101959998,
-                "epoch": 6,
-                "rank": [
-                  0.10863099130720416,
-                  -19.8186101959998
-                ],
-                "tissue_macro_f1": 0.10863099130720416
-              },
-              {
-                "age_mae": 16.918575963299663,
-                "epoch": 7,
-                "rank": [
-                  0.11166562107151186,
-                  -16.918575963299663
-                ],
-                "tissue_macro_f1": 0.11166562107151186
-              },
-              {
-                "age_mae": 16.87841587388501,
-                "epoch": 8,
-                "rank": [
-                  0.10327464656529042,
-                  -16.87841587388501
-                ],
-                "tissue_macro_f1": 0.10327464656529042
-              },
-              {
-                "age_mae": 15.290672088547934,
-                "epoch": 9,
-                "rank": [
-                  0.11025857962114152,
-                  -15.290672088547934
-                ],
-                "tissue_macro_f1": 0.11025857962114152
-              },
-              {
-                "age_mae": 15.619928345918247,
-                "epoch": 10,
-                "rank": [
-                  0.11049089158687679,
-                  -15.619928345918247
-                ],
-                "tissue_macro_f1": 0.11049089158687679
-              },
-              {
-                "age_mae": 15.021343011283996,
-                "epoch": 11,
-                "rank": [
-                  0.10505736089174654,
-                  -15.021343011283996
-                ],
-                "tissue_macro_f1": 0.10505736089174654
-              },
-              {
-                "age_mae": 15.303136466416904,
-                "epoch": 12,
-                "rank": [
-                  0.11803965381390978,
-                  -15.303136466416904
-                ],
-                "tissue_macro_f1": 0.11803965381390978
-              },
-              {
-                "age_mae": 13.288011632994843,
-                "epoch": 13,
-                "rank": [
-                  0.113481102282894,
-                  -13.288011632994843
-                ],
-                "tissue_macro_f1": 0.113481102282894
-              },
-              {
-                "age_mae": 13.042489516097008,
-                "epoch": 14,
-                "rank": [
-                  0.10051862320647685,
-                  -13.042489516097008
-                ],
-                "tissue_macro_f1": 0.10051862320647685
-              },
-              {
-                "age_mae": 12.362385011063227,
-                "epoch": 15,
-                "rank": [
-                  0.11270797034576992,
-                  -12.362385011063227
-                ],
-                "tissue_macro_f1": 0.11270797034576992
-              }
-            ]
+            "selection": "validation_tissue_macro_f1_then_age_mae"
           },
           "fold_id": 1,
           "sex_auroc": 0.9315236480911174,
@@ -399,144 +125,7 @@
             "has_validation": true,
             "max_epochs": 15,
             "n_val": 1358,
-            "selection": "validation_tissue_macro_f1_then_age_mae",
-            "val_history": [
-              {
-                "age_mae": 15.747271458363736,
-                "epoch": 1,
-                "rank": [
-                  0.17956963753025817,
-                  -15.747271458363736
-                ],
-                "tissue_macro_f1": 0.17956963753025817
-              },
-              {
-                "age_mae": 13.036655152614259,
-                "epoch": 2,
-                "rank": [
-                  0.2022963021283337,
-                  -13.036655152614259
-                ],
-                "tissue_macro_f1": 0.2022963021283337
-              },
-              {
-                "age_mae": 12.103365588768568,
-                "epoch": 3,
-                "rank": [
-                  0.20242676711031213,
-                  -12.103365588768568
-                ],
-                "tissue_macro_f1": 0.20242676711031213
-              },
-              {
-                "age_mae": 11.822132892058862,
-                "epoch": 4,
-                "rank": [
-                  0.22520992844645293,
-                  -11.822132892058862
-                ],
-                "tissue_macro_f1": 0.22520992844645293
-              },
-              {
-                "age_mae": 11.29482367246482,
-                "epoch": 5,
-                "rank": [
-                  0.21269739450982247,
-                  -11.29482367246482
-                ],
-                "tissue_macro_f1": 0.21269739450982247
-              },
-              {
-                "age_mae": 10.921486461409767,
-                "epoch": 6,
-                "rank": [
-                  0.2449845621875695,
-                  -10.921486461409767
-                ],
-                "tissue_macro_f1": 0.2449845621875695
-              },
-              {
-                "age_mae": 10.379503469494855,
-                "epoch": 7,
-                "rank": [
-                  0.23749129850440484,
-                  -10.379503469494855
-                ],
-                "tissue_macro_f1": 0.23749129850440484
-              },
-              {
-                "age_mae": 10.102595035590934,
-                "epoch": 8,
-                "rank": [
-                  0.20792804486226663,
-                  -10.102595035590934
-                ],
-                "tissue_macro_f1": 0.20792804486226663
-              },
-              {
-                "age_mae": 9.983051222858393,
-                "epoch": 9,
-                "rank": [
-                  0.25269163419020246,
-                  -9.983051222858393
-                ],
-                "tissue_macro_f1": 0.25269163419020246
-              },
-              {
-                "age_mae": 9.459613714841314,
-                "epoch": 10,
-                "rank": [
-                  0.22338935209707514,
-                  -9.459613714841314
-                ],
-                "tissue_macro_f1": 0.22338935209707514
-              },
-              {
-                "age_mae": 9.23575489051646,
-                "epoch": 11,
-                "rank": [
-                  0.22834480865407103,
-                  -9.23575489051646
-                ],
-                "tissue_macro_f1": 0.22834480865407103
-              },
-              {
-                "age_mae": 9.494974460171347,
-                "epoch": 12,
-                "rank": [
-                  0.20633001036061546,
-                  -9.494974460171347
-                ],
-                "tissue_macro_f1": 0.20633001036061546
-              },
-              {
-                "age_mae": 8.946004864588225,
-                "epoch": 13,
-                "rank": [
-                  0.24227557931202745,
-                  -8.946004864588225
-                ],
-                "tissue_macro_f1": 0.24227557931202745
-              },
-              {
-                "age_mae": 8.957558849944833,
-                "epoch": 14,
-                "rank": [
-                  0.2398662157215252,
-                  -8.957558849944833
-                ],
-                "tissue_macro_f1": 0.2398662157215252
-              },
-              {
-                "age_mae": 8.978820793920919,
-                "epoch": 15,
-                "rank": [
-                  0.22039539495816332,
-                  -8.978820793920919
-                ],
-                "tissue_macro_f1": 0.22039539495816332
-              }
-            ]
+            "selection": "validation_tissue_macro_f1_then_age_mae"
           },
           "fold_id": 2,
           "sex_auroc": 0.9068271519635358,
@@ -550,10 +139,130 @@
       "tissue_macro_f1_std": 0.05871016042929402
     },
     {
+      "age_mae_years": 8.682160519195527,
+      "age_r2": 0.7669452095468814,
+      "arm_id": "P2-fusion-balanced",
+      "label": "P2 saved scores + balanced logistic late fusion (no retrain).",
+      "n_folds": 3,
+      "per_fold": [
+        {
+          "age_mae": 9.923280125249159,
+          "age_r2": 0.7496974749074048,
+          "checkpoint_selection": null,
+          "fold_id": 0,
+          "sex_auroc": 0.8179021033321362,
+          "tissue_balanced_accuracy": 0.3601369177964278,
+          "tissue_macro_f1": 0.30945138098199143
+        },
+        {
+          "age_mae": 7.828068344388831,
+          "age_r2": 0.748469798890179,
+          "checkpoint_selection": null,
+          "fold_id": 1,
+          "sex_auroc": 0.9315236480911174,
+          "tissue_balanced_accuracy": 0.4709391530566619,
+          "tissue_macro_f1": 0.40882413944595514
+        },
+        {
+          "age_mae": 8.29513308794859,
+          "age_r2": 0.8026683548430603,
+          "checkpoint_selection": null,
+          "fold_id": 2,
+          "sex_auroc": 0.9068271519635358,
+          "tissue_balanced_accuracy": 0.4531078941545824,
+          "tissue_macro_f1": 0.43703214032924254
+        }
+      ],
+      "sex_auroc": 0.8854176344622632,
+      "tissue_balanced_accuracy": 0.428061321669224,
+      "tissue_macro_f1": 0.3851025535857297,
+      "tissue_macro_f1_std": 0.06701677227156151
+    },
+    {
+      "age_mae_years": 8.682160519195527,
+      "age_r2": 0.7669452095468814,
+      "arm_id": "P2-fusion-logistic",
+      "label": "P2-fusion-logistic",
+      "n_folds": 3,
+      "per_fold": [
+        {
+          "age_mae": 9.923280125249159,
+          "age_r2": 0.7496974749074048,
+          "checkpoint_selection": null,
+          "fold_id": 0,
+          "sex_auroc": 0.8179021033321362,
+          "tissue_balanced_accuracy": 0.3619130609890398,
+          "tissue_macro_f1": 0.3082188408562417
+        },
+        {
+          "age_mae": 7.828068344388831,
+          "age_r2": 0.748469798890179,
+          "checkpoint_selection": null,
+          "fold_id": 1,
+          "sex_auroc": 0.9315236480911174,
+          "tissue_balanced_accuracy": 0.4725019784401327,
+          "tissue_macro_f1": 0.4074238911011689
+        },
+        {
+          "age_mae": 8.29513308794859,
+          "age_r2": 0.8026683548430603,
+          "checkpoint_selection": null,
+          "fold_id": 2,
+          "sex_auroc": 0.9068271519635358,
+          "tissue_balanced_accuracy": 0.43017558040604764,
+          "tissue_macro_f1": 0.41222189278981647
+        }
+      ],
+      "sex_auroc": 0.8854176344622632,
+      "tissue_balanced_accuracy": 0.42153020661174007,
+      "tissue_macro_f1": 0.37595487491574237,
+      "tissue_macro_f1_std": 0.05871016042929402
+    },
+    {
+      "age_mae_years": 8.682160519195527,
+      "age_r2": 0.7669452095468814,
+      "arm_id": "P2-fusion-sgd",
+      "label": "P2-fusion-sgd",
+      "n_folds": 3,
+      "per_fold": [
+        {
+          "age_mae": 9.923280125249159,
+          "age_r2": 0.7496974749074048,
+          "checkpoint_selection": null,
+          "fold_id": 0,
+          "sex_auroc": 0.8179021033321362,
+          "tissue_balanced_accuracy": 0.3339366581226132,
+          "tissue_macro_f1": 0.2944169158095746
+        },
+        {
+          "age_mae": 7.828068344388831,
+          "age_r2": 0.748469798890179,
+          "checkpoint_selection": null,
+          "fold_id": 1,
+          "sex_auroc": 0.9315236480911174,
+          "tissue_balanced_accuracy": 0.38080798362215096,
+          "tissue_macro_f1": 0.3315464699328645
+        },
+        {
+          "age_mae": 8.29513308794859,
+          "age_r2": 0.8026683548430603,
+          "checkpoint_selection": null,
+          "fold_id": 2,
+          "sex_auroc": 0.9068271519635358,
+          "tissue_balanced_accuracy": 0.38474791655017787,
+          "tissue_macro_f1": 0.3579204175748435
+        }
+      ],
+      "sex_auroc": 0.8854176344622632,
+      "tissue_balanced_accuracy": 0.3664975194316473,
+      "tissue_macro_f1": 0.32796126777242757,
+      "tissue_macro_f1_std": 0.03190319639176112
+    },
+    {
       "age_mae_years": 7.946098900533088,
       "age_r2": 0.802346561433355,
       "arm_id": "P3-region-head-bypass",
-      "label": "T-mean-region transparent (no cascade train)",
+      "label": "Transparent **`T-mean-region`**: region-mean M-values \u2192 linear heads; no CascadeDeepSet training.",
       "n_folds": 3,
       "per_fold": [
         {
@@ -588,12 +297,416 @@
       "tissue_balanced_accuracy": 0.4243274976651959,
       "tissue_macro_f1": 0.3886659263189842,
       "tissue_macro_f1_std": 0.06123058400825806
+    },
+    {
+      "age_mae_years": 8.619772828257085,
+      "age_r2": 0.7718926454048849,
+      "arm_id": "P4-fusion-balanced",
+      "label": "P4 saved scores + balanced logistic late fusion.",
+      "n_folds": 3,
+      "per_fold": [
+        {
+          "age_mae": 9.916290941175756,
+          "age_r2": 0.7501485339920704,
+          "checkpoint_selection": null,
+          "fold_id": 0,
+          "sex_auroc": 0.8212795351380382,
+          "tissue_balanced_accuracy": 0.33341899490050136,
+          "tissue_macro_f1": 0.30217884624070507
+        },
+        {
+          "age_mae": 7.7744947404039,
+          "age_r2": 0.763132245353477,
+          "checkpoint_selection": null,
+          "fold_id": 1,
+          "sex_auroc": 0.9601720549397077,
+          "tissue_balanced_accuracy": 0.482921779422181,
+          "tissue_macro_f1": 0.41165091952040284
+        },
+        {
+          "age_mae": 8.168532803191605,
+          "age_r2": 0.8023971568691072,
+          "checkpoint_selection": null,
+          "fold_id": 2,
+          "sex_auroc": 0.9143626076489476,
+          "tissue_balanced_accuracy": 0.4271496720743194,
+          "tissue_macro_f1": 0.40980095743193395
+        }
+      ],
+      "sex_auroc": 0.8986047325755645,
+      "tissue_balanced_accuracy": 0.41449681546566725,
+      "tissue_macro_f1": 0.3745435743976806,
+      "tissue_macro_f1_std": 0.06267651873594225
+    },
+    {
+      "age_mae_years": 8.619772828257085,
+      "age_r2": 0.7718926454048849,
+      "arm_id": "P4-fusion-logistic",
+      "label": "P4-fusion-logistic",
+      "n_folds": 3,
+      "per_fold": [
+        {
+          "age_mae": 9.916290941175756,
+          "age_r2": 0.7501485339920704,
+          "checkpoint_selection": null,
+          "fold_id": 0,
+          "sex_auroc": 0.8212795351380382,
+          "tissue_balanced_accuracy": 0.33325827781847533,
+          "tissue_macro_f1": 0.3001969331267973
+        },
+        {
+          "age_mae": 7.7744947404039,
+          "age_r2": 0.763132245353477,
+          "checkpoint_selection": null,
+          "fold_id": 1,
+          "sex_auroc": 0.9601720549397077,
+          "tissue_balanced_accuracy": 0.4764766809834296,
+          "tissue_macro_f1": 0.39925217818623626
+        },
+        {
+          "age_mae": 8.168532803191605,
+          "age_r2": 0.8023971568691072,
+          "checkpoint_selection": null,
+          "fold_id": 2,
+          "sex_auroc": 0.9143626076489476,
+          "tissue_balanced_accuracy": 0.40333131112725207,
+          "tissue_macro_f1": 0.38039855990697097
+        }
+      ],
+      "sex_auroc": 0.8986047325755645,
+      "tissue_balanced_accuracy": 0.404355423309719,
+      "tissue_macro_f1": 0.3599492237400015,
+      "tissue_macro_f1_std": 0.05259863977042249
+    },
+    {
+      "age_mae_years": 8.619772828257085,
+      "age_r2": 0.7718926454048849,
+      "arm_id": "P4-fusion-sgd",
+      "label": "P4-fusion-sgd",
+      "n_folds": 3,
+      "per_fold": [
+        {
+          "age_mae": 9.916290941175756,
+          "age_r2": 0.7501485339920704,
+          "checkpoint_selection": null,
+          "fold_id": 0,
+          "sex_auroc": 0.8212795351380382,
+          "tissue_balanced_accuracy": 0.27805396320426884,
+          "tissue_macro_f1": 0.24029952315016556
+        },
+        {
+          "age_mae": 7.7744947404039,
+          "age_r2": 0.763132245353477,
+          "checkpoint_selection": null,
+          "fold_id": 1,
+          "sex_auroc": 0.9601720549397077,
+          "tissue_balanced_accuracy": 0.45013553141871737,
+          "tissue_macro_f1": 0.3820440279912951
+        },
+        {
+          "age_mae": 8.168532803191605,
+          "age_r2": 0.8023971568691072,
+          "checkpoint_selection": null,
+          "fold_id": 2,
+          "sex_auroc": 0.9143626076489476,
+          "tissue_balanced_accuracy": 0.3409133474741847,
+          "tissue_macro_f1": 0.3022421329739241
+        }
+      ],
+      "sex_auroc": 0.8986047325755645,
+      "tissue_balanced_accuracy": 0.3563676140323903,
+      "tissue_macro_f1": 0.3081952280384616,
+      "tissue_macro_f1_std": 0.07105952201358953
+    },
+    {
+      "age_mae_years": 8.619772828257085,
+      "age_r2": 0.7718926454048849,
+      "arm_id": "P4-pooling-mean",
+      "label": "Like P2 loss weights but **mean/mean** CpG\u2192region and region\u2192gene pooling; late-fusion test.",
+      "n_folds": 3,
+      "per_fold": [
+        {
+          "age_mae": 9.916290941175756,
+          "age_r2": 0.7501485339920704,
+          "checkpoint_selection": {
+            "best_epoch": 9,
+            "has_validation": true,
+            "max_epochs": 15,
+            "n_val": 1443,
+            "selection": "validation_tissue_macro_f1_then_age_mae"
+          },
+          "fold_id": 0,
+          "sex_auroc": 0.8212795351380382,
+          "tissue_balanced_accuracy": 0.33325827781847533,
+          "tissue_macro_f1": 0.3001969331267973
+        },
+        {
+          "age_mae": 7.7744947404039,
+          "age_r2": 0.763132245353477,
+          "checkpoint_selection": {
+            "best_epoch": 12,
+            "has_validation": true,
+            "max_epochs": 15,
+            "n_val": 1294,
+            "selection": "validation_tissue_macro_f1_then_age_mae"
+          },
+          "fold_id": 1,
+          "sex_auroc": 0.9601720549397077,
+          "tissue_balanced_accuracy": 0.4764766809834296,
+          "tissue_macro_f1": 0.39925217818623626
+        },
+        {
+          "age_mae": 8.168532803191605,
+          "age_r2": 0.8023971568691072,
+          "checkpoint_selection": {
+            "best_epoch": 12,
+            "has_validation": true,
+            "max_epochs": 15,
+            "n_val": 1358,
+            "selection": "validation_tissue_macro_f1_then_age_mae"
+          },
+          "fold_id": 2,
+          "sex_auroc": 0.9143626076489476,
+          "tissue_balanced_accuracy": 0.40333131112725207,
+          "tissue_macro_f1": 0.38039855990697097
+        }
+      ],
+      "sex_auroc": 0.8986047325755645,
+      "tissue_balanced_accuracy": 0.404355423309719,
+      "tissue_macro_f1": 0.3599492237400015,
+      "tissue_macro_f1_std": 0.05259863977042249
+    },
+    {
+      "age_mae_years": 8.740559125634663,
+      "age_r2": 0.7642271855959754,
+      "arm_id": "P5-epochs-30",
+      "label": "P2 loss weights, **max/max** pooling, **30-epoch** ceiling + early stop on validation tissue F1; late-fusion test.",
+      "n_folds": 3,
+      "per_fold": [
+        {
+          "age_mae": 9.777810268298612,
+          "age_r2": 0.7525011577378499,
+          "checkpoint_selection": {
+            "best_epoch": 9,
+            "best_validation_metrics": {
+              "age_mae": 13.927626081163622,
+              "epoch": 9,
+              "rank": [
+                0.23148518784890068,
+                -13.927626081163622
+              ],
+              "tissue_macro_f1": 0.23148518784890068
+            },
+            "early_stopping": {
+              "enabled": true,
+              "min_delta": 0.001,
+              "monitor": "validation_tissue_macro_f1",
+              "patience": 8,
+              "stop_epoch": 17,
+              "stopped_early": true
+            },
+            "epochs_completed": 17,
+            "has_validation": true,
+            "max_epochs": 30,
+            "n_val": 1443,
+            "selection": "validation_tissue_macro_f1_then_age_mae"
+          },
+          "fold_id": 0,
+          "sex_auroc": 0.8202134715495292,
+          "tissue_balanced_accuracy": 0.35841312234709677,
+          "tissue_macro_f1": 0.3045359121961098
+        },
+        {
+          "age_mae": 7.837867379720527,
+          "age_r2": 0.7529304909167109,
+          "checkpoint_selection": {
+            "best_epoch": 4,
+            "best_validation_metrics": {
+              "age_mae": 22.230672926651224,
+              "epoch": 4,
+              "rank": [
+                0.11608933287013133,
+                -22.230672926651224
+              ],
+              "tissue_macro_f1": 0.11608933287013133
+            },
+            "early_stopping": {
+              "enabled": true,
+              "min_delta": 0.001,
+              "monitor": "validation_tissue_macro_f1",
+              "patience": 8,
+              "stop_epoch": 12,
+              "stopped_early": true
+            },
+            "epochs_completed": 12,
+            "has_validation": true,
+            "max_epochs": 30,
+            "n_val": 1294,
+            "selection": "validation_tissue_macro_f1_then_age_mae"
+          },
+          "fold_id": 1,
+          "sex_auroc": 0.9231998412323034,
+          "tissue_balanced_accuracy": 0.47043206983970864,
+          "tissue_macro_f1": 0.4036585258944274
+        },
+        {
+          "age_mae": 8.60599972888485,
+          "age_r2": 0.7872499081333648,
+          "checkpoint_selection": {
+            "best_epoch": 4,
+            "best_validation_metrics": {
+              "age_mae": 11.79548156903711,
+              "epoch": 4,
+              "rank": [
+                0.24069944920275335,
+                -11.79548156903711
+              ],
+              "tissue_macro_f1": 0.24069944920275335
+            },
+            "early_stopping": {
+              "enabled": true,
+              "min_delta": 0.001,
+              "monitor": "validation_tissue_macro_f1",
+              "patience": 8,
+              "stop_epoch": 12,
+              "stopped_early": true
+            },
+            "epochs_completed": 12,
+            "has_validation": true,
+            "max_epochs": 30,
+            "n_val": 1358,
+            "selection": "validation_tissue_macro_f1_then_age_mae"
+          },
+          "fold_id": 2,
+          "sex_auroc": 0.9061073206097389,
+          "tissue_balanced_accuracy": 0.3828271079451576,
+          "tissue_macro_f1": 0.36108047808312727
+        }
+      ],
+      "sex_auroc": 0.8831735444638572,
+      "tissue_balanced_accuracy": 0.4038907667106543,
+      "tissue_macro_f1": 0.3564249720578882,
+      "tissue_macro_f1_std": 0.04972502829420766
+    },
+    {
+      "age_mae_years": 8.597179423748644,
+      "age_r2": 0.7748114121027179,
+      "arm_id": "P5-mean-epochs-30",
+      "label": "P5-mean-epochs-30",
+      "n_folds": 3,
+      "per_fold": [
+        {
+          "age_mae": 9.962502385976162,
+          "age_r2": 0.7482376265828178,
+          "checkpoint_selection": {
+            "best_epoch": 4,
+            "best_validation_metrics": {
+              "age_mae": 19.74171466484104,
+              "epoch": 4,
+              "rank": [
+                0.22290967713498633,
+                -19.74171466484104
+              ],
+              "tissue_macro_f1": 0.22290967713498633
+            },
+            "early_stopping": {
+              "enabled": true,
+              "min_delta": 0.0,
+              "monitor": "validation_tissue_macro_f1",
+              "patience": 5,
+              "stop_epoch": 9,
+              "stopped_early": true
+            },
+            "epochs_completed": 9,
+            "has_validation": true,
+            "max_epochs": 30,
+            "n_val": 1443,
+            "selection": "validation_tissue_macro_f1_then_age_mae"
+          },
+          "fold_id": 0,
+          "sex_auroc": 0.8151364852579098,
+          "tissue_balanced_accuracy": 0.334678562748138,
+          "tissue_macro_f1": 0.30062135583702243
+        },
+        {
+          "age_mae": 7.666284965252171,
+          "age_r2": 0.7706493367536411,
+          "checkpoint_selection": {
+            "best_epoch": 9,
+            "best_validation_metrics": {
+              "age_mae": 19.767844176648754,
+              "epoch": 9,
+              "rank": [
+                0.11306981802863751,
+                -19.767844176648754
+              ],
+              "tissue_macro_f1": 0.11306981802863751
+            },
+            "early_stopping": {
+              "enabled": true,
+              "min_delta": 0.0,
+              "monitor": "validation_tissue_macro_f1",
+              "patience": 5,
+              "stop_epoch": 14,
+              "stopped_early": true
+            },
+            "epochs_completed": 14,
+            "has_validation": true,
+            "max_epochs": 30,
+            "n_val": 1294,
+            "selection": "validation_tissue_macro_f1_then_age_mae"
+          },
+          "fold_id": 1,
+          "sex_auroc": 0.9575096536808866,
+          "tissue_balanced_accuracy": 0.4739743625977687,
+          "tissue_macro_f1": 0.4000156829581973
+        },
+        {
+          "age_mae": 8.1627509200176,
+          "age_r2": 0.8055472729716948,
+          "checkpoint_selection": {
+            "best_epoch": 8,
+            "best_validation_metrics": {
+              "age_mae": 11.06443098158697,
+              "epoch": 8,
+              "rank": [
+                0.24166443282058994,
+                -11.06443098158697
+              ],
+              "tissue_macro_f1": 0.24166443282058994
+            },
+            "early_stopping": {
+              "enabled": true,
+              "min_delta": 0.0,
+              "monitor": "validation_tissue_macro_f1",
+              "patience": 5,
+              "stop_epoch": 13,
+              "stopped_early": true
+            },
+            "epochs_completed": 13,
+            "has_validation": true,
+            "max_epochs": 30,
+            "n_val": 1358,
+            "selection": "validation_tissue_macro_f1_then_age_mae"
+          },
+          "fold_id": 2,
+          "sex_auroc": 0.9065238179423014,
+          "tissue_balanced_accuracy": 0.40558269988833906,
+          "tissue_macro_f1": 0.3827847567463864
+        }
+      ],
+      "sex_auroc": 0.8930566522936992,
+      "tissue_balanced_accuracy": 0.4047452084114152,
+      "tissue_macro_f1": 0.3611405985138687,
+      "tissue_macro_f1_std": 0.05311459550032812
     }
   ],
   "checkpoint_audit": [
     {
       "arm_id": "P0-baseline",
       "best_epoch": null,
+      "early_stopping": null,
+      "epochs_completed": null,
       "fold_id": 0,
       "selection": null,
       "val_tissue_macro_f1_at_best": null
@@ -601,6 +714,8 @@
     {
       "arm_id": "P0-baseline",
       "best_epoch": null,
+      "early_stopping": null,
+      "epochs_completed": null,
       "fold_id": 1,
       "selection": null,
       "val_tissue_macro_f1_at_best": null
@@ -608,6 +723,8 @@
     {
       "arm_id": "P0-baseline",
       "best_epoch": null,
+      "early_stopping": null,
+      "epochs_completed": null,
       "fold_id": 2,
       "selection": null,
       "val_tissue_macro_f1_at_best": null
@@ -615,27 +732,127 @@
     {
       "arm_id": "P2-end2end-tissue-weight",
       "best_epoch": 15,
+      "early_stopping": null,
+      "epochs_completed": null,
       "fold_id": 0,
       "selection": "validation_tissue_macro_f1_then_age_mae",
-      "val_tissue_macro_f1_at_best": 0.22858665039008363
+      "val_tissue_macro_f1_at_best": null
     },
     {
       "arm_id": "P2-end2end-tissue-weight",
       "best_epoch": 12,
+      "early_stopping": null,
+      "epochs_completed": null,
       "fold_id": 1,
       "selection": "validation_tissue_macro_f1_then_age_mae",
-      "val_tissue_macro_f1_at_best": 0.11270797034576992
+      "val_tissue_macro_f1_at_best": null
     },
     {
       "arm_id": "P2-end2end-tissue-weight",
       "best_epoch": 9,
+      "early_stopping": null,
+      "epochs_completed": null,
       "fold_id": 2,
       "selection": "validation_tissue_macro_f1_then_age_mae",
-      "val_tissue_macro_f1_at_best": 0.22039539495816332
+      "val_tissue_macro_f1_at_best": null
+    },
+    {
+      "arm_id": "P4-pooling-mean",
+      "best_epoch": 9,
+      "early_stopping": null,
+      "epochs_completed": null,
+      "fold_id": 0,
+      "selection": "validation_tissue_macro_f1_then_age_mae",
+      "val_tissue_macro_f1_at_best": null
+    },
+    {
+      "arm_id": "P4-pooling-mean",
+      "best_epoch": 12,
+      "early_stopping": null,
+      "epochs_completed": null,
+      "fold_id": 1,
+      "selection": "validation_tissue_macro_f1_then_age_mae",
+      "val_tissue_macro_f1_at_best": null
+    },
+    {
+      "arm_id": "P4-pooling-mean",
+      "best_epoch": 12,
+      "early_stopping": null,
+      "epochs_completed": null,
+      "fold_id": 2,
+      "selection": "validation_tissue_macro_f1_then_age_mae",
+      "val_tissue_macro_f1_at_best": null
+    },
+    {
+      "arm_id": "P5-epochs-30",
+      "best_epoch": 9,
+      "early_stopping": {
+        "enabled": true,
+        "min_delta": 0.001,
+        "monitor": "validation_tissue_macro_f1",
+        "patience": 8,
+        "stop_epoch": 17,
+        "stopped_early": true
+      },
+      "epochs_completed": 17,
+      "fold_id": 0,
+      "selection": "validation_tissue_macro_f1_then_age_mae",
+      "val_tissue_macro_f1_at_best": 0.23148518784890068
+    },
+    {
+      "arm_id": "P5-epochs-30",
+      "best_epoch": 4,
+      "early_stopping": {
+        "enabled": true,
+        "min_delta": 0.001,
+        "monitor": "validation_tissue_macro_f1",
+        "patience": 8,
+        "stop_epoch": 12,
+        "stopped_early": true
+      },
+      "epochs_completed": 12,
+      "fold_id": 1,
+      "selection": "validation_tissue_macro_f1_then_age_mae",
+      "val_tissue_macro_f1_at_best": 0.11608933287013133
+    },
+    {
+      "arm_id": "P5-epochs-30",
+      "best_epoch": 4,
+      "early_stopping": {
+        "enabled": true,
+        "min_delta": 0.001,
+        "monitor": "validation_tissue_macro_f1",
+        "patience": 8,
+        "stop_epoch": 12,
+        "stopped_early": true
+      },
+      "epochs_completed": 12,
+      "fold_id": 2,
+      "selection": "validation_tissue_macro_f1_then_age_mae",
+      "val_tissue_macro_f1_at_best": 0.24069944920275335
     }
   ],
   "diagnosis": "task_competition",
   "f1_gate": 0.2,
+  "locked_tissue_comparator": {
+    "arm": "C-mvalue-enet",
+    "per_fold": [
+      {
+        "fold_id": 0,
+        "tissue_macro_f1": 0.30279626878569504
+      },
+      {
+        "fold_id": 1,
+        "tissue_macro_f1": 0.3350351315316885
+      },
+      {
+        "fold_id": 2,
+        "tissue_macro_f1": 0.364420394422702
+      }
+    ],
+    "tissue_macro_f1": 0.3340839315800285,
+    "tissue_macro_f1_std": 0.030823072545455844
+  },
   "recommendation": "**Proceed with narrowed hyperparameter grid** (P4-P5 + fusion solver sweep) before Milestone 7 OOF; cascade may be salvageable for tissue with fusion/loss fixes.",
   "study_composition": [
     {

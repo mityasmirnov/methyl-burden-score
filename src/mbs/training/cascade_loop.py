@@ -470,6 +470,13 @@ def _evaluate_fusion_mode(
     return out
 
 
+def _evaluations_incomplete(metrics: dict[str, Any]) -> bool:
+    ev = metrics.get("evaluations")
+    if not isinstance(ev, dict):
+        return True
+    return "mbs_e2e" not in ev or "fusion_full" not in ev
+
+
 def train_cascade_on_arrays(
     *,
     assignment: CascadeAssignment,
@@ -507,13 +514,26 @@ def train_cascade_on_arrays(
     primary_evaluation: PrimaryEvaluation = "late_fusion",
     extra_fusion_modes: tuple[FusionBlockMode, ...] = (),
     locus_ids: list[str] | None = None,
+    eval_only: bool = False,
 ) -> dict[str, Any]:
     """Train CascadeDeepSet + MBS heads; write scores; evaluate; return metrics."""
     score_dir = out_dir / "scores"
     manifest_path = score_dir / "score_manifest.json"
     metrics_path = out_dir / "metrics.json"
-    if skip_if_done and manifest_path.is_file() and metrics_path.is_file():
-        cached = json.loads(metrics_path.read_text(encoding="utf-8"))
+    prior_metrics: dict[str, Any] | None = None
+    if metrics_path.is_file():
+        prior_metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+    if (
+        skip_if_done
+        and manifest_path.is_file()
+        and metrics_path.is_file()
+        and not (
+            eval_only
+            and prior_metrics is not None
+            and _evaluations_incomplete(prior_metrics)
+        )
+    ):
+        cached = dict(prior_metrics or {})
         cached["skipped"] = True
         cached["score_dir"] = str(score_dir)
         return cached
@@ -574,6 +594,8 @@ def train_cascade_on_arrays(
     has_val = val_idx_a is not None and val_idx_a.size > 0
     out_dir.mkdir(parents=True, exist_ok=True)
     ckpt_path = out_dir / "best.pt"
+    if eval_only and not ckpt_path.is_file():
+        raise FileNotFoundError(f"eval_only requires checkpoint: {ckpt_path}")
 
     def _save_checkpoint() -> None:
         torch.save(
@@ -599,157 +621,169 @@ def train_cascade_on_arrays(
     stopped_early = False
     stop_epoch: int | None = None
 
-    for _epoch in range(max_epochs):
-        epochs_completed = _epoch + 1
-        model.train()
-        heads.train()
-        order = train_idx.copy()
-        np.random.shuffle(order)
-        for i in order.tolist():
-            if not (bool(age_mask_a[i]) or bool(tissue_mask_a[i]) or bool(sex_mask_a[i])):
-                continue
-            out = _forward_sample(model, assignment, betas[i], device=device)
-            mbs = out["mbs"].unsqueeze(0)
-            present = out["present"].unsqueeze(0)
-            if assignment.n_genes == 0:
-                mbs = torch.full((1, 1), 0.5, device=device)
-                present = torch.zeros(1, 1, dtype=torch.bool, device=device)
-            loss = torch.zeros((), device=device)
-            if bool(age_mask_a[i]):
-                age_t = torch.tensor([float(ages[i])], device=device)
-                age_pred = heads.forward_age(mbs, present)
-                loss = loss + age_loss_weight * F.huber_loss(age_pred, age_t)
-            if bool(tissue_mask_a[i]):
-                tissue_t = torch.tensor([int(tissue[i])], device=device, dtype=torch.long)
-                tissue_pred = heads.forward_tissue(mbs, present)
-                loss = loss + tissue_loss_weight * F.cross_entropy(
-                    tissue_pred, tissue_t, weight=tissue_class_weights
-                )
-            if bool(sex_mask_a[i]):
-                sex_t = torch.tensor([int(sex[i])], device=device, dtype=torch.long)
-                sex_pred = heads.forward_sex(mbs, present)
-                if sex_pred is not None:
-                    loss = loss + sex_loss_weight * F.cross_entropy(sex_pred, sex_t)
-            opt.zero_grad(set_to_none=True)
-            loss.backward()
-            opt.step()
-        if (_epoch + 1) % max(1, max_epochs // 5) == 0 or _epoch == 0:
-            print(
-                f"[cascade] {out_dir.name} epoch {_epoch + 1}/{max_epochs}",
-                flush=True,
-            )
-        if has_val and val_idx_a is not None:
-            val_metrics = _evaluate_cascade_validation(
-                model,
-                heads,
-                assignment,
-                betas[val_idx_a],
-                ages_val=ages[val_idx_a],
-                age_mask_val=age_mask_a[val_idx_a],
-                tissue_val=tissue[val_idx_a],
-                tissue_mask_val=tissue_mask_a[val_idx_a],
-                sex_val=sex[val_idx_a],
-                sex_mask_val=sex_mask_a[val_idx_a],
-                device=device,
-            )
-            rank = _validation_rank(val_metrics)
-            val_history.append({"epoch": _epoch + 1, "rank": list(rank), **val_metrics})
-            if best_rank is None or rank > best_rank:
-                best_rank = rank
-                best_epoch = _epoch + 1
-                _save_checkpoint()
-
-            tissue_f1 = val_metrics.get("tissue_macro_f1")
-            if early_stopping_patience is not None and tissue_f1 is not None:
-                tissue_f1_f = float(tissue_f1)
-                if tissue_f1_f > best_early_stop_f1 + early_stopping_min_delta:
-                    best_early_stop_f1 = tissue_f1_f
-                    epochs_without_tissue_improvement = 0
-                else:
-                    epochs_without_tissue_improvement += 1
-                if epochs_without_tissue_improvement >= early_stopping_patience:
-                    stopped_early = True
-                    stop_epoch = _epoch + 1
-        if stopped_early:
-            print(
-                f"[cascade] {out_dir.name} early stop at epoch {stop_epoch}; "
-                f"best validation tissue macro-F1={best_early_stop_f1:.4f}",
-                flush=True,
-            )
-            break
-
-    checkpoint_selection: dict[str, Any] = {
-        "has_validation": has_val,
-        "n_val": int(val_idx_a.size) if val_idx_a is not None else 0,
-        "max_epochs": max_epochs,
-        "epochs_completed": epochs_completed,
-        "val_history": val_history,
-        "early_stopping": {
-            "enabled": early_stopping_patience is not None,
-            "monitor": "validation_tissue_macro_f1",
-            "patience": early_stopping_patience,
-            "min_delta": early_stopping_min_delta,
-            "stopped_early": stopped_early,
-            "stop_epoch": stop_epoch,
-        },
-    }
-    if has_val and best_epoch > 0:
-        checkpoint_selection["best_epoch"] = best_epoch
-        checkpoint_selection["selection"] = "validation_tissue_macro_f1_then_age_mae"
-        checkpoint_selection["best_validation_metrics"] = next(
-            row for row in val_history if int(row["epoch"]) == best_epoch
-        )
-        # Reload the best-validation checkpoint (may not be the final epoch).
+    if eval_only:
         ckpt = torch.load(ckpt_path, map_location=device)
         model.load_state_dict(ckpt["model"])
         heads.load_state_dict(ckpt["heads"])
+        if prior_metrics and isinstance(prior_metrics.get("checkpoint_selection"), dict):
+            checkpoint_selection = dict(prior_metrics["checkpoint_selection"])
+        else:
+            checkpoint_selection = {"selection": "eval_only_reload", "best_epoch": ckpt.get("epoch")}
     else:
-        checkpoint_selection["best_epoch"] = max_epochs
-        checkpoint_selection["selection"] = "final_epoch_no_validation"
-        _save_checkpoint()
+        for _epoch in range(max_epochs):
+            epochs_completed = _epoch + 1
+            model.train()
+            heads.train()
+            order = train_idx.copy()
+            np.random.shuffle(order)
+            for i in order.tolist():
+                if not (bool(age_mask_a[i]) or bool(tissue_mask_a[i]) or bool(sex_mask_a[i])):
+                    continue
+                out = _forward_sample(model, assignment, betas[i], device=device)
+                mbs = out["mbs"].unsqueeze(0)
+                present = out["present"].unsqueeze(0)
+                if assignment.n_genes == 0:
+                    mbs = torch.full((1, 1), 0.5, device=device)
+                    present = torch.zeros(1, 1, dtype=torch.bool, device=device)
+                loss = torch.zeros((), device=device)
+                if bool(age_mask_a[i]):
+                    age_t = torch.tensor([float(ages[i])], device=device)
+                    age_pred = heads.forward_age(mbs, present)
+                    loss = loss + age_loss_weight * F.huber_loss(age_pred, age_t)
+                if bool(tissue_mask_a[i]):
+                    tissue_t = torch.tensor([int(tissue[i])], device=device, dtype=torch.long)
+                    tissue_pred = heads.forward_tissue(mbs, present)
+                    loss = loss + tissue_loss_weight * F.cross_entropy(
+                        tissue_pred, tissue_t, weight=tissue_class_weights
+                    )
+                if bool(sex_mask_a[i]):
+                    sex_t = torch.tensor([int(sex[i])], device=device, dtype=torch.long)
+                    sex_pred = heads.forward_sex(mbs, present)
+                    if sex_pred is not None:
+                        loss = loss + sex_loss_weight * F.cross_entropy(sex_pred, sex_t)
+                opt.zero_grad(set_to_none=True)
+                loss.backward()
+                opt.step()
+            if (_epoch + 1) % max(1, max_epochs // 5) == 0 or _epoch == 0:
+                print(
+                    f"[cascade] {out_dir.name} epoch {_epoch + 1}/{max_epochs}",
+                    flush=True,
+                )
+            if has_val and val_idx_a is not None:
+                val_metrics = _evaluate_cascade_validation(
+                    model,
+                    heads,
+                    assignment,
+                    betas[val_idx_a],
+                    ages_val=ages[val_idx_a],
+                    age_mask_val=age_mask_a[val_idx_a],
+                    tissue_val=tissue[val_idx_a],
+                    tissue_mask_val=tissue_mask_a[val_idx_a],
+                    sex_val=sex[val_idx_a],
+                    sex_mask_val=sex_mask_a[val_idx_a],
+                    device=device,
+                )
+                rank = _validation_rank(val_metrics)
+                val_history.append({"epoch": _epoch + 1, "rank": list(rank), **val_metrics})
+                if best_rank is None or rank > best_rank:
+                    best_rank = rank
+                    best_epoch = _epoch + 1
+                    _save_checkpoint()
 
-    mbs_all, present_all, orphan_all = score_samples(model, assignment, betas, device=device)
-    direct_all, direct_names = _fit_direct_columns(
-        betas_train=betas[train_idx],
-        betas_all=betas,
-        direct_cols=assignment.direct_col_index,
-        ages_train=ages[train_idx],
-        age_mask_train=age_mask_a[train_idx],
-        tissue_train=tissue[train_idx],
-        tissue_mask_train=tissue_mask_a[train_idx],
-        sex_train=sex[train_idx],
-        sex_mask_train=sex_mask_a[train_idx],
-        study_ids_train=study_ids[train_idx],
-        use_level1=True,
-    )
+                tissue_f1 = val_metrics.get("tissue_macro_f1")
+                if early_stopping_patience is not None and tissue_f1 is not None:
+                    tissue_f1_f = float(tissue_f1)
+                    if tissue_f1_f > best_early_stop_f1 + early_stopping_min_delta:
+                        best_early_stop_f1 = tissue_f1_f
+                        epochs_without_tissue_improvement = 0
+                    else:
+                        epochs_without_tissue_improvement += 1
+                    if epochs_without_tissue_improvement >= early_stopping_patience:
+                        stopped_early = True
+                        stop_epoch = _epoch + 1
+            if stopped_early:
+                print(
+                    f"[cascade] {out_dir.name} early stop at epoch {stop_epoch}; "
+                    f"best validation tissue macro-F1={best_early_stop_f1:.4f}",
+                    flush=True,
+                )
+                break
 
-    gene_ids = list(assignment.gene_ids) if assignment.gene_ids else ["__none__"]
-    orphan_ids = list(assignment.orphan_region_ids)
-    direct_cpg_all: np.ndarray | None = None
-    direct_locus_ids: list[str] | None = None
-    if assignment.direct_col_index.size and locus_ids is not None:
-        dcols = assignment.direct_col_index
-        block = betas[:, dcols]
-        obs = np.isfinite(block)
-        safe = np.where(obs, block, 0.5)
-        m_vals = beta_to_m_value(safe)
-        direct_cpg_all = np.where(obs, m_vals, np.nan).astype(np.float32)
-        direct_locus_ids = [str(locus_ids[int(c)]) for c in dcols.tolist()]
-    write_cascade_score_dir(
-        score_dir,
-        sample_ids=sample_ids,
-        gene_ids=gene_ids,
-        orphan_region_ids=orphan_ids,
-        mbs=mbs_all if assignment.n_genes else mbs_all[:, :1],
-        gene_present=present_all if assignment.n_genes else present_all[:, :1],
-        orphan_rbs=orphan_all,
-        direct_contrib=direct_all,
-        direct_task_names=direct_names,
-        fold_id=str(out_dir.name),
-        restart_id=str(seed),
-        direct_cpg=direct_cpg_all,
-        direct_locus_ids=direct_locus_ids,
-    )
+        checkpoint_selection: dict[str, Any] = {
+            "has_validation": has_val,
+            "n_val": int(val_idx_a.size) if val_idx_a is not None else 0,
+            "max_epochs": max_epochs,
+            "epochs_completed": epochs_completed,
+            "val_history": val_history,
+            "early_stopping": {
+                "enabled": early_stopping_patience is not None,
+                "monitor": "validation_tissue_macro_f1",
+                "patience": early_stopping_patience,
+                "min_delta": early_stopping_min_delta,
+                "stopped_early": stopped_early,
+                "stop_epoch": stop_epoch,
+            },
+        }
+        if has_val and best_epoch > 0:
+            checkpoint_selection["best_epoch"] = best_epoch
+            checkpoint_selection["selection"] = "validation_tissue_macro_f1_then_age_mae"
+            checkpoint_selection["best_validation_metrics"] = next(
+                row for row in val_history if int(row["epoch"]) == best_epoch
+            )
+            # Reload the best-validation checkpoint (may not be the final epoch).
+            ckpt = torch.load(ckpt_path, map_location=device)
+            model.load_state_dict(ckpt["model"])
+            heads.load_state_dict(ckpt["heads"])
+        else:
+            checkpoint_selection["best_epoch"] = max_epochs
+            checkpoint_selection["selection"] = "final_epoch_no_validation"
+            _save_checkpoint()
+
+    if eval_only and manifest_path.is_file():
+        pass
+    else:
+        mbs_all, present_all, orphan_all = score_samples(model, assignment, betas, device=device)
+        direct_all, direct_names = _fit_direct_columns(
+            betas_train=betas[train_idx],
+            betas_all=betas,
+            direct_cols=assignment.direct_col_index,
+            ages_train=ages[train_idx],
+            age_mask_train=age_mask_a[train_idx],
+            tissue_train=tissue[train_idx],
+            tissue_mask_train=tissue_mask_a[train_idx],
+            sex_train=sex[train_idx],
+            sex_mask_train=sex_mask_a[train_idx],
+            study_ids_train=study_ids[train_idx],
+            use_level1=True,
+        )
+
+        gene_ids = list(assignment.gene_ids) if assignment.gene_ids else ["__none__"]
+        orphan_ids = list(assignment.orphan_region_ids)
+        direct_cpg_all: np.ndarray | None = None
+        direct_locus_ids: list[str] | None = None
+        if assignment.direct_col_index.size and locus_ids is not None:
+            dcols = assignment.direct_col_index
+            block = betas[:, dcols]
+            obs = np.isfinite(block)
+            safe = np.where(obs, block, 0.5)
+            m_vals = beta_to_m_value(safe)
+            direct_cpg_all = np.where(obs, m_vals, np.nan).astype(np.float32)
+            direct_locus_ids = [str(locus_ids[int(c)]) for c in dcols.tolist()]
+        write_cascade_score_dir(
+            score_dir,
+            sample_ids=sample_ids,
+            gene_ids=gene_ids,
+            orphan_region_ids=orphan_ids,
+            mbs=mbs_all if assignment.n_genes else mbs_all[:, :1],
+            gene_present=present_all if assignment.n_genes else present_all[:, :1],
+            orphan_rbs=orphan_all,
+            direct_contrib=direct_all,
+            direct_task_names=direct_names,
+            fold_id=str(out_dir.name),
+            restart_id=str(seed),
+            direct_cpg=direct_cpg_all,
+            direct_locus_ids=direct_locus_ids,
+        )
 
     blocks = load_cascade_score_blocks(score_dir)
     if "tbs" in blocks:
@@ -956,6 +990,7 @@ def run_cascade_hub(
     max_train_samples: int | None = None,
     report_dir: Path | None = None,
     skip_if_done: bool = True,
+    eval_only: bool = False,
 ) -> CascadeTrainResult:
     """Train cascade on frozen 7E folds; write scores + report."""
     pilot = config.get("pilot", {})
@@ -1189,6 +1224,7 @@ def run_cascade_hub(
             primary_evaluation=cast(PrimaryEvaluation, primary_evaluation),
             extra_fusion_modes=cast(tuple[FusionBlockMode, ...], extra_fusion_modes),
             locus_ids=locus_index["locus_id"].astype(str).tolist()[:n_cols],
+            eval_only=eval_only,
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
         fold_summaries.append(metrics)
@@ -1264,6 +1300,7 @@ def train_cascade(
     max_train_samples: int | None = None,
     report_dir: Path | None = None,
     skip_if_done: bool = True,
+    eval_only: bool = False,
 ) -> CascadeTrainResult:
     """CLI entry: fixture or Hub cascade on frozen 7E folds."""
     if overfit_fixture:
@@ -1288,4 +1325,5 @@ def train_cascade(
         max_train_samples=max_train_samples,
         report_dir=report_dir,
         skip_if_done=skip_if_done,
+        eval_only=eval_only,
     )

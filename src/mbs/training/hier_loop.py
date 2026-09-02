@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import torch
 
 from mbs.evaluation.annotation_slices import (
@@ -51,12 +52,13 @@ from mbs.training.level1_norm import (
     persist_level1,
     resolve_level1_config,
 )
-from mbs.training.locus_gene import load_graph_tables
+from mbs.training.cascade_assign import build_cascade_assignment, gene_linked_col_index
 from mbs.training.locus_region_gene import (
     REGION_TYPE_TO_ID,
     RESIDUAL_PANEL_ID,
     LocusRegionGeneIndex,
     build_locus_region_gene_index,
+    locus_region_gene_col_filter,
     region_systems_from_arm,
     region_type_vocab,
 )
@@ -661,6 +663,26 @@ def train_hierarchical_baseline(
             max_loci=max_loci,
             region_systems=region_systems,
         )
+        gene_linked_only = bool(train_cfg.get("gene_linked_only", False))
+        if gene_linked_only:
+            genes_path = data_root / "canonical" / "graphs" / graph_id / "genes.parquet"
+            genes_df = (
+                pd.read_parquet(genes_path) if genes_path.is_file() else pd.DataFrame()
+            )
+            cascade_assignment = build_cascade_assignment(
+                locus_index=locus_index,
+                locus_region_edges=lr_edges,
+                regions=regions,
+                genes=genes_df,
+                max_loci=max_loci,
+            )
+            gene_cols = gene_linked_col_index(cascade_assignment)
+            locus_region = locus_region_gene_col_filter(locus_region, gene_cols)
+            print(  # noqa: T201
+                f"[hier] gene_linked_only panel: {gene_cols.size} CpG columns, "
+                f"{locus_region.n_typed_edges} typed edges",
+                flush=True,
+            )
         gene_ids = locus_region.gene_ids
         n_genes = locus_region.n_genes
         n_panel = locus_region.n_panel

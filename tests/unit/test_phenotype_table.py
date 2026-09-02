@@ -110,3 +110,31 @@ def test_build_table_gsm_dedupe_and_masks(tmp_path: Path) -> None:
         split_id="test-split",
     )
     assert_no_study_leakage(split)
+
+
+def test_load_multitask_phenotypes_returns_objects_first(tmp_path: Path) -> None:
+    """Callers must unpack (phenotypes, class_names); strings are class names."""
+    frame = pd.DataFrame(
+        [
+            {
+                "sample_id": "GSM1",
+                "study_id": "GSE_A",
+                "platform": "HM450",
+                "age_mask": True,
+                "tissue_mask": True,
+                "sex_mask": False,
+                "row_index": 0,
+                "matrix_id": "m1",
+                "age_years": 40.0,
+                "tissue_label": "blood",
+            }
+        ]
+    )
+    path = tmp_path / "phenotypes.parquet"
+    frame.to_parquet(path, index=False)
+    phenotypes, class_names = load_multitask_phenotypes(path)
+    assert isinstance(class_names, list)
+    assert all(isinstance(n, str) for n in class_names)
+    assert len(phenotypes) == 1
+    assert hasattr(phenotypes[0], "sample_id")
+    assert phenotypes[0].sample_id == "GSM1"
