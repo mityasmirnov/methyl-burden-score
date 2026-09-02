@@ -16,7 +16,11 @@ import pandas as pd
 from mbs.annotation.manifest import write_json
 from mbs.matrix.store import matrix_store_paths, read_locus_index
 from mbs.paths import DataPaths
-from mbs.training.cascade_assign import build_cascade_assignment, gene_linked_col_index
+from mbs.training.cascade_assign import (
+    GeneAllocationPolicy,
+    build_cascade_assignment,
+    gene_linked_col_index,
+)
 from mbs.training.classical_mvalue import run_classical_mvalue
 from mbs.training.dev_cv import load_frozen_folds, samples_from_phenotype_table
 from mbs.training.loop import load_experiment_config
@@ -103,11 +107,14 @@ def build_gene_cols(
     matrix_id: str,
     graph_id: str,
     max_loci: int,
-) -> np.ndarray:
+    gene_allocation: GeneAllocationPolicy = "explicit_only",
+    max_nearest_gene_bp: int | None = None,
+) -> tuple[np.ndarray, dict[str, Any]]:
     matrix_paths = matrix_store_paths(paths.data_root / "canonical" / "matrices" / matrix_id)
     locus_index = read_locus_index(matrix_paths.locus_index_path)
     lr_edges, regions = load_graph_tables(paths.data_root / "canonical" / "graphs" / graph_id)
-    genes_path = paths.data_root / "canonical" / "graphs" / graph_id / "genes.parquet"
+    graph_root = paths.data_root / "canonical" / "graphs" / graph_id
+    genes_path = graph_root / "genes.parquet"
     genes = pd.read_parquet(genes_path) if genes_path.is_file() else pd.DataFrame()
     assignment = build_cascade_assignment(
         locus_index=locus_index,
@@ -115,12 +122,32 @@ def build_gene_cols(
         regions=regions,
         genes=genes,
         max_loci=max_loci,
+        gene_allocation=gene_allocation,
+        max_nearest_gene_bp=max_nearest_gene_bp,
     )
     gene_cols = gene_linked_col_index(assignment)
     if gene_cols.size == 0:
         raise RuntimeError("gene-linked CpG panel is empty")
-    print(f"[gene-probe] gene_cols={gene_cols.size} from prefix max_loci={max_loci}", flush=True)
-    return gene_cols
+    graph_manifest_path = graph_root / "graph_manifest.json"
+    graph_hash = None
+    if graph_manifest_path.is_file():
+        graph_hash = json.loads(graph_manifest_path.read_text(encoding="utf-8")).get("content_hash")
+    manifest = {
+        "gene_allocation": gene_allocation,
+        "max_nearest_gene_bp": max_nearest_gene_bp,
+        "n_gene_cols": int(gene_cols.size),
+        "graph_id": graph_id,
+        "graph_content_hash": graph_hash,
+        "matrix_id": matrix_id,
+        "max_loci": int(max_loci),
+        "gene_col_indices": gene_cols.astype(int).tolist(),
+    }
+    print(
+        f"[gene-probe] gene_cols={gene_cols.size} allocation={gene_allocation} "
+        f"max_loci={max_loci}",
+        flush=True,
+    )
+    return gene_cols, manifest
 
 
 def write_per_arm(report_dir: Path, arm_id: str, payload: dict[str, Any]) -> None:
@@ -174,6 +201,11 @@ def main() -> None:
 
     split_id = str(cfg.get("split_id", "hub-ats-7e-3fold-v1"))
     max_loci = int(cfg.get("cv_budget", {}).get("max_loci", 65536))
+    panel_cfg = cfg.get("gene_panel") or {}
+    gene_allocation = str(panel_cfg.get("allocation", "explicit_only"))
+    max_nearest_gene_bp = panel_cfg.get("max_nearest_gene_bp")
+    if max_nearest_gene_bp is not None:
+        max_nearest_gene_bp = int(max_nearest_gene_bp)
     arms = cfg.get("arms") or []
     pilot = cfg.get("pilot", {})
     matrix_id = str(pilot.get("matrix_id", "matrix-hub-age-tissue-sex-full-v1"))
@@ -196,6 +228,16 @@ def main() -> None:
     unknown = sorted(requested - known)
     if unknown:
         raise ValueError(f"unknown --arm values: {unknown}")
+
+    gene_cols, gene_panel_manifest = build_gene_cols(
+        paths,
+        matrix_id=matrix_id,
+        graph_id=graph_id,
+        max_loci=max_loci,
+        gene_allocation=gene_allocation,  # type: ignore[arg-type]
+        max_nearest_gene_bp=max_nearest_gene_bp,
+    )
+    write_json(report_dir / "gene_panel_manifest.json", gene_panel_manifest)
 
     completed: dict[str, list[dict[str, Any]]] = {}
 
@@ -264,9 +306,6 @@ def main() -> None:
                 },
             )
         elif kind == "classical_gene":
-            gene_cols = build_gene_cols(
-                paths, matrix_id=matrix_id, graph_id=graph_id, max_loci=max_loci
-            )
             payload = run_classical_mvalue(
                 data_root=paths.data_root,
                 fold_pack=fold_pack,

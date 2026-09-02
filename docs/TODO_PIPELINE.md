@@ -20,12 +20,15 @@ True next milestone after bootstrap:
 > → one score matrix.
 
 **Current gate:** **7G′ Stage A** — corrected gene-only MBS benchmark on
-**identical `gene_cols`**: neural encoders (**CascadeDeepSet** primary;
-**FlatDeepSet** / **HierarchicalDeepSet** / planned **FlatDeepSetRegion** when
-re-run) vs **`C-mvalue-*-G`**; primary metric **`mbs_e2e`**. Code + runner:
-`scripts/run_7g_gene_only_probe.py`. **Real runs use GPU** (`--device cuda`).
-Then **7G′ Stage B** (fold-safe `C-mvalue-enetS`, full model, orphan ablation,
-`direct_cpg.zarr`). Final Milestone **7** 5×6 OOF remains blocked.
+**identical `gene_cols`** with **`gene_allocation: explicit_only`**
+([ADR 0010](adr/0010-gene-allocation-policy.md)): neural encoders vs
+**`C-mvalue-*-G`**; primary metric **`mbs_e2e`** (test split only;
+`eval_split=test`). Pre-fix ~0.67–0.70 `mbs_e2e` is **invalid** (train+test leak).
+**No architecture lock** until rerun + matched classical folds complete.
+Code + runner: `scripts/run_7g_gene_only_probe.py`. Then **7G′ Stage B**
+(fold-safe panel plumbing landed; GPU run pending). **7G″** expression pilot
+[`plans/milestone-7g-double-prime-expression-auxiliary.md`](plans/milestone-7g-double-prime-expression-auxiliary.md)
+is **deferred**. Final Milestone **7** 5×6 OOF remains blocked.
 
 **7G** methylation eval and **tissue probe P0–P3** are done (historical evidence
 only — P2 ~0.38 used late fusion, not MBS-only). Plan:
@@ -817,20 +820,29 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 - **Done when:** Report under
   `reports/inspection/stage0_7g_gene_only_probe/` with per-fold tables,
-  **`mbs_e2e`** primary ranking, locked pooling/epoch policy, orphan
-  `fusion_full` vs `fusion_mbs_direct` decision; arms `P2-G`, `P4-G`,
+  **test-only** **`mbs_e2e`** primary ranking (`eval_split=test`), locked
+  pooling/epoch policy, orphan fusion decision; arms `P2-G`, `P4-G`,
   `P5-G-max`, optional `P5-G-mean`, `C-mvalue-*-G`, optional
-  `P2-orphan-ablation`. Real runs use **`--device cuda`**.
-- **Evidence:** (pending GPU report)
+  `P2-orphan-ablation` on **`explicit_only`** panel (`gene_panel_manifest.json`).
+  Real runs use **`--device cuda`** and new run IDs (`*-explicit`).
+- **Evidence:** `C-mvalue-classical-G` + `P2-orphan-ablation` complete (2026-09-02);
+  cascade P2/P4/P5-G arms have 3/3 folds but **pre-fix `mbs_e2e`** (no
+  `eval_split=test`) — **lock blocked**; GPU rerun with `*-explicit` run IDs
+  pending before Stage B
 
 ### Stage B — fold-selected panel + full model
 
 - **Done when:** Report under
   `reports/inspection/stage0_7g_prime_matched_probe/` with fold-safe
-  `C-mvalue-enetS`, `N-cascade-S`, **`N-light-type`** (`FlatDeepSetRegion`),
-  `N-full` / `N-mbs-direct-only`, and **`direct_cpg.zarr`** on cascade score
-  export when direct loci exist.
-- **Evidence:** (pending)
+  `C-mvalue-enetS`, `N-cascade-S`, **`N-light-type`**, post-hoc
+  **`N-mbs-posthoc-full-fusion`** / **`N-mbs-posthoc-mbs-direct`**, canonical
+  `fold_panels/fold_*_panel.json`, and **`direct_cpg.zarr`** when direct loci exist.
+- **Evidence:** selector + runner plumbing landed; **GPU run pending**
+
+### 7G″ — expression auxiliary (deferred)
+
+- **Plan:** [`plans/milestone-7g-double-prime-expression-auxiliary.md`](plans/milestone-7g-double-prime-expression-auxiliary.md)
+- **Not a gate** for 7G′ or Milestone **7**; run after Stage B if pursued.
 
 - **Depends on:** (7G); Stage A lock for pooling/epochs.
 - **Blocks:** Milestone **7** 5×6 OOF.

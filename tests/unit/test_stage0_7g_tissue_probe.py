@@ -15,11 +15,16 @@ from mbs.training.cascade_assign import (
 )
 from mbs.training.cascade_scores import fusion_feature_matrix
 from mbs.training.cascade_loop import (
+    _evaluate_mbs_e2e,
     make_synthetic_cascade_tables,
     train_cascade_on_arrays,
 )
 from mbs.training.late_fusion import evaluate_late_fusion
-from mbs.training.transparent_baselines import fit_linear_multitask, run_mean_baseline
+from mbs.training.transparent_baselines import (
+    evaluate_multitask_predictions,
+    fit_linear_multitask,
+    run_mean_baseline,
+)
 
 
 def test_balanced_logistic_fusion_runs() -> None:
@@ -339,3 +344,103 @@ def test_gene_linked_mbs_e2e_primary_eval(tmp_path: Path) -> None:
     assert "fusion_full" in evaluations
     assert "fusion_mbs_direct" in evaluations
     assert out["metrics"] == evaluations["mbs_e2e"]["metrics"]
+    assert evaluations["mbs_e2e"]["eval_split"] == "test"
+    assert evaluations["mbs_e2e"]["n_eval_samples"] == int(test_idx.size)
+
+
+def test_mbs_e2e_evaluates_test_only_not_train() -> None:
+    """Train-perfect / test-wrong predictions must not inflate reported mbs_e2e F1."""
+    from unittest.mock import MagicMock, patch
+
+    import torch
+
+    n = 10
+    train_idx = np.arange(0, 6, dtype=np.int64)
+    test_idx = np.arange(6, 10, dtype=np.int64)
+    tissue = np.array([0, 1, 2, 0, 1, 2, 0, 1, 2, 0], dtype=np.int64)
+    tissue_mask = np.ones(n, dtype=bool)
+
+    model = MagicMock()
+    heads = MagicMock()
+    heads.sex_head = None
+
+    def _tissue_logits(mbs: torch.Tensor, present: torch.Tensor) -> torch.Tensor:
+        logits = torch.zeros((mbs.shape[0], 3))
+        logits[:, 0] = 10.0
+        return logits
+
+    heads.forward_tissue.side_effect = _tissue_logits
+    heads.forward_age.return_value = torch.zeros(4)
+
+    with patch("mbs.training.cascade_loop.score_samples") as mock_score:
+        mock_score.return_value = (
+            np.zeros((4, 3), dtype=np.float32),
+            np.ones((4, 3), dtype=bool),
+            np.zeros((4, 0), dtype=np.float32),
+        )
+        out = _evaluate_mbs_e2e(
+            model,
+            heads,
+            MagicMock(),
+            np.zeros((n, 5), dtype=np.float32),
+            train_idx=train_idx,
+            test_idx=test_idx,
+            ages=np.zeros(n),
+            age_mask=np.zeros(n, dtype=bool),
+            tissue=tissue,
+            tissue_mask=tissue_mask,
+            sex=np.zeros(n, dtype=np.int64),
+            sex_mask=np.zeros(n, dtype=bool),
+            study_ids=np.array(["s"] * n),
+            class_names=["A", "B", "C"],
+            device=torch.device("cpu"),
+        )
+
+    assert out["eval_split"] == "test"
+    assert out["n_eval_samples"] == 4
+    test_f1 = out["metrics"]["tissue"]["macro_f1"]
+    assert test_f1 is not None
+    assert test_f1 < 0.5
+
+    # Old (contaminated) behaviour: score all samples → much higher macro-F1.
+    with patch("mbs.training.cascade_loop.score_samples") as mock_score:
+        mock_score.return_value = (
+            np.zeros((n, 3), dtype=np.float32),
+            np.ones((n, 3), dtype=bool),
+            np.zeros((n, 0), dtype=np.float32),
+        )
+
+        def _perfect_train_wrong_test(mbs: torch.Tensor, present: torch.Tensor) -> torch.Tensor:
+            logits = torch.zeros((mbs.shape[0], 3))
+            for i in range(mbs.shape[0]):
+                logits[i, tissue[i]] = 10.0 if i < 6 else 0.0
+                if i >= 6:
+                    logits[i, 0] = 10.0
+            return logits
+
+        heads.forward_tissue.side_effect = _perfect_train_wrong_test
+        heads.forward_age.return_value = torch.zeros(n)
+        contaminated = evaluate_multitask_predictions(
+            preds={
+                "age": np.zeros(n),
+                "tissue": _perfect_train_wrong_test(
+                    torch.zeros(n, 3), torch.ones(n, 3, dtype=bool)
+                )
+                .detach()
+                .numpy()
+                .argmax(axis=1),
+                "sex": None,
+            },
+            age=np.zeros(n),
+            age_mask=np.zeros(n, dtype=bool),
+            tissue=tissue,
+            tissue_mask=tissue_mask,
+            sex=np.zeros(n, dtype=np.int64),
+            sex_mask=np.zeros(n, dtype=bool),
+            study_ids=np.array(["s"] * n),
+            tissue_class_names=["A", "B", "C"],
+            tissue_valid_classes=set(tissue[train_idx[tissue_mask[train_idx]]].tolist()),
+        )
+    contaminated_f1 = contaminated["tissue"]["macro_f1"]
+    assert contaminated_f1 is not None
+    assert contaminated_f1 > test_f1 + 0.15

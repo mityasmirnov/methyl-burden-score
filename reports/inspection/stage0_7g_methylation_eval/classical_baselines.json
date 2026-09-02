@@ -76,8 +76,18 @@
             ]
           },
           "tissue": {
-            "balanced_accuracy": 0.34387282212824516,
-            "macro_f1": 0.30279626878569504
+            "balanced_accuracy": 0.42531638526388216,
+            "excluded_zero_shot_test_counts": {
+              "3": 13,
+              "8": 11,
+              "17": 13,
+              "19": 39,
+              "20": 11,
+              "26": 84,
+              "44": 22
+            },
+            "macro_f1": 0.3745111745507281,
+            "n_classes_scored": 38
           },
           "tissue_roc": [
             {
@@ -375,8 +385,18 @@
             ]
           },
           "tissue": {
-            "balanced_accuracy": 0.08514491207221447,
-            "macro_f1": 0.05520042103163879
+            "balanced_accuracy": 0.10531081229984421,
+            "excluded_zero_shot_test_counts": {
+              "3": 13,
+              "8": 11,
+              "17": 13,
+              "19": 39,
+              "20": 11,
+              "26": 84,
+              "44": 22
+            },
+            "macro_f1": 0.06827420496018481,
+            "n_classes_scored": 38
           },
           "tissue_roc": [
             {
@@ -644,8 +664,18 @@
             ]
           },
           "tissue": {
-            "balanced_accuracy": 0.2755027442865841,
-            "macro_f1": 0.2589110184948464
+            "balanced_accuracy": 0.34075339424919615,
+            "excluded_zero_shot_test_counts": {
+              "3": 13,
+              "8": 11,
+              "17": 13,
+              "19": 39,
+              "20": 11,
+              "26": 84,
+              "44": 22
+            },
+            "macro_f1": 0.3202320491909942,
+            "n_classes_scored": 38
           },
           "tissue_roc": [
             {
@@ -915,8 +945,18 @@
             ]
           },
           "tissue": {
-            "balanced_accuracy": 0.2793482736643991,
-            "macro_f1": 0.26068322930711385
+            "balanced_accuracy": 0.3455097069007042,
+            "excluded_zero_shot_test_counts": {
+              "3": 13,
+              "8": 11,
+              "17": 13,
+              "19": 39,
+              "20": 11,
+              "26": 84,
+              "44": 22
+            },
+            "macro_f1": 0.3224239941430092,
+            "n_classes_scored": 38
           },
           "tissue_roc": [
             {
@@ -1140,8 +1180,17 @@
             ]
           },
           "tissue": {
-            "balanced_accuracy": 0.39645323366650737,
-            "macro_f1": 0.3350351315316885
+            "balanced_accuracy": 0.47777697390579094,
+            "excluded_zero_shot_test_counts": {
+              "4": 52,
+              "10": 12,
+              "18": 90,
+              "27": 25,
+              "33": 85,
+              "42": 87
+            },
+            "macro_f1": 0.4037602867176759,
+            "n_classes_scored": 39
           },
           "tissue_roc": [
             {
@@ -1449,8 +1498,17 @@
             ]
           },
           "tissue": {
-            "balanced_accuracy": 0.16849088439187573,
-            "macro_f1": 0.1523468987837092
+            "balanced_accuracy": 0.20305311708764512,
+            "excluded_zero_shot_test_counts": {
+              "4": 52,
+              "10": 12,
+              "18": 90,
+              "27": 25,
+              "33": 85,
+              "42": 87
+            },
+            "macro_f1": 0.18359754468805975,
+            "n_classes_scored": 39
           },
           "tissue_roc": [
             {
@@ -1912,8 +1970,17 @@
             ]
           },
           "tissue": {
-            "balanced_accuracy": 0.3479899527497784,
-            "macro_f1": 0.31559461165073693
+            "balanced_accuracy": 0.4193725071599893,
+            "excluded_zero_shot_test_counts": {
+              "4": 52,
+              "10": 12,
+              "18": 90,
+              "27": 25,
+              "33": 85,
+              "42": 87
+            },
+            "macro_f1": 0.3803319678867856,
+            "n_classes_scored": 39
           },
           "tissue_roc": [
             {
@@ -2181,8 +2248,17 @@
             ]
           },
           "tissue": {
-            "balanced_accuracy": 0.34096965704009047,
-            "macro_f1": 0.2970763039482923
+            "balanced_accuracy": 0.4109121507919039,
+            "excluded_zero_shot_test_counts": {
+              "4": 52,
+              "10": 12,
+              "18": 90,
+              "27": 25,
+              "33": 85,
+              "42": 87
+            },
+            "macro_f1": 0.35801503296332665,
+            "n_classes_scored": 39
           },
           "tissue_roc": [
             {
@@ -2448,8 +2524,15 @@
             ]
           },
           "tissue": {
-            "balanced_accuracy": 0.38952686685372423,
-            "macro_f1": 0.364420394422702
+            "balanced_accuracy": 0.4358991129077391,
+            "excluded_zero_shot_test_counts": {
+              "21": 42,
+              "28": 99,
+              "31": 11,
+              "41": 15
+            },
+            "macro_f1": 0.40780377471111895,
+            "n_classes_scored": 42
           },
           "tissue_roc": [
             {
@@ -2749,8 +2832,15 @@
             ]
           },
           "tissue": {
-            "balanced_accuracy": 0.05342701289369979,
-            "macro_f1": 0.024434470208946187
+            "balanced_accuracy": 0.0597873715715212,
+            "excluded_zero_shot_test_counts": {
+              "21": 42,
+              "28": 99,
+              "31": 11,
+              "41": 15
+            },
+            "macro_f1": 0.02734333571001121,
+            "n_classes_scored": 42
           },
           "tissue_roc": [
             {
@@ -3032,8 +3122,15 @@
             ]
           },
           "tissue": {
-            "balanced_accuracy": 0.3142355130074501,
-            "macro_f1": 0.2887744332181423
+            "balanced_accuracy": 0.3516445026511943,
+            "excluded_zero_shot_test_counts": {
+              "21": 42,
+              "28": 99,
+              "31": 11,
+              "41": 15
+            },
+            "macro_f1": 0.3231523419345878,
+            "n_classes_scored": 42
           },
           "tissue_roc": [
             {
@@ -3297,8 +3394,15 @@
             ]
           },
           "tissue": {
-            "balanced_accuracy": 0.35694372497919874,
-            "macro_f1": 0.34393458869204135
+            "balanced_accuracy": 0.3994370255719605,
+            "excluded_zero_shot_test_counts": {
+              "21": 42,
+              "28": 99,
+              "31": 11,
+              "41": 15
+            },
+            "macro_f1": 0.384879182583951,
+            "n_classes_scored": 42
           },
           "tissue_roc": [
             {
@@ -3413,6 +3517,7 @@
       "n_train": 7631
     }
   ],
+  "gene_linked_panel": false,
   "n_loci_in_matrix": 482379,
   "n_loci_used": 65536,
   "note": "M-values on the same 65536-locus prefix as the neural cascade. HistGradientBoosting stands in for LightGBM; PCA SVs for Bioconductor sva. Metadata-only omitted from ranking (7E\u2032 leakage alarm only).",

@@ -3,6 +3,8 @@ split_id: hub-ats-7e-3fold-v1
 sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
 milestone: 7G-gene-only-probe
 report_dir: reports/inspection/stage0_7g_gene_only_probe
+gene_panel:
+  allocation: explicit_only
 cv_budget:
   max_loci: 65536
 experiment:
@@ -16,19 +18,19 @@ pilot:
 arms:
   - id: P2-G
     kind: cascade_train
-    run_id: stage0-7g-gene-probe-P2-G
+    run_id: stage0-7g-gene-probe-P2-G-explicit
     config: configs/experiment/stage0_7g_gene_only_probe_p2.yaml
   - id: P4-G
     kind: cascade_train
-    run_id: stage0-7g-gene-probe-P4-G
+    run_id: stage0-7g-gene-probe-P4-G-explicit
     config: configs/experiment/stage0_7g_gene_only_probe_p4.yaml
   - id: P5-G-max
     kind: cascade_train
-    run_id: stage0-7g-gene-probe-P5-G-max
+    run_id: stage0-7g-gene-probe-P5-G-max-explicit
     config: configs/experiment/stage0_7g_gene_only_probe_p5_max.yaml
   - id: P5-G-mean
     kind: cascade_train
-    run_id: stage0-7g-gene-probe-P5-G-mean
+    run_id: stage0-7g-gene-probe-P5-G-mean-explicit
     config: configs/experiment/stage0_7g_gene_only_probe_p5_mean.yaml
     optional: true
     gate_arm: P4-G

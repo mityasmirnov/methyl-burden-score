@@ -8,6 +8,7 @@ Ignores ``region_system=tbs``. Nearest-gene allocates typed RBS with null
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -20,6 +21,8 @@ from mbs.training.locus_region_gene import (
 
 TYPED_SYSTEMS: tuple[str, ...] = ("gene", "rbs")
 ORPHAN_GENE_INDEX = -1
+GeneAllocationPolicy = Literal["explicit_only", "bounded_nearest", "legacy_nearest"]
+DEFAULT_BOUNDED_NEAREST_BP = 1_000_000
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,28 +169,51 @@ def assignment_gene_linked_only(assignment: CascadeAssignment) -> CascadeAssignm
     )
 
 
-def nearest_gene_on_chromosome(
+def _region_has_explicit_gene(gid: object) -> bool:
+    if gid is None or (isinstance(gid, float) and np.isnan(gid)):
+        return False
+    return str(gid) not in ("", ".", "None", "nan")
+
+
+def _midpoint_from_region(rec: object) -> tuple[str, int]:
+    chrom = str(getattr(rec, "chromosome", ""))
+    start = int(getattr(rec, "start", 0) or 0)
+    end = int(getattr(rec, "end", start) or start)
+    return chrom, (start + end) // 2
+
+
+def _nearest_gene_distance(
     chromosome: str,
     midpoint: int,
     genes: pd.DataFrame,
-) -> str | None:
-    """Return nearest gene_id on ``chromosome`` by distance to gene interval; else None."""
+) -> tuple[str | None, int | None]:
+    """Return nearest gene_id on chromosome and distance in bp (0 if inside interval)."""
     if genes.empty or "chromosome" not in genes.columns:
-        return None
+        return None, None
     chrom = str(chromosome)
     g = genes.loc[genes["chromosome"].astype(str) == chrom]
     if g.empty:
-        return None
+        return None, None
     starts = g["start"].to_numpy(dtype=np.int64, copy=False)
     ends = g["end"].to_numpy(dtype=np.int64, copy=False)
-    # Distance 0 if midpoint inside [start, end]; else to nearest endpoint.
+    gene_ids = g["gene_id"].astype(str).to_numpy(copy=False)
     dist = np.where(
         (midpoint >= starts) & (midpoint <= ends),
         0,
         np.minimum(np.abs(midpoint - starts), np.abs(midpoint - ends)),
     )
     best = int(np.argmin(dist))
-    return str(g.iloc[best]["gene_id"])
+    return str(gene_ids[best]), int(dist[best])
+
+
+def nearest_gene_on_chromosome(
+    chromosome: str,
+    midpoint: int,
+    genes: pd.DataFrame,
+) -> str | None:
+    """Return nearest gene_id on ``chromosome`` by distance to gene interval; else None."""
+    gid, _ = _nearest_gene_distance(chromosome, midpoint, genes)
+    return gid
 
 
 def _gene_tables_by_chrom(genes: pd.DataFrame) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
@@ -223,32 +249,41 @@ def _nearest_from_chrom_table(
 def allocate_rbs_genes(
     regions: pd.DataFrame,
     genes: pd.DataFrame,
+    *,
+    policy: GeneAllocationPolicy = "legacy_nearest",
+    max_nearest_gene_bp: int | None = None,
 ) -> pd.Series:
-    """Map each region row to allocated gene_id (typed gene_id or nearest-gene).
+    """Map each region row to allocated gene_id per ``policy``.
 
-    Regions already carrying a non-null ``gene_id`` keep it. Null-gene typed
-    RBS regions receive same-chromosome nearest gene; failure → None (orphan).
+    Regions already carrying a non-null ``gene_id`` keep it. Under ``legacy_nearest``,
+    null-gene typed RBS regions receive same-chromosome nearest gene. Under
+    ``explicit_only``, null-gene regions stay unallocated (orphan). Under
+    ``bounded_nearest``, nearest gene is used only when distance ≤ ``max_nearest_gene_bp``.
     """
+    if policy == "bounded_nearest" and max_nearest_gene_bp is None:
+        raise ValueError("bounded_nearest requires max_nearest_gene_bp")
     chrom_tables = _gene_tables_by_chrom(genes)
     out: list[str | None] = []
     for rec in regions.itertuples(index=False):
         gid = getattr(rec, "gene_id", None)
-        if gid is not None and not (isinstance(gid, float) and np.isnan(gid)) and str(gid) not in (
-            "",
-            ".",
-            "None",
-            "nan",
-        ):
+        if _region_has_explicit_gene(gid):
             out.append(str(gid))
             continue
-        chrom = str(getattr(rec, "chromosome", ""))
+        if policy == "explicit_only":
+            out.append(None)
+            continue
+        chrom, mid = _midpoint_from_region(rec)
+        if policy == "bounded_nearest":
+            nearest, dist = _nearest_gene_distance(chrom, mid, genes)
+            if nearest is None or dist is None or dist > int(max_nearest_gene_bp or 0):
+                out.append(None)
+            else:
+                out.append(nearest)
+            continue
         table = chrom_tables.get(chrom)
         if table is None:
             out.append(None)
             continue
-        start = int(getattr(rec, "start", 0) or 0)
-        end = int(getattr(rec, "end", start) or start)
-        mid = (start + end) // 2
         out.append(_nearest_from_chrom_table(mid, table[0], table[1], table[2]))
     return pd.Series(out, index=regions.index, dtype=object)
 
@@ -260,6 +295,8 @@ def build_cascade_assignment(
     regions: pd.DataFrame,
     genes: pd.DataFrame,
     max_loci: int | None = None,
+    gene_allocation: GeneAllocationPolicy = "legacy_nearest",
+    max_nearest_gene_bp: int | None = None,
 ) -> CascadeAssignment:
     """Build 7F assignment: gene+rbs only; leftover (incl. former TBS) → direct."""
     required_locus = {"col_index", "locus_id"}
@@ -342,7 +379,12 @@ def build_cascade_assignment(
             allocated_gene_id=[],
         )
 
-    selected["allocated_gene_id"] = allocate_rbs_genes(selected, genes)
+    selected["allocated_gene_id"] = allocate_rbs_genes(
+        selected,
+        genes,
+        policy=gene_allocation,
+        max_nearest_gene_bp=max_nearest_gene_bp,
+    )
 
     region_view = selected.loc[
         :,

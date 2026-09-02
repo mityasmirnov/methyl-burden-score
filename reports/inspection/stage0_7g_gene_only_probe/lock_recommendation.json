@@ -1,10 +1,12 @@
 {
   "best_classical_arm": null,
   "cascade_clearly_ahead": null,
-  "locked_cascade_arm": "P4-G",
-  "max_epochs": 15,
-  "pooling_cpg": "mean",
-  "pooling_region": "mean",
+  "lock_blocked_reason": "no cascade arm with test-only mbs_e2e (eval_split=test on all folds)",
+  "locked_cascade_arm": null,
+  "max_epochs": null,
+  "mbs_e2e_valid": false,
+  "pooling_cpg": null,
+  "pooling_region": null,
   "primary_metric": "mbs_e2e.metrics.tissue.macro_f1",
   "recommend_encoder_parity": false
 }

@@ -137,18 +137,30 @@ def train_flat_region_on_arrays(
             mbs, present = forward_sample(int(i))
             logits = heads.forward_tissue(mbs, present)
             tissue_pred.append(int(logits.argmax(dim=-1).item()))
+    test_idx_a = np.asarray(test_idx, dtype=np.int64)
+    train_idx_a = np.asarray(train_idx, dtype=np.int64)
+    tm_tr = tissue_mask_a[train_idx_a]
+    tissue_valid_classes = (
+        set(tissue[train_idx_a][tm_tr].tolist()) if tm_tr.any() else None
+    )
     metrics = evaluate_multitask_predictions(
         preds={"tissue": np.asarray(tissue_pred, dtype=np.int64)},
-        age=ages,
-        age_mask=age_mask_a,
-        tissue=tissue,
-        tissue_mask=tissue_mask_a,
-        sex=sex,
-        sex_mask=sex_mask_a,
-        study_ids=study_ids,
+        age=ages[test_idx_a],
+        age_mask=age_mask_a[test_idx_a],
+        tissue=tissue[test_idx_a],
+        tissue_mask=tissue_mask_a[test_idx_a],
+        sex=sex[test_idx_a],
+        sex_mask=sex_mask_a[test_idx_a],
+        study_ids=study_ids[test_idx_a],
         tissue_class_names=list(class_names),
-        tissue_valid_classes=set(tissue[train_idx].tolist()),
+        tissue_valid_classes=tissue_valid_classes,
     )
-    payload = {"metrics": metrics, "arm": "N-light-type", "n_genes": index.n_genes}
+    payload = {
+        "metrics": metrics,
+        "arm": "N-light-type",
+        "n_genes": index.n_genes,
+        "eval_split": "test",
+        "n_eval_samples": int(test_idx_a.size),
+    }
     (out_dir / "metrics.json").write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
     return payload

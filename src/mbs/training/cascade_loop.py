@@ -375,6 +375,8 @@ def _evaluate_mbs_e2e(
     assignment: CascadeAssignment,
     betas: np.ndarray,
     *,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
     ages: np.ndarray,
     age_mask: np.ndarray,
     tissue: np.ndarray,
@@ -385,10 +387,12 @@ def _evaluate_mbs_e2e(
     class_names: list[str],
     device: torch.device,
 ) -> dict[str, Any]:
-    """End-to-end phenotype heads on MBS only (no late fusion)."""
-    mbs_all, present_all, _ = score_samples(model, assignment, betas, device=device)
-    mbs_t = torch.from_numpy(mbs_all).to(device)
-    present_t = torch.from_numpy(present_all).to(device)
+    """End-to-end phenotype heads on MBS only (no late fusion); test split only."""
+    test_idx_a = np.asarray(test_idx, dtype=np.int64)
+    betas_te = betas[test_idx_a]
+    mbs_te, present_te, _ = score_samples(model, assignment, betas_te, device=device)
+    mbs_t = torch.from_numpy(mbs_te).to(device)
+    present_t = torch.from_numpy(present_te).to(device)
     heads.eval()
     with torch.no_grad():
         age_pred = heads.forward_age(mbs_t, present_t).detach().cpu().numpy()
@@ -404,26 +408,31 @@ def _evaluate_mbs_e2e(
         "tissue": tissue_pred,
         "sex": sex_pred,
     }
+    train_idx_a = np.asarray(train_idx, dtype=np.int64)
     tissue_valid_classes = None
-    tm = np.asarray(tissue_mask, dtype=bool)
-    if tm.any():
-        tissue_valid_classes = set(np.asarray(tissue, dtype=np.int64)[tm].tolist())
+    tm_tr = np.asarray(tissue_mask, dtype=bool)[train_idx_a]
+    if tm_tr.any():
+        tissue_valid_classes = set(
+            np.asarray(tissue, dtype=np.int64)[train_idx_a][tm_tr].tolist()
+        )
     metrics = evaluate_multitask_predictions(
         preds=preds,
-        age=ages,
-        age_mask=age_mask,
-        tissue=tissue,
-        tissue_mask=tissue_mask,
-        sex=sex,
-        sex_mask=sex_mask,
-        study_ids=study_ids,
+        age=ages[test_idx_a],
+        age_mask=age_mask[test_idx_a],
+        tissue=tissue[test_idx_a],
+        tissue_mask=tissue_mask[test_idx_a],
+        sex=sex[test_idx_a],
+        sex_mask=sex_mask[test_idx_a],
+        study_ids=study_ids[test_idx_a],
         tissue_class_names=list(class_names) if class_names else None,
         tissue_valid_classes=tissue_valid_classes,
     )
     return {
         "metrics": metrics,
         "evaluation": "mbs_e2e",
-        "n_score_features": int(mbs_all.shape[1]),
+        "eval_split": "test",
+        "n_eval_samples": int(test_idx_a.size),
+        "n_score_features": int(mbs_te.shape[1]),
     }
 
 
@@ -474,7 +483,12 @@ def _evaluations_incomplete(metrics: dict[str, Any]) -> bool:
     ev = metrics.get("evaluations")
     if not isinstance(ev, dict):
         return True
-    return "mbs_e2e" not in ev or "fusion_full" not in ev
+    if "mbs_e2e" not in ev or "fusion_full" not in ev:
+        return True
+    e2e = ev.get("mbs_e2e")
+    if not isinstance(e2e, dict) or e2e.get("eval_split") != "test":
+        return True
+    return False
 
 
 def train_cascade_on_arrays(
@@ -527,11 +541,8 @@ def train_cascade_on_arrays(
         skip_if_done
         and manifest_path.is_file()
         and metrics_path.is_file()
-        and not (
-            eval_only
-            and prior_metrics is not None
-            and _evaluations_incomplete(prior_metrics)
-        )
+        and prior_metrics is not None
+        and not _evaluations_incomplete(prior_metrics)
     ):
         cached = dict(prior_metrics or {})
         cached["skipped"] = True
@@ -795,6 +806,8 @@ def train_cascade_on_arrays(
         heads,
         assignment,
         betas,
+        train_idx=train_idx,
+        test_idx=test_idx,
         ages=ages,
         age_mask=age_mask_a,
         tissue=tissue,
@@ -1028,6 +1041,18 @@ def run_cascade_hub(
     if fusion_cfg is not None and not isinstance(fusion_cfg, dict):
         raise ValueError("config fusion must be a mapping")
     gene_linked_only = bool(training_cfg.get("gene_linked_only", False))
+    gene_allocation_raw = model_cfg.get(
+        "gene_allocation",
+        training_cfg.get("gene_allocation", "legacy_nearest"),
+    )
+    gene_allocation = str(gene_allocation_raw)
+    if gene_allocation not in ("explicit_only", "bounded_nearest", "legacy_nearest"):
+        raise ValueError(f"unsupported gene_allocation: {gene_allocation!r}")
+    max_nearest_raw = model_cfg.get(
+        "max_nearest_gene_bp",
+        training_cfg.get("max_nearest_gene_bp"),
+    )
+    max_nearest_gene_bp = None if max_nearest_raw is None else int(max_nearest_raw)
     primary_evaluation = str(training_cfg.get("primary_evaluation", "late_fusion"))
     if primary_evaluation not in ("late_fusion", "mbs_e2e"):
         raise ValueError(f"unsupported training.primary_evaluation: {primary_evaluation!r}")
@@ -1070,10 +1095,13 @@ def run_cascade_hub(
         regions=regions,
         genes=genes,
         max_loci=max_loci,
+        gene_allocation=gene_allocation,  # type: ignore[arg-type]
+        max_nearest_gene_bp=max_nearest_gene_bp,
     )
     print(
         f"[cascade] assignment genes={assignment.n_genes} regions={assignment.n_regions} "
-        f"orphan_rbs={assignment.n_orphan_rbs} direct={assignment.n_direct}",
+        f"orphan_rbs={assignment.n_orphan_rbs} direct={assignment.n_direct} "
+        f"gene_allocation={gene_allocation}",
         flush=True,
     )
     betas_z = open_betas_zarr(matrix_paths.betas_path)

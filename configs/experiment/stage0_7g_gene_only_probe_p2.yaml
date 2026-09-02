@@ -19,6 +19,7 @@ model:
   topology: rbs_gene_direct
   tbs_arm: false
   pooling: max
+  gene_allocation: explicit_only
   cpg_hidden_dim: 64
   region_hidden_dim: 32
   dropout: 0.1

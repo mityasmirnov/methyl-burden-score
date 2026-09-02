@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import numpy as np
 
 from mbs.training.cascade_assign import build_cascade_assignment
 from mbs.training.cascade_loop import (
+    _evaluations_incomplete,
     make_synthetic_cascade_tables,
     train_cascade_on_arrays,
 )
@@ -143,6 +145,50 @@ def test_skip_if_done_reuses_metrics(tmp_path: Path) -> None:
     second = train_cascade_on_arrays(**kwargs, skip_if_done=True)
     assert second.get("skipped") is True
     assert second["score_dir"] == first["score_dir"]
+
+
+def test_skip_if_done_reruns_when_mbs_e2e_lacks_test_split(tmp_path: Path) -> None:
+    tables = make_synthetic_cascade_tables(seed=4)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, max(2, n // 2), dtype=np.int64)
+    test_idx = np.arange(train_idx[-1] + 1, n, dtype=np.int64)
+    if test_idx.size == 0:
+        test_idx = train_idx.copy()
+    out_dir = tmp_path / "fold"
+    kwargs = dict(
+        assignment=assignment,
+        betas=tables["betas"],
+        train_idx=train_idx,
+        test_idx=test_idx,
+        ages=tables["ages"],
+        tissue=tables["tissue"],
+        sex=tables["sex"],
+        study_ids=tables["study_ids"],
+        sample_ids=tables["sample_ids"],
+        class_names=tables["class_names"],
+        out_dir=out_dir,
+        max_epochs=1,
+        seed=1,
+        device_str="cpu",
+        cpg_hidden_dim=8,
+        region_hidden_dim=4,
+        dropout=0.0,
+    )
+    train_cascade_on_arrays(**kwargs, skip_if_done=False)
+    metrics_path = out_dir / "metrics.json"
+    blob = json.loads(metrics_path.read_text(encoding="utf-8"))
+    blob["evaluations"]["mbs_e2e"].pop("eval_split", None)
+    metrics_path.write_text(json.dumps(blob), encoding="utf-8")
+    assert _evaluations_incomplete(blob)
+    rerun = train_cascade_on_arrays(**kwargs, skip_if_done=True)
+    assert rerun.get("skipped") is not True
+    assert rerun["evaluations"]["mbs_e2e"]["eval_split"] == "test"
 
 
 def test_t_mean_region_is_distinct_arm_name() -> None:

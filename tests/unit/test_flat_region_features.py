@@ -56,5 +56,6 @@ def test_stability_select_columns_smoke() -> None:
     rng = np.random.default_rng(0)
     x = rng.normal(size=(40, 20)).astype(np.float32)
     y = rng.integers(0, 3, size=40)
-    picked = stability_select_columns(x, y, max_seeds=5, n_inner_folds=2)
+    picked, meta = stability_select_columns(x, y, max_seeds=5, n_inner_folds=2)
     assert picked.size >= 1
+    assert meta["n_runs"] >= 0

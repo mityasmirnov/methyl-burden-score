@@ -12,6 +12,7 @@ from mbs.models import CascadeDeepSet
 from mbs.training.cascade_assign import (
     ORPHAN_GENE_INDEX,
     build_cascade_assignment,
+    gene_linked_col_index,
     nearest_gene_on_chromosome,
 )
 from mbs.training.cascade_loop import (
@@ -37,6 +38,74 @@ def test_nearest_gene_and_orphan_chromosome() -> None:
     )
     assert nearest_gene_on_chromosome("chr1", 150, genes) == "ENSG1"
     assert nearest_gene_on_chromosome("chr2", 150, genes) is None
+
+
+def test_gene_allocation_explicit_only_excludes_nearest_gene_rbs() -> None:
+    tables = make_synthetic_cascade_tables(seed=0)
+    legacy = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+        gene_allocation="legacy_nearest",
+    )
+    explicit = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+        gene_allocation="explicit_only",
+    )
+    legacy_cols = set(gene_linked_col_index(legacy).tolist())
+    explicit_cols = set(gene_linked_col_index(explicit).tolist())
+    assert legacy_cols.issuperset(explicit_cols)
+    assert legacy_cols != explicit_cols
+    cgi_i = legacy.region_ids.index("RBS:cgi_1")
+    assert legacy.region_to_gene[cgi_i] >= 0
+    explicit_cgi_i = explicit.region_ids.index("RBS:cgi_1")
+    assert explicit.region_to_gene[explicit_cgi_i] == ORPHAN_GENE_INDEX
+
+
+def test_gene_allocation_bounded_nearest_distance_gate() -> None:
+    tables = make_synthetic_cascade_tables(seed=0)
+    regions = pd.concat(
+        [
+            tables["regions"],
+            pd.DataFrame(
+                [
+                    {
+                        "region_id": "RBS:far_cgi",
+                        "gene_id": None,
+                        "region_type": "cgi_island",
+                        "region_system": "rbs",
+                        "chromosome": "chr1",
+                        "start": 2000,
+                        "end": 2100,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    edges = pd.concat(
+        [
+            tables["locus_region_edges"],
+            pd.DataFrame([{"locus_id": 40, "region_id": "RBS:far_cgi"}]),
+        ],
+        ignore_index=True,
+    )
+    kwargs = {
+        "locus_index": tables["locus_index"],
+        "locus_region_edges": edges,
+        "regions": regions,
+        "genes": tables["genes"],
+        "gene_allocation": "bounded_nearest",
+    }
+    near = build_cascade_assignment(**kwargs, max_nearest_gene_bp=5000)
+    far = build_cascade_assignment(**kwargs, max_nearest_gene_bp=500)
+    far_i = near.region_ids.index("RBS:far_cgi")
+    assert near.region_to_gene[far_i] >= 0
+    assert far.region_to_gene[far_i] == ORPHAN_GENE_INDEX
 
 
 def test_cascade_assign_leftover_direct_and_rbs_gene() -> None:

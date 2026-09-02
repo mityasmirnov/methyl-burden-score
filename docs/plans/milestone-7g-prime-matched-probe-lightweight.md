@@ -49,23 +49,24 @@ Current code facts (must stay documented until fixed):
 
 ## Stage A — Gene-only MBS architecture selection (corrected P4/P5)
 
-### Gene-linked CpG definition
+### Gene-linked CpG definition (Stage A)
 
-From the assignment graph (after removing unrestricted nearest-gene allocation
-for architecture selection):
+Use **`gene_allocation: explicit_only`** ([ADR 0010](../adr/0010-gene-allocation-policy.md)):
+annotation-backed `gene_id` only; null-gene typed regions stay orphan. Persist
+matched columns in `gene_panel_manifest.json`. Sensitivity: `legacy_nearest`,
+`bounded_nearest`.
 
 ```python
-gene_edge = (
-    assignment.region_to_gene[assignment.edge_region_index] >= 0
-)
-gene_cols = np.unique(
-    assignment.edge_col_index[gene_edge]
-)
+gene_edge = assignment.region_to_gene[assignment.edge_region_index] >= 0
+gene_cols = np.unique(assignment.edge_col_index[gene_edge])
 ```
 
-Both CascadeDeepSet and the comparator use **exactly `gene_cols`**. Non-gene
-typed regions, orphan-region CpGs, and untyped CpGs are **excluded** from this
-phase (compute savings + fair loss path).
+Both CascadeDeepSet and **`C-mvalue-*-G`** use **exactly `gene_cols`**.
+
+### Primary metric: test-only `mbs_e2e`
+
+End-to-end MBS heads are evaluated on **outer test only** (`eval_split=test`).
+Reports refuse architecture lock when historical metrics lack this field.
 
 ### MBS-only architecture
 
@@ -138,8 +139,10 @@ the primary selector.
 | `C-mvalue-enetS` | sparse linear on selected panel |
 | `N-cascade-S` | locked Stage-A cascade on same loci |
 | `N-light-type` | `[M, multi-hot regulatory annotation, observed]` → gene pool |
-| `N-mbs-direct-only` | MBS + direct; omit orphan block (`fusion_mbs_direct`) |
-| `N-full` | MBS + qualified orphan RBS + direct (`fusion_full`) |
+| `N-mbs-posthoc-mbs-direct` | MBS + direct post-hoc fusion (encoder once) |
+| `N-mbs-posthoc-full-fusion` | MBS + orphan RBS + direct post-hoc fusion |
+
+Legacy names `N-full` / `N-mbs-direct-only` are deprecated aliases.
 
 ### Full model after gene-architecture selection
 
@@ -164,8 +167,14 @@ heads → joint fine-tune → compare vs scratch.
 - Final model: one column per **qualified** multi-CpG `region_id`; never pool
   globally or by `region_type`.
 - Unqualified singletons → direct.
-- Remove unrestricted same-chromosome nearest-gene allocation for final OOF
-  (current `cascade_assign.py` violates this).
+- Remove unrestricted same-chromosome nearest-gene allocation for **Stage A**
+  (`explicit_only`; ADR 0010). Product OOF may use `bounded_nearest` when documented.
+
+**Stage B panel artifact** (`fold_panels/fold_*_panel.json`):
+
+- Multitask study-grouped stability selection on M-values (age, sex, tissue union)
+- Shared `panel_cols` for `C-mvalue-enetS`, `N-cascade-S`, `N-light-type`, post-hoc fusion arms
+- Selection frequency, graph/hash metadata, train-only normalizer hashes
 
 **Association product (Milestone 7 export)**
 
@@ -190,8 +199,10 @@ direct_locus_index.parquet
 
 ## Sequencing
 
-1. Implement gene-col filter + MBS-only evaluation mode in cascade trainer.
-2. Re-run Stage A (`P2-G` … `C-mvalue-enet-G`).
-3. Implement fold-safe panel selector + `direct_cpg.zarr` contract.
-4. Run Stage B.
-5. Start Milestone **7** OOF with locked config + full product export.
+1. ~~Test-only `mbs_e2e` + report invalidation~~ (done).
+2. ~~`explicit_only` allocation + `gene_panel_manifest.json`~~ (done).
+3. **Re-run Stage A** (`P2-G` … `C-mvalue-enet-G` on `*-explicit` run IDs).
+4. ~~Fold-safe panel selector + Stage B runner plumbing~~ (done; GPU run pending).
+5. Run Stage B.
+6. Optional **7G″** expression pilot ([plan](milestone-7g-double-prime-expression-auxiliary.md)).
+7. Start Milestone **7** OOF with locked config + full product export.

@@ -31,8 +31,8 @@ def main() -> None:
         "C-mvalue-enetS",
         "N-cascade-S",
         "N-light-type",
-        "N-full",
-        "N-mbs-direct-only",
+        "N-mbs-posthoc-full-fusion",
+        "N-mbs-posthoc-mbs-direct",
     ]
     lock = summary.get("lock_from_stage_a") or {}
     if lock.get("locked_cascade_arm"):
@@ -68,7 +68,8 @@ def main() -> None:
             "## Recommendation",
             "",
             "Compare `C-mvalue-enetS` vs `N-cascade-S` vs `N-light-type` tissue macro-F1 on "
-            "identical fold-selected panels. Use `N-full` vs `N-mbs-direct-only` for orphan RBS.",
+            "identical fold-selected panels. Use `N-mbs-posthoc-full-fusion` vs "
+            "`N-mbs-posthoc-mbs-direct` for orphan RBS (single encoder; CPU fusion heads only).",
             "Product export includes `direct_cpg.zarr` from cascade score writes when direct "
             "loci are present.",
             "",

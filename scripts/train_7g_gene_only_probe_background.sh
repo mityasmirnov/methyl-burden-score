@@ -22,9 +22,19 @@ LATEST_LOG="$LOGDIR/stage0_7g_gene_only_latest.log"
 LATEST_PID="$LOGDIR/stage0_7g_gene_only_latest.pid"
 
 export PYTHONUNBUFFERED=1
+ARMS="${ARMS:-}"
+ARM_ARGS=()
+if [[ -n "$ARMS" ]]; then
+  # Space-separated arm ids, e.g. ARMS="P2-G P4-G"
+  read -r -a ARM_IDS <<<"$ARMS"
+  for arm in "${ARM_IDS[@]}"; do
+    ARM_ARGS+=(--arm "$arm")
+  done
+fi
 nohup uv run python "$REPO_ROOT/scripts/run_7g_gene_only_probe.py" \
   --config "$CONFIG" \
   --device "$DEVICE" \
+  "${ARM_ARGS[@]}" \
   >"$NOHUP_LOG" 2>&1 &
 PID=$!
 printf '%s\n' "$PID" >"$PID_FILE"

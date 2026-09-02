@@ -96,12 +96,19 @@ ARM_DESCRIPTIONS: dict[str, str] = {
         "**FlatDeepSetRegion** (planned): per-CpG `[M-value, regulatory-type one-hot, observed]` "
         "→ pool by gene → MBS; lighter than full RBS→gene cascade."
     ),
+    "N-mbs-posthoc-full-fusion": (
+        "**Stage B post-hoc fusion:** MBS encoder trained once; CPU late fusion on "
+        "**`[orphan_rbs | mbs | direct_contrib]`** (`fusion_full`). Not joint end-to-end."
+    ),
+    "N-mbs-posthoc-mbs-direct": (
+        "**Stage B orphan ablation:** same encoder; CPU fusion on **`[mbs | direct_contrib]`** only "
+        "(`fusion_mbs_direct`)."
+    ),
     "N-full": (
-        "**Stage B full model:** late fusion **`fusion_full`** = orphan RBS + MBS + direct columns."
+        "Deprecated alias for **`N-mbs-posthoc-full-fusion`** (post-hoc fusion, not joint training)."
     ),
     "N-mbs-direct-only": (
-        "**Orphan ablation:** late fusion **`fusion_mbs_direct`** = MBS + direct only "
-        "(no orphan RBS block)."
+        "Deprecated alias for **`N-mbs-posthoc-mbs-direct`**."
     ),
     # --- Transparent linear baselines (T = transparent; fixed features, no shared encoder train) ---
     "T-mean-gene": "Presence-aware **gene-mean** M-values → fold-fitted linear multitask heads.",

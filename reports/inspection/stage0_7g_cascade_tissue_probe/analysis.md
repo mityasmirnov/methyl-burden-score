@@ -39,25 +39,25 @@ Frozen split `hub-ats-7e-3fold-v1`; **65536 loci / 1 restart**. P0-P4 use 15 epo
 
 ## Comparable ranking (panel × eval mode)
 
-Compare **only within the same row group** (same panel and eval mode). Stage A primary metric is **`mbs_e2e`** on the **gene-linked** panel; 7G tissue probe P0–P5 used **late fusion (`fusion_full`)** on the **65k prefix**. The same cascade checkpoint can score very differently under `mbs_e2e` vs `fusion_full`.
+Compare **only within the same row group** (same panel and eval mode). Stage A primary metric is **`mbs_e2e`** on the **gene-linked** panel (test split only). 7G tissue probe P0–P5 used **late fusion (`fusion_full`)** on the **65k prefix**. Rows marked *invalid* used pre-fix `mbs_e2e` that scored train+validation+test together.
 
-| Arm | Panel | Eval mode | Tissue macro-F1 | folds |
-|-----|-------|-----------|----------------:|------:|
-| `P0-baseline` | 65k prefix | `fusion_full` | 0.093 (±0.014) | 3 |
-| `P0-baseline` | 65k prefix | `mbs_e2e` | — | 0 |
-| `P2-end2end-tissue-weight` | 65k prefix | `fusion_full` | 0.376 (±0.059) | 3 |
-| `P2-end2end-tissue-weight` | 65k prefix | `mbs_e2e` | — | 0 |
-| `P4-pooling-mean` | 65k prefix | `fusion_full` | 0.360 (±0.053) | 3 |
-| `P4-pooling-mean` | 65k prefix | `mbs_e2e` | — | 0 |
-| `P5-epochs-30` | 65k prefix | `fusion_full` | 0.356 (±0.050) | 3 |
-| `P5-epochs-30` | 65k prefix | `mbs_e2e` | 0.674 (±0.040) | 3 |
-| `P2-G` | gene-linked | `fusion_full` | 0.380 (±0.051) | 3 |
-| `P2-G` | gene-linked | `mbs_e2e` | 0.682 (±0.030) | 3 |
-| `P4-G` | gene-linked | `fusion_full` | 0.374 (±0.048) | 3 |
-| `P4-G` | gene-linked | `mbs_e2e` | 0.695 (±0.054) | 3 |
-| `P5-G-mean` | gene-linked | `mbs_e2e` | 0.672 (±0.029) | 3 |
-| `C-mvalue-enet` | 65k prefix | `classical` | 0.334 (±0.031) | 3 |
-| `C-mvalue-enet-G` | gene-linked | `classical` | — | 0 |
+| Arm | Panel | Eval mode | Tissue macro-F1 | folds | Notes |
+|-----|-------|-----------|----------------:|------:|-------|
+| `P0-baseline` | 65k prefix | `fusion_full` | 0.093 (±0.014) | 3 |  |
+| `P0-baseline` | 65k prefix | `mbs_e2e` | — | 0 | mbs_e2e missing eval_split=test (train+test leak) |
+| `P2-end2end-tissue-weight` | 65k prefix | `fusion_full` | 0.376 (±0.059) | 3 |  |
+| `P2-end2end-tissue-weight` | 65k prefix | `mbs_e2e` | — | 0 | mbs_e2e missing eval_split=test (train+test leak) |
+| `P4-pooling-mean` | 65k prefix | `fusion_full` | 0.360 (±0.053) | 3 |  |
+| `P4-pooling-mean` | 65k prefix | `mbs_e2e` | — | 0 | mbs_e2e missing eval_split=test (train+test leak) |
+| `P5-epochs-30` | 65k prefix | `fusion_full` | 0.356 (±0.050) | 3 |  |
+| `P5-epochs-30` | 65k prefix | `mbs_e2e` | — | 0 | mbs_e2e missing eval_split=test (train+test leak) |
+| `P2-G` | gene-linked | `fusion_full` | 0.380 (±0.051) | 3 |  |
+| `P2-G` | gene-linked | `mbs_e2e` | — | 0 | mbs_e2e missing eval_split=test (train+test leak) |
+| `P4-G` | gene-linked | `fusion_full` | 0.374 (±0.048) | 3 |  |
+| `P4-G` | gene-linked | `mbs_e2e` | — | 0 | mbs_e2e missing eval_split=test (train+test leak) |
+| `P5-G-mean` | gene-linked | `mbs_e2e` | — | 0 | mbs_e2e missing eval_split=test (train+test leak) |
+| `C-mvalue-enet` | 65k prefix | `classical` | 0.334 (±0.031) | 3 |  |
+| `C-mvalue-enet-G` | gene-linked | `classical` | — | 0 |  |
 
 **Fair pairs (examples):**
 

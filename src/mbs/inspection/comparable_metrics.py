@@ -155,6 +155,14 @@ def _classical_f1_per_fold(
     return out
 
 
+def _mbs_e2e_fold_valid(blob: dict[str, Any]) -> bool:
+    evaluations = blob.get("evaluations") or {}
+    e2e = evaluations.get("mbs_e2e")
+    if not isinstance(e2e, dict):
+        return False
+    return e2e.get("eval_split") == "test"
+
+
 def load_comparable_rows(
     artifact_root: Path,
     *,
@@ -176,20 +184,24 @@ def load_comparable_rows(
                     per_fold.append(None)
                     continue
                 blob = json.loads(metrics_path.read_text(encoding="utf-8"))
+                if spec["eval_mode"] == "mbs_e2e" and not _mbs_e2e_fold_valid(blob):
+                    per_fold.append(None)
+                    continue
                 per_fold.append(_metric_from_blob(blob, spec["metric_path"]))
         mean_f1, std_f1 = _mean_std(per_fold)
-        rows.append(
-            {
-                "arm": spec["arm"],
-                "run_id": spec["run_id"],
-                "panel": spec["panel"],
-                "eval_mode": spec["eval_mode"],
-                "tissue_macro_f1": mean_f1,
-                "tissue_macro_f1_std": std_f1,
-                "n_folds": sum(1 for v in per_fold if v is not None),
-                "per_fold_f1": per_fold,
-            }
-        )
+        row: dict[str, Any] = {
+            "arm": spec["arm"],
+            "run_id": spec["run_id"],
+            "panel": spec["panel"],
+            "eval_mode": spec["eval_mode"],
+            "tissue_macro_f1": mean_f1,
+            "tissue_macro_f1_std": std_f1,
+            "n_folds": sum(1 for v in per_fold if v is not None),
+            "per_fold_f1": per_fold,
+        }
+        if spec["eval_mode"] == "mbs_e2e" and row["n_folds"] == 0 and spec["run_id"]:
+            row["invalid_reason"] = "mbs_e2e missing eval_split=test (train+test leak)"
+        rows.append(row)
     return rows
 
 
@@ -199,12 +211,12 @@ def render_comparable_ranking_section(rows: list[dict[str, Any]]) -> list[str]:
         "## Comparable ranking (panel × eval mode)",
         "",
         "Compare **only within the same row group** (same panel and eval mode). "
-        "Stage A primary metric is **`mbs_e2e`** on the **gene-linked** panel; "
+        "Stage A primary metric is **`mbs_e2e`** on the **gene-linked** panel (test split only). "
         "7G tissue probe P0–P5 used **late fusion (`fusion_full`)** on the **65k prefix**. "
-        "The same cascade checkpoint can score very differently under `mbs_e2e` vs `fusion_full`.",
+        "Rows marked *invalid* used pre-fix `mbs_e2e` that scored train+validation+test together.",
         "",
-        "| Arm | Panel | Eval mode | Tissue macro-F1 | folds |",
-        "|-----|-------|-----------|----------------:|------:|",
+        "| Arm | Panel | Eval mode | Tissue macro-F1 | folds | Notes |",
+        "|-----|-------|-----------|----------------:|------:|-------|",
     ]
     for row in rows:
         f1 = row.get("tissue_macro_f1")
@@ -215,9 +227,12 @@ def render_comparable_ranking_section(rows: list[dict[str, Any]]) -> list[str]:
             disp = f"{f1:.3f} (±{std:.3f})"
         else:
             disp = f"{f1:.3f}"
+        note = row.get("invalid_reason") or ""
+        if note:
+            disp = f"*{disp}*" if disp != "—" else "—"
         lines.append(
             f"| `{row['arm']}` | {row['panel']} | `{row['eval_mode']}` | {disp} | "
-            f"{row.get('n_folds', 0)} |"
+            f"{row.get('n_folds', 0)} | {note} |"
         )
     lines.extend(
         [

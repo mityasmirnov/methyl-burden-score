@@ -28,6 +28,7 @@ from mbs.matrix.store import (
     read_sample_index,
 )
 from mbs.training.dev_cv import _phenotype_arrays
+from mbs.training.fold_safe_panel import select_multitask_fold_panel
 from mbs.training.features import beta_to_m_value
 
 EPSILON = 0.001
@@ -402,8 +403,6 @@ def run_classical_mvalue_enetS(
     max_seeds: int = 10_000,
 ) -> dict[str, Any]:
     """Fold-safe ``C-mvalue-enetS``: stability selection on outer-train only."""
-    from mbs.training.fold_safe_panel import select_fold_panel
-
     matrix_paths = matrix_store_paths(data_root / "canonical" / "matrices" / matrix_id)
     sample_index = read_sample_index(matrix_paths.sample_index_path)
     n_cols = min(int(max_loci), int(read_locus_index(matrix_paths.locus_index_path).shape[0]))
@@ -449,14 +448,22 @@ def run_classical_mvalue_enetS(
         x_te = matrix_for(test_ids)
         ph_tr = _phenotype_arrays(phenotypes, train_ids)
         ph_te = _phenotype_arrays(phenotypes, test_ids)
-        tissue_m = ph_tr["tissue_mask"]
-        if not bool(tissue_m.any()):
-            raise ValueError(f"fold {fold_idx}: no tissue labels on train")
-        panel_info = select_fold_panel(
-            x_train=x_tr[tissue_m],
-            y_train=ph_tr["tissue"][tissue_m],
+        studies_tr = np.asarray(
+            [str(next(p for p in phenotypes if p.sample_id == s).study_id or "NA") for s in train_ids],
+            dtype=object,
+        )
+        panel_info = select_multitask_fold_panel(
+            x_train=x_tr,
+            age=ph_tr["age"],
+            age_mask=ph_tr["age_mask"],
+            sex=ph_tr["sex"],
+            sex_mask=ph_tr["sex_mask"],
+            tissue=ph_tr["tissue"],
+            tissue_mask=ph_tr["tissue_mask"],
+            study_ids=studies_tr,
             assignment=assignment,
             max_seeds=max_seeds,
+            matrix_id=matrix_id,
         )
         panel = np.asarray(panel_info["panel_cols"], dtype=np.int64)
         metrics = fit_eval_mvalue_fold(

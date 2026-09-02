@@ -17,6 +17,13 @@ pilot:
 panel:
   max_seeds: 10000
 lock_from_stage_a: reports/inspection/stage0_7g_gene_only_probe/lock_recommendation.json
+stage_a_defaults:
+  pooling_cpg: max
+  pooling_region: max
+  max_epochs: 15
+  age_loss_weight: 0.3
+  tissue_loss_weight: 3.0
+  sex_loss_weight: 1.0
 arms:
   - id: C-mvalue-enetS
     kind: classical_enetS
@@ -25,12 +32,9 @@ arms:
     run_id: stage0-7g-prime-N-cascade-S
   - id: N-light-type
     kind: flat_region_panel
-  - id: N-full
-    kind: cascade_full
-    run_id: stage0-7g-prime-N-full
-    extra_fusion_modes: []
-  - id: N-mbs-direct-only
-    kind: cascade_full
-    run_id: stage0-7g-prime-N-mbs-direct
-    extra_fusion_modes:
-      - mbs_direct
+  - id: N-mbs-posthoc-full-fusion
+    kind: cascade_posthoc_full
+    run_id: stage0-7g-prime-N-posthoc-full
+  - id: N-mbs-posthoc-mbs-direct
+    kind: cascade_posthoc_mbs_direct
+    run_id: stage0-7g-prime-N-posthoc-mbs-direct
