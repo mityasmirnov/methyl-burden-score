@@ -1,4 +1,46 @@
 {
+  "cpg_context_populated": true,
+  "flat_region_graph_audit": {
+    "cpg_context_counts": {
+      "island": 20193,
+      "north_shelf": 2051,
+      "north_shore": 6923,
+      "open_sea": 18572,
+      "south_shelf": 2147,
+      "south_shore": 7544,
+      "unknown": 0
+    },
+    "cpgs_per_gene": {
+      "max": 639,
+      "mean": 21.70445956160242,
+      "min": 1
+    },
+    "edges_per_gene": {
+      "max": 639,
+      "mean": 21.70445956160242,
+      "min": 1
+    },
+    "n_locus_gene_edges": 57430,
+    "n_multi_gene_cpgs": 5718,
+    "n_other_gene_edges": 0,
+    "n_unique_cpgs": 51375,
+    "regulatory_nonzero_counts": {
+      "chromhmm": 0,
+      "ctcf_only_ccre": 0,
+      "dhs_flag": 0,
+      "dhs_only_ccre": 0,
+      "enhancer_like_ccre": 0,
+      "promoter_like_ccre": 0
+    },
+    "role_counts": {
+      "five_prime": 1890,
+      "gene_body": 23422,
+      "other_gene": 0,
+      "promoter_core": 15876,
+      "promoter_proximal": 13145,
+      "three_prime": 3097
+    }
+  },
   "gene_allocation": "explicit_only",
   "gene_col_indices": [
     6,
@@ -51379,9 +51421,13 @@
   ],
   "graph_content_hash": null,
   "graph_id": "graph-grch38-gencode38-cgi-tile-v2",
+  "loci_annotation_path": "/data/projects/methyl-burden-score/data/canonical/annotations/loci.parquet",
+  "loci_annotation_sha256": "6b1358fd1a4f8c3b1ef0bf6d3faf7027c77d16e25dcd98d9f126053cba228be8",
   "matrix_id": "matrix-hub-age-tissue-sex-full-v1",
   "max_loci": 65536,
   "max_nearest_gene_bp": null,
   "n_gene_cols": 51375,
-  "n_other_gene_edges": 0
+  "n_other_gene_edges": 0,
+  "regulatory_channels_note": "cCRE/DHS/ChromHMM not yet on disk; reserved slots remain zero",
+  "regulatory_channels_populated": false
 }

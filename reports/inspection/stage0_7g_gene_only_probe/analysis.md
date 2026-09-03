@@ -3,6 +3,8 @@
 Primary metric: **`mbs_e2e`** tissue macro-F1 (end-to-end MBS heads; not late fusion).
 Classical comparator: **`C-mvalue-*-G`** on identical `gene_cols`.
 
+> **Invalid historical `mbs_e2e`:** pre-fix runs scored train+validation+test together. Reported ~0.67–0.70 gene-only F1 is **not trustworthy**. Until rerun with `eval_split=test`, use **`mbs_linear_probe`** (~0.37) as the honest neural tissue check. **Do not lock architecture.**
+
 ## Arm glossary
 
 ### Naming prefixes
@@ -99,17 +101,22 @@ Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare row
 | `P2-G` | `mbs_linear_probe` | 0.373 (±0.052) | 13.393 (±1.104) | 0.488 (±0.110) | 0.784 (±0.020) | 0.717 (±0.021) | 3 |
 | `P5-G-max` | `mbs_linear_probe` | 0.371 (±0.039) | 13.274 (±0.893) | 0.476 (±0.091) | 0.714 (±0.009) | 0.659 (±0.003) | 3 |
 | `P4-G` | `mbs_e2e` | 0.370 (±0.059) | 20.380 (±2.156) | -0.036 (±0.059) | — | 0.664 (±0.038) | 3 |
+| `N-cascade-scalar-max-mean` | `mbs_linear_probe` | 0.367 (±0.051) | 12.247 (±1.077) | 0.567 (±0.012) | 0.800 (±0.046) | 0.726 (±0.044) | 3 |
+| `N-cascade-vector-max-max` | `mbs_linear_probe` | 0.367 (±0.046) | 14.857 (±1.089) | 0.367 (±0.048) | 0.687 (±0.029) | 0.638 (±0.019) | 3 |
+| `N-cascade-vector-mean-max` | `mbs_linear_probe` | 0.360 (±0.040) | 15.051 (±0.542) | 0.349 (±0.061) | 0.697 (±0.049) | 0.644 (±0.031) | 3 |
+| `N-cascade-scalar-max-mean` | `mbs_e2e` | 0.359 (±0.075) | 21.356 (±2.603) | -0.135 (±0.147) | 0.701 (±0.041) | 0.641 (±0.041) | 3 |
 | `P5-G-max` | `mbs_e2e` | 0.356 (±0.042) | 21.402 (±1.786) | -0.150 (±0.078) | — | 0.598 (±0.006) | 3 |
 | `C-mvalue-sva-G` | `classical` | 0.348 (±0.028) | 12.920 (±4.941) | 0.083 (±0.814) | 0.851 (±0.071) | — | 3 |
+| `N-cascade-vector-max-max` | `mbs_e2e` | 0.343 (±0.063) | 21.458 (±2.454) | -0.153 (±0.105) | 0.671 (±0.033) | 0.584 (±0.027) | 3 |
+| `N-cascade-vector-mean-max` | `mbs_e2e` | 0.337 (±0.036) | 22.753 (±4.259) | -0.233 (±0.215) | 0.665 (±0.048) | 0.601 (±0.032) | 3 |
 | `C-mvalue-ridge-G` | `classical` | 0.337 (±0.040) | 6.489 (±0.907) | 0.856 (±0.033) | 0.904 (±0.056) | — | 3 |
 | `N-cascade-scalar-mean-max` | `mbs_e2e` | 0.331 (±0.020) | 20.713 (±1.893) | -0.083 (±0.141) | 0.667 (±0.032) | 0.597 (±0.024) | 3 |
 | `N-light-gene-mean` | `mbs_enet` | 0.296 (±0.074) | 20.498 (±3.007) | -0.013 (±0.057) | 0.860 (±0.034) | 0.655 (±0.194) | 3 |
+| `N-light-gene-max` | `mbs_linear_probe` | 0.295 (±0.122) | 13.438 (±2.818) | 0.483 (±0.171) | 0.731 (±0.107) | 0.678 (±0.089) | 3 |
 | `N-light-gene-mean` | `mbs_linear_probe` | 0.264 (±0.111) | 12.434 (±4.287) | 0.554 (±0.257) | 0.773 (±0.130) | 0.715 (±0.107) | 3 |
-| `N-light-gene-max` | `mbs_enet` | 0.203 (±0.168) | 19.325 (±1.257) | 0.064 (±0.121) | 0.680 (±0.159) | 0.494 (±0.187) | 3 |
-| `N-light-gene-max` | `mbs_linear_probe` | 0.171 (±0.153) | 14.364 (±4.685) | 0.440 (±0.292) | 0.714 (±0.107) | 0.659 (±0.074) | 3 |
+| `N-light-gene-max` | `mbs_e2e` | 0.122 (±0.102) | 21.888 (±0.553) | -0.232 (±0.120) | 0.575 (±0.022) | 0.458 (±0.117) | 3 |
 | `C-mvalue-hgb-G` | `classical` | 0.114 (±0.081) | 9.066 (±1.022) | 0.753 (±0.052) | 0.938 (±0.059) | — | 3 |
 | `N-light-gene-mean` | `mbs_e2e` | 0.001 (±0.002) | 22.592 (±2.352) | -0.185 (±0.161) | 0.470 (±0.041) | 0.374 (±0.060) | 3 |
-| `N-light-gene-max` | `mbs_e2e` | 0.000 (±0.000) | 21.105 (±2.698) | -0.049 (±0.094) | 0.470 (±0.070) | 0.357 (±0.034) | 3 |
 
 **Readouts:** `mbs_e2e` = jointly trained neural heads on MBS (Stage A lock metric); `mbs_linear_probe` / `mbs_enet` = new sklearn heads on the **same frozen MBS**; `rbs_linear_probe` / `rbs_enet` = frozen **gene-linked RBS** (pre–gene-pool); `classical` = sklearn on gene-linked CpG M-values (no encoder).
 
@@ -127,10 +134,10 @@ Non-dominated on tissue macro-F1 (↑), age MAE (↓), sex AUROC (↑). Do **not
 ## Architecture questions (Stage A screen)
 
 1. **CpG → region pool (mean vs max):** `mean-max` tissue F1=0.331 vs `max-max` 0.373; age MAE 20.713 vs 15.637. Prefer **`P2-G`** on this slice (check Pareto).
-2. **Region → gene pool (mean vs max):** `mean-mean` tissue F1=0.370 vs `mean-max` 0.331; age MAE 20.380 vs 20.713. Prefer **`P4-G`** on this slice (check Pareto).
-3. **Does scalar RBS discard information?** Vector arm `—` tissue vs P2 `0.373`; vector arms pending.
+2. **Region → gene pool (mean vs max):** `max-mean` tissue F1=0.359 vs `max-max` 0.373; age MAE 21.356 vs 15.637. Prefer **`P2-G`** on this slice (check Pareto).
+3. **Does scalar RBS discard information?** Vector arm `0.337` tissue vs P2 `0.373`; if vector does not beat scalar on age/sex, bottleneck is elsewhere.
 4. **Gene pooling vs RBS:** Pending RBS diagnostic.
-5. **One-hop vs cascade:** One-hop `N-light-gene-max` tissue=0.000 / age=21.105 vs P2-G 0.373 / 15.637.
+5. **One-hop vs cascade:** One-hop `N-light-gene-max` tissue=0.122 / age=21.888 vs P2-G 0.373 / 15.637.
 6. **One-scalar-per-gene bottleneck:** Gene aggregation still trails classical on age/sex; one scalar MBS/gene is **not yet adequate** unless a screen arm closes the gap.
 7. **Best performance/compute:** Prefer landed P2/P4 (15 ep) over P5; promote Tier-1 (5 ep) arms only when Pareto/near-best, then confirm at 15 ep.
 
@@ -142,10 +149,13 @@ Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`
 |-----|-----------:|----------------:|------------:|--------------:|------------------:|------:|
 | P2-G | 0.373 (±0.038) | 0.373 | 0.385 (±0.053) | 15.637 | 0.784 | 3 |
 | P4-G | 0.370 (±0.059) | 0.379 | 0.379 (±0.059) | 20.380 | 0.800 | 3 |
+| N-cascade-scalar-max-mean | 0.359 (±0.075) | 0.367 | — | 21.356 | 0.800 | 3 |
 | P5-G-max | 0.356 (±0.042) | 0.371 | — | 21.402 | 0.714 | 3 |
+| N-cascade-vector-max-max | 0.343 (±0.063) | 0.367 | — | 21.458 | 0.687 | 3 |
+| N-cascade-vector-mean-max | 0.337 (±0.036) | 0.360 | — | 22.753 | 0.697 | 3 |
 | N-cascade-scalar-mean-max | 0.331 (±0.020) | 0.375 | — | 20.713 | 0.711 | 3 |
-| N-light-gene-mean | 0.001 (±0.002) | 0.264 | 0.296 (±0.074) | 22.592 | 0.773 | 3 |
-| N-light-gene-max | 0.000 (±0.000) | 0.171 | 0.203 (±0.168) | 21.105 | 0.714 | 3 |
+| N-light-gene-max | 0.122 (±0.102) | 0.295 | — | 21.888 | 0.731 | 3 |
+| N-light-gene-mean | *invalid (pre-fix orient)* 0.001 | 0.264 | 0.296 (±0.074) | 22.592 | 0.773 | 3 |
 
 ## Classical arms (-G panel)
 
@@ -179,6 +189,45 @@ Compare **`fusion_full`** (orphan RBS + MBS + direct) vs **`fusion_mbs_direct`**
 | Δ (full − mbs_direct) | 0.000 |
 
 **Orphan RBS effect is negligible** at this budget (|Δ| ≤ 0.01); Stage B should still report both fusion modes.
+
+## Annotation ablation grid (A0–A4, N0–N3)
+
+Fold 0, `mean` pooling, 8 epochs, two seeds. Bootstrap 95% CIs from available folds. Tissue macro-F1, age MAE, sex AUROC.
+
+**Note:** A4 and A7 are identical while regulatory channels are zero (cCRE/DHS/ChromHMM not on disk).
+
+| Arm | Features | Tissue macro-F1 [95% CI] | Age MAE [95% CI] | Sex AUROC [95% CI] |
+|-----|----------|-------------------------:|-----------------:|-------------------:|
+| A0 | M only |  — | — | — |
+| A1 | M + gene role |  — | — | — |
+| A2 | M + CpG context |  — | — | — |
+| A3 | M + role + context |  — | — | — |
+| A4/A7 | All (regulatory zero) |  — | — | — |
+
+### Negative controls
+
+| Arm | Features | Tissue macro-F1 [95% CI] | Age MAE [95% CI] | Sex AUROC [95% CI] |
+|-----|----------|-------------------------:|-----------------:|-------------------:|
+| N0 | Observed flag only |  — | — | — |
+| N1 | Annotations only (no M) |  — | — | — |
+| N2 | Reg. permuted |  — | — | — |
+| N3 | All-zero regulatory |  — | — | — |
+
+### Representation diagnostics (fold 0 mean across seeds)
+
+> Values populated only when `stage_a_per_epoch_eval: true` and repr_diagnostics logged.
+
+| Arm | Gene-score SD | Saturation frac | Const-score frac | Corr w/ mean-M |
+|-----|:-------------:|:---------------:|:----------------:|:--------------:|
+| stage0_7g_gene_only_probe_ablation_m_only | — | — | — | — |
+| stage0_7g_gene_only_probe_ablation_m_role | — | — | — | — |
+| stage0_7g_gene_only_probe_ablation_m_context | — | — | — | — |
+| stage0_7g_gene_only_probe_ablation_m_role_context | — | — | — | — |
+| stage0_7g_gene_only_probe_ablation_full | — | — | — | — |
+| stage0_7g_gene_only_probe_ablation_n0_obs_only | — | — | — | — |
+| stage0_7g_gene_only_probe_ablation_n1_anno_only | — | — | — | — |
+| stage0_7g_gene_only_probe_ablation_n2_reg_permuted | — | — | — | — |
+| stage0_7g_gene_only_probe_ablation_n3_reg_zero | — | — | — | — |
 
 ## Parallel / follow-on work
 

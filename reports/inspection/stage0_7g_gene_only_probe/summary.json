@@ -1,6 +1,8 @@
 {
   "arms_run": [
-    "N-cascade-scalar-mean-max"
+    "N-cascade-scalar-max-mean",
+    "N-cascade-vector-max-max",
+    "N-cascade-vector-mean-max"
   ],
   "gene_panel": {
     "graph_content_hash": null,
