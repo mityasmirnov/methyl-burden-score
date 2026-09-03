@@ -142,6 +142,7 @@ class _PilotStore:
     flat_region_index: FlatRegionGeneIndex | None = None
     flat_region_base_features: np.ndarray | None = None
     flat_region_feature_mode: str = "full"
+    flat_region_reg_permute_seed: int | None = None
 
 
 def resolve_device(device_str: str, *, require_cuda: bool = False) -> torch.device:
@@ -334,6 +335,7 @@ def _materialize_record(
             epsilon=store.epsilon,
             base_features=store.flat_region_base_features,
             feature_mode=store.flat_region_feature_mode,  # type: ignore[arg-type]
+            reg_permute_seed=store.flat_region_reg_permute_seed,
         )
         if cpg_features.shape[0] == 0:
             raise ValueError(f"sample {phenotype.sample_id!r} has zero observed flat-region edges")
@@ -1402,6 +1404,9 @@ def train_flat_baseline(
         )
         flat_base = None
         flat_feature_mode = str(model_cfg.get("flat_region_feature_mode", "full"))
+        flat_reg_permute_seed: int | None = model_cfg.get("reg_permute_seed", None)
+        if flat_reg_permute_seed is not None:
+            flat_reg_permute_seed = int(flat_reg_permute_seed)
         if flat_region_index is not None:
             flat_base = build_flat_region_base_features(
                 flat_region_index,
@@ -1423,6 +1428,7 @@ def train_flat_baseline(
             flat_region_index=flat_region_index,
             flat_region_base_features=flat_base,
             flat_region_feature_mode=flat_feature_mode,
+            flat_region_reg_permute_seed=flat_reg_permute_seed,
         )
         if include_robust_z:
             if not train_phenotypes:
@@ -1714,7 +1720,12 @@ def train_flat_baseline(
             )
         )
     use_tissue_rank = ckpt_selection_mode == "validation_tissue_macro_f1_then_age_mae"
-    stage_a_per_epoch_eval = bool(train_cfg.get("stage_a_per_epoch_eval", False))
+    # Ranking checkpoints by validation tissue-F1 requires that metric to be
+    # computed every epoch; without this, `use_tissue_rank` silently falls
+    # back to comparing missing values, so epoch 1 always "wins" and no later
+    # (better-trained) checkpoint is ever selected. `flat_region` + multitask
+    # defaults to this ranking mode above, so the per-epoch eval must follow.
+    stage_a_per_epoch_eval = bool(train_cfg.get("stage_a_per_epoch_eval", False)) or use_tissue_rank
 
     history: list[dict[str, Any]] = []
     val_history: list[dict[str, Any]] = []

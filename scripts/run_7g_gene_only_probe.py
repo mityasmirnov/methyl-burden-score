@@ -136,10 +136,35 @@ def build_gene_cols(
         count_other_gene_edges,
     )
 
+    # Load cpg_context from canonical annotations (Milestone 3 artifact).
+    # The locus_index.parquet from the matrix store has no cpg_context column;
+    # the annotation is joined here so it flows into FlatRegionGeneIndex.
+    from mbs.annotation.manifest import sha256_file
+
+    loci_ann_path = paths.data_root / "canonical" / "annotations" / "loci.parquet"
+    cpg_context_by_locus: dict[str, str] | None = None
+    loci_ann_sha256: str | None = None
+    if loci_ann_path.is_file():
+        ann = pd.read_parquet(loci_ann_path, columns=["locus_id", "cpg_context"])
+        col_to_context = locus_index.merge(ann, on="locus_id", how="left")
+        valid = col_to_context["cpg_context"].notna()
+        cpg_context_by_locus = dict(
+            zip(
+                col_to_context.loc[valid, "locus_id"].astype(str),
+                col_to_context.loc[valid, "cpg_context"].astype(str),
+            )
+        )
+        loci_ann_sha256 = sha256_file(loci_ann_path)
+        print(
+            f"[gene-probe] cpg_context loaded: {len(cpg_context_by_locus)} loci from {loci_ann_path.name}",
+            flush=True,
+        )
+
     n_other = count_other_gene_edges(type_ids, assignment.region_types)
     region_index = build_flat_region_gene_index(
         assignment,
         locus_index=locus_index,
+        cpg_context_by_locus=cpg_context_by_locus,
         allow_other_gene=False,
     )
     graph_audit = assert_flat_region_index(region_index, gene_col_indices=gene_cols)
@@ -158,6 +183,11 @@ def build_gene_cols(
         "max_loci": int(max_loci),
         "gene_col_indices": gene_cols.astype(int).tolist(),
         "flat_region_graph_audit": graph_audit,
+        "loci_annotation_path": str(loci_ann_path),
+        "loci_annotation_sha256": loci_ann_sha256,
+        "cpg_context_populated": cpg_context_by_locus is not None,
+        "regulatory_channels_populated": False,
+        "regulatory_channels_note": "cCRE/DHS/ChromHMM not yet on disk; reserved slots remain zero",
     }
     print(
         f"[gene-probe] gene_cols={gene_cols.size} allocation={gene_allocation} "

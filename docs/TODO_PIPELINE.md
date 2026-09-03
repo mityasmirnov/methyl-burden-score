@@ -56,6 +56,17 @@ eval applies `1-MBS` pairing for legacy negated heads). Re-eval without retrain:
 probes show representation signal. Diagnostic fold-0 mean run:
 `configs/experiment/stage0_7g_gene_only_probe_light_mean_diag.yaml`.
 
+**Static annotation channels (2026-09):** `cpg_context` (UCSC CGI, Milestone 3
+artifact at `data/canonical/annotations/loci.parquet`) is now wired into
+`build_gene_cols()` and `build_flat_region_gene_index()`. Regulatory channels
+(cCRE/DHS/ChromHMM) remain zero — source files not on disk (Stage A non-goal).
+Versioned annotation artifacts: `scripts/build_stage_a_locus_annotations.py`
+→ `reports/inspection/stage0_7g_gene_only_probe/locus_annotations/`.
+Ablation grid (fold 0, 8 ep, two seeds):
+A0 `m_only` | A1 `m_role` | A2 `m_context` | A3 `m_role_context` | A4/A7 `full` |
+N0 `obs_only` | N1 `anno_only` | N2 reg-permuted | N3 reg-zero.
+Run all arms with `--fold 0 --device cuda` via `run_7g_gene_only_probe.py`.
+
 **Provisional lock:** `P2-G` max/max, 15 epochs (`lock_recommendation.json`);
 cascade is **not** clearly ahead of classical. Stage A screen may revise the
 topology before Stage B. **7G″** expression pilot is **deferred**. Final

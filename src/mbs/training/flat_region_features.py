@@ -31,7 +31,15 @@ REGULATORY_CHANNELS: tuple[str, ...] = (
     "chromhmm",
     "dhs_flag",
 )
-FlatRegionFeatureMode = Literal["m_only", "m_role", "m_role_context", "full"]
+FlatRegionFeatureMode = Literal[
+    "m_only",        # A0: M-value + observed; all annotation zeroed
+    "m_role",        # A1: M + gene-role one-hot
+    "m_context",     # A2: M + CpG-context one-hot (no role)
+    "m_role_context",  # A3: M + role + CpG-context
+    "full",          # A4/A7: all channels (regulatory stays zero until source loaded)
+    "obs_only",      # N0: observed/missingness flag only; no M-value
+    "anno_only",     # N1: gene role + CpG context; no M-value
+]
 PRESENCE_FLAGS: tuple[str, ...] = (
     "gene_role_present",
     "cpg_context_present",
@@ -211,19 +219,51 @@ def apply_flat_region_feature_mode(
     feats: np.ndarray,
     mode: FlatRegionFeatureMode = "full",
 ) -> np.ndarray:
-    """Zero disabled annotation blocks for ablation runs."""
+    """Zero disabled annotation blocks for ablation runs.
+
+    Column layout (0-indexed):
+      0            M-value
+      1..6         gene-role one-hot (GENE_ROLES)
+      7..13        CpG-context one-hot (CPG_CONTEXTS)
+      14..19       regulatory multi-hot (REGULATORY_CHANNELS)
+      20           gene_role_present flag
+      21           cpg_context_present flag
+      22           regulatory_annotation_present flag
+      23           observed flag  (last column)
+    """
     if mode == "full":
         return feats
     out = np.array(feats, dtype=np.float32, copy=True)
     role_start, ctx_start, reg_start, flags_start = _annotation_offsets()
     dim = out.shape[1]
     if mode == "m_only":
+        # Keep M (col 0) and observed (last); zero everything between.
         out[:, 1 : dim - 1] = 0.0
     elif mode == "m_role":
-        out[:, ctx_start : dim - 1] = 0.0
+        # Keep M + role one-hot + role_present; zero context, regulatory, ctx/reg flags.
+        out[:, ctx_start : dim - 1] = 0.0          # ctx, reg, all 3 flags → 0
+        out[:, flags_start] = feats[:, flags_start]  # restore gene_role_present
+    elif mode == "m_context":
+        # Keep M + CpG-context one-hot + ctx_present; zero role, regulatory, role/reg flags.
+        out[:, role_start:ctx_start] = 0.0          # zero role one-hot
+        out[:, reg_start:flags_start] = 0.0         # zero regulatory
+        out[:, flags_start] = 0.0                   # zero gene_role_present
+        # flags_start+1 = cpg_context_present: already correct from feats copy
+        out[:, flags_start + 2] = 0.0              # zero regulatory_annotation_present
     elif mode == "m_role_context":
+        # Keep M + role + context; zero regulatory and its flag.
         out[:, reg_start:flags_start] = 0.0
         out[:, flags_start + 2] = 0.0
+    elif mode == "obs_only":
+        # N0: only the observed flag; no M-value, no annotations.
+        out[:, 0] = 0.0                             # zero M
+        out[:, 1 : dim - 1] = 0.0                  # zero all annotation + flags
+        # observed (last col) preserved from feats copy
+    elif mode == "anno_only":
+        # N1: gene role + CpG context; no M-value, no regulatory.
+        out[:, 0] = 0.0                             # zero M
+        out[:, reg_start:flags_start] = 0.0         # zero regulatory
+        out[:, flags_start + 2] = 0.0              # zero regulatory_annotation_present
     else:
         raise ValueError(f"unknown flat_region feature mode: {mode!r}")
     return out
@@ -236,11 +276,18 @@ def gather_flat_region_features(
     epsilon: float = 0.001,
     base_features: np.ndarray | None = None,
     feature_mode: FlatRegionFeatureMode = "full",
+    reg_permute_seed: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return ``(features [n_obs_edges, dim], cpg_to_gene [n_obs_edges])``.
 
     Unobserved graph edges are dropped before pooling. When ``base_features`` is
     provided, only M-value and observed are refreshed from ``beta_row``.
+
+    ``reg_permute_seed``: when set, shuffle the regulatory multi-hot block
+    (columns ``reg_start:flags_start``) across edges using this seed before
+    returning features. Intended for N2 negative-control ablations only.
+    This permutation is applied to the full edge set before the observed
+    filter, so the shuffled assignments are consistent across samples.
     """
     betas = np.asarray(beta_row, dtype=np.float32).reshape(-1)
     dim = flat_region_input_dim()
@@ -281,6 +328,14 @@ def gather_flat_region_features(
         feats[:, offset + 1] = index.edge_context_present.astype(np.float32)
         feats[:, offset + 2] = index.edge_regulatory_present.astype(np.float32)
         feats[:, -1] = obs.astype(np.float32)
+    if reg_permute_seed is not None:
+        # N2 negative control: shuffle regulatory multi-hot rows across edges.
+        # ponytail: simple row-wise shuffle; no stratum keys in current index.
+        # Upgrade path: pass gene-size strata when available.
+        _, ctx_start_off, reg_start_off, flags_start_off = _annotation_offsets()
+        rng = np.random.default_rng(reg_permute_seed)
+        perm = rng.permutation(feats.shape[0])
+        feats[:, reg_start_off:flags_start_off] = feats[perm, reg_start_off:flags_start_off]
     feats = apply_flat_region_feature_mode(feats, feature_mode)
     if not np.any(obs):
         return np.zeros((0, dim), dtype=np.float32), np.zeros(0, dtype=np.int64)

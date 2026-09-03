@@ -81,8 +81,19 @@ def main() -> None:
         arm = arms_cfg.get(arm_id)
         if arm is None:
             prefix = arm_id
+            arm_cfg = cfg
         else:
             prefix = str(arm.get("run_prefix") or arm_id)
+            # Each arm's own training config carries its pooling mode and the
+            # correct `pilot.sample_phenotype_table` — the orchestrator manifest
+            # (`cfg`) only lists arms and lacks both, so reusing `cfg` here
+            # silently fell back to a stale/tiny default phenotype table and
+            # the wrong model settings.
+            arm_cfg_rel = Path(str(arm["config"]))
+            arm_cfg_path = (
+                arm_cfg_rel if arm_cfg_rel.is_absolute() else paths.project_root / arm_cfg_rel
+            )
+            arm_cfg = load_experiment_config(arm_cfg_path)
         folds = list(enumerate(fold_pack["folds"]))
         if args.fold is not None:
             folds = [(args.fold, fold_pack["folds"][args.fold])]
@@ -95,7 +106,7 @@ def main() -> None:
             print(f"[reeval] {run_id}", flush=True)
             reeval_run(
                 paths=paths,
-                config=cfg,
+                config=arm_cfg,
                 fold=fold,
                 run_id=run_id,
                 device=args.device,
