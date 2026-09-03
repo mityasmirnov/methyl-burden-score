@@ -58,6 +58,97 @@ arms:
     kind: cascade_train
     run_id: stage0-7g-gene-probe-vector-max-max
     config: configs/experiment/stage0_7g_gene_only_probe_vector_max_max.yaml
+  # Annotation ablation grid — fold 0, two seeds each. Run after N-light-gene-mean lands.
+  - id: N-light-gene-ablation-m-only
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-m-only
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_m_only.yaml
+    pool: mean
+  - id: N-light-gene-ablation-m-only-s2
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-m-only-s2
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_m_only_s2.yaml
+    pool: mean
+  - id: N-light-gene-ablation-m-role
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-m-role
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_m_role.yaml
+    pool: mean
+  - id: N-light-gene-ablation-m-role-s2
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-m-role-s2
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_m_role_s2.yaml
+    pool: mean
+  - id: N-light-gene-ablation-m-context
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-m-context
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_m_context.yaml
+    pool: mean
+  - id: N-light-gene-ablation-m-context-s2
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-m-context-s2
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_m_context_s2.yaml
+    pool: mean
+  - id: N-light-gene-ablation-m-role-context
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-m-role-context
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_m_role_context.yaml
+    pool: mean
+  - id: N-light-gene-ablation-m-role-context-s2
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-m-role-context-s2
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_m_role_context_s2.yaml
+    pool: mean
+  - id: N-light-gene-ablation-full
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-full
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_full.yaml
+    pool: mean
+  - id: N-light-gene-ablation-full-s2
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-full-s2
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_full_s2.yaml
+    pool: mean
+  - id: N-light-gene-ablation-n0-obs-only
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-n0-obs-only
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_n0_obs_only.yaml
+    pool: mean
+  - id: N-light-gene-ablation-n0-obs-only-s2
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-n0-obs-only-s2
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_n0_obs_only_s2.yaml
+    pool: mean
+  - id: N-light-gene-ablation-n1-anno-only
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-n1-anno-only
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_n1_anno_only.yaml
+    pool: mean
+  - id: N-light-gene-ablation-n1-anno-only-s2
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-n1-anno-only-s2
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_n1_anno_only_s2.yaml
+    pool: mean
+  - id: N-light-gene-ablation-n2-reg-permuted
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-n2-reg-permuted
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_n2_reg_permuted.yaml
+    pool: mean
+  - id: N-light-gene-ablation-n2-reg-permuted-s2
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-n2-reg-permuted-s2
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_n2_reg_permuted_s2.yaml
+    pool: mean
+  - id: N-light-gene-ablation-n3-reg-zero
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-n3-reg-zero
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_n3_reg_zero.yaml
+    pool: mean
+  - id: N-light-gene-ablation-n3-reg-zero-s2
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-n3-reg-zero-s2
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_n3_reg_zero_s2.yaml
+    pool: mean
   # Historical / inactive — keep out of default grid
   - id: P5-G-max
     kind: cascade_train
