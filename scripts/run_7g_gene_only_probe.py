@@ -128,6 +128,11 @@ def build_gene_cols(
     gene_cols = gene_linked_col_index(assignment)
     if gene_cols.size == 0:
         raise RuntimeError("gene-linked CpG panel is empty")
+    gene_edge = assignment.region_to_gene[assignment.edge_region_index] >= 0
+    type_ids = assignment.region_type_id[assignment.edge_region_index[gene_edge]]
+    from mbs.training.flat_region_features import count_other_gene_edges
+
+    n_other = count_other_gene_edges(type_ids, assignment.region_types)
     graph_manifest_path = graph_root / "graph_manifest.json"
     graph_hash = None
     if graph_manifest_path.is_file():
@@ -136,6 +141,7 @@ def build_gene_cols(
         "gene_allocation": gene_allocation,
         "max_nearest_gene_bp": max_nearest_gene_bp,
         "n_gene_cols": int(gene_cols.size),
+        "n_other_gene_edges": int(n_other),
         "graph_id": graph_id,
         "graph_content_hash": graph_hash,
         "matrix_id": matrix_id,
@@ -144,7 +150,7 @@ def build_gene_cols(
     }
     print(
         f"[gene-probe] gene_cols={gene_cols.size} allocation={gene_allocation} "
-        f"max_loci={max_loci}",
+        f"other_gene={n_other} max_loci={max_loci}",
         flush=True,
     )
     return gene_cols, manifest
@@ -184,12 +190,90 @@ def _slim_cascade_fold(blob: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def train_flat_region_arm(
+    *,
+    paths: DataPaths,
+    config_path: Path,
+    run_prefix: str,
+    device: str,
+    report_dir: Path,
+) -> list[dict[str, Any]]:
+    """Train FlatDeepSetRegion per frozen fold via ``mbs train flat``."""
+    from copy import deepcopy
+
+    from mbs.training.dev_cv import inject_fold_into_config, load_frozen_folds
+    from mbs.training.loop import load_experiment_config, train_flat_baseline
+
+    cfg = load_experiment_config(config_path)
+    split_id = str(cfg.get("split_id", "hub-ats-7e-3fold-v1"))
+    fold_pack = load_frozen_folds(paths.artifact_root / "splits" / split_id / "folds.json")
+    cv_budget = cfg.get("cv_budget") or {}
+    raw_max_loci = cv_budget.get("max_loci", (cfg.get("training") or {}).get("max_loci"))
+    max_loci = int(raw_max_loci) if raw_max_loci not in (None, "", 0) else None
+    raw_max_epochs = cv_budget.get("max_epochs", (cfg.get("training") or {}).get("max_epochs"))
+    max_epochs = int(raw_max_epochs) if raw_max_epochs not in (None, "", 0) else None
+    folds_out: list[dict[str, Any]] = []
+    for fold_i, fold in enumerate(fold_pack["folds"]):
+        run_id = f"{run_prefix}-f{fold_i}"
+        run_root = paths.artifact_root / "runs" / run_id
+        metrics_path = run_root / "metrics.json"
+        if metrics_path.is_file():
+            folds_out.append(json.loads(metrics_path.read_text(encoding="utf-8")))
+            print(f"[gene-probe] skip-if-done {run_id}", flush=True)
+            continue
+        fold_cfg = inject_fold_into_config(deepcopy(cfg), fold, seed=42 + fold_i)
+        print(
+            f"[gene-probe flat] train {run_id} max_loci={max_loci} max_epochs={max_epochs}",
+            flush=True,
+        )
+        result = train_flat_baseline(
+            project_root=paths.project_root,
+            data_root=paths.data_root,
+            artifact_root=paths.artifact_root,
+            config=fold_cfg,
+            run_id=run_id,
+            device_str=device,
+            max_epochs=max_epochs,
+            max_loci=max_loci,
+        )
+        metrics = dict(result.metrics) if hasattr(result, "metrics") else {}
+        if not metrics and metrics_path.is_file():
+            metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+        # Normalize to Stage A evaluation shape when flat trainer returns flat metrics.
+        if "evaluations" not in metrics and "tissue" in metrics:
+            metrics = {
+                "evaluations": {
+                    "mbs_e2e": {
+                        "metrics": metrics,
+                        "eval_split": "test",
+                    }
+                },
+                "metrics": metrics,
+                "eval_split": "test",
+            }
+            metrics_path.parent.mkdir(parents=True, exist_ok=True)
+            metrics_path.write_text(json.dumps(metrics, indent=2, default=str), encoding="utf-8")
+        elif "evaluations" in metrics:
+            # Persist Stage A suite written by train_flat_baseline.
+            metrics_path.parent.mkdir(parents=True, exist_ok=True)
+            metrics_path.write_text(json.dumps(metrics, indent=2, default=str), encoding="utf-8")
+        folds_out.append(metrics)
+        staging = report_dir / f"_staging_{run_prefix.replace('-', '_')}_fold_{fold_i}"
+        staging.mkdir(parents=True, exist_ok=True)
+    return folds_out
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--skip-train", action="store_true")
     parser.add_argument("--arm", action="append", default=[])
+    parser.add_argument(
+        "--include-inactive",
+        action="store_true",
+        help="Also run arms marked inactive (e.g. P5).",
+    )
     args = parser.parse_args()
 
     paths = DataPaths.from_environment()
@@ -245,6 +329,9 @@ def main() -> None:
         arm_id = str(arm["id"])
         if requested and arm_id not in requested:
             continue
+        if arm.get("inactive") and not args.include_inactive and not requested:
+            print(f"[gene-probe] skip inactive {arm_id}", flush=True)
+            continue
         kind = str(arm["kind"])
         if arm.get("optional"):
             gate_arm = str(arm.get("gate_arm", ""))
@@ -292,6 +379,7 @@ def main() -> None:
                     "arm_id": arm_id,
                     "kind": kind,
                     "run_id": arm["run_id"],
+                    "alias": arm.get("alias"),
                     "folds": [_slim_cascade_fold(f) for f in folds],
                     "mean_mbs_e2e_tissue_f1": _mean_metric(folds, "mbs_e2e.metrics.tissue.macro_f1"),
                     "mean_mbs_linear_probe_tissue_f1": _mean_metric(
@@ -300,11 +388,55 @@ def main() -> None:
                     "mean_mbs_enet_tissue_f1": _mean_metric(
                         folds, "mbs_enet.metrics.tissue.macro_f1"
                     ),
+                    "mean_rbs_linear_probe_tissue_f1": _mean_metric(
+                        folds, "rbs_linear_probe.metrics.tissue.macro_f1"
+                    ),
+                    "mean_rbs_enet_tissue_f1": _mean_metric(
+                        folds, "rbs_enet.metrics.tissue.macro_f1"
+                    ),
                     "mean_fusion_full_tissue_f1": _mean_metric(
                         folds, "fusion_full.metrics.tissue.macro_f1"
                     ),
                     "mean_fusion_mbs_direct_tissue_f1": _mean_metric(
                         folds, "fusion_mbs_direct.metrics.tissue.macro_f1"
+                    ),
+                },
+            )
+        elif kind == "flat_region_train":
+            if not args.skip_train:
+                rel_cfg = Path(str(arm["config"]))
+                arm_cfg = rel_cfg if rel_cfg.is_absolute() else paths.project_root / rel_cfg
+                folds = train_flat_region_arm(
+                    paths=paths,
+                    config_path=arm_cfg,
+                    run_prefix=str(arm["run_prefix"]),
+                    device=args.device,
+                    report_dir=report_dir,
+                )
+            else:
+                folds = []
+                prefix = str(arm["run_prefix"])
+                for fold_dir in sorted((paths.artifact_root / "runs").glob(f"{prefix}-f*")):
+                    metrics_path = fold_dir / "metrics.json"
+                    if metrics_path.is_file():
+                        folds.append(json.loads(metrics_path.read_text(encoding="utf-8")))
+            completed[arm_id] = folds
+            write_per_arm(
+                report_dir,
+                arm_id,
+                {
+                    "arm_id": arm_id,
+                    "kind": kind,
+                    "run_prefix": arm["run_prefix"],
+                    "pool": arm.get("pool"),
+                    "folds": [_slim_cascade_fold(f) for f in folds],
+                    "mean_mbs_e2e_tissue_f1": _mean_metric(folds, "mbs_e2e.metrics.tissue.macro_f1")
+                    or _mean_metric(folds, "metrics.tissue.macro_f1"),
+                    "mean_mbs_linear_probe_tissue_f1": _mean_metric(
+                        folds, "mbs_linear_probe.metrics.tissue.macro_f1"
+                    ),
+                    "mean_mbs_enet_tissue_f1": _mean_metric(
+                        folds, "mbs_enet.metrics.tissue.macro_f1"
                     ),
                 },
             )
@@ -325,6 +457,11 @@ def main() -> None:
         "milestone": "7G-prime-stage-A",
         "report_dir": str(report_dir),
         "arms_run": sorted(completed.keys()) if completed else sorted(requested) if requested else [],
+        "gene_panel": {
+            "n_gene_cols": gene_panel_manifest.get("n_gene_cols"),
+            "n_other_gene_edges": gene_panel_manifest.get("n_other_gene_edges"),
+            "graph_content_hash": gene_panel_manifest.get("graph_content_hash"),
+        },
     }
     write_json(report_dir / "summary.json", summary)
     print(f"[gene-probe] wrote {report_dir / 'summary.json'}", flush=True)

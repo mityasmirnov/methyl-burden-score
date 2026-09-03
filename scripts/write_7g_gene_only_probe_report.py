@@ -22,14 +22,36 @@ from mbs.paths import DataPaths
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPORT = ROOT / "reports/inspection/stage0_7g_gene_only_probe"
 
-CASCADE_ARMS = ("P2-G", "P4-G", "P5-G-max", "P5-G-mean")
+CASCADE_ARMS = (
+    "P2-G",
+    "P4-G",
+    "P5-G-max",
+    "N-cascade-scalar-mean-max",
+    "N-cascade-scalar-max-mean",
+    "N-cascade-vector-mean-max",
+    "N-cascade-vector-max-max",
+    "N-light-gene-max",
+    "N-light-gene-mean",
+)
 CLASSICAL_SUFFIXES = ("C-mvalue-ridge-G", "C-mvalue-enet-G", "C-mvalue-hgb-G", "C-mvalue-sva-G")
 ARM_POOLING = {
     "P2-G": ("max", "max", 15),
     "P4-G": ("mean", "mean", 15),
     "P5-G-max": ("max", "max", 30),
-    "P5-G-mean": ("mean", "mean", 30),
+    "N-cascade-scalar-mean-max": ("mean", "max", 5),
+    "N-cascade-scalar-max-mean": ("max", "mean", 5),
+    "N-cascade-vector-mean-max": ("mean", "max", 5),
+    "N-cascade-vector-max-max": ("max", "max", 5),
+    "N-light-gene-max": ("n/a", "max", 5),
+    "N-light-gene-mean": ("n/a", "mean", 5),
 }
+CASCADE_READOUTS = (
+    "mbs_e2e",
+    "mbs_linear_probe",
+    "mbs_enet",
+    "rbs_linear_probe",
+    "rbs_enet",
+)
 LOCK_TRAINING_DEFAULTS = {
     "age_loss_weight": 0.3,
     "tissue_loss_weight": 3.0,
@@ -240,8 +262,8 @@ def orphan_ablation_section(payload: dict[str, Any] | None) -> str:
         "Compare **`fusion_full`** (orphan RBS + MBS + direct) vs **`fusion_mbs_direct`** "
         "(MBS + direct only).",
         "",
-        f"| Mode | Mean tissue macro-F1 |",
-        f"|------|---------------------:|",
+        "| Mode | Mean tissue macro-F1 |",
+        "|------|---------------------:|",
         f"| fusion_full | {_fmt(full_mean)} |",
         f"| fusion_mbs_direct | {_fmt(direct_mean)} |",
         f"| Δ (full − mbs_direct) | {_fmt(delta)} |",
@@ -311,7 +333,7 @@ def _task_comparison_rows(
         folds = cascade_folds_by_arm.get(arm_id) or []
         if not folds:
             continue
-        for mode in ("mbs_e2e", "mbs_linear_probe", "mbs_enet"):
+        for mode in CASCADE_READOUTS:
             row = _cascade_mode_row(folds, arm_id, mode)
             if row is not None:
                 rows.append(row)
@@ -357,8 +379,9 @@ def render_task_comparison_section(rows: list[dict[str, Any]]) -> list[str]:
         "",
         "Same **`explicit_only`** gene-linked panel and outer **test** folds. "
         "Compare rows as alternative **readouts** of one encoder (`mbs_e2e` / "
-        "`mbs_linear_probe` / `mbs_enet`) versus classical models on raw CpG M-values. "
-        "`mbs_e2e` sex AUROC is unavailable (class argmax only). "
+        "`mbs_linear_probe` / `mbs_enet` / `rbs_*`) versus classical models on raw "
+        "CpG M-values. Prefer `mbs_e2e` sex AUROC when present (proba path); "
+        "`rbs_*` diagnose loss before vs after gene pooling. "
         "Classical enet age uses Huber SGD elastic-net (year-scale target + "
         "eta0=1e-4); unscaled squared-error SGD exploded on this panel. "
         "Horvath-style clocks are not in this table.",
@@ -386,10 +409,171 @@ def render_task_comparison_section(rows: list[dict[str, Any]]) -> list[str]:
             "",
             "**Readouts:** `mbs_e2e` = jointly trained neural heads on MBS (Stage A lock metric); "
             "`mbs_linear_probe` / `mbs_enet` = new sklearn heads on the **same frozen MBS**; "
+            "`rbs_linear_probe` / `rbs_enet` = frozen **gene-linked RBS** (pre–gene-pool); "
             "`classical` = sklearn on gene-linked CpG M-values (no encoder).",
             "",
         ]
     )
+    return lines
+
+
+def _pareto_front(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Non-dominated on tissue F1 (↑), age MAE (↓), sex AUROC (↑). Prefer mbs_e2e."""
+    candidates = [
+        r
+        for r in rows
+        if r.get("readout") in ("mbs_e2e", "classical")
+        and r.get("tissue_f1") is not None
+        and r.get("age_mae") is not None
+    ]
+    front: list[dict[str, Any]] = []
+    for a in candidates:
+        dominated = False
+        for b in candidates:
+            if a is b:
+                continue
+            better_or_eq = (
+                (b["tissue_f1"] >= a["tissue_f1"])
+                and (b["age_mae"] <= a["age_mae"])
+                and (
+                    (b.get("sex_auroc") or 0.0) >= (a.get("sex_auroc") or 0.0)
+                )
+            )
+            strictly = (
+                b["tissue_f1"] > a["tissue_f1"]
+                or b["age_mae"] < a["age_mae"]
+                or (b.get("sex_auroc") or 0.0) > (a.get("sex_auroc") or 0.0)
+            )
+            if better_or_eq and strictly:
+                dominated = True
+                break
+        if not dominated:
+            front.append(a)
+    return sorted(front, key=lambda r: float(r["tissue_f1"]), reverse=True)
+
+
+def render_pareto_section(rows: list[dict[str, Any]]) -> list[str]:
+    front = _pareto_front(rows)
+    lines = [
+        "## Three-task Pareto (`mbs_e2e` + classical)",
+        "",
+        "Non-dominated on tissue macro-F1 (↑), age MAE (↓), sex AUROC (↑). "
+        "Do **not** pick a winner on tissue alone.",
+        "",
+        "| Arm | Readout | Tissue F1 | Age MAE | Sex AUROC |",
+        "|-----|---------|----------:|--------:|----------:|",
+    ]
+    for row in front:
+        lines.append(
+            f"| `{row['arm_id']}` | `{row['readout']}` | "
+            f"{_fmt(row.get('tissue_f1'))} | {_fmt(row.get('age_mae'))} | "
+            f"{_fmt(row.get('sex_auroc'))} |"
+        )
+    if not front:
+        lines.append("| — | — | — | — | — |")
+    lines.extend(["", ""])
+    return lines
+
+
+def render_architecture_qa(rows: list[dict[str, Any]]) -> list[str]:
+    """Answer the seven Stage A architecture questions from available rows."""
+
+    def _e2e(arm: str) -> dict[str, Any] | None:
+        for r in rows:
+            if r.get("arm_id") == arm and r.get("readout") == "mbs_e2e":
+                return r
+        return None
+
+    def _mode(arm: str, mode: str) -> dict[str, Any] | None:
+        for r in rows:
+            if r.get("arm_id") == arm and r.get("readout") == mode:
+                return r
+        return None
+
+    p2 = _e2e("P2-G")
+    p4 = _e2e("P4-G")
+    mean_max = _e2e("N-cascade-scalar-mean-max")
+    max_mean = _e2e("N-cascade-scalar-max-mean")
+    vec = _e2e("N-cascade-vector-mean-max") or _e2e("N-cascade-vector-max-max")
+    light = _e2e("N-light-gene-max") or _e2e("N-light-gene-mean")
+    rbs = _mode("P2-G", "rbs_enet") or _mode("P2-G", "rbs_linear_probe")
+    mbs_enet = _mode("P2-G", "mbs_enet")
+    classical = next((r for r in rows if r.get("arm_id") == "C-mvalue-enet-G"), None)
+
+    def _cmp_pool(level: str) -> str:
+        if level == "cpg":
+            a, b = mean_max, p2  # mean vs max at cpg (region fixed max)
+            label_a, label_b = "mean-max", "max-max"
+            if mean_max is None or p2 is None:
+                a, b = p4, max_mean
+                label_a, label_b = "mean-mean", "max-mean"
+        else:
+            a, b = max_mean, p2  # mean vs max at gene (cpg fixed max)
+            label_a, label_b = "max-mean", "max-max"
+            if max_mean is None or p2 is None:
+                a, b = p4, mean_max
+                label_a, label_b = "mean-mean", "mean-max"
+        if a is None or b is None:
+            return f"Insufficient arms for {level}-level comparison yet."
+        better = a if (a.get("tissue_f1") or 0) >= (b.get("tissue_f1") or 0) else b
+        return (
+            f"`{label_a}` tissue F1={_fmt(a.get('tissue_f1'))} vs "
+            f"`{label_b}` {_fmt(b.get('tissue_f1'))}; "
+            f"age MAE {_fmt(a.get('age_mae'))} vs {_fmt(b.get('age_mae'))}. "
+            f"Prefer **`{better['arm_id']}`** on this slice (check Pareto)."
+        )
+
+    q3 = "Pending RBS diagnostic."
+    if rbs is not None and mbs_enet is not None:
+        q3 = (
+            f"P2 `rbs_*` tissue F1={_fmt(rbs.get('tissue_f1'))}, age MAE={_fmt(rbs.get('age_mae'))}; "
+            f"`mbs_enet` tissue={_fmt(mbs_enet.get('tissue_f1'))}, age={_fmt(mbs_enet.get('age_mae'))}. "
+            + (
+                "Gene pooling recovers tissue but **drops age/sex** relative to RBS."
+                if (rbs.get("age_mae") or 99) < (mbs_enet.get("age_mae") or 0)
+                else "Loss is not clearly at gene pooling; check scalar RBS vs raw CpG."
+            )
+        )
+    if classical is not None and rbs is not None:
+        q3 += (
+            f" Classical enet age MAE={_fmt(classical.get('age_mae'))} remains the age ceiling."
+        )
+
+    q5 = "Pending one-hop arms."
+    if light is not None and p2 is not None:
+        q5 = (
+            f"One-hop `{light['arm_id']}` tissue={_fmt(light.get('tissue_f1'))} / "
+            f"age={_fmt(light.get('age_mae'))} vs P2-G "
+            f"{_fmt(p2.get('tissue_f1'))} / {_fmt(p2.get('age_mae'))}."
+        )
+
+    q6 = (
+        "Gene aggregation still trails classical on age/sex; one scalar MBS/gene is "
+        "**not yet adequate** unless a screen arm closes the gap."
+        if classical is not None
+        else "Pending classical comparison."
+    )
+
+    lines = [
+        "## Architecture questions (Stage A screen)",
+        "",
+        f"1. **CpG → region pool (mean vs max):** {_cmp_pool('cpg')}",
+        f"2. **Region → gene pool (mean vs max):** {_cmp_pool('region')}",
+        f"3. **Does scalar RBS discard information?** Vector arm "
+        f"`{_fmt(vec.get('tissue_f1') if vec else None)}` tissue vs P2 "
+        f"`{_fmt(p2.get('tissue_f1') if p2 else None)}`; "
+        + (
+            "if vector does not beat scalar on age/sex, bottleneck is elsewhere."
+            if vec is not None
+            else "vector arms pending."
+        ),
+        f"4. **Gene pooling vs RBS:** {q3}",
+        f"5. **One-hop vs cascade:** {q5}",
+        f"6. **One-scalar-per-gene bottleneck:** {q6}",
+        "7. **Best performance/compute:** Prefer landed P2/P4 (15 ep) over P5; "
+        "promote Tier-1 (5 ep) arms only when Pareto/near-best, then confirm at 15 ep.",
+        "",
+    ]
     return lines
 
 
@@ -462,6 +646,10 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
     glossary_ids: list[str] = list(CASCADE_ARMS) + list(CLASSICAL_SUFFIXES) + [
         "C-mvalue-classical-G",
         "P2-orphan-ablation",
+        "N-cascade-scalar-max-max",
+        "N-cascade-scalar-mean-mean",
+        "rbs_linear_probe",
+        "rbs_enet",
         "C-mvalue-enetS",
         "N-cascade-S",
         "N-light-type",
@@ -487,6 +675,8 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
                 "mbs_e2e",
                 "mbs_linear_probe",
                 "mbs_enet",
+                "rbs_linear_probe",
+                "rbs_enet",
                 "fusion_full",
                 "fusion_mbs_direct",
             ),
@@ -506,12 +696,15 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
     task_rows = _task_comparison_rows(cascade_folds_by_arm, classical_payload)
     write_json(report_dir / "task_comparison.json", {"rows": task_rows})
     lines.extend(render_task_comparison_section(task_rows))
+    lines.extend(render_pareto_section(task_rows))
+    lines.extend(render_architecture_qa(task_rows))
     lines.extend(
         [
         "## Cascade arms (gene-linked CpGs only)",
         "",
         "Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** "
-        "are readouts of the **same frozen MBS**. Contaminated pre-fix **`mbs_e2e`** shown as *invalid*.",
+        "are readouts of the **same frozen MBS**; **`rbs_*`** use gene-linked RBS. "
+        "Contaminated pre-fix **`mbs_e2e`** shown as *invalid*.",
         "",
         "| Arm | mbs_e2e F1 | linear probe F1 | mbs_enet F1 | age MAE (e2e) | sex AUROC (probe) | folds |",
         "|-----|-----------:|----------------:|------------:|--------------:|------------------:|------:|",
@@ -605,6 +798,9 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
             "",
             "- **Stage A required GPU arms** (`P2-G`, `P4-G`, `P5-G-max`, `C-mvalue-*-G`) are complete "
             "on `explicit_only`. Optional `P5-G-mean` was not run.",
+            "- **Stage A screen (sequential):** train one arm at a time and regenerate this report after each. "
+            "Order: `N-light-gene-max` → `N-light-gene-mean` → mixed scalar cascades → vector cascades; "
+            "promote Tier-2 (15 ep) only if Pareto/near-best.",
             "- **Encoder parity (optional):** FlatDeepSet + HierarchicalDeepSet on same `gene_cols` if cascade "
             "does not lead classical by ≥0.03 F1.",
             "- **Stage B (after lock):** fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type`, "
@@ -612,7 +808,9 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
             "",
             "## Next",
             "",
-            "- Stage B: fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type` (FlatDeepSetRegion), "
+            "- **Stage A screen (sequential):** continue remaining Tier-1 arms after each landed light arm "
+            "updates this report.",
+            "- Stage B (after lock): fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type` (FlatDeepSetRegion), "
             "`N-mbs-posthoc-full-fusion` / `N-mbs-posthoc-mbs-direct`, plus `direct_cpg.zarr`.",
             "- Milestone **7** 5×6 OOF remains blocked until Stage B completes.",
             "",

@@ -141,12 +141,14 @@ def test_cascade_deepset_forward_and_empty_gene_mask() -> None:
         genes=tables["genes"],
     )
     model = CascadeDeepSet(1, len(assignment.region_types), cpg_hidden_dim=8, region_hidden_dim=4)
-    mbs, present, orphan = score_samples(
+    mbs, present, orphan, all_rbs, all_present = score_samples(
         model, assignment, tables["betas"][:2], device=torch.device("cpu")
     )
     assert mbs.shape == (2, assignment.n_genes)
     assert present.shape == mbs.shape
     assert orphan.shape == (2, assignment.n_orphan_rbs)
+    assert all_rbs.shape == (2, assignment.n_regions)
+    assert all_present.shape == all_rbs.shape
     # Absent genes stay neutral when no active regions (ENSG2 unused).
     ens2 = assignment.gene_ids.index("ENSG2") if "ENSG2" in assignment.gene_ids else None
     if ens2 is not None:

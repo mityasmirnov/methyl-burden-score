@@ -1,4 +1,4 @@
-"""7G′ Stage B flat-region fold trainer (FlatDeepSetRegion / N-light-type)."""
+"""7G′ flat-region fold trainer (FlatDeepSetRegion / N-light-gene-*)."""
 
 from __future__ import annotations
 
@@ -10,16 +10,17 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from mbs.training.transparent_baselines import evaluate_multitask_predictions
 from mbs.models import FlatDeepSetRegion
 from mbs.training.cascade_assign import CascadeAssignment, assignment_col_subset
 from mbs.training.cascade_loop import _tissue_class_weights
 from mbs.training.flat_region_features import (
     build_flat_region_gene_index,
+    flat_region_input_dim,
     gather_flat_region_features,
 )
 from mbs.training.loop import resolve_device
 from mbs.training.multitask import MultitaskHeads
+from mbs.training.transparent_baselines import evaluate_multitask_predictions
 
 
 def _set_seed(seed: int) -> None:
@@ -53,23 +54,31 @@ def train_flat_region_on_arrays(
     tissue_loss_weight: float = 3.0,
     age_loss_weight: float = 0.3,
     sex_loss_weight: float = 1.0,
+    pool: str = "max",
+    arm: str = "N-light-gene-max",
+    locus_index: Any | None = None,
+    allow_other_gene: bool = False,
 ) -> dict[str, Any]:
-    """Train FlatDeepSetRegion on one fold; return test metrics."""
+    """Train FlatDeepSetRegion on one fold; return test tissue/age/sex metrics."""
     out_dir.mkdir(parents=True, exist_ok=True)
     if panel_cols is not None:
         assignment = assignment_col_subset(assignment, panel_cols)
-    index = build_flat_region_gene_index(assignment)
+    index = build_flat_region_gene_index(
+        assignment,
+        locus_index=locus_index,
+        allow_other_gene=allow_other_gene,
+    )
     n_genes = max(index.n_genes, 1)
     n_classes = max(len(class_names), 2)
     device = resolve_device(device_str, require_cuda=False)
-    input_dim = 1 + len(index.region_types) + 1
+    input_dim = flat_region_input_dim()
     model = FlatDeepSetRegion(
         input_dim,
         phi_hidden_dim=64,
         phi_layers=2,
         rho_hidden_dim=10,
         rho_layers=2,
-        pool="max",
+        pool=pool,  # type: ignore[arg-type]
     ).to(device)
     heads = MultitaskHeads(n_genes, n_classes, sex_enabled=True).to(device)
     opt = torch.optim.AdamW(list(model.parameters()) + list(heads.parameters()), lr=lr)
@@ -131,20 +140,47 @@ def train_flat_region_on_arrays(
 
     model.eval()
     heads.eval()
+    age_pred: list[float] = []
     tissue_pred: list[int] = []
+    tissue_proba: list[np.ndarray] = []
+    sex_pred: list[int] = []
+    sex_proba: list[np.ndarray] = []
     with torch.no_grad():
         for i in test_idx.tolist():
             mbs, present = forward_sample(int(i))
-            logits = heads.forward_tissue(mbs, present)
-            tissue_pred.append(int(logits.argmax(dim=-1).item()))
+            age_hat = heads.forward_age(mbs, present).detach().cpu().numpy().reshape(-1)
+            age_pred.append(float(age_hat[0]))
+            t_logits = heads.forward_tissue(mbs, present)
+            tissue_pred.append(int(t_logits.argmax(dim=-1).item()))
+            tissue_proba.append(
+                torch.softmax(t_logits, dim=-1).detach().cpu().numpy().reshape(-1)
+            )
+            s_logits = heads.forward_sex(mbs, present)
+            if s_logits is not None:
+                sex_pred.append(int(s_logits.argmax(dim=-1).item()))
+                sex_proba.append(
+                    torch.softmax(s_logits, dim=-1).detach().cpu().numpy().reshape(-1)
+                )
+            else:
+                sex_pred.append(0)
+                sex_proba.append(np.asarray([1.0, 0.0], dtype=np.float64))
     test_idx_a = np.asarray(test_idx, dtype=np.int64)
     train_idx_a = np.asarray(train_idx, dtype=np.int64)
     tm_tr = tissue_mask_a[train_idx_a]
     tissue_valid_classes = (
         set(tissue[train_idx_a][tm_tr].tolist()) if tm_tr.any() else None
     )
+    preds: dict[str, np.ndarray] = {
+        "age": np.asarray(age_pred, dtype=np.float64),
+        "tissue": np.asarray(tissue_pred, dtype=np.int64),
+        "tissue_proba": np.asarray(tissue_proba, dtype=np.float64),
+        "tissue_classes": np.arange(n_classes, dtype=np.int64),
+        "sex": np.asarray(sex_pred, dtype=np.int64),
+        "sex_proba": np.asarray(sex_proba, dtype=np.float64),
+        "sex_classes": np.arange(2, dtype=np.int64),
+    }
     metrics = evaluate_multitask_predictions(
-        preds={"tissue": np.asarray(tissue_pred, dtype=np.int64)},
+        preds=preds,
         age=ages[test_idx_a],
         age_mask=age_mask_a[test_idx_a],
         tissue=tissue[test_idx_a],
@@ -157,10 +193,21 @@ def train_flat_region_on_arrays(
     )
     payload = {
         "metrics": metrics,
-        "arm": "N-light-type",
+        "arm": arm,
         "n_genes": index.n_genes,
+        "n_other_gene_edges": index.n_other_gene_edges,
+        "pool": pool,
         "eval_split": "test",
         "n_eval_samples": int(test_idx_a.size),
+        "evaluations": {
+            "mbs_e2e": {
+                "metrics": metrics,
+                "eval_split": "test",
+                "n_eval_samples": int(test_idx_a.size),
+            }
+        },
     }
-    (out_dir / "metrics.json").write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    (out_dir / "metrics.json").write_text(
+        json.dumps(payload, indent=2, default=str), encoding="utf-8"
+    )
     return payload

@@ -33,6 +33,7 @@ from mbs.training.cascade_scores import (
     fusion_feature_matrix,
     load_cascade_score_blocks,
     write_cascade_score_dir,
+    _write_array,
 )
 from mbs.training.dev_cv import DEFAULT_SPLIT_ID, load_frozen_folds
 from mbs.training.direct_cpg import direct_cpg_design_matrix, fit_direct_elasticnet
@@ -278,7 +279,16 @@ def _forward_batch(
         )
         n_orphan = int(assignment.n_orphan_rbs)
         orphan = torch.full((batch_size, n_orphan), 0.5, device=device, dtype=torch.float32)
-        return {"mbs": mbs, "present": present, "orphan_rbs": orphan}
+        n_regions = int(graph.n_regions)
+        rbs = torch.full((batch_size, n_regions), 0.5, device=device, dtype=torch.float32)
+        rbs_present = torch.zeros(batch_size, n_regions, dtype=torch.bool, device=device)
+        return {
+            "mbs": mbs,
+            "present": present,
+            "orphan_rbs": orphan,
+            "rbs": rbs,
+            "rbs_present": rbs_present,
+        }
 
     feats = _dense_cpg_features_batch(betas_batch, col_indices=cols)
     feats_t = torch.from_numpy(feats).to(device=device, dtype=torch.float32)
@@ -290,6 +300,8 @@ def _forward_batch(
     mbs_rows: list[torch.Tensor] = []
     present_rows: list[torch.Tensor] = []
     orphan_rows: list[torch.Tensor] = []
+    rbs_rows: list[torch.Tensor] = []
+    rbs_present_rows: list[torch.Tensor] = []
     for b in range(batch_size):
         out = model.forward_from_cpg_hidden(
             cpg_hidden[b],
@@ -302,11 +314,15 @@ def _forward_batch(
         )
         mbs_rows.append(out["mbs"])
         present_rows.append(out["present"])
+        rbs_rows.append(out["rbs"])
+        rbs_present_rows.append(out["rbs_present"])
         if assignment.n_orphan_rbs:
             orphan_rows.append(out["orphan_rbs"])
 
     mbs = torch.stack(mbs_rows, dim=0)
     present = torch.stack(present_rows, dim=0)
+    rbs = torch.stack(rbs_rows, dim=0)
+    rbs_present = torch.stack(rbs_present_rows, dim=0)
     orphan = (
         torch.stack(orphan_rows, dim=0)
         if orphan_rows
@@ -315,7 +331,13 @@ def _forward_batch(
     if assignment.n_genes == 0:
         mbs = torch.full((batch_size, 1), 0.5, device=device, dtype=torch.float32)
         present = torch.zeros(batch_size, 1, dtype=torch.bool, device=device)
-    return {"mbs": mbs, "present": present, "orphan_rbs": orphan}
+    return {
+        "mbs": mbs,
+        "present": present,
+        "orphan_rbs": orphan,
+        "rbs": rbs,
+        "rbs_present": rbs_present,
+    }
 
 
 def _forward_sample(
@@ -340,15 +362,18 @@ def score_samples(
     *,
     device: torch.device,
     batch_size: int = 1,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Return mbs, gene_present, orphan_rbs for all sample rows."""
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return mbs, gene_present, orphan_rbs, all_rbs, all_rbs_present."""
     model.eval()
     n = betas.shape[0]
     n_genes = max(assignment.n_genes, 1)
     n_orphan = assignment.n_orphan_rbs
+    n_regions = assignment.n_regions
     mbs_out = np.full((n, n_genes), 0.5, dtype=np.float32)
     present_out = np.zeros((n, n_genes), dtype=bool)
     orphan_out = np.full((n, n_orphan), 0.5, dtype=np.float32)
+    rbs_out = np.full((n, n_regions), 0.5, dtype=np.float32)
+    rbs_present_out = np.zeros((n, n_regions), dtype=bool)
     graph = _cascade_graph_tensors(assignment, device=device)
     step = max(1, int(batch_size))
     with torch.no_grad():
@@ -373,9 +398,20 @@ def score_samples(
                 orphan_out[start:end] = (
                     out["orphan_rbs"].detach().cpu().numpy().astype(np.float32)
                 )
+            if n_regions:
+                rbs_out[start:end] = out["rbs"].detach().cpu().numpy().astype(np.float32)
+                rbs_present_out[start:end] = (
+                    out["rbs_present"].detach().cpu().numpy().astype(bool)
+                )
     if assignment.n_genes == 0:
-        return mbs_out, present_out, orphan_out
-    return mbs_out[:, : assignment.n_genes], present_out[:, : assignment.n_genes], orphan_out
+        return mbs_out, present_out, orphan_out, rbs_out, rbs_present_out
+    return (
+        mbs_out[:, : assignment.n_genes],
+        present_out[:, : assignment.n_genes],
+        orphan_out,
+        rbs_out,
+        rbs_present_out,
+    )
 
 
 def _fit_direct_columns(
@@ -500,7 +536,7 @@ def _evaluate_cascade_validation(
     out: dict[str, Any] = {"tissue_macro_f1": None, "age_mae": None}
     if betas_val.shape[0] == 0:
         return out
-    mbs_v, present_v, _ = score_samples(
+    mbs_v, present_v, _, _, _ = score_samples(
         model, assignment, betas_val, device=device, batch_size=batch_size
     )
     mbs_t = torch.from_numpy(mbs_v).to(device)
@@ -553,7 +589,7 @@ def _evaluate_mbs_e2e(
     """End-to-end phenotype heads on MBS only (no late fusion); test split only."""
     test_idx_a = np.asarray(test_idx, dtype=np.int64)
     betas_te = betas[test_idx_a]
-    mbs_te, present_te, _ = score_samples(
+    mbs_te, present_te, _, _, _ = score_samples(
         model, assignment, betas_te, device=device, batch_size=batch_size
     )
     mbs_t = torch.from_numpy(mbs_te).to(device)
@@ -563,16 +599,24 @@ def _evaluate_mbs_e2e(
         age_pred = heads.forward_age(mbs_t, present_t).detach().cpu().numpy()
         tissue_logits = heads.forward_tissue(mbs_t, present_t)
         tissue_pred = tissue_logits.detach().cpu().numpy().argmax(axis=1)
+        tissue_proba = torch.softmax(tissue_logits, dim=-1).detach().cpu().numpy()
         sex_pred: np.ndarray | None = None
+        sex_proba: np.ndarray | None = None
         if heads.sex_head is not None:
             sex_logits = heads.forward_sex(mbs_t, present_t)
             if sex_logits is not None:
                 sex_pred = sex_logits.detach().cpu().numpy().argmax(axis=1)
+                sex_proba = torch.softmax(sex_logits, dim=-1).detach().cpu().numpy()
     preds: dict[str, np.ndarray | None] = {
         "age": age_pred,
         "tissue": tissue_pred,
+        "tissue_proba": tissue_proba,
+        "tissue_classes": np.arange(tissue_proba.shape[1], dtype=np.int64),
         "sex": sex_pred,
     }
+    if sex_proba is not None:
+        preds["sex_proba"] = sex_proba
+        preds["sex_classes"] = np.arange(sex_proba.shape[1], dtype=np.int64)
     train_idx_a = np.asarray(train_idx, dtype=np.int64)
     tissue_valid_classes = None
     tm_tr = np.asarray(tissue_mask, dtype=bool)[train_idx_a]
@@ -694,6 +738,9 @@ def _evaluations_incomplete(metrics: dict[str, Any]) -> bool:
     e2e = ev.get("mbs_e2e")
     if not isinstance(e2e, dict) or e2e.get("eval_split") != "test":
         return True
+    # Stage A screen: gene-linked runs should expose RBS frozen readouts.
+    if bool(metrics.get("gene_linked_only")) and "rbs_enet" not in ev:
+        return True
     return False
 
 
@@ -722,6 +769,8 @@ def train_cascade_on_arrays(
     dropout: float = 0.1,
     cpg_pool: PoolName = "max",
     region_pool: PoolName = "max",
+    gene_aggregation: str = "scalar_rbs",
+    gene_allocation_policy: str = "legacy_nearest",
     skip_if_done: bool = False,
     val_idx: np.ndarray | None = None,
     age_loss_weight: float = 1.0,
@@ -779,6 +828,7 @@ def train_cascade_on_arrays(
         region_hidden_dim=int(region_hidden_dim),
         cpg_pool=cpg_pool,
         region_pool=region_pool,
+        gene_aggregation=gene_aggregation,  # type: ignore[arg-type]
         dropout=float(dropout),
         activation="gelu",
         layer_norm=True,
@@ -832,6 +882,20 @@ def train_cascade_on_arrays(
     has_val = val_idx_a is not None and val_idx_a.size > 0
     out_dir.mkdir(parents=True, exist_ok=True)
     ckpt_path = out_dir / "best.pt"
+    # Re-score / re-eval without retraining when a checkpoint already exists but
+    # Stage A diagnostics (e.g. rbs_enet) are missing.
+    if (
+        not eval_only
+        and ckpt_path.is_file()
+        and prior_metrics is not None
+        and _evaluations_incomplete(prior_metrics)
+    ):
+        eval_only = True
+        print(
+            f"[cascade] {out_dir.name} eval_only auto: checkpoint present, "
+            "refreshing incomplete evaluations",
+            flush=True,
+        )
     if eval_only and not ckpt_path.is_file():
         raise FileNotFoundError(f"eval_only requires checkpoint: {ckpt_path}")
 
@@ -846,6 +910,7 @@ def train_cascade_on_arrays(
                 "region_hidden_dim": region_hidden_dim,
                 "cpg_pool": cpg_pool,
                 "region_pool": region_pool,
+                "gene_aggregation": gene_aggregation,
             },
             ckpt_path,
         )
@@ -998,9 +1063,58 @@ def train_cascade_on_arrays(
             _save_checkpoint()
 
     if eval_only and manifest_path.is_file():
-        pass
+        # Re-attach diagnostic gene-linked RBS if an older score dir lacks it.
+        if not (score_dir / "all_gene_rbs.zarr").exists():
+            mbs_all, present_all, orphan_all, rbs_all, rbs_present_all = score_samples(
+                model, assignment, betas, device=device, batch_size=batch_size
+            )
+            gene_linked_region_mask = assignment.region_to_gene >= 0
+            gene_linked_region_indices = np.flatnonzero(gene_linked_region_mask).astype(
+                np.int64
+            )
+            all_gene_rbs = (
+                rbs_all[:, gene_linked_region_indices]
+                if gene_linked_region_indices.size
+                else np.zeros((rbs_all.shape[0], 0), dtype=np.float32)
+            )
+            all_gene_rbs_present = (
+                rbs_present_all[:, gene_linked_region_indices]
+                if gene_linked_region_indices.size
+                else np.zeros((rbs_present_all.shape[0], 0), dtype=bool)
+            )
+            _write_array(score_dir / "all_gene_rbs.zarr", all_gene_rbs)
+            _write_array(
+                score_dir / "all_gene_rbs_present.zarr",
+                all_gene_rbs_present.astype(np.uint8),
+            )
+            pd.DataFrame(
+                {
+                    "region_id": [
+                        assignment.region_ids[int(i)]
+                        for i in gene_linked_region_indices.tolist()
+                    ],
+                    "gene_id": [
+                        assignment.gene_ids[int(assignment.region_to_gene[int(i)])]
+                        if int(assignment.region_to_gene[int(i)]) >= 0
+                        else None
+                        for i in gene_linked_region_indices.tolist()
+                    ],
+                    "region_type": [
+                        assignment.region_types[int(assignment.region_type_id[int(i)])]
+                        if int(assignment.region_type_id[int(i)])
+                        < len(assignment.region_types)
+                        else "unknown"
+                        for i in gene_linked_region_indices.tolist()
+                    ],
+                    "column_index": np.arange(
+                        gene_linked_region_indices.size, dtype=np.int64
+                    ),
+                    "allocation_policy": str(gene_allocation_policy),
+                }
+            ).to_parquet(score_dir / "all_gene_region_index.parquet", index=False)
+            del mbs_all, present_all, orphan_all
     else:
-        mbs_all, present_all, orphan_all = score_samples(
+        mbs_all, present_all, orphan_all, rbs_all, rbs_present_all = score_samples(
             model, assignment, betas, device=device, batch_size=batch_size
         )
         direct_all, direct_names = _fit_direct_columns(
@@ -1019,6 +1133,31 @@ def train_cascade_on_arrays(
 
         gene_ids = list(assignment.gene_ids) if assignment.gene_ids else ["__none__"]
         orphan_ids = list(assignment.orphan_region_ids)
+        gene_linked_region_mask = assignment.region_to_gene >= 0
+        gene_linked_region_indices = np.flatnonzero(gene_linked_region_mask).astype(np.int64)
+        all_gene_rbs = (
+            rbs_all[:, gene_linked_region_indices]
+            if gene_linked_region_indices.size
+            else np.zeros((rbs_all.shape[0], 0), dtype=np.float32)
+        )
+        all_gene_rbs_present = (
+            rbs_present_all[:, gene_linked_region_indices]
+            if gene_linked_region_indices.size
+            else np.zeros((rbs_present_all.shape[0], 0), dtype=bool)
+        )
+        all_gene_region_ids = [assignment.region_ids[int(i)] for i in gene_linked_region_indices.tolist()]
+        all_gene_region_gene_ids = [
+            assignment.gene_ids[int(assignment.region_to_gene[int(i)])]
+            if int(assignment.region_to_gene[int(i)]) >= 0
+            else None
+            for i in gene_linked_region_indices.tolist()
+        ]
+        all_gene_region_types = [
+            assignment.region_types[int(assignment.region_type_id[int(i)])]
+            if int(assignment.region_type_id[int(i)]) < len(assignment.region_types)
+            else "unknown"
+            for i in gene_linked_region_indices.tolist()
+        ]
         direct_cpg_all: np.ndarray | None = None
         direct_locus_ids: list[str] | None = None
         if assignment.direct_col_index.size and locus_ids is not None:
@@ -1043,6 +1182,17 @@ def train_cascade_on_arrays(
             restart_id=str(seed),
             direct_cpg=direct_cpg_all,
             direct_locus_ids=direct_locus_ids,
+            all_gene_rbs=all_gene_rbs,
+            all_gene_rbs_present=all_gene_rbs_present,
+            all_gene_region_ids=all_gene_region_ids,
+            all_gene_region_gene_ids=all_gene_region_gene_ids,
+            all_gene_region_types=all_gene_region_types,
+            allocation_policy=str(gene_allocation_policy),
+            extra_manifest={
+                "cpg_pool": cpg_pool,
+                "region_pool": region_pool,
+                "gene_aggregation": gene_aggregation,
+            },
         )
 
     blocks = load_cascade_score_blocks(score_dir)
@@ -1096,6 +1246,38 @@ def train_cascade_on_arrays(
         study_ids=study_ids,
         class_names=list(class_names),
     )
+    if "all_gene_rbs" in blocks and blocks["all_gene_rbs"].shape[1] > 0:
+        rbs_blocks = {"mbs": blocks["all_gene_rbs"]}
+        evaluations["rbs_linear_probe"] = _evaluate_fusion_mode(
+            rbs_blocks,
+            mode="mbs_only",
+            train_idx=train_idx,
+            test_idx=test_idx,
+            ages=ages,
+            age_mask=age_mask_a,
+            tissue=tissue,
+            tissue_mask=tissue_mask_a,
+            sex=sex,
+            sex_mask=sex_mask_a,
+            study_ids=study_ids,
+            class_names=list(class_names),
+            fusion=fusion,
+        )
+        evaluations["rbs_linear_probe"]["evaluation"] = "rbs_linear_probe"
+        evaluations["rbs_enet"] = _evaluate_mbs_enet(
+            rbs_blocks,
+            train_idx=train_idx,
+            test_idx=test_idx,
+            ages=ages,
+            age_mask=age_mask_a,
+            tissue=tissue,
+            tissue_mask=tissue_mask_a,
+            sex=sex,
+            sex_mask=sex_mask_a,
+            study_ids=study_ids,
+            class_names=list(class_names),
+        )
+        evaluations["rbs_enet"]["evaluation"] = "rbs_enet"
 
     fusion_modes: list[FusionBlockMode] = ["full"]
     for mode in extra_fusion_modes:
@@ -1139,6 +1321,8 @@ def train_cascade_on_arrays(
         "checkpoint": str(ckpt_path),
         "checkpoint_selection": checkpoint_selection,
         "pooling": {"cpg_to_region": cpg_pool, "region_to_gene": region_pool},
+        "gene_aggregation": gene_aggregation,
+        "gene_allocation": gene_allocation_policy,
     }
     write_json(metrics_path, fused)
     return fused
@@ -1292,6 +1476,9 @@ def run_cascade_hub(
         )
     cpg_pool = cast(PoolName, cpg_pool_name)
     region_pool = cast(PoolName, region_pool_name)
+    gene_aggregation = str(model_cfg.get("gene_aggregation", "scalar_rbs"))
+    if gene_aggregation not in ("scalar_rbs", "region_hidden"):
+        raise ValueError(f"unsupported gene_aggregation: {gene_aggregation!r}")
     training_cfg = config.get("training", {})
     age_loss_weight = float(training_cfg.get("age_loss_weight", 1.0))
     tissue_loss_weight = float(training_cfg.get("tissue_loss_weight", 1.0))
@@ -1512,6 +1699,8 @@ def run_cascade_hub(
             dropout=dropout,
             cpg_pool=cpg_pool,
             region_pool=region_pool,
+            gene_aggregation=gene_aggregation,
+            gene_allocation_policy=gene_allocation,
             skip_if_done=skip_if_done,
             val_idx=val_idx,
             age_loss_weight=age_loss_weight,

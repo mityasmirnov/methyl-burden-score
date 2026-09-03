@@ -13,11 +13,18 @@ LATEST_PID="$LOGDIR/stage0_7g_gene_only_latest.pid"
 REPORT="${REPORT_DIR:-$REPO_ROOT/reports/inspection/stage0_7g_gene_only_probe}"
 
 ARMS=(
+  stage0-7g-gene-probe-P2-G-explicit
+  stage0-7g-gene-probe-P4-G-explicit
+  stage0-7g-gene-probe-P5-G-max-explicit
+  stage0-7g-gene-probe-P5-G-mean-explicit
+  stage0-7g-gene-probe-P2-orphan-ablation
+)
+# Legacy (pre-explicit) runs — informational only
+LEGACY_ARMS=(
   stage0-7g-gene-probe-P2-G
   stage0-7g-gene-probe-P4-G
   stage0-7g-gene-probe-P5-G-max
   stage0-7g-gene-probe-P5-G-mean
-  stage0-7g-gene-probe-P2-orphan-ablation
 )
 
 printf '=== 7G′ Stage A gene-only probe status ===\n'

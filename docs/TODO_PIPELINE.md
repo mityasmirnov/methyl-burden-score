@@ -15,14 +15,16 @@ True next milestone after bootstrap:
 > **done**, fixture + Hub DeepRVAT A/B) → development CV (7E — **done**) →
 > Hub multitask + hygiene (**7E′** — **done**) → **RBS→gene + direct topology
 > (7F — done)** → **methylation-only full eval (7G — done)** →
-> **Phase-2 gene-only cascade grid (7G′ Stage A — scaffolding done, GPU rerun
-> gate)** → **fold-selected panel + full model (7G′ Stage B — plumbing done,
-> GPU pending)** → **final OOF cross-fitting (7)** → one score matrix.
+> **Phase-2 gene-only cascade grid (7G′ Stage A — DeepRVAT screen
+> in progress)** → **fold-selected panel + full model (7G′ Stage B — plumbing
+> done, GPU pending)** → **final OOF cross-fitting (7)** → one score matrix.
 
-**Current gate:** **7G′ Stage B GPU** (after Stage A lock). Stage A required
-`explicit_only` GPU arms are complete with test-only **`mbs_e2e`**. Cascade does
-**not** beat `C-mvalue-enet-G` by ≥0.03 F1 — encoder parity is recommended
-before committing cascade to Stage B. Plan:
+**Current gate:** **7G′ Stage A DeepRVAT screen** (mixed pooling, RBS
+diagnostic, vector cascade, one-hop). Required P2/P4/P5-max/`C-mvalue-*-G`
+GPU arms already landed with test-only **`mbs_e2e`**; cascade does **not** beat
+`C-mvalue-enet-G` by ≥0.03 F1. **P5 inactive.** Stage B GPU follows after the
+screen selects (or rejects) gene aggregation. Plans:
+[`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md),
 [`plans/milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md).
 
 | Layer | Status |
@@ -31,8 +33,9 @@ before committing cascade to Stage B. Plan:
 | `explicit_only` allocation + manifest | **done** (ADR 0010; YAML `*-explicit` run IDs) |
 | Stage B selector / panel artifact / honest fusion names | **done** (code only) |
 | 7G″ expression plan | **done** (deferred; no training code) |
-| Stage A honest GPU runs | **done** (P2/P4/P5-max explicit; optional P5-mean not run) |
-| Stage B GPU run | **pending** ← **current ops gate** (encoder parity recommended first) |
+| Stage A required GPU arms (P2/P4/P5-max/`C-*-G`) | **done** (P5 inactive thereafter) |
+| Stage A DeepRVAT screen | **in_progress** ← **current ops gate** |
+| Stage B GPU run | **pending** (after screen) |
 | Milestone **7** 5×6 OOF | **blocked** |
 
 **Trustworthy numbers (`explicit_only` panel, 51 375 gene-linked CpGs, test split):**
@@ -46,9 +49,10 @@ before committing cascade to Stage B. Plan:
 | P5 longer max train | `P5-G-max` | 0.356 (±0.042) | Did not help |
 | Invalid (do not cite) | pre-fix `mbs_e2e` on P*-G | ~0.67–0.70 | train+val+test leak |
 
-**Lock:** `P2-G` max/max, 15 epochs (`lock_recommendation.json`). Cascade is **not**
-clearly ahead of classical. Then **7G′ Stage B** GPU run (optionally after Flat/Hier
-parity). **7G″** expression pilot is **deferred**. Final Milestone **7** OOF remains blocked.
+**Provisional lock:** `P2-G` max/max, 15 epochs (`lock_recommendation.json`);
+cascade is **not** clearly ahead of classical. Stage A screen may revise the
+topology before Stage B. **7G″** expression pilot is **deferred**. Final
+Milestone **7** OOF remains blocked.
 
 Runners: Stage A `scripts/run_7g_gene_only_probe.py` · Stage B
 `scripts/run_7g_prime_stage_b.py` (both `--device cuda` on GPU hosts).
@@ -835,8 +839,10 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 7G′. Gene-only architecture selection + matched-panel benchmark
 
-- **Status:** scaffolding **`done`** · Stage A GPU rerun **`done`** (required arms) · Stage B code **`done`** / GPU **`pending`**
+- **Status:** scaffolding **`done`** · required Stage A GPU arms **`done`** ·
+  DeepRVAT screen **`in_progress`** · Stage B code **`done`** / GPU **`pending`**
 - **Plan:** [`plans/milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md)
+- **Screen:** [`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md)
 - **Runner (Stage A):** `scripts/run_7g_gene_only_probe.py` · background:
   `scripts/train_7g_gene_only_probe_background.sh`
 - **Runner (Stage B):** `scripts/run_7g_prime_stage_b.py` · background:
@@ -854,23 +860,23 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ### Stage A — gene-only MBS architecture selection
 
-- **Done when:** Report under
+- **Required arms done when:** Report under
   `reports/inspection/stage0_7g_gene_only_probe/` with per-fold tables,
-  **test-only** **`mbs_e2e`** primary ranking (`eval_split=test`), locked
-  pooling/epoch policy, orphan fusion decision; arms `P2-G`, `P4-G`,
-  `P5-G-max`, optional `P5-G-mean`, `C-mvalue-*-G`, optional
-  `P2-orphan-ablation` on **`explicit_only`** panel (`gene_panel_manifest.json`).
-  Real runs use **`--device cuda`** and new run IDs (`*-explicit`).
-- **Evidence:**
+  **test-only** **`mbs_e2e`** (`eval_split=test`), provisional lock, orphan
+  fusion decision; arms `P2-G`, `P4-G`, `P5-G-max` (**inactive thereafter**),
+  `C-mvalue-*-G`, optional `P2-orphan-ablation` on **`explicit_only`** panel.
+- **Evidence (required arms):**
   - **`P2-G-explicit` / `P4-G-explicit` / `P5-G-max-explicit`:** 3/3 folds,
     `eval_split=test`. Best cascade **`mbs_e2e`:** P2-G **0.373**; P4-G 0.370;
-    P5-G-max 0.356. Optional **P5-G-mean** not run.
+    P5-G-max 0.356 (**P5 inactive** — do not extend).
   - **`mbs_enet`** on frozen P2/P4 MBS: P2 **0.385** (closest neural readout to classical).
   - **`C-mvalue-classical-G`** on **`explicit_only`** (51 375 cols): enet-G **0.388**
-    still leads tissue F1; cascade not ≥0.03 ahead → encoder parity recommended.
+    still leads tissue F1; cascade not ≥0.03 ahead.
   - **`P2-orphan-ablation`:** orphan RBS negligible (Δ F1 ≈ 0)
-  - **Lock:** `P2-G` max/max, 15 epochs (`lock_recommendation.json`)
-- **Pre-lock checklist:** complete for required arms (item 6: classical wins, lock issued with encoder-parity flag).
+  - **Provisional lock:** `P2-G` max/max, 15 epochs (`lock_recommendation.json`)
+- **DeepRVAT screen (current):** mixed scalar pooling, RBS-only diagnostic,
+  vector-region cascade, one-hop annotated DeepSet; always report tissue/age/sex;
+  Tier 1 (5 ep) then Tier 2 (15 ep) for promoted arms. See screen plan.
 
 ### Stage B — fold-selected panel + full model
 
@@ -879,7 +885,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `C-mvalue-enetS`, `N-cascade-S`, **`N-light-type`**, post-hoc
   **`N-mbs-posthoc-full-fusion`** / **`N-mbs-posthoc-mbs-direct`**, canonical
   `fold_panels/fold_*_panel.json`, and **`direct_cpg.zarr`** when direct loci exist.
-- **Evidence:** selector + runner plumbing landed; **GPU run pending** (needs Stage A lock)
+- **Evidence:** selector + runner plumbing landed; **GPU run pending** (after
+  Stage A screen). Seed-gene transfer is a **separate** design (screen plan §10).
 
 ### 7G″ — expression auxiliary (deferred)
 

@@ -49,10 +49,34 @@ ARM_DESCRIPTIONS: dict[str, str] = {
         "Like P2-G but **mean/mean** pooling; same gene-only panel and **`mbs_e2e`** metric."
     ),
     "P5-G-max": (
-        "Gene-only cascade; max/max pooling; 30-epoch cap + early stop; **`mbs_e2e`** metric."
+        "Gene-only cascade; max/max pooling; 30-epoch cap + early stop; **`mbs_e2e`** metric. "
+        "**Inactive** for Stage A DeepRVAT screen (historical only)."
     ),
     "P5-G-mean": (
-        "Gene-only cascade; mean/mean pooling; 30-epoch cap + early stop; **`mbs_e2e`** metric."
+        "Gene-only cascade; mean/mean pooling; 30-epoch cap + early stop; **`mbs_e2e`** metric. "
+        "**Inactive**."
+    ),
+    "N-cascade-scalar-max-max": "Alias of **`P2-G`**: scalar RBS cascade, CpG max → gene max.",
+    "N-cascade-scalar-mean-mean": "Alias of **`P4-G`**: scalar RBS cascade, CpG mean → gene mean.",
+    "N-cascade-scalar-mean-max": (
+        "Scalar RBS cascade; **mean** CpG→region + **max** region→gene; Stage A screen."
+    ),
+    "N-cascade-scalar-max-mean": (
+        "Scalar RBS cascade; **max** CpG→region + **mean** region→gene; Stage A screen."
+    ),
+    "N-cascade-vector-mean-max": (
+        "Vector-region cascade: pool region **embeddings** (mean CpG→region, max region→gene) "
+        "then ``rho_G`` → MBS."
+    ),
+    "N-cascade-vector-max-max": (
+        "Vector-region cascade with max/max pooling of latent region embeddings."
+    ),
+    "N-light-gene-max": (
+        "One-hop annotated FlatDeepSetRegion: `[M, gene-role, CGI context, regulatory, flags]` "
+        "→ gene **max** → MBS."
+    ),
+    "N-light-gene-mean": (
+        "One-hop annotated FlatDeepSetRegion with gene **mean** pooling."
     ),
     "P2-orphan-ablation": (
         "Full assignment (not gene-only): same P2 loss weights; compares "
@@ -93,8 +117,8 @@ ARM_DESCRIPTIONS: dict[str, str] = {
         "(same loci as `C-mvalue-enetS` per fold)."
     ),
     "N-light-type": (
-        "**FlatDeepSetRegion** (planned): per-CpG `[M-value, regulatory-type one-hot, observed]` "
-        "→ pool by gene → MBS; lighter than full RBS→gene cascade."
+        "Legacy Stage B name for FlatDeepSetRegion; prefer **`N-light-gene-max`** / "
+        "**`N-light-gene-mean`** in Stage A screen."
     ),
     "N-mbs-posthoc-full-fusion": (
         "**Stage B post-hoc fusion:** MBS encoder trained once; CPU late fusion on "
@@ -133,6 +157,13 @@ EVAL_MODE_DESCRIPTIONS: dict[str, str] = {
     "mbs_enet": (
         "CPU elastic-net heads on the **same saved MBS** (age + tissue + sex). "
         "Same CascadeDeepSet weights as `mbs_e2e`; no encoder retrain."
+    ),
+    "rbs_linear_probe": (
+        "CPU linear probe on frozen **gene-linked RBS** (`all_gene_rbs.zarr`); "
+        "diagnoses loss before vs after gene pooling."
+    ),
+    "rbs_enet": (
+        "CPU elastic-net on frozen gene-linked RBS (same matrix as `rbs_linear_probe`)."
     ),
     "fusion_full": "Late fusion on **`[orphan_rbs | mbs | direct_contrib]`** columns.",
     "fusion_mbs_direct": "Late fusion on **`[mbs | direct_contrib]`** — orphan RBS ablation.",

@@ -1,0 +1,38 @@
+# 7G′ Stage A: N-cascade-scalar-max-mean (CpG max → scalar RBS mean).
+split_id: hub-ats-7e-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+milestone: 7G-gene-only-scalar-max-mean
+report_dir: reports/inspection/stage0_7g_gene_only_probe/_staging_scalar_max_mean_t2_train
+cv_budget:
+  max_loci: 65536
+  max_epochs: 15
+experiment:
+  name: stage0_7g_gene_only_probe_scalar_max_mean_t2
+  seed: 42
+  stage: 0
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-age-tissue-sex-full-v1
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+model:
+  topology: rbs_gene_direct
+  tbs_arm: false
+  cpg_pool: max
+  region_pool: mean
+  gene_aggregation: scalar_rbs
+  gene_allocation: explicit_only
+  cpg_hidden_dim: 64
+  region_hidden_dim: 32
+  dropout: 0.1
+training:
+  max_epochs: 15
+  batch_size: auto
+  learning_rate: 0.001
+  tissue_loss_weight: 3.0
+  age_loss_weight: 0.3
+  sex_loss_weight: 1.0
+  gene_linked_only: true
+  primary_evaluation: mbs_e2e
+device:
+  torch_device: cuda

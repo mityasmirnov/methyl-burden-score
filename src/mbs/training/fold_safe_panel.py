@@ -21,7 +21,7 @@ ENET_L1_GRID = (0.25, 0.5, 0.75)
 def _enet_classifier_pipeline(*, alpha: float, l1_ratio: float) -> Pipeline:
     return Pipeline(
         [
-            ("impute", SimpleImputer(strategy="median")),
+            ("impute", SimpleImputer(strategy="median", keep_empty_features=True)),
             ("scale", StandardScaler(with_mean=True)),
             (
                 "sgd",
@@ -43,7 +43,7 @@ def _enet_classifier_pipeline(*, alpha: float, l1_ratio: float) -> Pipeline:
 def _enet_regressor_pipeline(*, alpha: float, l1_ratio: float) -> Pipeline:
     return Pipeline(
         [
-            ("impute", SimpleImputer(strategy="median")),
+            ("impute", SimpleImputer(strategy="median", keep_empty_features=True)),
             ("scale", StandardScaler(with_mean=True)),
             (
                 "sgd",

@@ -70,6 +70,7 @@ from mbs.training.encoder_config import resolve_encoder
 from mbs.training.features import SampleFeatureBundle, build_static_column_table, cpg_input_dim
 from mbs.training.flat_region_features import (
     FlatRegionGeneIndex,
+    build_flat_region_base_features,
     build_flat_region_gene_index,
     flat_region_input_dim,
     gather_flat_region_features,
@@ -132,6 +133,7 @@ class _PilotStore:
     epsilon: float
     n_cols: int
     flat_region_index: FlatRegionGeneIndex | None = None
+    flat_region_base_features: np.ndarray | None = None
 
 
 def resolve_device(device_str: str, *, require_cuda: bool = False) -> torch.device:
@@ -322,6 +324,7 @@ def _materialize_record(
             beta_row=beta_row,
             index=store.flat_region_index,
             epsilon=store.epsilon,
+            base_features=store.flat_region_base_features,
         )
         if cpg_features.shape[0] == 0:
             raise ValueError(f"sample {phenotype.sample_id!r} has zero flat-region edges")
@@ -580,8 +583,14 @@ def _run_epoch(
             study_ids.append(str(ph.study_id if ph and ph.study_id else rec.sample_id))
             task_keys.append(task_key(ph))
     else:
+        # Prefer flat-region edge count so token-budget batching packs GPU work.
+        edge_est = 1
+        if pilot_store is not None and pilot_store.flat_region_index is not None:
+            edge_est = max(1, int(pilot_store.flat_region_index.n_edges))
+        elif pilot_store is not None:
+            edge_est = max(1, int(pilot_store.locus_gene.n_edges))
         for ph in all_phenotypes or []:
-            n_tokens.append(1)  # ponytail: unknown until materialize; upgrade: cache edge counts
+            n_tokens.append(edge_est)
             study_ids.append(str(ph.study_id or ph.sample_id))
             task_keys.append(task_key(ph))
 
@@ -950,9 +959,11 @@ def train_flat_baseline(
     lr = float(train_cfg.get("learning_rate", 1e-3))
     weight_decay = float(train_cfg.get("weight_decay", 1e-4))
     grad_clip = float(train_cfg.get("gradient_clip_norm", 2.0))
-    batch_size = max(1, int(train_cfg.get("batch_size", 1)))
+    batch_size_raw = train_cfg.get("batch_size", 1)
     raw_budget = train_cfg.get("batch_token_budget")
     batch_token_budget = int(raw_budget) if raw_budget not in (None, "", 0) else None
+    # Resolved after graph/panel known when batch_size is ``auto``.
+    batch_size = 1 if str(batch_size_raw).strip().lower() == "auto" else max(1, int(batch_size_raw))
     control_mode = _control_mode(config)
     model_cfg = config.get("model", {})
     arm = model_cfg.get("arm")
@@ -967,6 +978,10 @@ def train_flat_baseline(
     level1_sigma_min = float(level1_cfg["sigma_min"])
     level1_params: Level1NormParams | None = None
     level1_manifest: dict[str, Any] | None = None
+    cv_budget = config.get("cv_budget", {}) or {}
+    if max_loci is None:
+        raw_max_loci = cv_budget.get("max_loci", train_cfg.get("max_loci"))
+        max_loci = int(raw_max_loci) if raw_max_loci not in (None, "", 0) else None
 
     fixture_records: list[FlatSampleRecord] | None = None
     train_phenotypes: list[SamplePhenotype] | None = None
@@ -1268,18 +1283,32 @@ def train_flat_baseline(
             genes_df = (
                 pd.read_parquet(genes_path) if genes_path.is_file() else pd.DataFrame()
             )
+            gene_allocation = str(
+                model_cfg.get(
+                    "gene_allocation",
+                    train_cfg.get("gene_allocation", "explicit_only"),
+                )
+            )
+            max_nearest_raw = model_cfg.get(
+                "max_nearest_gene_bp",
+                train_cfg.get("max_nearest_gene_bp"),
+            )
+            max_nearest_gene_bp = None if max_nearest_raw is None else int(max_nearest_raw)
             cascade_assignment = build_cascade_assignment(
                 locus_index=locus_index,
                 locus_region_edges=lr_edges,
                 regions=regions,
                 genes=genes_df,
                 max_loci=max_loci,
+                gene_allocation=gene_allocation,  # type: ignore[arg-type]
+                max_nearest_gene_bp=max_nearest_gene_bp,
             )
             gene_cols = gene_linked_col_index(cascade_assignment)
             locus_gene = locus_gene_col_filter(locus_gene, gene_cols)
             print(  # noqa: T201
                 f"[flat] gene_linked_only panel: {gene_cols.size} CpG columns, "
-                f"{locus_gene.n_edges} edges",
+                f"{locus_gene.n_edges} edges allocation={gene_allocation} "
+                f"max_loci={max_loci}",
                 flush=True,
             )
         if topology == "flat_region":
@@ -1287,16 +1316,49 @@ def train_flat_baseline(
             genes_df = (
                 pd.read_parquet(genes_path) if genes_path.is_file() else pd.DataFrame()
             )
+            gene_allocation = str(
+                model_cfg.get(
+                    "gene_allocation",
+                    train_cfg.get("gene_allocation", "explicit_only"),
+                )
+            )
+            max_nearest_raw = model_cfg.get(
+                "max_nearest_gene_bp",
+                train_cfg.get("max_nearest_gene_bp"),
+            )
+            max_nearest_gene_bp = None if max_nearest_raw is None else int(max_nearest_raw)
             cascade_assignment = build_cascade_assignment(
                 locus_index=locus_index,
                 locus_region_edges=lr_edges,
                 regions=regions,
                 genes=genes_df,
                 max_loci=max_loci,
+                gene_allocation=gene_allocation,  # type: ignore[arg-type]
+                max_nearest_gene_bp=max_nearest_gene_bp,
             )
-            flat_region_index = build_flat_region_gene_index(cascade_assignment)
+            cpg_context_by_locus: dict[str, str] | None = None
+            loci_ann = data_root / "canonical" / "annotations" / "loci.parquet"
+            if loci_ann.is_file():
+                loci_df = pd.read_parquet(loci_ann, columns=["locus_id", "cpg_context"])
+                cpg_context_by_locus = {
+                    str(r.locus_id): str(r.cpg_context)
+                    for r in loci_df.itertuples(index=False)
+                    if pd.notna(getattr(r, "cpg_context", None))
+                }
+            flat_region_index = build_flat_region_gene_index(
+                cascade_assignment,
+                locus_index=locus_index,
+                cpg_context_by_locus=cpg_context_by_locus,
+                allow_other_gene=bool(train_cfg.get("allow_other_gene", False)),
+            )
             gene_ids = flat_region_index.gene_ids
             n_genes = flat_region_index.n_genes
+            print(  # noqa: T201
+                f"[flat_region] allocation={gene_allocation} genes={n_genes} "
+                f"edges={flat_region_index.n_edges} "
+                f"other_gene={flat_region_index.n_other_gene_edges}",
+                flush=True,
+            )
         else:
             gene_ids = locus_gene.gene_ids
             n_genes = locus_gene.n_genes
@@ -1320,7 +1382,7 @@ def train_flat_baseline(
             )
         epsilon = float(level1_epsilon)
         if topology == "flat_region" and flat_region_index is not None:
-            input_dim = flat_region_input_dim(len(flat_region_index.region_types))
+            input_dim = flat_region_input_dim()
         else:
             input_dim = cpg_input_dim(
                 static_dim,
@@ -1339,16 +1401,32 @@ def train_flat_baseline(
         if mode in {"multitask_hub", "deeprvat_hub"}:
             table_rows = {str(p.sample_id): sample_row_by_id[str(p.sample_id)] for p in phenotypes}
             sample_row_by_id = table_rows
+        betas_handle = open_betas_for_matrix(matrix_paths.root)
+        # Match cascade: dense prefix in RAM so epochs are GPU-bound, not zarr-bound.
+        print(f"[flat] loading betas[:, :{n_cols}] into RAM…", flush=True)  # noqa: T201
+        betas_ram = np.asarray(betas_handle[:, :n_cols], dtype=np.float32)
+        print(  # noqa: T201
+            f"[flat] betas shape={betas_ram.shape} dtype={betas_ram.dtype}",
+            flush=True,
+        )
+        flat_base = None
+        if flat_region_index is not None:
+            flat_base = build_flat_region_base_features(flat_region_index)
+            print(  # noqa: T201
+                f"[flat] cached annotation base_features shape={flat_base.shape}",
+                flush=True,
+            )
         pilot_store = _PilotStore(
             phenotypes=phenotypes,
             sample_row_by_id=sample_row_by_id,
-            betas=open_betas_for_matrix(matrix_paths.root),
+            betas=betas_ram,
             static_by_col=static_by_col,
             static_valid=static_valid,
             locus_gene=locus_gene,
             epsilon=epsilon,
             n_cols=n_cols,
             flat_region_index=flat_region_index,
+            flat_region_base_features=flat_base,
         )
         if include_robust_z:
             if not train_phenotypes:
@@ -1672,8 +1750,112 @@ def train_flat_baseline(
                 )
                 tb_server = None
 
+    n_edges_for_batch = 1
+    if pilot_store is not None and pilot_store.flat_region_index is not None:
+        n_edges_for_batch = max(1, int(pilot_store.flat_region_index.n_edges))
+    elif pilot_store is not None:
+        n_edges_for_batch = max(1, int(pilot_store.locus_gene.n_edges))
+    n_cols_for_batch = int(pilot_store.n_cols) if pilot_store is not None else 1
+    if str(batch_size_raw).strip().lower() == "auto":
+        from mbs.training.cascade_loop import (  # noqa: PLC0415 — avoid import cycle with loop
+            resolve_cascade_train_batch_size,
+        )
+
+        batch_size = resolve_cascade_train_batch_size(
+            device,
+            n_cols=n_cols_for_batch,
+            n_edges=n_edges_for_batch,
+            requested="auto",
+            # Exclusive Ada-class GPU0 (~49GB): allow large micro-batches for flat_region.
+            max_batch=256,
+            gpu_share=1,
+        )
+    # Prefer packing by edge tokens on GPU; keep a generous budget for Ada-class cards.
+    if device.type == "cuda" and batch_token_budget is not None:
+        min_budget = max(int(batch_token_budget), int(batch_size) * int(n_edges_for_batch))
+        batch_token_budget = min_budget
+
+    amp_dtype = torch.bfloat16 if (device.type == "cuda" and use_amp) else torch.float32
+
+    # Probe largest micro-batch that fits (exclusive GPU0); never fail the run on OOM.
+    if (
+        device.type == "cuda"
+        and pilot_store is not None
+        and train_phenotypes
+        and int(batch_size) > 1
+        and not overfit_fixture
+    ):
+        from mbs.training.dataset import pack_records_to_batch as _pack  # noqa: PLC0415
+
+        candidates = []
+        cur = int(batch_size)
+        while cur >= 16:
+            candidates.append(cur)
+            cur = cur // 2
+        if 16 not in candidates:
+            candidates.append(16)
+        fitted = 16
+        probe_ph = list(train_phenotypes[: max(candidates)])
+        for cand in candidates:
+            torch.cuda.empty_cache()
+            try:
+                chunk = [
+                    _materialize_record(
+                        ph,
+                        pilot_store,
+                        control_mode=control_mode,
+                        include_m_value=include_m_value,
+                        include_robust_z=include_robust_z,
+                        level1_params=level1_params,
+                    )
+                    for ph in probe_ph[:cand]
+                ]
+                batch = _pack(
+                    chunk,
+                    n_genes=n_genes,
+                    age_values=[None] * len(chunk),
+                    age_enabled=[False] * len(chunk),
+                    tissue_enabled=[False] * len(chunk),
+                    sex_enabled=[False] * len(chunk),
+                    sex_class_indices=[0] * len(chunk),
+                ).to(device)
+                with torch.autocast(device_type="cuda", dtype=amp_dtype, enabled=use_amp):
+                    mbs_p, present_p = _packed_mbs(model, batch)
+                    if isinstance(head, MultitaskHeads):
+                        loss_probe = head.forward_age(mbs_p, present_p).sum()
+                        loss_probe = loss_probe + head.forward_tissue(mbs_p, present_p).sum()
+                    else:
+                        loss_probe = mbs_p.sum()
+                loss_probe.backward()
+                optimizer.zero_grad(set_to_none=True)
+                del batch, mbs_p, present_p, loss_probe, chunk
+                torch.cuda.empty_cache()
+                fitted = cand
+                break
+            except torch.cuda.OutOfMemoryError:
+                optimizer.zero_grad(set_to_none=True)
+                torch.cuda.empty_cache()
+                print(f"[flat] batch_size={cand} OOM during calibrate; trying smaller", flush=True)
+                continue
+        if fitted != int(batch_size):
+            print(  # noqa: T201
+                f"[flat] calibrated batch_size {batch_size} → {fitted} to fit VRAM",
+                flush=True,
+            )
+        batch_size = int(fitted)
+        if batch_token_budget is not None:
+            batch_token_budget = max(int(batch_token_budget), int(batch_size) * int(n_edges_for_batch))
+
+    print(  # noqa: T201
+        f"[flat] training start epochs={epochs} batch_size={batch_size} "
+        f"batch_token_budget={batch_token_budget} n_edges~{n_edges_for_batch} "
+        f"device={device} amp={use_amp}",
+        flush=True,
+    )
+
     epoch = 0
     for epoch in range(1, epochs + 1):
+        print(f"[flat] epoch {epoch}/{epochs} train…", flush=True)  # noqa: T201
         train_metrics = _run_epoch(
             records=train_records,
             phenotypes=train_phenotypes,
@@ -1737,6 +1919,12 @@ def train_flat_baseline(
             disease_maps=disease_maps,
             cancer_maps=cancer_maps,
             **level1_epoch_kwargs,
+        )
+        print(  # noqa: T201
+            f"[flat] epoch {epoch}/{epochs} "
+            f"train_loss={train_metrics.get('loss', float('nan')):.4f} "
+            f"val_loss={val_metrics.get('loss', float('nan')):.4f}",
+            flush=True,
         )
         row = {
             "epoch": epoch,
@@ -2008,6 +2196,50 @@ def train_flat_baseline(
     if overfit_fixture and history:
         metrics_out["overfit_train_accuracy"] = history[-1]["train_accuracy"]
         metrics_out["overfit_ok"] = bool(history[-1]["train_accuracy"] >= 0.999)
+
+    # Stage A screen parity with cascade P2/P4: test-only mbs_e2e + frozen MBS probes.
+    topology_final = str(model_cfg.get("topology", "flat"))
+    if (
+        topology_final == "flat_region"
+        and task_kind == "multitask"
+        and isinstance(head, MultitaskHeads)
+        and train_phenotypes
+        and test_phenotypes
+        and pilot_store is not None
+        and not overfit_fixture
+        and not study_holdout_fixture
+    ):
+        from mbs.training.flat_stage_a_eval import (  # noqa: PLC0415
+            build_stage_a_flat_evaluations,
+        )
+
+        def _mat(ph: SamplePhenotype) -> FlatSampleRecord:
+            return _materialize_record(
+                ph,
+                pilot_store,
+                control_mode=control_mode,
+                include_m_value=include_m_value,
+                include_robust_z=include_robust_z,
+                level1_params=level1_params,
+            )
+
+        stage_a = build_stage_a_flat_evaluations(
+            model=model,
+            head=head,
+            train_phenotypes=list(train_phenotypes),
+            val_phenotypes=list(val_phenotypes or []),
+            test_phenotypes=list(test_phenotypes),
+            materialize_fn=_mat,
+            device=device,
+            n_genes=n_genes,
+            class_names=list(class_names),
+            age_mean=age_mean,
+            age_std=age_std,
+            batch_size=batch_size,
+            score_dir=run_root / "scores",
+        )
+        metrics_out.update(stage_a)
+        metrics_out["eval_split"] = "test"
 
     if tb_writer is not None:
         tb_writer.flush()

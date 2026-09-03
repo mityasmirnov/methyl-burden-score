@@ -1,9 +1,13 @@
 # Plan: 7G′ gene-only architecture selection + matched-panel benchmark
 
-Status: **in progress** — Stage A required GPU rerun **done**; lock `P2-G`
-max/max 15 epochs; cascade **not** ≥0.03 ahead of `C-mvalue-enet-G` (encoder
-parity recommended). Stage B GPU **pending**. Blocks Milestone **7** until
-Stage B completes.
+Status: **in progress** — required Stage A GPU arms (`P2-G` / `P4-G` /
+`P5-G-max` / `C-mvalue-*-G`) **landed** with test-only `mbs_e2e` on
+`explicit_only`; provisional lock `P2-G` max/max 15 epochs with
+`cascade_clearly_ahead: false`. Stage A is **reopened** for the DeepRVAT-style
+screening grid (mixed pooling, RBS diagnostic, vector cascade, one-hop) —
+see [`milestone-7g-prime-stage-a-deeprvat-screen.md`](milestone-7g-prime-stage-a-deeprvat-screen.md).
+**P5 inactive.** Stage B GPU and Milestone **7** remain blocked until the
+screen selects (or rejects) a gene-aggregation architecture.
 
 Normative encoder family: [`ARCHITECTURE.md`](../ARCHITECTURE.md) § Neural encoder family,
 [`SCORING_PIPELINE.md`](../SCORING_PIPELINE.md).
@@ -41,25 +45,30 @@ Replaces the former **7H** plan
 | 5 | `P5-G-max` | gene 51 375 | `mbs_e2e` | 0.356 | 30-epoch max did not help |
 | ✗ | pre-fix `P*-G` `mbs_e2e` | gene | invalid | ~0.67–0.70 | **Do not cite** |
 
-Stage A **primary lock metric** is test-only **`mbs_e2e`** on **`explicit_only`**
-`gene_cols` — none of the rows above satisfy that yet.
+Stage A **primary metric** remains test-only **`mbs_e2e`** on **`explicit_only`**
+`gene_cols`. The rows above **do** satisfy that metric; the provisional lock
+chose `P2-G` but cascade is **not** clearly ahead of classical (≥0.03 tissue F1).
+Age/sex deficits and the incomplete pooling/one-hop grid reopen Stage A for
+screening — not because the prior e2e numbers were invalid.
 
 Post-hoc **`mbs_enet`** (elastic-net on frozen gene MBS, no encoder retrain) is an
-extra readout of encoder quality, not a lock substitute. Age clocks (Horvath et al.)
-are deferred until after P4-explicit.
+extra readout of encoder quality, not a lock substitute. **P5 is inactive**
+(historical evidence only; do not run further 30-epoch arms).
 
-### Pre-lock checks
+### Pre-lock checks (required arms — done)
 
-1. GPU train `P2-G-explicit`, `P4-G-explicit`, `P5-G-max-explicit` (+ `P5-G-mean-explicit` if P4 within ~0.03 of P2).
-2. `C-mvalue-classical-G` on the **same** `gene_panel_manifest.json` hash.
-3. Every cascade fold JSON: `evaluations.mbs_e2e.eval_split == "test"`.
-4. Regenerate `reports/inspection/stage0_7g_gene_only_probe/`; `lock_recommendation.json` must not be blocked.
-5. If cascade does not beat classical by ≥0.03 F1, consider encoder-parity arms (FlatDeepSet / HierarchicalDeepSet on same panel).
+1. ~~GPU train `P2-G-explicit`, `P4-G-explicit`, `P5-G-max-explicit`~~ (**done**).
+2. ~~`C-mvalue-classical-G` on the same `gene_panel_manifest.json`~~ (**done**).
+3. ~~Every cascade fold JSON: `evaluations.mbs_e2e.eval_split == "test"`~~ (**done**).
+4. ~~Regenerate report; `lock_recommendation.json` issued~~ (**done**; `cascade_clearly_ahead: false`).
 
 ### Next (ordered)
 
-1. **Stage A GPU rerun** (`--device cuda`, configs `stage0_7g_gene_only_probe*.yaml`).
-2. **Stage B GPU run** after lock (`stage0_7g_prime_stage_b.yaml`).
+1. **Stage A DeepRVAT screen** ([plan](milestone-7g-prime-stage-a-deeprvat-screen.md)):
+   mixed scalar pooling, RBS diagnostic, vector cascade, one-hop; Tier 1 (5 ep)
+   then Tier 2 (15 ep) for promoted arms.
+2. **Stage B GPU run** after screen selects (or rejects) gene aggregation
+   (`stage0_7g_prime_stage_b.yaml`); seed-gene transfer is a **separate** design.
 3. Optional **7G″** expression pilot (not a gate).
 4. Milestone **7** 5×6 OOF with locked topology + `direct_cpg.zarr` export.
 
@@ -182,6 +191,16 @@ After Stage A locks gene-level aggregation:
 
 Sensitivity arm `S-assoc`: univariate meta-analysis within studies only — not
 the primary selector.
+
+### Seed-gene transfer (separate experiment — design only)
+
+Not the same as fold-selected-panel Stage B. Full DeepRVAT analogy: train a
+shared impairment function on trait-associated **seed genes**, apply to all
+genes, evaluate non-seed transfer / replication. Protocol, trait bar, study
+overlap controls, and robustness checks:
+[`milestone-7g-prime-stage-a-deeprvat-screen.md`](milestone-7g-prime-stage-a-deeprvat-screen.md)
+§ Stage B seed-gene transfer. **Do not implement training until Stage A screen
+selects (or rejects) gene aggregation and a real trait passes the coverage bar.**
 
 ### Comparison arms (identical panel per fold)
 

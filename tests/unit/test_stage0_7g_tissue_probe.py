@@ -377,6 +377,8 @@ def test_mbs_e2e_evaluates_test_only_not_train() -> None:
             np.zeros((4, 3), dtype=np.float32),
             np.ones((4, 3), dtype=bool),
             np.zeros((4, 0), dtype=np.float32),
+            np.zeros((4, 0), dtype=np.float32),
+            np.zeros((4, 0), dtype=bool),
         )
         out = _evaluate_mbs_e2e(
             model,
@@ -408,6 +410,8 @@ def test_mbs_e2e_evaluates_test_only_not_train() -> None:
             np.zeros((n, 3), dtype=np.float32),
             np.ones((n, 3), dtype=bool),
             np.zeros((n, 0), dtype=np.float32),
+            np.zeros((n, 0), dtype=np.float32),
+            np.zeros((n, 0), dtype=bool),
         )
 
         def _perfect_train_wrong_test(mbs: torch.Tensor, present: torch.Tensor) -> torch.Tensor:

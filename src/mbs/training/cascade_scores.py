@@ -6,13 +6,13 @@ import json
 from pathlib import Path
 from typing import Any, Literal
 
-FusionBlockMode = Literal["full", "mbs_direct", "mbs_only"]
-
 import numpy as np
 import pandas as pd
 import zarr
 
 from mbs.scoring.orientation import score_manifest
+
+FusionBlockMode = Literal["full", "mbs_direct", "mbs_only"]
 
 
 def _write_array(path: Path, data: np.ndarray) -> None:
@@ -49,6 +49,12 @@ def write_cascade_score_dir(
     extra_manifest: dict[str, Any] | None = None,
     direct_cpg: np.ndarray | None = None,
     direct_locus_ids: list[str] | None = None,
+    all_gene_rbs: np.ndarray | None = None,
+    all_gene_rbs_present: np.ndarray | None = None,
+    all_gene_region_ids: list[str] | None = None,
+    all_gene_region_gene_ids: list[str | None] | None = None,
+    all_gene_region_types: list[str] | None = None,
+    allocation_policy: str | None = None,
 ) -> dict[str, Any]:
     """Persist sample×score Zarrs under ``out_dir`` (DATA_CONTRACT 7F layout)."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -89,6 +95,36 @@ def write_cascade_score_dir(
             }
         ).to_parquet(out_dir / "direct_locus_index.parquet", index=False)
 
+    if all_gene_rbs is not None:
+        agr = np.asarray(all_gene_rbs, dtype=np.float32)
+        agr_present = (
+            np.asarray(all_gene_rbs_present, dtype=bool)
+            if all_gene_rbs_present is not None
+            else np.ones(agr.shape, dtype=bool)
+        )
+        region_ids = list(all_gene_region_ids or [])
+        if agr.shape != (n, len(region_ids)):
+            raise ValueError(
+                f"all_gene_rbs shape {agr.shape} != ({n}, {len(region_ids)})"
+            )
+        if agr_present.shape != agr.shape:
+            raise ValueError("all_gene_rbs_present shape mismatch")
+        gene_ids_col = list(all_gene_region_gene_ids or [None] * len(region_ids))
+        type_col = list(all_gene_region_types or ["unknown"] * len(region_ids))
+        if len(gene_ids_col) != len(region_ids) or len(type_col) != len(region_ids):
+            raise ValueError("all_gene region index length mismatch")
+        _write_array(out_dir / "all_gene_rbs.zarr", agr)
+        _write_array(out_dir / "all_gene_rbs_present.zarr", agr_present.astype(np.uint8))
+        pd.DataFrame(
+            {
+                "region_id": region_ids,
+                "gene_id": gene_ids_col,
+                "region_type": type_col,
+                "column_index": np.arange(len(region_ids), dtype=np.int64),
+                "allocation_policy": allocation_policy or "unknown",
+            }
+        ).to_parquet(out_dir / "all_gene_region_index.parquet", index=False)
+
     pd.DataFrame({"sample_id": sample_ids, "row_index": np.arange(n, dtype=np.int64)}).to_parquet(
         out_dir / "sample_index.parquet", index=False
     )
@@ -118,6 +154,11 @@ def write_cascade_score_dir(
     if direct_cpg is not None:
         manifest["n_direct_loci"] = len(direct_locus_ids or [])
         manifest["direct_cpg"] = True
+    if all_gene_rbs is not None:
+        manifest["n_all_gene_rbs"] = int(np.asarray(all_gene_rbs).shape[1])
+        manifest["all_gene_rbs"] = True
+        if allocation_policy is not None:
+            manifest["allocation_policy"] = allocation_policy
     if extra_manifest:
         manifest.update(extra_manifest)
     (out_dir / "score_manifest.json").write_text(
@@ -135,7 +176,18 @@ def load_cascade_score_blocks(score_dir: Path) -> dict[str, np.ndarray]:
     direct = np.asarray(
         zarr.open_array(str(root / "direct_contrib.zarr"), mode="r"), dtype=np.float32
     )
-    return {"mbs": mbs, "orphan_rbs": rbs, "direct": direct}
+    out: dict[str, np.ndarray] = {"mbs": mbs, "orphan_rbs": rbs, "direct": direct}
+    all_gene_path = root / "all_gene_rbs.zarr"
+    if all_gene_path.is_dir() or all_gene_path.is_file():
+        out["all_gene_rbs"] = np.asarray(
+            zarr.open_array(str(all_gene_path), mode="r"), dtype=np.float32
+        )
+        present_path = root / "all_gene_rbs_present.zarr"
+        if present_path.is_dir() or present_path.is_file():
+            out["all_gene_rbs_present"] = np.asarray(
+                zarr.open_array(str(present_path), mode="r"), dtype=bool
+            )
+    return out
 
 
 def fusion_feature_matrix(

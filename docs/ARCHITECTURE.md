@@ -52,7 +52,7 @@ phenotype heads are separate linear modules on centered MBS
 | Encoder | Aggregation path | Region / annotation features | CLI / trainer | Milestone |
 |---------|------------------|------------------------------|---------------|-----------|
 | **`FlatDeepSet`** | CpG → pool by **gene** → ρ → sigmoid MBS | Locus→gene index only (regions collapsed upstream) | `mbs train flat` · `training/loop.py` | 5, 5c, 5d, 7E |
-| **`FlatDeepSetRegion`** | CpG **(+ regulatory type features)** → pool by **gene** → MBS | Per-CpG multi-hot regulatory type + observed flag (no RBS hop) | Stage B arm **`N-light-type`** (planned) | 7G′ Stage B |
+| **`FlatDeepSetRegion`** | CpG **(+ gene-role / CGI / regulatory features)** → pool by **gene** → MBS | Per-CpG annotated channels + presence flags (no RBS hop) | Stage A **`N-light-gene-*`**; Stage B **`N-light-type`** | 7G′ Stage A/B |
 | **`HierarchicalDeepSet`** | CpG → pool by **typed region** → φ_region(+ type emb) → pool by **gene** → MBS; **residual** path for unmapped CpGs | Region-type embedding at the region stage | `mbs train hierarchical` · `training/hier_loop.py` | 6, 7E |
 | **`CascadeDeepSet`** | CpG → pool by **typed region** → RBS → pool by **gene** → MBS; **orphan RBS** and **direct** scored outside the module | Region-type embedding at RBS; orphan columns never pooled by type | `mbs train cascade` · `training/cascade_loop.py` | 7F, 7G, 7G′ |
 
@@ -63,8 +63,8 @@ flowchart TB
     F2 --> F3["pool by gene"]
     F3 --> F4["ρ → MBS"]
   end
-  subgraph flatReg [FlatDeepSetRegion planned N-light-type]
-    R1["CpG M-value + type one-hot + observed"] --> R2["shared φ"]
+  subgraph flatReg [FlatDeepSetRegion N-light-gene]
+    R1["CpG M-value + role/context/flags"] --> R2["shared φ"]
     R2 --> R3["pool by gene"]
     R3 --> R4["ρ → MBS"]
   end
@@ -76,7 +76,7 @@ flowchart TB
   end
   subgraph cascade [CascadeDeepSet 7F product]
     C1["typed CpG"] --> C2["pool by region"]
-    C2 --> C3["RBS per region"]
+    C2 --> C3["RBS or region embedding"]
     C3 --> C4["pool by gene → MBS"]
     C3 --> C5["orphan RBS columns"]
     C6["leftover CpGs"] --> C7["direct branch"]
@@ -84,12 +84,13 @@ flowchart TB
 ```
 
 **`FlatDeepSetRegion`** is the programme name for **annotation-augmented flat
-pooling**: methylation plus regulatory context per CpG, then a single gene-level
-pool — closer to DeepRVAT’s variant+annotation pattern than the two-hop
-RBS→gene cascade. It is **not** yet a separate class in `src/mbs/models.py`;
-7G′ Stage B implements it as arm **`N-light-type`** via
-`FlatDeepSetRegion` in `src/mbs/models.py` and `model.topology: flat_region`
-on `mbs train flat` ([`milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md)).
+pooling**: methylation plus gene-role / CGI / regulatory context per CpG, then a
+single gene-level pool — closer to DeepRVAT’s variant+annotation pattern than
+the two-hop RBS→gene cascade. Stage A arms **`N-light-gene-max`** /
+**`N-light-gene-mean`** train it via `model.topology: flat_region` on
+`mbs train flat` ([`milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md)).
+`CascadeDeepSet` supports `gene_aggregation: scalar_rbs | region_hidden` for the
+scalar vs vector-region screen.
 
 Implementation references: `FlatDeepSet`, `HierarchicalDeepSet`, `CascadeDeepSet`
 in `src/mbs/models.py`.

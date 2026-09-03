@@ -1,4 +1,5 @@
-# 7G′ Stage A gene-only probe + classical -G panel + orphan-RBS ablation.
+# 7G′ Stage A DeepRVAT screen — gene-only probe + classical -G + new arms.
+# P5 inactive (historical only). Reuses landed P2-G / P4-G / C-mvalue-*-G.
 split_id: hub-ats-7e-3fold-v1
 sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
 milestone: 7G-gene-only-probe
@@ -16,30 +17,55 @@ pilot:
   matrix_id: matrix-hub-age-tissue-sex-full-v1
   graph_id: graph-grch38-gencode38-cgi-tile-v2
 arms:
+  # Landed — reuse unless --force-retrain
   - id: P2-G
     kind: cascade_train
     run_id: stage0-7g-gene-probe-P2-G-explicit
     config: configs/experiment/stage0_7g_gene_only_probe_p2.yaml
+    alias: N-cascade-scalar-max-max
   - id: P4-G
     kind: cascade_train
     run_id: stage0-7g-gene-probe-P4-G-explicit
     config: configs/experiment/stage0_7g_gene_only_probe_p4.yaml
+    alias: N-cascade-scalar-mean-mean
+  - id: C-mvalue-classical-G
+    kind: classical_gene
+  # Tier-1 screen — run model-by-model; refresh analysis.md after each arm.
+  # Order: one-hop DeepRVAT-like first, then mixed scalar / vector cascade.
+  - id: N-light-gene-max
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-light-max
+    config: configs/experiment/stage0_7g_gene_only_probe_light_max.yaml
+    pool: max
+  - id: N-light-gene-mean
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-light-mean
+    config: configs/experiment/stage0_7g_gene_only_probe_light_mean.yaml
+    pool: mean
+  - id: N-cascade-scalar-mean-max
+    kind: cascade_train
+    run_id: stage0-7g-gene-probe-scalar-mean-max
+    config: configs/experiment/stage0_7g_gene_only_probe_scalar_mean_max.yaml
+  - id: N-cascade-scalar-max-mean
+    kind: cascade_train
+    run_id: stage0-7g-gene-probe-scalar-max-mean
+    config: configs/experiment/stage0_7g_gene_only_probe_scalar_max_mean.yaml
+  - id: N-cascade-vector-mean-max
+    kind: cascade_train
+    run_id: stage0-7g-gene-probe-vector-mean-max
+    config: configs/experiment/stage0_7g_gene_only_probe_vector_mean_max.yaml
+  - id: N-cascade-vector-max-max
+    kind: cascade_train
+    run_id: stage0-7g-gene-probe-vector-max-max
+    config: configs/experiment/stage0_7g_gene_only_probe_vector_max_max.yaml
+  # Historical / inactive — keep out of default grid
   - id: P5-G-max
     kind: cascade_train
     run_id: stage0-7g-gene-probe-P5-G-max-explicit
     config: configs/experiment/stage0_7g_gene_only_probe_p5_max.yaml
-  - id: P5-G-mean
-    kind: cascade_train
-    run_id: stage0-7g-gene-probe-P5-G-mean-explicit
-    config: configs/experiment/stage0_7g_gene_only_probe_p5_mean.yaml
-    optional: true
-    gate_arm: P4-G
-    gate_metric: mbs_e2e.metrics.tissue.macro_f1
-    gate_reference_arm: P2-G
-    gate_max_delta: 0.03
-  - id: C-mvalue-classical-G
-    kind: classical_gene
+    inactive: true
   - id: P2-orphan-ablation
     kind: cascade_train
     run_id: stage0-7g-gene-probe-P2-orphan-ablation
     config: configs/experiment/stage0_7g_gene_only_probe_p2_orphan_ablation.yaml
+    inactive: true

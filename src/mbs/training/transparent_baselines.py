@@ -334,21 +334,40 @@ def fit_elasticnet_phenotype(
     task: Literal["regression", "multiclass"] = "regression",
     alpha: float = 0.1,
     l1_ratio: float = 0.5,
+    max_iter: int | None = None,
 ) -> Any:
     """Elastic-net on fixed features (transparent T-enet arm)."""
     x = np.asarray(x_train, dtype=np.float64)
     y = np.asarray(y_train)
+    n_features = int(x.shape[1]) if x.ndim == 2 else 0
+    # ponytail: saga one-vs-rest on ~15k RBS columns is multi-hour; SGD for wide diagnostic.
+    wide = n_features > 4096
     if task == "regression":
-        model = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, max_iter=2000)
+        iters = 400 if wide else (max_iter if max_iter is not None else 2000)
+        model = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, max_iter=iters)
         model.fit(x, y.astype(np.float64))
         return model
+    if wide:
+        iters = max_iter if max_iter is not None else 200
+        model = SGDClassifier(
+            loss="log_loss",
+            penalty="elasticnet",
+            alpha=float(alpha),
+            l1_ratio=float(l1_ratio),
+            max_iter=iters,
+            tol=1e-3,
+            random_state=0,
+        )
+        model.fit(x, y.astype(np.int64))
+        return model
     # Multiclass via one-vs-rest logistic with elastic-net (saga).
+    iters = max_iter if max_iter is not None else 2000
     model = LogisticRegression(
         penalty="elasticnet",
         solver="saga",
         l1_ratio=l1_ratio,
         C=1.0 / max(alpha, 1e-6),
-        max_iter=2000,
+        max_iter=iters,
     )
     model.fit(x, y.astype(np.int64))
     return model

@@ -20,17 +20,26 @@ Classical comparator: **`C-mvalue-*-G`** on identical `gene_cols`.
 |-----|-------------|
 | `P2-G` | CascadeDeepSet on **gene-linked CpGs only** (`gene_cols`); max/max pooling; 15 epochs; P2 loss weights; primary metric **`mbs_e2e`** (end-to-end MBS heads). |
 | `P4-G` | Like P2-G but **mean/mean** pooling; same gene-only panel and **`mbs_e2e`** metric. |
-| `P5-G-max` | Gene-only cascade; max/max pooling; 30-epoch cap + early stop; **`mbs_e2e`** metric. |
-| `P5-G-mean` | Gene-only cascade; mean/mean pooling; 30-epoch cap + early stop; **`mbs_e2e`** metric. |
+| `P5-G-max` | Gene-only cascade; max/max pooling; 30-epoch cap + early stop; **`mbs_e2e`** metric. **Inactive** for Stage A DeepRVAT screen (historical only). |
+| `N-cascade-scalar-mean-max` | Scalar RBS cascade; **mean** CpG→region + **max** region→gene; Stage A screen. |
+| `N-cascade-scalar-max-mean` | Scalar RBS cascade; **max** CpG→region + **mean** region→gene; Stage A screen. |
+| `N-cascade-vector-mean-max` | Vector-region cascade: pool region **embeddings** (mean CpG→region, max region→gene) then ``rho_G`` → MBS. |
+| `N-cascade-vector-max-max` | Vector-region cascade with max/max pooling of latent region embeddings. |
+| `N-light-gene-max` | One-hop annotated FlatDeepSetRegion: `[M, gene-role, CGI context, regulatory, flags]` → gene **max** → MBS. |
+| `N-light-gene-mean` | One-hop annotated FlatDeepSetRegion with gene **mean** pooling. |
 | `C-mvalue-ridge-G` | Same as `C-mvalue-ridge` but only **`gene_cols`** (56k matched panel). |
 | `C-mvalue-enet-G` | Elastic-net on **identical gene-linked CpGs** as neural `-G` arms (fair Stage A comparator). |
 | `C-mvalue-hgb-G` | HGB on **`gene_cols`** only. |
 | `C-mvalue-sva-G` | PCA-SVA + ridge on **`gene_cols`** only. |
 | `C-mvalue-classical-G` | Bundle runner for all **`C-mvalue-*-G`** arms below on the same `gene_cols` panel. |
 | `P2-orphan-ablation` | Full assignment (not gene-only): same P2 loss weights; compares **`fusion_full`** (orphan RBS + MBS + direct) vs **`fusion_mbs_direct`** (MBS + direct, orphan block dropped). |
+| `N-cascade-scalar-max-max` | Alias of **`P2-G`**: scalar RBS cascade, CpG max → gene max. |
+| `N-cascade-scalar-mean-mean` | Alias of **`P4-G`**: scalar RBS cascade, CpG mean → gene mean. |
+| `rbs_linear_probe` | See docs/ARM_GLOSSARY.md (no inline entry for `rbs_linear_probe`). |
+| `rbs_enet` | See docs/ARM_GLOSSARY.md (no inline entry for `rbs_enet`). |
 | `C-mvalue-enetS` | **Stage B:** fold-safe stability-selected sparse CpG panel (outer-train only) → refit enet; one test eval per fold. |
 | `N-cascade-S` | **Stage B:** locked Stage-A cascade hyperparameters on the **fold-selected** CpG panel (same loci as `C-mvalue-enetS` per fold). |
-| `N-light-type` | **FlatDeepSetRegion** (planned): per-CpG `[M-value, regulatory-type one-hot, observed]` → pool by gene → MBS; lighter than full RBS→gene cascade. |
+| `N-light-type` | Legacy Stage B name for FlatDeepSetRegion; prefer **`N-light-gene-max`** / **`N-light-gene-mean`** in Stage A screen. |
 | `N-mbs-posthoc-full-fusion` | **Stage B post-hoc fusion:** MBS encoder trained once; CPU late fusion on **`[orphan_rbs | mbs | direct_contrib]`** (`fusion_full`). Not joint end-to-end. |
 | `N-mbs-posthoc-mbs-direct` | **Stage B orphan ablation:** same encoder; CPU fusion on **`[mbs | direct_contrib]`** only (`fusion_mbs_direct`). |
 
@@ -39,6 +48,8 @@ Classical comparator: **`C-mvalue-*-G`** on identical `gene_cols`.
 - **`mbs_e2e`**: End-to-end **`MultitaskHeads`** on MBS only (no orphan/direct columns) — **Stage A primary metric**.
 - **`mbs_linear_probe`**: CPU linear probe fit on **saved MBS matrix** only (representation check, not fusion).
 - **`mbs_enet`**: CPU elastic-net heads on the **same saved MBS** (age + tissue + sex). Same CascadeDeepSet weights as `mbs_e2e`; no encoder retrain.
+- **`rbs_linear_probe`**: CPU linear probe on frozen **gene-linked RBS** (`all_gene_rbs.zarr`); diagnoses loss before vs after gene pooling.
+- **`rbs_enet`**: CPU elastic-net on frozen gene-linked RBS (same matrix as `rbs_linear_probe`).
 - **`fusion_full`**: Late fusion on **`[orphan_rbs | mbs | direct_contrib]`** columns.
 - **`fusion_mbs_direct`**: Late fusion on **`[mbs | direct_contrib]`** — orphan RBS ablation.
 
@@ -75,7 +86,7 @@ Compare **only within the same row group** (same panel and eval mode). Stage A p
 
 ## Task comparison (tissue / age / sex)
 
-Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare rows as alternative **readouts** of one encoder (`mbs_e2e` / `mbs_linear_probe` / `mbs_enet`) versus classical models on raw CpG M-values. `mbs_e2e` sex AUROC is unavailable (class argmax only). Classical enet age uses Huber SGD elastic-net (year-scale target + eta0=1e-4); unscaled squared-error SGD exploded on this panel. Horvath-style clocks are not in this table.
+Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare rows as alternative **readouts** of one encoder (`mbs_e2e` / `mbs_linear_probe` / `mbs_enet` / `rbs_*`) versus classical models on raw CpG M-values. Prefer `mbs_e2e` sex AUROC when present (proba path); `rbs_*` diagnose loss before vs after gene pooling. Classical enet age uses Huber SGD elastic-net (year-scale target + eta0=1e-4); unscaled squared-error SGD exploded on this panel. Horvath-style clocks are not in this table.
 
 | Arm | Readout | Tissue F1 | Age MAE | Age R² | Sex AUROC | Sex F1 | folds |
 |-----|---------|----------:|--------:|-------:|----------:|-------:|------:|
@@ -92,11 +103,32 @@ Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare row
 | `C-mvalue-ridge-G` | `classical` | 0.337 (±0.040) | 6.489 (±0.907) | 0.856 (±0.033) | 0.904 (±0.056) | — | 3 |
 | `C-mvalue-hgb-G` | `classical` | 0.114 (±0.081) | 9.066 (±1.022) | 0.753 (±0.052) | 0.938 (±0.059) | — | 3 |
 
-**Readouts:** `mbs_e2e` = jointly trained neural heads on MBS (Stage A lock metric); `mbs_linear_probe` / `mbs_enet` = new sklearn heads on the **same frozen MBS**; `classical` = sklearn on gene-linked CpG M-values (no encoder).
+**Readouts:** `mbs_e2e` = jointly trained neural heads on MBS (Stage A lock metric); `mbs_linear_probe` / `mbs_enet` = new sklearn heads on the **same frozen MBS**; `rbs_linear_probe` / `rbs_enet` = frozen **gene-linked RBS** (pre–gene-pool); `classical` = sklearn on gene-linked CpG M-values (no encoder).
+
+## Three-task Pareto (`mbs_e2e` + classical)
+
+Non-dominated on tissue macro-F1 (↑), age MAE (↓), sex AUROC (↑). Do **not** pick a winner on tissue alone.
+
+| Arm | Readout | Tissue F1 | Age MAE | Sex AUROC |
+|-----|---------|----------:|--------:|----------:|
+| `C-mvalue-enet-G` | `classical` | 0.388 | 8.150 | 0.882 |
+| `C-mvalue-ridge-G` | `classical` | 0.337 | 6.489 | 0.904 |
+| `C-mvalue-hgb-G` | `classical` | 0.114 | 9.066 | 0.938 |
+
+
+## Architecture questions (Stage A screen)
+
+1. **CpG → region pool (mean vs max):** Insufficient arms for cpg-level comparison yet.
+2. **Region → gene pool (mean vs max):** Insufficient arms for region-level comparison yet.
+3. **Does scalar RBS discard information?** Vector arm `—` tissue vs P2 `0.373`; vector arms pending.
+4. **Gene pooling vs RBS:** Pending RBS diagnostic.
+5. **One-hop vs cascade:** Pending one-hop arms.
+6. **One-scalar-per-gene bottleneck:** Gene aggregation still trails classical on age/sex; one scalar MBS/gene is **not yet adequate** unless a screen arm closes the gap.
+7. **Best performance/compute:** Prefer landed P2/P4 (15 ep) over P5; promote Tier-1 (5 ep) arms only when Pareto/near-best, then confirm at 15 ep.
 
 ## Cascade arms (gene-linked CpGs only)
 
-Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** are readouts of the **same frozen MBS**. Contaminated pre-fix **`mbs_e2e`** shown as *invalid*.
+Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** are readouts of the **same frozen MBS**; **`rbs_*`** use gene-linked RBS. Contaminated pre-fix **`mbs_e2e`** shown as *invalid*.
 
 | Arm | mbs_e2e F1 | linear probe F1 | mbs_enet F1 | age MAE (e2e) | sex AUROC (probe) | folds |
 |-----|-----------:|----------------:|------------:|--------------:|------------------:|------:|
@@ -145,5 +177,8 @@ Compare **`fusion_full`** (orphan RBS + MBS + direct) vs **`fusion_mbs_direct`**
 
 ## Next
 
-- Stage B: fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type` (FlatDeepSetRegion), `N-mbs-posthoc-full-fusion` / `N-mbs-posthoc-mbs-direct`, plus `direct_cpg.zarr`.
+- **In progress:** `N-light-gene-max` (Tier-1) with P2/P4-parity evals (`mbs_e2e` / `mbs_linear_probe` / `mbs_enet`, test-only) and GPU0-optimized flat path (RAM betas, vectorized gather, `batch_size: auto`).
+- Then `N-light-gene-mean` → mixed scalar cascades → vector cascades (same cascade trainer/eval suite as P2/P4).
+- Promote Tier-2 (15 ep) only if Pareto/near-best.
+- Stage B (after lock): fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type`, post-hoc fusion, `direct_cpg.zarr`.
 - Milestone **7** 5×6 OOF remains blocked until Stage B completes.

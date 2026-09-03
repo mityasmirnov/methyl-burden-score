@@ -51382,5 +51382,6 @@
   "matrix_id": "matrix-hub-age-tissue-sex-full-v1",
   "max_loci": 65536,
   "max_nearest_gene_bp": null,
-  "n_gene_cols": 51375
+  "n_gene_cols": 51375,
+  "n_other_gene_edges": 0
 }

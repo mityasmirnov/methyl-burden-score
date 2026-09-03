@@ -60,9 +60,9 @@ All encoders share: permutation-invariant pooling, neutral `MBS=0.5` when
 flowchart TB
   subgraph encoders [Encoder choice same phenotype heads]
     FD["FlatDeepSet\nCpG → gene"]
-    FDR["FlatDeepSetRegion\nCpG + type → gene\nStage B N-light-type"]
-    HD["HierarchicalDeepSet\nCpG → region → gene\n+ residual"]
-    CD["CascadeDeepSet\nCpG → RBS → MBS\n+ orphan + direct"]
+  FDR["FlatDeepSetRegion\nannotated CpG → gene\nN-light-gene-*"]
+  HD["HierarchicalDeepSet\nCpG → region → gene\n+ residual"]
+  CD["CascadeDeepSet\nscalar RBS or vector h_r\n→ gene MBS"]
   end
   encoders --> MBS["MBS s g + present"]
   MBS --> Heads["MultitaskHeads"]
@@ -71,7 +71,7 @@ flowchart TB
 | Encoder | Train command | Pooling stages | Region annotations |
 |---------|---------------|----------------|-------------------|
 | **FlatDeepSet** | `mbs train flat` | CpG → **gene** | Collapsed in locus→gene index only |
-| **FlatDeepSetRegion** | Stage B **`N-light-type`** | `mbs train flat` (`topology: flat_region`) | CpG(+features) → **gene** | Per-CpG multi-hot regulatory type + observed |
+| **FlatDeepSetRegion** | Stage A **`N-light-gene-*`** / Stage B **`N-light-type`** | `mbs train flat` (`topology: flat_region`) | CpG(+role/context/regulatory) → **gene** | Per-edge gene-role + CGI + reserved cCRE multi-hot |
 | **HierarchicalDeepSet** | `mbs train hierarchical` | CpG → **region** → **gene**; unmapped → **residual** scalar | Region-type embedding at region pool |
 | **CascadeDeepSet** | `mbs train cascade` | CpG → **region** → **RBS** → **gene** MBS; orphan RBS separate | Region-type embedding; orphan never pooled by type |
 
@@ -134,15 +134,32 @@ Regions are collapsed when building the locus→gene index (`training/locus_gene
 This is the DeepRVAT-style reference retained for every comparison. Trains on
 the full locus prefix or a **gene-only** column subset via the packed index.
 
-### Flat with region annotations (`FlatDeepSetRegion` — Stage B)
+### Flat with region annotations (`FlatDeepSetRegion` — 7G′ Stage A / B)
 
 ```text
-[M-value, multi-hot regulatory type, observed] → shared φ → pool by gene → ρ → MBS
+[M-value, gene-role one-hot, CGI context, regulatory multi-hot, presence flags]
+  → shared φ → pool by gene → ρ → MBS → tissue/age/sex heads
 ```
 
-Skips the RBS intermediate hop; compares against full **CascadeDeepSet** in 7G′
-Stage B as arm **`N-light-type`**. Implemented as `FlatDeepSetRegion` in
-`src/mbs/models.py` (`model.topology: flat_region` on `mbs train flat`).
+Stage A arms **`N-light-gene-max`** / **`N-light-gene-mean`** use
+`gene_allocation: explicit_only` on the same gene-linked panel as cascade `-G`.
+Regulatory SCREEN/cCRE slots are reserved (zeros until a later graph release).
+Train via batched `mbs train flat` (`topology: flat_region`), not the per-sample
+Stage B helper. Legacy Stage B name: **`N-light-type`**.
+
+### Vector-region cascade (`CascadeDeepSet` + `gene_aggregation: region_hidden`)
+
+```text
+h_c = φ_CpG(x_c)
+u_r = pool_{c∈r} h_c
+h_r = φ_R[u_r, e(region_type)]
+h_g = pool_{r∈g} h_r
+MBS_g = σ(ρ_G(h_g))
+```
+
+Scalar RBS from `ρ_R(h_r)` is still exported for diagnostics (`all_gene_rbs.zarr`)
+but is **not** used for gene pooling. Arms: `N-cascade-vector-mean-max`,
+`N-cascade-vector-max-max`. Residual / orphan / direct paths stay off in Stage A.
 
 ### Hierarchical (`HierarchicalDeepSet`) — Milestone 6 / 7E
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 import torch
 import torch.nn.functional as F
@@ -148,11 +148,12 @@ class FlatDeepSet(nn.Module):
 
 
 class FlatDeepSetRegion(FlatDeepSet):
-    """Annotation-augmented flat pooling: per-CpG M-value + regulatory type → gene MBS.
+    """Annotation-augmented flat pooling: per-CpG features → gene MBS.
 
-    Programme name for 7G′ Stage B arm **N-light-type**. Input layout is
-    ``[M-value, region_type one-hot, observed]`` assembled in
-    ``training.flat_region_features`` — no RBS intermediate hop.
+    Programme names: Stage A **N-light-gene-max** / **N-light-gene-mean**.
+    Input layout is assembled in ``training.flat_region_features``
+    (M-value, gene-role, CGI context, regulatory multi-hot, presence flags,
+    observed) — no RBS intermediate hop.
     """
 
 
@@ -344,6 +345,7 @@ class HierarchicalDeepSet(nn.Module):
 class CascadeModelOutput(TypedDict):
     rbs: Tensor
     rbs_present: Tensor
+    region_hidden: Tensor
     mbs: Tensor
     centered_mbs: Tensor
     present: Tensor
@@ -352,11 +354,19 @@ class CascadeModelOutput(TypedDict):
     logits: Tensor
 
 
+GeneAggregation = Literal["scalar_rbs", "region_hidden"]
+
+
 class CascadeDeepSet(nn.Module):
-    """7F topology: CpG → typed region (RBS) → gene-pooled MBS; orphan RBS kept.
+    """7F topology: CpG → typed region → gene-pooled MBS; orphan RBS kept.
 
     No residual/tile path — leftover CpGs are scored outside this module
     (direct elastic-net). ``region_to_gene`` uses -1 for orphan regions.
+
+    ``gene_aggregation``:
+    - ``scalar_rbs``: pool sigmoid scalar RBS by gene (legacy product path).
+    - ``region_hidden``: pool latent region embeddings by gene, then ``gene_rho``
+      → MBS (DeepRVAT-like; scalar RBS still exported for diagnostics).
     """
 
     def __init__(
@@ -369,6 +379,7 @@ class CascadeDeepSet(nn.Module):
         region_type_dim: int = 8,
         cpg_pool: PoolName = "max",
         region_pool: PoolName = "max",
+        gene_aggregation: GeneAggregation = "scalar_rbs",
         neutral_score: float = 0.5,
         dropout: float = 0.1,
         activation: str = "gelu",
@@ -377,8 +388,11 @@ class CascadeDeepSet(nn.Module):
         super().__init__()
         if n_region_types <= 0:
             raise ValueError("n_region_types must be positive")
+        if gene_aggregation not in ("scalar_rbs", "region_hidden"):
+            raise ValueError(f"unsupported gene_aggregation: {gene_aggregation!r}")
         self.cpg_pool: PoolName = cpg_pool
         self.region_pool: PoolName = region_pool
+        self.gene_aggregation: GeneAggregation = gene_aggregation
         self.neutral_score = neutral_score
         self.cpg_hidden_dim = cpg_hidden_dim
         self.region_hidden_dim = region_hidden_dim
@@ -407,6 +421,18 @@ class CascadeDeepSet(nn.Module):
             dropout=dropout,
             activation=activation,
         )
+        # Only for region_hidden; keep off scalar_rbs so old P2/P4 checkpoints load.
+        self.gene_rho: SharedMLP | None
+        if gene_aggregation == "region_hidden":
+            self.gene_rho = SharedMLP(
+                region_hidden_dim,
+                [16, 8],
+                1,
+                dropout=dropout,
+                activation=activation,
+            )
+        else:
+            self.gene_rho = None
 
     def forward_from_cpg_hidden(
         self,
@@ -436,6 +462,9 @@ class CascadeDeepSet(nn.Module):
         if cpg_hidden.shape[0] == 0 or n_regions == 0:
             rbs = torch.full((n_regions,), self.neutral_score, device=device, dtype=dtype)
             rbs_present = torch.zeros(n_regions, dtype=torch.bool, device=device)
+            region_hidden = torch.zeros(
+                n_regions, self.region_hidden_dim, device=device, dtype=dtype
+            )
             mbs = torch.full((n_gene_instances,), self.neutral_score, device=device, dtype=dtype)
             present = torch.zeros(n_gene_instances, dtype=torch.bool, device=device)
             logits = torch.zeros(n_gene_instances, device=device, dtype=dtype)
@@ -461,22 +490,40 @@ class CascadeDeepSet(nn.Module):
             if allocated.any() and n_gene_instances > 0:
                 active = allocated & rbs_present
                 if active.any():
-                    score_vals = rbs[active].unsqueeze(-1)
                     gene_idx = region_to_gene[active].to(torch.long)
-                    gene_scores, gene_present = segment_pool(
-                        score_vals,
-                        gene_idx,
-                        n_gene_instances,
-                        self.region_pool,
-                    )
-                    mbs = gene_scores.squeeze(-1)
-                    mbs = torch.where(
-                        gene_present,
-                        mbs,
-                        torch.full_like(mbs, self.neutral_score),
-                    )
-                    present = gene_present
-                    logits = mbs
+                    if self.gene_aggregation == "region_hidden":
+                        if self.gene_rho is None:
+                            raise RuntimeError("gene_rho required for region_hidden aggregation")
+                        gene_hidden, gene_present = segment_pool(
+                            region_hidden[active],
+                            gene_idx,
+                            n_gene_instances,
+                            self.region_pool,
+                        )
+                        logits = self.gene_rho(gene_hidden).squeeze(-1)
+                        raw_mbs = torch.sigmoid(logits)
+                        mbs = torch.where(
+                            gene_present,
+                            raw_mbs,
+                            torch.full_like(raw_mbs, self.neutral_score),
+                        )
+                        present = gene_present
+                    else:
+                        score_vals = rbs[active].unsqueeze(-1)
+                        gene_scores, gene_present = segment_pool(
+                            score_vals,
+                            gene_idx,
+                            n_gene_instances,
+                            self.region_pool,
+                        )
+                        mbs = gene_scores.squeeze(-1)
+                        mbs = torch.where(
+                            gene_present,
+                            mbs,
+                            torch.full_like(mbs, self.neutral_score),
+                        )
+                        present = gene_present
+                        logits = mbs
                 else:
                     mbs = torch.full(
                         (n_gene_instances,), self.neutral_score, device=device, dtype=dtype
@@ -491,7 +538,7 @@ class CascadeDeepSet(nn.Module):
                 logits = torch.zeros(n_gene_instances, device=device, dtype=dtype)
 
         if orphan_region_indices is None:
-            orphan_idx = torch.flatnonzero(region_to_gene < 0)
+            orphan_idx = torch.nonzero(region_to_gene < 0, as_tuple=False).flatten()
         else:
             orphan_idx = orphan_region_indices.to(torch.long)
         if orphan_idx.numel() == 0:
@@ -505,6 +552,7 @@ class CascadeDeepSet(nn.Module):
         return {
             "rbs": rbs,
             "rbs_present": rbs_present,
+            "region_hidden": region_hidden,
             "mbs": mbs,
             "centered_mbs": centered,
             "present": present,

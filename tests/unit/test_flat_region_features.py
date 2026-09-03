@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import torch
 
 from mbs.models import FlatDeepSetRegion
 from mbs.training.cascade_assign import assignment_col_subset, build_cascade_assignment
@@ -13,7 +14,6 @@ from mbs.training.flat_region_features import (
     gather_flat_region_features,
 )
 from mbs.training.fold_safe_panel import expand_panel_columns, stability_select_columns
-import torch
 
 
 def test_flat_region_input_dim_and_gather() -> None:
@@ -23,9 +23,10 @@ def test_flat_region_input_dim_and_gather() -> None:
         locus_region_edges=tables["locus_region_edges"],
         regions=tables["regions"],
         genes=tables["genes"],
+        gene_allocation="explicit_only",
     )
-    index = build_flat_region_gene_index(assignment)
-    dim = flat_region_input_dim(len(index.region_types))
+    index = build_flat_region_gene_index(assignment, allow_other_gene=True)
+    dim = flat_region_input_dim()
     beta_row = np.asarray(tables["betas"][0], dtype=np.float32)
     feats, cpg_to_gene = gather_flat_region_features(beta_row=beta_row, index=index)
     assert feats.shape[1] == dim
