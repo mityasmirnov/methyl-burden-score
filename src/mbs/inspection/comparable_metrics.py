@@ -69,35 +69,49 @@ COMPARISON_SPECS: tuple[dict[str, str], ...] = (
     },
     {
         "arm": "P2-G",
-        "run_id": "stage0-7g-gene-probe-P2-G",
+        "run_id": "stage0-7g-gene-probe-P2-G-explicit",
         "panel": "gene-linked",
         "eval_mode": "fusion_full",
         "metric_path": "evaluations.fusion_full.metrics.tissue.macro_f1",
     },
     {
         "arm": "P2-G",
-        "run_id": "stage0-7g-gene-probe-P2-G",
+        "run_id": "stage0-7g-gene-probe-P2-G-explicit",
         "panel": "gene-linked",
         "eval_mode": "mbs_e2e",
         "metric_path": "evaluations.mbs_e2e.metrics.tissue.macro_f1",
     },
     {
+        "arm": "P2-G",
+        "run_id": "stage0-7g-gene-probe-P2-G-explicit",
+        "panel": "gene-linked",
+        "eval_mode": "mbs_enet",
+        "metric_path": "evaluations.mbs_enet.metrics.tissue.macro_f1",
+    },
+    {
         "arm": "P4-G",
-        "run_id": "stage0-7g-gene-probe-P4-G",
+        "run_id": "stage0-7g-gene-probe-P4-G-explicit",
         "panel": "gene-linked",
         "eval_mode": "fusion_full",
         "metric_path": "evaluations.fusion_full.metrics.tissue.macro_f1",
     },
     {
         "arm": "P4-G",
-        "run_id": "stage0-7g-gene-probe-P4-G",
+        "run_id": "stage0-7g-gene-probe-P4-G-explicit",
         "panel": "gene-linked",
         "eval_mode": "mbs_e2e",
         "metric_path": "evaluations.mbs_e2e.metrics.tissue.macro_f1",
     },
     {
-        "arm": "P5-G-mean",
-        "run_id": "stage0-7g-gene-probe-P5-G-mean",
+        "arm": "P4-G",
+        "run_id": "stage0-7g-gene-probe-P4-G-explicit",
+        "panel": "gene-linked",
+        "eval_mode": "mbs_enet",
+        "metric_path": "evaluations.mbs_enet.metrics.tissue.macro_f1",
+    },
+    {
+        "arm": "P5-G-max",
+        "run_id": "stage0-7g-gene-probe-P5-G-max-explicit",
         "panel": "gene-linked",
         "eval_mode": "mbs_e2e",
         "metric_path": "evaluations.mbs_e2e.metrics.tissue.macro_f1",
@@ -167,6 +181,7 @@ def load_comparable_rows(
     artifact_root: Path,
     *,
     classical_baselines_path: Path | None = None,
+    gene_classical_path: Path | None = None,
 ) -> list[dict[str, Any]]:
     """Aggregate tissue macro-F1 per arm × panel × eval_mode."""
     rows: list[dict[str, Any]] = []
@@ -174,8 +189,13 @@ def load_comparable_rows(
         per_fold: list[float | None] = []
         if spec["metric_path"].startswith("classical:"):
             arm_name = spec["metric_path"].split(":", 1)[1]
-            if classical_baselines_path is not None:
-                per_fold = _classical_f1_per_fold(classical_baselines_path, arm_name)
+            classical_path = (
+                gene_classical_path
+                if arm_name.endswith("-G") and gene_classical_path is not None
+                else classical_baselines_path
+            )
+            if classical_path is not None:
+                per_fold = _classical_f1_per_fold(classical_path, arm_name)
         elif spec["run_id"]:
             run_root = artifact_root / "runs" / spec["run_id"]
             for fold_i in range(3):
@@ -240,9 +260,9 @@ def render_comparable_ranking_section(rows: list[dict[str, Any]]) -> list[str]:
             "**Fair pairs (examples):**",
             "",
             "- **Late fusion, 65k:** `P2-end2end` vs `P4-pooling-mean` vs `C-mvalue-enet`.",
-            "- **Late fusion, gene-linked:** `P2-G` `fusion_full` ≈ `P2-end2end` on 65k (same loss weights).",
-            "- **MBS e2e, gene-linked:** `P2-G` vs `P4-G` vs `C-mvalue-enet-G` (Stage A lock metric).",
-            "- **MBS e2e, 65k:** backfill `evaluations.mbs_e2e` on P2/P4/P0 (P5 already has both).",
+            "- **Late fusion, gene-linked:** `P2-G` / `P4-G` `fusion_full` on `explicit_only`.",
+            "- **MBS e2e, gene-linked:** `P2-G` vs `P4-G` vs `P5-G-max` vs `C-mvalue-enet-G` (Stage A lock).",
+            "- **MBS enet readout:** same frozen MBS as e2e, elastic-net heads (not a lock substitute).",
             "",
         ]
     )

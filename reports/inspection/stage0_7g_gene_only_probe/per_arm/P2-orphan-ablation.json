@@ -453475,6 +453475,7 @@
   "mean_fusion_full_tissue_f1": 0.36782566505059416,
   "mean_fusion_mbs_direct_tissue_f1": 0.36782566505059416,
   "mean_mbs_e2e_tissue_f1": 0.6986026892128002,
+  "mean_mbs_enet_tissue_f1": null,
   "mean_mbs_linear_probe_tissue_f1": 0.377613762497345,
   "run_id": "stage0-7g-gene-probe-P2-orphan-ablation"
 }

@@ -12,8 +12,11 @@ from typing import Any
 import numpy as np
 
 from mbs.annotation.manifest import write_json
-from mbs.inspection.arm_glossary import arm_description, render_arm_glossary_section
-from mbs.inspection.comparable_metrics import load_comparable_rows, render_comparable_ranking_section
+from mbs.inspection.arm_glossary import render_arm_glossary_section
+from mbs.inspection.comparable_metrics import (
+    load_comparable_rows,
+    render_comparable_ranking_section,
+)
 from mbs.paths import DataPaths
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -111,7 +114,7 @@ def _classical_metric_means(
 
 def _metric_from_fold(blob: dict[str, Any], metric_path: str) -> float | None:
     parts = metric_path.split(".")
-    eval_keys = ("mbs_e2e", "mbs_linear_probe", "fusion_full", "fusion_mbs_direct")
+    eval_keys = ("mbs_e2e", "mbs_linear_probe", "mbs_enet", "fusion_full", "fusion_mbs_direct")
     if parts[0] in eval_keys:
         evaluations = blob.get("evaluations") or {}
         cur: Any = evaluations.get(parts[0])
@@ -143,6 +146,15 @@ def _cascade_tissue_f1(
 
 def _classical_tissue_f1(payload: dict[str, Any], arm_name: str) -> tuple[float | None, float | None]:
     return _classical_metric_means(payload, arm_name, "tissue", "macro_f1")
+
+def _gene_panel_n_cols(report_dir: Path) -> int | None:
+    path = report_dir / "gene_panel_manifest.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    n = payload.get("n_gene_cols")
+    return int(n) if n is not None else None
+
 
 def load_per_arm(report_dir: Path) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
@@ -253,6 +265,133 @@ def orphan_ablation_section(payload: dict[str, Any] | None) -> str:
     return "\n".join(lines)
 
 
+def _fmt_pm(mean: float | None, std: float | None = None) -> str:
+    if mean is None or (isinstance(mean, float) and math.isnan(mean)):
+        return "—"
+    if std is None or (isinstance(std, float) and math.isnan(std)):
+        return f"{mean:.3f}"
+    return f"{mean:.3f} (±{std:.3f})"
+
+
+def _cascade_mode_row(folds: list[dict[str, Any]], arm_id: str, mode: str) -> dict[str, Any] | None:
+    """One arm × readout row with tissue / age / sex means."""
+    if mode == "mbs_e2e" and not _cascade_has_valid_mbs_e2e(folds):
+        return None
+    tissue, tissue_std = _cascade_metric_means(folds, mode, "tissue", "macro_f1")
+    if tissue is None:
+        return None
+    age_mae, age_mae_std = _cascade_metric_means(folds, mode, "age", "mae")
+    age_r2, age_r2_std = _cascade_metric_means(folds, mode, "age", "r2")
+    sex_auroc, sex_auroc_std = _cascade_metric_means(folds, mode, "sex", "auroc")
+    sex_f1, sex_f1_std = _cascade_metric_means(folds, mode, "sex", "macro_f1")
+    return {
+        "arm_id": arm_id,
+        "readout": mode,
+        "tissue_f1": tissue,
+        "tissue_f1_std": tissue_std,
+        "age_mae": age_mae,
+        "age_mae_std": age_mae_std,
+        "age_r2": age_r2,
+        "age_r2_std": age_r2_std,
+        "sex_auroc": sex_auroc,
+        "sex_auroc_std": sex_auroc_std,
+        "sex_f1": sex_f1,
+        "sex_f1_std": sex_f1_std,
+        "n_folds": len(folds),
+    }
+
+
+def _task_comparison_rows(
+    cascade_folds_by_arm: dict[str, list[dict[str, Any]]],
+    classical_payload: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Side-by-side tissue / age / sex for cascade readouts and classical -G arms."""
+    rows: list[dict[str, Any]] = []
+    for arm_id in CASCADE_ARMS:
+        folds = cascade_folds_by_arm.get(arm_id) or []
+        if not folds:
+            continue
+        for mode in ("mbs_e2e", "mbs_linear_probe", "mbs_enet"):
+            row = _cascade_mode_row(folds, arm_id, mode)
+            if row is not None:
+                rows.append(row)
+    if classical_payload:
+        for arm_name in CLASSICAL_SUFFIXES:
+            tissue, tissue_std = _classical_tissue_f1(classical_payload, arm_name)
+            if tissue is None:
+                continue
+            age_mae, age_mae_std = _classical_metric_means(
+                classical_payload, arm_name, "age", "mae"
+            )
+            age_r2, age_r2_std = _classical_metric_means(classical_payload, arm_name, "age", "r2")
+            sex_auroc, sex_auroc_std = _classical_metric_means(
+                classical_payload, arm_name, "sex", "auroc"
+            )
+            sex_f1, sex_f1_std = _classical_metric_means(
+                classical_payload, arm_name, "sex", "macro_f1"
+            )
+            rows.append(
+                {
+                    "arm_id": arm_name,
+                    "readout": "classical",
+                    "tissue_f1": tissue,
+                    "tissue_f1_std": tissue_std,
+                    "age_mae": age_mae,
+                    "age_mae_std": age_mae_std,
+                    "age_r2": age_r2,
+                    "age_r2_std": age_r2_std,
+                    "sex_auroc": sex_auroc,
+                    "sex_auroc_std": sex_auroc_std,
+                    "sex_f1": sex_f1,
+                    "sex_f1_std": sex_f1_std,
+                    "n_folds": 3,
+                }
+            )
+    return rows
+
+
+def render_task_comparison_section(rows: list[dict[str, Any]]) -> list[str]:
+    """Single table: tissue F1, age MAE/R², sex AUROC/F1."""
+    lines = [
+        "## Task comparison (tissue / age / sex)",
+        "",
+        "Same **`explicit_only`** gene-linked panel and outer **test** folds. "
+        "Compare rows as alternative **readouts** of one encoder (`mbs_e2e` / "
+        "`mbs_linear_probe` / `mbs_enet`) versus classical models on raw CpG M-values. "
+        "`mbs_e2e` sex AUROC is unavailable (class argmax only). "
+        "Classical enet age is blanked when SGD MAE exploded. "
+        "Horvath-style clocks are not in this table.",
+        "",
+        "| Arm | Readout | Tissue F1 | Age MAE | Age R² | Sex AUROC | Sex F1 | folds |",
+        "|-----|---------|----------:|--------:|-------:|----------:|-------:|------:|",
+    ]
+    ranked = sorted(
+        rows,
+        key=lambda r: r.get("tissue_f1") if r.get("tissue_f1") is not None else -1.0,
+        reverse=True,
+    )
+    for row in ranked:
+        lines.append(
+            f"| `{row['arm_id']}` | `{row['readout']}` | "
+            f"{_fmt_pm(row.get('tissue_f1'), row.get('tissue_f1_std'))} | "
+            f"{_fmt_pm(row.get('age_mae'), row.get('age_mae_std'))} | "
+            f"{_fmt_pm(row.get('age_r2'), row.get('age_r2_std'))} | "
+            f"{_fmt_pm(row.get('sex_auroc'), row.get('sex_auroc_std'))} | "
+            f"{_fmt_pm(row.get('sex_f1'), row.get('sex_f1_std'))} | "
+            f"{row.get('n_folds', 0)} |"
+        )
+    lines.extend(
+        [
+            "",
+            "**Readouts:** `mbs_e2e` = jointly trained neural heads on MBS (Stage A lock metric); "
+            "`mbs_linear_probe` / `mbs_enet` = new sklearn heads on the **same frozen MBS**; "
+            "`classical` = sklearn on gene-linked CpG M-values (no encoder).",
+            "",
+        ]
+    )
+    return lines
+
+
 def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths | None = None) -> None:
     arms = load_per_arm(report_dir)
     classical_payload = arms.get("C-mvalue-classical-G")
@@ -284,11 +423,12 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
         cascade_folds_by_arm[arm_id] = folds
         e2e, e2e_std = _cascade_tissue_f1(folds, "mbs_e2e")
         probe, _ = _cascade_tissue_f1(folds, "mbs_linear_probe")
+        enet, enet_std = _cascade_tissue_f1(folds, "mbs_enet")
         age_mae, _ = _cascade_metric_means(folds, "mbs_e2e", "age", "mae")
         age_r2, _ = _cascade_metric_means(folds, "mbs_e2e", "age", "r2")
-        sex_auroc, _ = _cascade_metric_means(folds, "mbs_e2e", "sex", "auroc")
+        sex_auroc, _ = _cascade_metric_means(folds, "mbs_linear_probe", "sex", "auroc")
         if sex_auroc is None:
-            sex_auroc, _ = _cascade_metric_means(folds, "mbs_e2e", "sex", "macro_f1")
+            sex_auroc, _ = _cascade_metric_means(folds, "mbs_enet", "sex", "auroc")
         contaminated_e2e = None
         if e2e is None and folds:
             contaminated_e2e, _ = _cascade_metric_means(folds, "mbs_e2e", "tissue", "macro_f1")
@@ -300,6 +440,8 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
                 "mbs_e2e_contaminated_f1": contaminated_e2e,
                 "mbs_e2e_valid": _cascade_has_valid_mbs_e2e(folds),
                 "mbs_linear_probe_f1": probe,
+                "mbs_enet_f1": enet,
+                "mbs_enet_std": enet_std,
                 "age_mae": age_mae if e2e is not None else None,
                 "age_r2": age_r2 if e2e is not None else None,
                 "sex_auroc": sex_auroc if e2e is not None else None,
@@ -334,13 +476,19 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
         "Primary metric: **`mbs_e2e`** tissue macro-F1 (end-to-end MBS heads; not late fusion).",
         "Classical comparator: **`C-mvalue-*-G`** on identical `gene_cols`.",
         "",
-        INVALID_MBS_E2E_BANNER,
-        "",
     ]
+    if any(not r.get("mbs_e2e_valid") for r in cascade_rows if r.get("n_folds")):
+        lines.extend([INVALID_MBS_E2E_BANNER, ""])
     lines.extend(
         render_arm_glossary_section(
             glossary_ids,
-            extra_eval_modes=("mbs_e2e", "mbs_linear_probe", "fusion_full", "fusion_mbs_direct"),
+            extra_eval_modes=(
+                "mbs_e2e",
+                "mbs_linear_probe",
+                "mbs_enet",
+                "fusion_full",
+                "fusion_mbs_direct",
+            ),
         )
     )
     if paths is not None:
@@ -350,23 +498,27 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
         comp_rows = load_comparable_rows(
             paths.artifact_root,
             classical_baselines_path=classical_path,
+            gene_classical_path=report_dir / "per_arm" / "C-mvalue-classical-G.json",
         )
         write_json(report_dir / "comparable_ranking.json", {"rows": comp_rows})
         lines.extend(render_comparable_ranking_section(comp_rows))
+    task_rows = _task_comparison_rows(cascade_folds_by_arm, classical_payload)
+    write_json(report_dir / "task_comparison.json", {"rows": task_rows})
+    lines.extend(render_task_comparison_section(task_rows))
     lines.extend(
         [
         "## Cascade arms (gene-linked CpGs only)",
         "",
-        "Primary **`mbs_e2e`** (test split only); secondary **`mbs_linear_probe`**. "
-        "Contaminated pre-fix **`mbs_e2e`** shown as *invalid* for audit.",
+        "Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** "
+        "are readouts of the **same frozen MBS**. Contaminated pre-fix **`mbs_e2e`** shown as *invalid*.",
         "",
-        "| Arm | mbs_e2e F1 | linear probe F1 | invalid e2e (audit) | age MAE | age R² | sex AUROC/F1 | folds |",
-        "|-----|-----------:|----------------:|--------------------:|--------:|-------:|-------------:|------:|",
+        "| Arm | mbs_e2e F1 | linear probe F1 | mbs_enet F1 | age MAE (e2e) | sex AUROC (probe) | folds |",
+        "|-----|-----------:|----------------:|------------:|--------------:|------------------:|------:|",
         ]
     )
     for row in sorted(
         cascade_rows,
-        key=lambda r: r.get("mbs_linear_probe_f1") or r.get("mbs_e2e_contaminated_f1") or -1.0,
+        key=lambda r: r.get("mbs_e2e_f1") or r.get("mbs_linear_probe_f1") or -1.0,
         reverse=True,
     ):
         e2e_disp = _fmt(row.get("mbs_e2e_f1"))
@@ -374,22 +526,23 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
             e2e_disp = f"{e2e_disp} (±{_fmt(row.get('mbs_e2e_std'))})"
         elif row.get("mbs_e2e_f1") is None:
             e2e_disp = "—"
-        invalid_disp = _fmt(row.get("mbs_e2e_contaminated_f1"))
-        if row.get("mbs_e2e_contaminated_f1") is not None:
-            invalid_disp = f"*{invalid_disp}*"
-        sex_disp = row.get("sex_auroc")
+        enet_disp = _fmt(row.get("mbs_enet_f1"))
+        if row.get("mbs_enet_std") is not None and row.get("mbs_enet_f1") is not None:
+            enet_disp = f"{enet_disp} (±{_fmt(row.get('mbs_enet_std'))})"
         lines.append(
             f"| {row['arm_id']} | {e2e_disp} | "
-            f"{_fmt(row.get('mbs_linear_probe_f1'))} | {invalid_disp} | "
-            f"{_fmt(row.get('age_mae'))} | {_fmt(row.get('age_r2'))} | "
-            f"{_fmt(sex_disp)} | {row.get('n_folds', 0)} |"
+            f"{_fmt(row.get('mbs_linear_probe_f1'))} | {enet_disp} | "
+            f"{_fmt(row.get('age_mae'))} | "
+            f"{_fmt(row.get('sex_auroc'))} | {row.get('n_folds', 0)} |"
         )
+    n_gene_cols = _gene_panel_n_cols(report_dir)
+    panel_label = f"**{n_gene_cols:,} gene-linked CpGs**" if n_gene_cols else "gene-linked CpGs"
     lines.extend(
         [
             "",
             "## Classical arms (-G panel)",
             "",
-            "Same **56 214 gene-linked CpGs** as neural arms: ridge, elastic-net, HGB, PCA-SVA+ridge.",
+            f"Same {panel_label} as neural arms (`explicit_only`): ridge, elastic-net, HGB, PCA-SVA+ridge.",
             "",
             "| Arm | tissue F1 | age MAE | age R² | sex AUROC |",
             "|-----|----------:|--------:|-------:|----------:|",
@@ -449,7 +602,8 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
         [
             "## Parallel / follow-on work",
             "",
-            "- **Stage A finish:** classical `-G` (CPU) + orphan ablation (GPU) — can run in parallel.",
+            "- **Stage A required GPU arms** (`P2-G`, `P4-G`, `P5-G-max`, `C-mvalue-*-G`) are complete "
+            "on `explicit_only`. Optional `P5-G-mean` was not run.",
             "- **Encoder parity (optional):** FlatDeepSet + HierarchicalDeepSet on same `gene_cols` if cascade "
             "does not lead classical by ≥0.03 F1.",
             "- **Stage B (after lock):** fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type`, "

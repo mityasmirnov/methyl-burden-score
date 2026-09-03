@@ -1,11 +1,9 @@
 {
   "arms_run": [
-    "C-mvalue-classical-G",
     "P2-G",
     "P2-orphan-ablation",
     "P4-G",
-    "P5-G-max",
-    "P5-G-mean"
+    "P5-G-max"
   ],
   "milestone": "7G-prime-stage-A",
   "report_dir": "/data/projects/methyl-burden-score/reports/inspection/stage0_7g_gene_only_probe"

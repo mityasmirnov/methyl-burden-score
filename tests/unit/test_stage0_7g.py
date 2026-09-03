@@ -280,3 +280,4 @@ def test_cascade_batched_train_smoke(tmp_path: Path) -> None:
         train_batch_size=4,
     )
     assert out.get("evaluations", {}).get("mbs_e2e", {}).get("eval_split") == "test"
+    assert out.get("evaluations", {}).get("mbs_enet", {}).get("eval_split") == "test"

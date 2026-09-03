@@ -1,16 +1,67 @@
 # Plan: 7G′ gene-only architecture selection + matched-panel benchmark
 
-Status: **pending** (blocks Milestone **7** final OOF).
+Status: **in progress** — Stage A required GPU rerun **done**; lock `P2-G`
+max/max 15 epochs; cascade **not** ≥0.03 ahead of `C-mvalue-enet-G` (encoder
+parity recommended). Stage B GPU **pending**. Blocks Milestone **7** until
+Stage B completes.
+
 Normative encoder family: [`ARCHITECTURE.md`](../ARCHITECTURE.md) § Neural encoder family,
 [`SCORING_PIPELINE.md`](../SCORING_PIPELINE.md).
 Parents: [`milestone-7g-cascade-tissue-investigation.md`](milestone-7g-cascade-tissue-investigation.md),
 [`milestone-7g-methylation-eval.md`](milestone-7g-methylation-eval.md).
 Normative: [ADR 0007](../adr/0007-crossfit-prerequisites.md),
 [ADR 0008](../adr/0008-score-identifiability.md),
-[ADR 0009](../adr/0009-drop-tbs-scores.md).
+[ADR 0009](../adr/0009-drop-tbs-scores.md),
+[ADR 0010](../adr/0010-gene-allocation-policy.md).
 
 Replaces the former **7H** plan
 ([`milestone-7h-fold-safe-probe-panel-benchmark.md`](milestone-7h-fold-safe-probe-panel-benchmark.md)).
+
+## Status snapshot (2026-09-02)
+
+### Landed
+
+| Item | Evidence |
+|------|----------|
+| Test-only `mbs_e2e` | `cascade_loop.py`; `eval_split=test` in fold JSON |
+| Lock refusal + invalid e2e banner | `write_7g_gene_only_probe_report.py`; `comparable_metrics.py` |
+| `explicit_only` gene allocation | [ADR 0010](../adr/0010-gene-allocation-policy.md); Stage A YAML `*-explicit` |
+| Stage B panel selector + artifact | `fold_safe_panel.py`; `run_7g_prime_stage_b.py` |
+| Honest fusion arm names | `N-mbs-posthoc-full-fusion`, `N-mbs-posthoc-mbs-direct` |
+| 7G″ expression plan | [`milestone-7g-double-prime-expression-auxiliary.md`](milestone-7g-double-prime-expression-auxiliary.md) |
+
+### Best numbers (`explicit_only`, test-only — lock input)
+
+| Rank | Arm | Panel | Eval | Tissue F1 | Notes |
+|------|-----|-------|------|----------:|-------|
+| 1 | `C-mvalue-enet-G` | gene 51 375 | classical | **0.388** | Tissue leader; age blanked |
+| 2 | `P2-G` | gene 51 375 | `mbs_enet` | 0.385 | Frozen MBS + elastic-net heads |
+| 3 | `P2-G` | gene 51 375 | `mbs_e2e` | 0.373 | **Locked cascade** (max/max, 15 ep) |
+| 4 | `P4-G` | gene 51 375 | `mbs_e2e` | 0.370 | mean/mean; tied with P2 within noise |
+| 5 | `P5-G-max` | gene 51 375 | `mbs_e2e` | 0.356 | 30-epoch max did not help |
+| ✗ | pre-fix `P*-G` `mbs_e2e` | gene | invalid | ~0.67–0.70 | **Do not cite** |
+
+Stage A **primary lock metric** is test-only **`mbs_e2e`** on **`explicit_only`**
+`gene_cols` — none of the rows above satisfy that yet.
+
+Post-hoc **`mbs_enet`** (elastic-net on frozen gene MBS, no encoder retrain) is an
+extra readout of encoder quality, not a lock substitute. Age clocks (Horvath et al.)
+are deferred until after P4-explicit.
+
+### Pre-lock checks
+
+1. GPU train `P2-G-explicit`, `P4-G-explicit`, `P5-G-max-explicit` (+ `P5-G-mean-explicit` if P4 within ~0.03 of P2).
+2. `C-mvalue-classical-G` on the **same** `gene_panel_manifest.json` hash.
+3. Every cascade fold JSON: `evaluations.mbs_e2e.eval_split == "test"`.
+4. Regenerate `reports/inspection/stage0_7g_gene_only_probe/`; `lock_recommendation.json` must not be blocked.
+5. If cascade does not beat classical by ≥0.03 F1, consider encoder-parity arms (FlatDeepSet / HierarchicalDeepSet on same panel).
+
+### Next (ordered)
+
+1. **Stage A GPU rerun** (`--device cuda`, configs `stage0_7g_gene_only_probe*.yaml`).
+2. **Stage B GPU run** after lock (`stage0_7g_prime_stage_b.yaml`).
+3. Optional **7G″** expression pilot (not a gate).
+4. Milestone **7** 5×6 OOF with locked topology + `direct_cpg.zarr` export.
 
 ## Executive decision
 
@@ -199,10 +250,10 @@ direct_locus_index.parquet
 
 ## Sequencing
 
-1. ~~Test-only `mbs_e2e` + report invalidation~~ (done).
-2. ~~`explicit_only` allocation + `gene_panel_manifest.json`~~ (done).
-3. **Re-run Stage A** (`P2-G` … `C-mvalue-enet-G` on `*-explicit` run IDs).
-4. ~~Fold-safe panel selector + Stage B runner plumbing~~ (done; GPU run pending).
-5. Run Stage B.
+1. ~~Test-only `mbs_e2e` + report invalidation~~ (**done**, `4f5e022`).
+2. ~~`explicit_only` allocation + `gene_panel_manifest.json`~~ (**done**).
+3. ~~Fold-safe panel selector + Stage B runner plumbing~~ (**done**; GPU run pending).
+4. **Re-run Stage A** (`P2-G` … `C-mvalue-enet-G` on `*-explicit` run IDs) ← **current gate**.
+5. Run Stage B on GPU.
 6. Optional **7G″** expression pilot ([plan](milestone-7g-double-prime-expression-auxiliary.md)).
 7. Start Milestone **7** OOF with locked config + full product export.

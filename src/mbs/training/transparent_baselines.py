@@ -493,3 +493,94 @@ def run_elasticnet_baseline(
                         yt, pred, np.asarray(platforms_test)[mt], task="multiclass"
                     )
     return {"kind": "elasticnet", "metrics": metrics, "n_features": int(x_train.shape[1])}
+
+
+def run_elasticnet_multitask(
+    *,
+    x_train: np.ndarray,
+    x_test: np.ndarray,
+    age_train: np.ndarray | None,
+    age_mask_train: np.ndarray | None,
+    tissue_train: np.ndarray | None,
+    tissue_mask_train: np.ndarray | None,
+    sex_train: np.ndarray | None,
+    sex_mask_train: np.ndarray | None,
+    age_test: np.ndarray | None,
+    age_mask_test: np.ndarray | None,
+    tissue_test: np.ndarray | None,
+    tissue_mask_test: np.ndarray | None,
+    sex_test: np.ndarray | None,
+    sex_mask_test: np.ndarray | None,
+    study_ids_test: np.ndarray | None = None,
+    platforms_test: np.ndarray | None = None,
+    tissue_class_names: list[str] | None = None,
+    alpha: float = 0.1,
+    l1_ratio: float = 0.5,
+) -> dict[str, Any]:
+    """Fold-fit elastic-net heads on frozen features (age + tissue + sex)."""
+    models: dict[str, Any] = {}
+    if (
+        age_train is not None
+        and age_mask_train is not None
+        and bool(np.asarray(age_mask_train).any())
+    ):
+        m = np.asarray(age_mask_train, dtype=bool)
+        models["age"] = fit_elasticnet_phenotype(
+            x_train[m],
+            np.asarray(age_train)[m],
+            task="regression",
+            alpha=alpha,
+            l1_ratio=l1_ratio,
+        )
+    if (
+        tissue_train is not None
+        and tissue_mask_train is not None
+        and bool(np.asarray(tissue_mask_train).any())
+    ):
+        m = np.asarray(tissue_mask_train, dtype=bool)
+        models["tissue"] = fit_elasticnet_phenotype(
+            x_train[m],
+            np.asarray(tissue_train)[m],
+            task="multiclass",
+            alpha=alpha,
+            l1_ratio=l1_ratio,
+        )
+    if (
+        sex_train is not None
+        and sex_mask_train is not None
+        and bool(np.asarray(sex_mask_train).any())
+    ):
+        m = np.asarray(sex_mask_train, dtype=bool)
+        models["sex"] = fit_elasticnet_phenotype(
+            x_train[m],
+            np.asarray(sex_train)[m],
+            task="multiclass",
+            alpha=alpha,
+            l1_ratio=l1_ratio,
+        )
+    preds = predict_linear_multitask(models, x_test)
+    tissue_valid_classes = None
+    if tissue_train is not None and tissue_mask_train is not None:
+        tm = np.asarray(tissue_mask_train, dtype=bool)
+        if tm.any():
+            tissue_valid_classes = set(np.asarray(tissue_train, dtype=np.int64)[tm].tolist())
+    metrics = evaluate_multitask_predictions(
+        preds=preds,
+        age=age_test,
+        age_mask=age_mask_test,
+        tissue=tissue_test,
+        tissue_mask=tissue_mask_test,
+        sex=sex_test,
+        sex_mask=sex_mask_test,
+        study_ids=study_ids_test,
+        platforms=platforms_test,
+        tissue_class_names=tissue_class_names,
+        tissue_valid_classes=tissue_valid_classes,
+    )
+    return {
+        "kind": "elasticnet",
+        "metrics": metrics,
+        "n_features": int(np.asarray(x_train).shape[1]),
+        "alpha": float(alpha),
+        "l1_ratio": float(l1_ratio),
+    }

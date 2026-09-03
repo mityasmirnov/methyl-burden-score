@@ -42,7 +42,10 @@ from mbs.training.locus_gene import load_graph_tables
 from mbs.training.loop import load_experiment_config, resolve_device
 from mbs.training.multitask import MultitaskHeads
 from mbs.training.phenotypes import load_multitask_phenotypes
-from mbs.training.transparent_baselines import evaluate_multitask_predictions
+from mbs.training.transparent_baselines import (
+    evaluate_multitask_predictions,
+    run_elasticnet_multitask,
+)
 from mbs.training.run_artifacts import run_dir
 
 PrimaryEvaluation = Literal["late_fusion", "mbs_e2e"]
@@ -641,6 +644,47 @@ def _evaluate_fusion_mode(
     return out
 
 
+def _evaluate_mbs_enet(
+    blocks: dict[str, np.ndarray],
+    *,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
+    ages: np.ndarray,
+    age_mask: np.ndarray,
+    tissue: np.ndarray,
+    tissue_mask: np.ndarray,
+    sex: np.ndarray,
+    sex_mask: np.ndarray,
+    study_ids: np.ndarray,
+    class_names: list[str],
+) -> dict[str, Any]:
+    """Elastic-net readout on frozen MBS columns only (same encoder as e2e / linear probe)."""
+    x = fusion_feature_matrix(blocks, mode="mbs_only")
+    out = run_elasticnet_multitask(
+        x_train=x[train_idx],
+        x_test=x[test_idx],
+        age_train=ages[train_idx],
+        age_mask_train=age_mask[train_idx],
+        tissue_train=tissue[train_idx],
+        tissue_mask_train=tissue_mask[train_idx],
+        sex_train=sex[train_idx],
+        sex_mask_train=sex_mask[train_idx],
+        age_test=ages[test_idx],
+        age_mask_test=age_mask[test_idx],
+        tissue_test=tissue[test_idx],
+        tissue_mask_test=tissue_mask[test_idx],
+        sex_test=sex[test_idx],
+        sex_mask_test=sex_mask[test_idx],
+        study_ids_test=study_ids[test_idx],
+        tissue_class_names=list(class_names) if class_names else None,
+    )
+    out["evaluation"] = "mbs_enet"
+    out["eval_split"] = "test"
+    out["n_eval_samples"] = int(np.asarray(test_idx).size)
+    out["n_score_features"] = int(out.get("n_features", x.shape[1]))
+    return out
+
+
 def _evaluations_incomplete(metrics: dict[str, Any]) -> bool:
     ev = metrics.get("evaluations")
     if not isinstance(ev, dict):
@@ -1038,6 +1082,19 @@ def train_cascade_on_arrays(
         study_ids=study_ids,
         class_names=list(class_names),
         fusion=fusion,
+    )
+    evaluations["mbs_enet"] = _evaluate_mbs_enet(
+        blocks,
+        train_idx=train_idx,
+        test_idx=test_idx,
+        ages=ages,
+        age_mask=age_mask_a,
+        tissue=tissue,
+        tissue_mask=tissue_mask_a,
+        sex=sex,
+        sex_mask=sex_mask_a,
+        study_ids=study_ids,
+        class_names=list(class_names),
     )
 
     fusion_modes: list[FusionBlockMode] = ["full"]

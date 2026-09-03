@@ -130,6 +130,10 @@ EVAL_MODE_DESCRIPTIONS: dict[str, str] = {
     "mbs_linear_probe": (
         "CPU linear probe fit on **saved MBS matrix** only (representation check, not fusion)."
     ),
+    "mbs_enet": (
+        "CPU elastic-net heads on the **same saved MBS** (age + tissue + sex). "
+        "Same CascadeDeepSet weights as `mbs_e2e`; no encoder retrain."
+    ),
     "fusion_full": "Late fusion on **`[orphan_rbs | mbs | direct_contrib]`** columns.",
     "fusion_mbs_direct": "Late fusion on **`[mbs | direct_contrib]`** — orphan RBS ablation.",
 }
