@@ -3,8 +3,6 @@
 Primary metric: **`mbs_e2e`** tissue macro-F1 (end-to-end MBS heads; not late fusion).
 Classical comparator: **`C-mvalue-*-G`** on identical `gene_cols`.
 
-> **Invalid historical `mbs_e2e`:** pre-fix runs scored train+validation+test together. Reported ~0.67–0.70 gene-only F1 is **not trustworthy**. Until rerun with `eval_split=test`, use **`mbs_linear_probe`** (~0.37) as the honest neural tissue check. **Do not lock architecture.**
-
 ## Arm glossary
 
 ### Naming prefixes
@@ -111,12 +109,11 @@ Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare row
 | `N-cascade-vector-mean-max` | `mbs_e2e` | 0.337 (±0.036) | 22.753 (±4.259) | -0.233 (±0.215) | 0.665 (±0.048) | 0.601 (±0.032) | 3 |
 | `C-mvalue-ridge-G` | `classical` | 0.337 (±0.040) | 6.489 (±0.907) | 0.856 (±0.033) | 0.904 (±0.056) | — | 3 |
 | `N-cascade-scalar-mean-max` | `mbs_e2e` | 0.331 (±0.020) | 20.713 (±1.893) | -0.083 (±0.141) | 0.667 (±0.032) | 0.597 (±0.024) | 3 |
-| `N-light-gene-mean` | `mbs_enet` | 0.296 (±0.074) | 20.498 (±3.007) | -0.013 (±0.057) | 0.860 (±0.034) | 0.655 (±0.194) | 3 |
-| `N-light-gene-max` | `mbs_linear_probe` | 0.295 (±0.122) | 13.438 (±2.818) | 0.483 (±0.171) | 0.731 (±0.107) | 0.678 (±0.089) | 3 |
-| `N-light-gene-mean` | `mbs_linear_probe` | 0.264 (±0.111) | 12.434 (±4.287) | 0.554 (±0.257) | 0.773 (±0.130) | 0.715 (±0.107) | 3 |
-| `N-light-gene-max` | `mbs_e2e` | 0.122 (±0.102) | 21.888 (±0.553) | -0.232 (±0.120) | 0.575 (±0.022) | 0.458 (±0.117) | 3 |
+| `N-light-gene-mean` | `mbs_linear_probe` | 0.306 (±0.000) | 13.274 (±0.000) | 0.517 (±0.000) | 0.709 (±0.000) | 0.650 (±0.000) | 1 |
+| `N-light-gene-max` | `mbs_linear_probe` | 0.162 (±0.000) | 16.683 (±0.000) | 0.287 (±0.000) | 0.610 (±0.000) | 0.577 (±0.000) | 1 |
 | `C-mvalue-hgb-G` | `classical` | 0.114 (±0.081) | 9.066 (±1.022) | 0.753 (±0.052) | 0.938 (±0.059) | — | 3 |
-| `N-light-gene-mean` | `mbs_e2e` | 0.001 (±0.002) | 22.592 (±2.352) | -0.185 (±0.161) | 0.470 (±0.041) | 0.374 (±0.060) | 3 |
+| `N-light-gene-mean` | `mbs_e2e` | 0.061 (±0.000) | 21.211 (±0.000) | -0.094 (±0.000) | 0.578 (±0.000) | 0.482 (±0.000) | 1 |
+| `N-light-gene-max` | `mbs_e2e` | 0.024 (±0.000) | 21.695 (±0.000) | -0.177 (±0.000) | 0.553 (±0.000) | 0.323 (±0.000) | 1 |
 
 **Readouts:** `mbs_e2e` = jointly trained neural heads on MBS (Stage A lock metric); `mbs_linear_probe` / `mbs_enet` = new sklearn heads on the **same frozen MBS**; `rbs_linear_probe` / `rbs_enet` = frozen **gene-linked RBS** (pre–gene-pool); `classical` = sklearn on gene-linked CpG M-values (no encoder).
 
@@ -137,7 +134,7 @@ Non-dominated on tissue macro-F1 (↑), age MAE (↓), sex AUROC (↑). Do **not
 2. **Region → gene pool (mean vs max):** `max-mean` tissue F1=0.359 vs `max-max` 0.373; age MAE 21.356 vs 15.637. Prefer **`P2-G`** on this slice (check Pareto).
 3. **Does scalar RBS discard information?** Vector arm `0.337` tissue vs P2 `0.373`; if vector does not beat scalar on age/sex, bottleneck is elsewhere.
 4. **Gene pooling vs RBS:** Pending RBS diagnostic.
-5. **One-hop vs cascade:** One-hop `N-light-gene-max` tissue=0.122 / age=21.888 vs P2-G 0.373 / 15.637.
+5. **One-hop vs cascade:** One-hop `N-light-gene-max` tissue=0.024 / age=21.695 vs P2-G 0.373 / 15.637.
 6. **One-scalar-per-gene bottleneck:** Gene aggregation still trails classical on age/sex; one scalar MBS/gene is **not yet adequate** unless a screen arm closes the gap.
 7. **Best performance/compute:** Prefer landed P2/P4 (15 ep) over P5; promote Tier-1 (5 ep) arms only when Pareto/near-best, then confirm at 15 ep.
 
@@ -154,8 +151,8 @@ Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`
 | N-cascade-vector-max-max | 0.343 (±0.063) | 0.367 | — | 21.458 | 0.687 | 3 |
 | N-cascade-vector-mean-max | 0.337 (±0.036) | 0.360 | — | 22.753 | 0.697 | 3 |
 | N-cascade-scalar-mean-max | 0.331 (±0.020) | 0.375 | — | 20.713 | 0.711 | 3 |
-| N-light-gene-max | 0.122 (±0.102) | 0.295 | — | 21.888 | 0.731 | 3 |
-| N-light-gene-mean | *invalid (pre-fix orient)* 0.001 | 0.264 | 0.296 (±0.074) | 22.592 | 0.773 | 3 |
+| N-light-gene-mean | 0.061 (±0.000) | 0.306 | — | 21.211 | 0.709 | 1 |
+| N-light-gene-max | 0.024 (±0.000) | 0.162 | — | 21.695 | 0.610 | 1 |
 
 ## Classical arms (-G panel)
 
