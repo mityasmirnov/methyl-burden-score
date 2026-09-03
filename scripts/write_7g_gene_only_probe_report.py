@@ -66,19 +66,25 @@ INVALID_MBS_E2E_BANNER = (
 )
 
 
-def _mbs_e2e_fold_valid(fold: dict[str, Any]) -> bool:
-    """True when fold mbs_e2e was computed on the test split only."""
+def _mbs_e2e_fold_valid(fold: dict[str, Any], *, arm_id: str | None = None) -> bool:
+    """True when fold mbs_e2e was computed on the test split with orientation contract v2."""
     evaluations = fold.get("evaluations") or {}
     blob = evaluations.get("mbs_e2e")
     if not isinstance(blob, dict):
         return False
-    return blob.get("eval_split") == "test"
+    if blob.get("eval_split") != "test":
+        return False
+    if arm_id and str(arm_id).startswith("N-light-gene"):
+        manifest = fold.get("score_manifest") or {}
+        if str(manifest.get("orientation_contract_version", "1")) != "2":
+            return False
+    return True
 
 
-def _cascade_has_valid_mbs_e2e(folds: list[dict[str, Any]]) -> bool:
+def _cascade_has_valid_mbs_e2e(folds: list[dict[str, Any]], *, arm_id: str | None = None) -> bool:
     if not folds:
         return False
-    return all(_mbs_e2e_fold_valid(f) for f in folds)
+    return all(_mbs_e2e_fold_valid(f, arm_id=arm_id) for f in folds)
 
 
 def _classical_has_completed_folds(payload: dict[str, Any] | None, arm_name: str) -> bool:
@@ -623,7 +629,7 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
                 "mbs_e2e_f1": e2e,
                 "mbs_e2e_std": e2e_std,
                 "mbs_e2e_contaminated_f1": contaminated_e2e,
-                "mbs_e2e_valid": _cascade_has_valid_mbs_e2e(folds),
+                "mbs_e2e_valid": _cascade_has_valid_mbs_e2e(folds, arm_id=arm_id),
                 "mbs_linear_probe_f1": probe,
                 "mbs_enet_f1": enet,
                 "mbs_enet_std": enet_std,
@@ -716,7 +722,9 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
         reverse=True,
     ):
         e2e_disp = _fmt(row.get("mbs_e2e_f1"))
-        if row.get("mbs_e2e_std") is not None and row.get("mbs_e2e_f1") is not None:
+        if not row.get("mbs_e2e_valid") and str(row.get("arm_id", "")).startswith("N-light-gene"):
+            e2e_disp = f"*invalid (pre-fix orient)* {e2e_disp}"
+        elif row.get("mbs_e2e_std") is not None and row.get("mbs_e2e_f1") is not None:
             e2e_disp = f"{e2e_disp} (±{_fmt(row.get('mbs_e2e_std'))})"
         elif row.get("mbs_e2e_f1") is None:
             e2e_disp = "—"

@@ -1,6 +1,6 @@
 {
   "arms_run": [
-    "N-light-gene-mean"
+    "N-cascade-scalar-mean-max"
   ],
   "gene_panel": {
     "graph_content_hash": null,

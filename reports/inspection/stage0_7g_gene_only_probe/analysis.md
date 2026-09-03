@@ -47,9 +47,9 @@ Classical comparator: **`C-mvalue-*-G`** on identical `gene_cols`.
 
 - **`mbs_e2e`**: End-to-end **`MultitaskHeads`** on MBS only (no orphan/direct columns) — **Stage A primary metric**.
 - **`mbs_linear_probe`**: CPU linear probe fit on **saved MBS matrix** only (representation check, not fusion).
-- **`mbs_enet`**: CPU elastic-net heads on the **same saved MBS** (age + tissue + sex). **Post-hoc for Stage A screen** (`scripts/eval_mbs_enet_from_scores.py`) — not run inline so the GPU queue is not blocked. Same encoder weights as `mbs_e2e`; no retrain.
+- **`mbs_enet`**: CPU elastic-net heads on the **same saved MBS** (age + tissue + sex). Same CascadeDeepSet weights as `mbs_e2e`; no encoder retrain.
 - **`rbs_linear_probe`**: CPU linear probe on frozen **gene-linked RBS** (`all_gene_rbs.zarr`); diagnoses loss before vs after gene pooling.
-- **`rbs_enet`**: CPU elastic-net on frozen gene-linked RBS (same matrix as `rbs_linear_probe`). **Also post-hoc** during the screen (same script / follow-on).
+- **`rbs_enet`**: CPU elastic-net on frozen gene-linked RBS (same matrix as `rbs_linear_probe`).
 - **`fusion_full`**: Late fusion on **`[orphan_rbs | mbs | direct_contrib]`** columns.
 - **`fusion_mbs_direct`**: Late fusion on **`[mbs | direct_contrib]`** — orphan RBS ablation.
 
@@ -94,6 +94,7 @@ Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare row
 | `P2-G` | `mbs_enet` | 0.385 (±0.053) | 14.393 (±0.655) | 0.452 (±0.054) | 0.765 (±0.027) | 0.702 (±0.026) | 3 |
 | `P4-G` | `mbs_linear_probe` | 0.379 (±0.055) | 11.609 (±1.405) | 0.611 (±0.067) | 0.800 (±0.055) | 0.732 (±0.046) | 3 |
 | `P4-G` | `mbs_enet` | 0.379 (±0.059) | 16.011 (±3.018) | 0.350 (±0.141) | 0.789 (±0.057) | 0.723 (±0.049) | 3 |
+| `N-cascade-scalar-mean-max` | `mbs_linear_probe` | 0.375 (±0.029) | 14.382 (±1.173) | 0.390 (±0.161) | 0.711 (±0.031) | 0.654 (±0.024) | 3 |
 | `P2-G` | `mbs_e2e` | 0.373 (±0.038) | 15.637 (±0.787) | 0.315 (±0.140) | — | 0.708 (±0.030) | 3 |
 | `P2-G` | `mbs_linear_probe` | 0.373 (±0.052) | 13.393 (±1.104) | 0.488 (±0.110) | 0.784 (±0.020) | 0.717 (±0.021) | 3 |
 | `P5-G-max` | `mbs_linear_probe` | 0.371 (±0.039) | 13.274 (±0.893) | 0.476 (±0.091) | 0.714 (±0.009) | 0.659 (±0.003) | 3 |
@@ -101,6 +102,7 @@ Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare row
 | `P5-G-max` | `mbs_e2e` | 0.356 (±0.042) | 21.402 (±1.786) | -0.150 (±0.078) | — | 0.598 (±0.006) | 3 |
 | `C-mvalue-sva-G` | `classical` | 0.348 (±0.028) | 12.920 (±4.941) | 0.083 (±0.814) | 0.851 (±0.071) | — | 3 |
 | `C-mvalue-ridge-G` | `classical` | 0.337 (±0.040) | 6.489 (±0.907) | 0.856 (±0.033) | 0.904 (±0.056) | — | 3 |
+| `N-cascade-scalar-mean-max` | `mbs_e2e` | 0.331 (±0.020) | 20.713 (±1.893) | -0.083 (±0.141) | 0.667 (±0.032) | 0.597 (±0.024) | 3 |
 | `N-light-gene-mean` | `mbs_enet` | 0.296 (±0.074) | 20.498 (±3.007) | -0.013 (±0.057) | 0.860 (±0.034) | 0.655 (±0.194) | 3 |
 | `N-light-gene-mean` | `mbs_linear_probe` | 0.264 (±0.111) | 12.434 (±4.287) | 0.554 (±0.257) | 0.773 (±0.130) | 0.715 (±0.107) | 3 |
 | `N-light-gene-max` | `mbs_enet` | 0.203 (±0.168) | 19.325 (±1.257) | 0.064 (±0.121) | 0.680 (±0.159) | 0.494 (±0.187) | 3 |
@@ -124,8 +126,8 @@ Non-dominated on tissue macro-F1 (↑), age MAE (↓), sex AUROC (↑). Do **not
 
 ## Architecture questions (Stage A screen)
 
-1. **CpG → region pool (mean vs max):** Insufficient arms for cpg-level comparison yet.
-2. **Region → gene pool (mean vs max):** Insufficient arms for region-level comparison yet.
+1. **CpG → region pool (mean vs max):** `mean-max` tissue F1=0.331 vs `max-max` 0.373; age MAE 20.713 vs 15.637. Prefer **`P2-G`** on this slice (check Pareto).
+2. **Region → gene pool (mean vs max):** `mean-mean` tissue F1=0.370 vs `mean-max` 0.331; age MAE 20.380 vs 20.713. Prefer **`P4-G`** on this slice (check Pareto).
 3. **Does scalar RBS discard information?** Vector arm `—` tissue vs P2 `0.373`; vector arms pending.
 4. **Gene pooling vs RBS:** Pending RBS diagnostic.
 5. **One-hop vs cascade:** One-hop `N-light-gene-max` tissue=0.000 / age=21.105 vs P2-G 0.373 / 15.637.
@@ -141,6 +143,7 @@ Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`
 | P2-G | 0.373 (±0.038) | 0.373 | 0.385 (±0.053) | 15.637 | 0.784 | 3 |
 | P4-G | 0.370 (±0.059) | 0.379 | 0.379 (±0.059) | 20.380 | 0.800 | 3 |
 | P5-G-max | 0.356 (±0.042) | 0.371 | — | 21.402 | 0.714 | 3 |
+| N-cascade-scalar-mean-max | 0.331 (±0.020) | 0.375 | — | 20.713 | 0.711 | 3 |
 | N-light-gene-mean | 0.001 (±0.002) | 0.264 | 0.296 (±0.074) | 22.592 | 0.773 | 3 |
 | N-light-gene-max | 0.000 (±0.000) | 0.171 | 0.203 (±0.168) | 21.105 | 0.714 | 3 |
 
@@ -186,7 +189,6 @@ Compare **`fusion_full`** (orphan RBS + MBS + direct) vs **`fusion_mbs_direct`**
 
 ## Next
 
-- **Screen policy:** inline = `mbs_e2e` + `mbs_linear_probe` (+ cascade `fusion_*` / `rbs_linear_probe`). **`mbs_enet` / `rbs_enet` post-hoc** after the GPU queue (`scripts/eval_mbs_enet_from_scores.py`, supports `--run-prefix` for flat `-f{i}` runs).
-- **`N-light-gene-max` / `N-light-gene-mean` done** (Tier-1). Next: mixed scalar cascades → vector cascades; promote Tier-2 (15 ep) only if Pareto/near-best.
+- **Stage A screen (sequential):** continue remaining Tier-1 arms after each landed light arm updates this report.
 - Stage B (after lock): fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type` (FlatDeepSetRegion), `N-mbs-posthoc-full-fusion` / `N-mbs-posthoc-mbs-direct`, plus `direct_cpg.zarr`.
 - Milestone **7** 5×6 OOF remains blocked until Stage B completes.

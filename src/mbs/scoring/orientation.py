@@ -59,14 +59,20 @@ def accumulate_signed_gene_mean_m(
     n_genes: int,
     cpg_m_batches: list[np.ndarray],
     cpg_to_gene_batches: list[np.ndarray],
+    observed_batches: list[np.ndarray] | None = None,
 ) -> np.ndarray:
     """Pool signed gene-mean M across many samples' edge lists."""
     sums = np.zeros(int(n_genes), dtype=np.float64)
     counts = np.zeros(int(n_genes), dtype=np.float64)
-    for cpg_m, cpg_to_gene in zip(cpg_m_batches, cpg_to_gene_batches, strict=True):
+    for i, (cpg_m, cpg_to_gene) in enumerate(
+        zip(cpg_m_batches, cpg_to_gene_batches, strict=True)
+    ):
         m = np.asarray(cpg_m, dtype=np.float64).reshape(-1)
         genes = np.asarray(cpg_to_gene, dtype=np.int64).reshape(-1)
+        obs = None if observed_batches is None else observed_batches[i]
         keep = np.isfinite(m)
+        if obs is not None:
+            keep = keep & np.asarray(obs, dtype=bool).reshape(-1)
         if not keep.any():
             continue
         g = genes[keep]
@@ -154,11 +160,23 @@ def flip_phenotype_head_weights_(head: nn.Module) -> None:
         gw.data.mul_(-1.0)
 
 
+def orient_mbs_array(mbs: np.ndarray, *, score_polarity: str) -> np.ndarray:
+    """Apply ADR 0008 score flip to exported MBS (heads stay unchanged)."""
+    scores = np.asarray(mbs, dtype=np.float32)
+    if score_polarity == "flipped":
+        return (1.0 - scores).astype(np.float32, copy=False)
+    if score_polarity != "hyper_aligned":
+        raise ValueError(f"unknown score_polarity: {score_polarity!r}")
+    return scores
+
+
 def score_manifest(
     *,
     score_polarity: str,
     fold_id: str | None = None,
     restart_id: str | None = None,
+    orientation_contract_version: str = "2",
+    head_weights_mutated: bool = False,
 ) -> dict[str, Any]:
     return {
         "artifact_version": "1",
@@ -167,5 +185,7 @@ def score_manifest(
         "anchor_recipe": ANCHOR_RECIPE,
         "fold_id": fold_id,
         "restart_id": restart_id,
+        "orientation_contract_version": orientation_contract_version,
+        "head_weights_mutated": head_weights_mutated,
         "notes": "Predictive sample x gene MBS; not a methylation constraint or LOEUF analogue.",
     }

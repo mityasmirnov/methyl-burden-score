@@ -35,6 +35,7 @@ from mbs.training.cascade_scores import (
     write_cascade_score_dir,
     _write_array,
 )
+from mbs.training.checkpoint_selection import validation_rank as _validation_rank
 from mbs.training.dev_cv import DEFAULT_SPLIT_ID, load_frozen_folds
 from mbs.training.direct_cpg import direct_cpg_design_matrix, fit_direct_elasticnet
 from mbs.training.features import beta_to_m_value
@@ -555,16 +556,6 @@ def _evaluate_cascade_validation(
                 tissue_val[tissue_mask_val], tissue_pred[tissue_mask_val]
             )["macro_f1"]
     return out
-
-
-def _validation_rank(val_metrics: dict[str, Any]) -> tuple[float, float]:
-    """Higher is better: (tissue macro-F1, -age MAE), missing -> worst."""
-    f1 = val_metrics.get("tissue_macro_f1")
-    mae = val_metrics.get("age_mae")
-    return (
-        float(f1) if f1 is not None else -1.0,
-        -float(mae) if mae is not None else -1e9,
-    )
 
 
 def _evaluate_mbs_e2e(

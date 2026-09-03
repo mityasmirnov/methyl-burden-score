@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -30,6 +31,7 @@ REGULATORY_CHANNELS: tuple[str, ...] = (
     "chromhmm",
     "dhs_flag",
 )
+FlatRegionFeatureMode = Literal["m_only", "m_role", "m_role_context", "full"]
 PRESENCE_FLAGS: tuple[str, ...] = (
     "gene_role_present",
     "cpg_context_present",
@@ -196,17 +198,49 @@ def build_flat_region_gene_index(
     )
 
 
+def _annotation_offsets() -> tuple[int, int, int, int]:
+    """Return ``(role_start, ctx_start, reg_start, flags_start)`` column indices."""
+    role_start = 1
+    ctx_start = role_start + len(GENE_ROLES)
+    reg_start = ctx_start + len(CPG_CONTEXTS)
+    flags_start = reg_start + len(REGULATORY_CHANNELS)
+    return role_start, ctx_start, reg_start, flags_start
+
+
+def apply_flat_region_feature_mode(
+    feats: np.ndarray,
+    mode: FlatRegionFeatureMode = "full",
+) -> np.ndarray:
+    """Zero disabled annotation blocks for ablation runs."""
+    if mode == "full":
+        return feats
+    out = np.array(feats, dtype=np.float32, copy=True)
+    role_start, ctx_start, reg_start, flags_start = _annotation_offsets()
+    dim = out.shape[1]
+    if mode == "m_only":
+        out[:, 1 : dim - 1] = 0.0
+    elif mode == "m_role":
+        out[:, ctx_start : dim - 1] = 0.0
+    elif mode == "m_role_context":
+        out[:, reg_start:flags_start] = 0.0
+        out[:, flags_start + 2] = 0.0
+    else:
+        raise ValueError(f"unknown flat_region feature mode: {mode!r}")
+    return out
+
+
 def gather_flat_region_features(
     *,
     beta_row: np.ndarray,
     index: FlatRegionGeneIndex,
     epsilon: float = 0.001,
     base_features: np.ndarray | None = None,
+    feature_mode: FlatRegionFeatureMode = "full",
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Return ``(features [n_edges, dim], cpg_to_gene [n_edges])``.
+    """Return ``(features [n_obs_edges, dim], cpg_to_gene [n_obs_edges])``.
 
-    When ``base_features`` is provided (annotation channels cached once per fold),
-    only the M-value and observed flag are refreshed from ``beta_row``.
+    Unobserved graph edges are dropped before pooling. When ``base_features`` is
+    provided, only M-value and observed are refreshed from ``beta_row``.
     """
     betas = np.asarray(beta_row, dtype=np.float32).reshape(-1)
     dim = flat_region_input_dim()
@@ -218,6 +252,7 @@ def gather_flat_region_features(
     safe = np.where(obs, betas[cols], 0.5)
     m_vals = beta_to_m_value(safe, epsilon=epsilon)
     m_vals = np.where(obs, m_vals, 0.0).astype(np.float32)
+    genes = index.edge_gene_index.astype(np.int64, copy=False)
     if base_features is not None:
         feats = np.array(base_features, dtype=np.float32, copy=True)
         if feats.shape != (n_edges, dim):
@@ -226,30 +261,102 @@ def gather_flat_region_features(
             )
         feats[:, 0] = m_vals
         feats[:, -1] = obs.astype(np.float32)
-        return feats, index.edge_gene_index.astype(np.int64, copy=False)
-    feats = np.zeros((n_edges, dim), dtype=np.float32)
-    feats[:, 0] = m_vals
-    offset = 1
-    role_ids = np.asarray(index.edge_role_id, dtype=np.int64)
-    valid_role = (role_ids >= 0) & (role_ids < len(GENE_ROLES))
-    if np.any(valid_role):
-        feats[np.nonzero(valid_role)[0], offset + role_ids[valid_role]] = 1.0
-    offset += len(GENE_ROLES)
-    context_ids = np.asarray(index.edge_context_id, dtype=np.int64)
-    valid_ctx = (context_ids >= 0) & (context_ids < len(CPG_CONTEXTS))
-    if np.any(valid_ctx):
-        feats[np.nonzero(valid_ctx)[0], offset + context_ids[valid_ctx]] = 1.0
-    offset += len(CPG_CONTEXTS)
-    feats[:, offset : offset + len(REGULATORY_CHANNELS)] = index.edge_regulatory_multi_hot
-    offset += len(REGULATORY_CHANNELS)
-    feats[:, offset] = index.edge_role_present.astype(np.float32)
-    feats[:, offset + 1] = index.edge_context_present.astype(np.float32)
-    feats[:, offset + 2] = index.edge_regulatory_present.astype(np.float32)
-    feats[:, -1] = obs.astype(np.float32)
-    return feats, index.edge_gene_index.astype(np.int64, copy=False)
+    else:
+        feats = np.zeros((n_edges, dim), dtype=np.float32)
+        feats[:, 0] = m_vals
+        offset = 1
+        role_ids = np.asarray(index.edge_role_id, dtype=np.int64)
+        valid_role = (role_ids >= 0) & (role_ids < len(GENE_ROLES))
+        if np.any(valid_role):
+            feats[np.nonzero(valid_role)[0], offset + role_ids[valid_role]] = 1.0
+        offset += len(GENE_ROLES)
+        context_ids = np.asarray(index.edge_context_id, dtype=np.int64)
+        valid_ctx = (context_ids >= 0) & (context_ids < len(CPG_CONTEXTS))
+        if np.any(valid_ctx):
+            feats[np.nonzero(valid_ctx)[0], offset + context_ids[valid_ctx]] = 1.0
+        offset += len(CPG_CONTEXTS)
+        feats[:, offset : offset + len(REGULATORY_CHANNELS)] = index.edge_regulatory_multi_hot
+        offset += len(REGULATORY_CHANNELS)
+        feats[:, offset] = index.edge_role_present.astype(np.float32)
+        feats[:, offset + 1] = index.edge_context_present.astype(np.float32)
+        feats[:, offset + 2] = index.edge_regulatory_present.astype(np.float32)
+        feats[:, -1] = obs.astype(np.float32)
+    feats = apply_flat_region_feature_mode(feats, feature_mode)
+    if not np.any(obs):
+        return np.zeros((0, dim), dtype=np.float32), np.zeros(0, dtype=np.int64)
+    return feats[obs], genes[obs]
 
 
-def build_flat_region_base_features(index: FlatRegionGeneIndex) -> np.ndarray:
+def assert_flat_region_index(
+    index: FlatRegionGeneIndex,
+    *,
+    gene_col_indices: np.ndarray | None = None,
+) -> dict[str, Any]:
+    """Graph/panel integrity checks for N-light Stage A reporting."""
+    cols = np.asarray(index.edge_col_index, dtype=np.int64)
+    genes = np.asarray(index.edge_gene_index, dtype=np.int64)
+    pairs = np.stack([cols, genes], axis=1)
+    if pairs.shape[0]:
+        unique_pairs = np.unique(pairs, axis=0)
+        if unique_pairs.shape[0] != pairs.shape[0]:
+            raise AssertionError(
+                f"duplicate (locus_col, gene_id) edges: "
+                f"{pairs.shape[0] - unique_pairs.shape[0]} duplicates"
+            )
+    unique_cpgs = int(np.unique(cols).size) if cols.size else 0
+    if gene_col_indices is not None:
+        panel_cpgs = int(np.unique(np.asarray(gene_col_indices, dtype=np.int64)).size)
+        if unique_cpgs != panel_cpgs:
+            raise AssertionError(
+                f"N-light unique CpGs {unique_cpgs} != gene panel cols {panel_cpgs}"
+            )
+    multi_gene_cpgs = 0
+    if cols.size:
+        for col in np.unique(cols):
+            if int(np.sum(cols == col)) > 1:
+                multi_gene_cpgs += 1
+    role_counts = {
+        name: int(np.sum(index.edge_role_id == i)) for i, name in enumerate(GENE_ROLES)
+    }
+    ctx_counts = {
+        name: int(np.sum(index.edge_context_id == i)) for i, name in enumerate(CPG_CONTEXTS)
+    }
+    reg = np.asarray(index.edge_regulatory_multi_hot, dtype=np.float64)
+    reg_nonzero = {
+        name: int(np.sum(reg[:, i] != 0)) for i, name in enumerate(REGULATORY_CHANNELS)
+    }
+    edges_per_gene = np.bincount(genes, minlength=index.n_genes) if genes.size else np.zeros(0)
+    cpgs_per_gene = np.zeros(index.n_genes, dtype=np.int64)
+    if genes.size:
+        for g in range(index.n_genes):
+            gcols = cols[genes == g]
+            cpgs_per_gene[g] = int(np.unique(gcols).size) if gcols.size else 0
+    return {
+        "n_locus_gene_edges": int(index.n_edges),
+        "n_unique_cpgs": unique_cpgs,
+        "n_multi_gene_cpgs": int(multi_gene_cpgs),
+        "role_counts": role_counts,
+        "cpg_context_counts": ctx_counts,
+        "regulatory_nonzero_counts": reg_nonzero,
+        "edges_per_gene": {
+            "min": int(edges_per_gene.min()) if edges_per_gene.size else 0,
+            "max": int(edges_per_gene.max()) if edges_per_gene.size else 0,
+            "mean": float(edges_per_gene.mean()) if edges_per_gene.size else 0.0,
+        },
+        "cpgs_per_gene": {
+            "min": int(cpgs_per_gene.min()) if cpgs_per_gene.size else 0,
+            "max": int(cpgs_per_gene.max()) if cpgs_per_gene.size else 0,
+            "mean": float(cpgs_per_gene.mean()) if cpgs_per_gene.size else 0.0,
+        },
+        "n_other_gene_edges": int(index.n_other_gene_edges),
+    }
+
+
+def build_flat_region_base_features(
+    index: FlatRegionGeneIndex,
+    *,
+    feature_mode: FlatRegionFeatureMode = "full",
+) -> np.ndarray:
     """Annotation-only feature template (M-value/observed filled per sample)."""
     dim = flat_region_input_dim()
     n_edges = index.n_edges
@@ -272,4 +379,4 @@ def build_flat_region_base_features(index: FlatRegionGeneIndex) -> np.ndarray:
     feats[:, offset] = index.edge_role_present.astype(np.float32)
     feats[:, offset + 1] = index.edge_context_present.astype(np.float32)
     feats[:, offset + 2] = index.edge_regulatory_present.astype(np.float32)
-    return feats
+    return apply_flat_region_feature_mode(feats, feature_mode)

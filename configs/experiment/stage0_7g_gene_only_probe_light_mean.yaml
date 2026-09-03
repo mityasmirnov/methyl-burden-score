@@ -77,6 +77,7 @@ training:
   stage_a_include_mbs_enet: false
   # Overlap sklearn linear/enet with next-fold GPU train.
   stage_a_defer_cpu_probes: true
+  checkpoint_selection: validation_tissue_macro_f1_then_age_mae
   gradient_clip_norm: 2.0
   learning_rate: 0.001
   max_epochs: 5

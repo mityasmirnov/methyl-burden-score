@@ -130,9 +130,19 @@ def build_gene_cols(
         raise RuntimeError("gene-linked CpG panel is empty")
     gene_edge = assignment.region_to_gene[assignment.edge_region_index] >= 0
     type_ids = assignment.region_type_id[assignment.edge_region_index[gene_edge]]
-    from mbs.training.flat_region_features import count_other_gene_edges
+    from mbs.training.flat_region_features import (
+        assert_flat_region_index,
+        build_flat_region_gene_index,
+        count_other_gene_edges,
+    )
 
     n_other = count_other_gene_edges(type_ids, assignment.region_types)
+    region_index = build_flat_region_gene_index(
+        assignment,
+        locus_index=locus_index,
+        allow_other_gene=False,
+    )
+    graph_audit = assert_flat_region_index(region_index, gene_col_indices=gene_cols)
     graph_manifest_path = graph_root / "graph_manifest.json"
     graph_hash = None
     if graph_manifest_path.is_file():
@@ -147,6 +157,7 @@ def build_gene_cols(
         "matrix_id": matrix_id,
         "max_loci": int(max_loci),
         "gene_col_indices": gene_cols.astype(int).tolist(),
+        "flat_region_graph_audit": graph_audit,
     }
     print(
         f"[gene-probe] gene_cols={gene_cols.size} allocation={gene_allocation} "
@@ -190,6 +201,18 @@ def _slim_cascade_fold(blob: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _mbs_e2e_stale(metrics: dict[str, Any]) -> bool:
+    """True when fold mbs_e2e needs orientation-v2 re-eval."""
+    manifest = metrics.get("score_manifest") or {}
+    if str(manifest.get("orientation_contract_version", "1")) != "2":
+        return True
+    evaluations = metrics.get("evaluations") or {}
+    blob = evaluations.get("mbs_e2e")
+    if not isinstance(blob, dict):
+        return True
+    return blob.get("eval_split") != "test"
+
+
 def train_flat_region_arm(
     *,
     paths: DataPaths,
@@ -197,6 +220,8 @@ def train_flat_region_arm(
     run_prefix: str,
     device: str,
     report_dir: Path,
+    fold_filter: int | None = None,
+    reeval_only: bool = False,
 ) -> list[dict[str, Any]]:
     """Train FlatDeepSetRegion per frozen fold via ``mbs train flat``."""
     from concurrent.futures import Future, ThreadPoolExecutor
@@ -236,11 +261,29 @@ def train_flat_region_arm(
 
     try:
         for fold_i, fold in enumerate(fold_pack["folds"]):
+            if fold_filter is not None and fold_i != fold_filter:
+                continue
             run_id = f"{run_prefix}-f{fold_i}"
             run_root = paths.artifact_root / "runs" / run_id
             metrics_path = run_root / "metrics.json"
-            if metrics_path.is_file():
+            if metrics_path.is_file() and not reeval_only:
                 metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+                if _mbs_e2e_stale(metrics):
+                    print(f"[gene-probe] stale e2e {run_id} → reeval", flush=True)
+                    fold_cfg = inject_fold_into_config(deepcopy(cfg), fold, seed=42 + fold_i)
+                    fold_cfg.setdefault("training", {})["reeval_only"] = True
+                    fold_cfg["training"]["max_epochs"] = 0
+                    train_flat_baseline(
+                        project_root=paths.project_root,
+                        data_root=paths.data_root,
+                        artifact_root=paths.artifact_root,
+                        config=fold_cfg,
+                        run_id=run_id,
+                        device_str=device,
+                        max_epochs=0,
+                        max_loci=max_loci,
+                    )
+                    metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
                 ev = metrics.get("evaluations") or {}
                 pending = bool(metrics.get("cpu_probes_pending")) or (
                     "mbs_e2e" in ev and "mbs_linear_probe" not in ev
@@ -318,6 +361,7 @@ def main() -> None:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--skip-train", action="store_true")
     parser.add_argument("--arm", action="append", default=[])
+    parser.add_argument("--fold", type=int, default=None, help="Train/reeval single fold index only")
     parser.add_argument(
         "--include-inactive",
         action="store_true",
@@ -461,6 +505,7 @@ def main() -> None:
                     run_prefix=str(arm["run_prefix"]),
                     device=args.device,
                     report_dir=report_dir,
+                    fold_filter=args.fold,
                 )
             else:
                 folds = []

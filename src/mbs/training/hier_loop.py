@@ -27,7 +27,6 @@ from mbs.matrix.virtual_hub_store import open_betas_for_matrix
 from mbs.models import HierarchicalDeepSet
 from mbs.scoring.orientation import (
     accumulate_signed_gene_mean_m,
-    flip_phenotype_head_weights_,
     orient_run_scores,
     score_manifest,
 )
@@ -1194,6 +1193,7 @@ def train_hierarchical_baseline(
             present_rows.append(gene_present)
             feats = rec.features.cpg_features
             regions = rec.features.cpg_to_region
+            # flat_standard layout: beta col 0, M col 1 (see feature_schema.FLAT_STANDARD).
             if feats.shape[0] and feats.shape[1] > 1 and regions.size:
                 m_batches.append(np.asarray(feats[:, 1], dtype=np.float64))
                 gene_batches.append(
@@ -1213,21 +1213,6 @@ def train_hierarchical_baseline(
                 present=np.stack(present_rows, axis=0),
             )
             polarity = str(oriented["score_polarity"])
-            if polarity == "flipped":
-                flip_phenotype_head_weights_(head)
-                for name in ("best.pt", "last.pt"):
-                    path = ckpt_root / name
-                    if path.is_file():
-                        payload = torch.load(path, map_location="cpu", weights_only=False)
-                        checkpoint_hashes[name] = save_checkpoint(
-                            path,
-                            model_state=model.state_dict(),
-                            head_state=head.state_dict(),
-                            optimizer_state=payload.get("optimizer_state", {}),
-                            epoch=int(payload.get("epoch", 0)),
-                            metrics={**payload.get("metrics", {}), "score_polarity": polarity},
-                            config_hash=cfg_hash,
-                        )
     manifest = score_manifest(score_polarity=polarity, fold_id=None, restart_id=run_id)
     (run_root / "score_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",

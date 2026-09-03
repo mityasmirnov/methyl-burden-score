@@ -15,7 +15,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from mbs.models import FlatDeepSet
+from mbs.scoring.orientation import orient_mbs_array
 from mbs.training.cascade_scores import fusion_feature_matrix
 from mbs.training.dataset import FlatSampleRecord, pack_records_to_batch
 from mbs.training.late_fusion import evaluate_late_fusion
@@ -93,12 +93,24 @@ def evaluate_flat_mbs_e2e(
     device: torch.device,
     age_mean: float,
     age_std: float,
+    score_polarity: str = "hyper_aligned",
+    legacy_negated_heads: bool = False,
 ) -> dict[str, Any]:
-    """End-to-end MultitaskHeads on test MBS only (destandardize age to years)."""
+    """End-to-end MultitaskHeads on test MBS only (destandardize age to years).
+
+    Contract v2: orient exported MBS via ``score_polarity``; heads unchanged.
+    Legacy repair: when ``legacy_negated_heads`` and flipped, use ``1 - mbs`` with
+    already-negated checkpoint weights (logit-preserving).
+    """
     if not phenotypes_test:
         raise ValueError("evaluate_flat_mbs_e2e requires test phenotypes")
     heads.eval()
-    mbs_t = torch.from_numpy(np.asarray(mbs_test, dtype=np.float32)).to(device)
+    mbs_arr = np.asarray(mbs_test, dtype=np.float32)
+    if legacy_negated_heads and score_polarity == "flipped":
+        mbs_eval = 1.0 - mbs_arr
+    else:
+        mbs_eval = orient_mbs_array(mbs_arr, score_polarity=score_polarity)
+    mbs_t = torch.from_numpy(mbs_eval).to(device)
     present_t = torch.from_numpy(np.asarray(present_test, dtype=bool)).to(device)
     with torch.no_grad():
         age_hat = heads.forward_age(mbs_t, present_t).detach().cpu().numpy().reshape(-1)
@@ -148,6 +160,8 @@ def evaluate_flat_mbs_e2e(
         "eval_split": "test",
         "n_eval_samples": int(len(phenotypes_test)),
         "n_score_features": int(mbs_test.shape[1]),
+        "score_polarity": score_polarity,
+        "legacy_negated_heads": bool(legacy_negated_heads),
     }
 
 
@@ -374,6 +388,8 @@ def build_stage_a_flat_evaluations(
     score_dir: Path | None = None,
     defer_cpu_probes: bool = False,
     include_mbs_enet: bool = False,
+    score_polarity: str = "hyper_aligned",
+    legacy_negated_heads: bool = False,
 ) -> dict[str, Any]:
     """Score train/val/test MBS and return Stage A evaluation dict.
 
@@ -429,6 +445,8 @@ def build_stage_a_flat_evaluations(
             device=device,
             age_mean=age_mean,
             age_std=age_std,
+            score_polarity=score_polarity,
+            legacy_negated_heads=legacy_negated_heads,
         ),
     }
     if defer_cpu_probes:

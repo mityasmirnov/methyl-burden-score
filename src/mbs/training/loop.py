@@ -38,9 +38,14 @@ from mbs.models import FlatDeepSet, FlatDeepSetRegion, SeedMaskedLinearHead, cen
 from mbs.release import validate_multitask_head_eligibility
 from mbs.scoring.orientation import (
     accumulate_signed_gene_mean_m,
-    flip_phenotype_head_weights_,
     orient_run_scores,
     score_manifest,
+)
+from mbs.training.feature_schema import (
+    FLAT_REGION,
+    FLAT_STANDARD,
+    m_column_index,
+    observed_column_index,
 )
 from mbs.segment_ops import PoolName
 from mbs.static_features.store import (
@@ -55,6 +60,7 @@ from mbs.training.controls import (
     fit_metadata_only,
     permute_labels_within_study,
 )
+from mbs.training.checkpoint_selection import validation_rank
 from mbs.training.dataset import (
     FlatBatch,
     FlatSampleRecord,
@@ -70,6 +76,7 @@ from mbs.training.encoder_config import resolve_encoder
 from mbs.training.features import SampleFeatureBundle, build_static_column_table, cpg_input_dim
 from mbs.training.flat_region_features import (
     FlatRegionGeneIndex,
+    assert_flat_region_index,
     build_flat_region_base_features,
     build_flat_region_gene_index,
     flat_region_input_dim,
@@ -134,6 +141,7 @@ class _PilotStore:
     n_cols: int
     flat_region_index: FlatRegionGeneIndex | None = None
     flat_region_base_features: np.ndarray | None = None
+    flat_region_feature_mode: str = "full"
 
 
 def resolve_device(device_str: str, *, require_cuda: bool = False) -> torch.device:
@@ -325,9 +333,10 @@ def _materialize_record(
             index=store.flat_region_index,
             epsilon=store.epsilon,
             base_features=store.flat_region_base_features,
+            feature_mode=store.flat_region_feature_mode,  # type: ignore[arg-type]
         )
         if cpg_features.shape[0] == 0:
-            raise ValueError(f"sample {phenotype.sample_id!r} has zero flat-region edges")
+            raise ValueError(f"sample {phenotype.sample_id!r} has zero observed flat-region edges")
         features = SampleFeatureBundle(
             cpg_features=cpg_features,
             cpg_to_gene=cpg_to_gene,
@@ -389,11 +398,6 @@ def _label_flags_for_record(
     return None, False, True, False, 0
 
 
-def _m_column_index(include_m_value: bool) -> int | None:
-    """Feature layout: beta, [M], static..., static_present."""
-    return 1 if include_m_value else None
-
-
 def _orient_and_write_score_manifest(
     *,
     model: FlatDeepSet,
@@ -405,16 +409,13 @@ def _orient_and_write_score_manifest(
     n_genes: int,
     include_m_value: bool,
     run_root: Path,
-    ckpt_root: Path,
     run_id: str,
-    optimizer: torch.optim.Optimizer,
-    cfg_hash: str,
-    checkpoint_hashes: dict[str, str],
     control_mode: str,
+    feature_schema: str = FLAT_STANDARD,
     include_robust_z: bool = False,
     level1_params: Level1NormParams | None = None,
 ) -> dict[str, Any]:
-    """Compute ADR 0008 polarity on train fold; flip heads and rewrite checkpoints if needed."""
+    """Compute ADR 0008 polarity on train fold; persist manifest only (contract v2)."""
     polarity = "hyper_aligned"
     if control_mode == "metadata_only" or (train_records is None and pilot_store is None):
         manifest = score_manifest(score_polarity=polarity, fold_id=None, restart_id=run_id)
@@ -430,7 +431,9 @@ def _orient_and_write_score_manifest(
     present_rows: list[np.ndarray] = []
     m_batches: list[np.ndarray] = []
     gene_batches: list[np.ndarray] = []
-    m_col = _m_column_index(include_m_value)
+    observed_batches: list[np.ndarray] | None = [] if feature_schema == FLAT_REGION else None
+    m_col = m_column_index(feature_schema=feature_schema, include_m_value=include_m_value)
+    obs_col = observed_column_index(feature_schema=feature_schema)
 
     def _consume(record: FlatSampleRecord) -> None:
         batch = record_to_batch(record, n_genes=n_genes, tissue_enabled=True).to(device)
@@ -439,9 +442,11 @@ def _orient_and_write_score_manifest(
         mbs_rows.append(mbs.detach().cpu().numpy()[0])
         present_rows.append(present.detach().cpu().numpy()[0])
         feats = record.features.cpg_features
-        if m_col is not None and feats.shape[1] > m_col:
+        if m_col is not None and feats.shape[1] > abs(m_col):
             m_batches.append(np.asarray(feats[:, m_col], dtype=np.float64))
             gene_batches.append(np.asarray(record.features.cpg_to_gene, dtype=np.int64))
+            if observed_batches is not None and obs_col is not None and feats.shape[0]:
+                observed_batches.append(np.asarray(feats[:, obs_col], dtype=bool))
 
     if train_records is not None:
         for rec in train_records:
@@ -466,25 +471,10 @@ def _orient_and_write_score_manifest(
             n_genes=n_genes,
             cpg_m_batches=m_batches,
             cpg_to_gene_batches=gene_batches,
+            observed_batches=observed_batches,
         )
         oriented = orient_run_scores(mbs_arr, signed_m=signed_m, present=present_arr)
         polarity = str(oriented["score_polarity"])
-        if polarity == "flipped":
-            flip_phenotype_head_weights_(head)
-            for name in ("best.pt", "last.pt"):
-                path = ckpt_root / name
-                if not path.is_file():
-                    continue
-                payload = torch.load(path, map_location="cpu", weights_only=False)
-                checkpoint_hashes[name] = save_checkpoint(
-                    path,
-                    model_state=model.state_dict(),
-                    head_state=head.state_dict(),
-                    optimizer_state=payload.get("optimizer_state", optimizer.state_dict()),
-                    epoch=int(payload.get("epoch", 0)),
-                    metrics={**payload.get("metrics", {}), "score_polarity": polarity},
-                    config_hash=cfg_hash,
-                )
 
     manifest = score_manifest(score_polarity=polarity, fold_id=None, restart_id=run_id)
     (run_root / "score_manifest.json").write_text(
@@ -1351,6 +1341,7 @@ def train_flat_baseline(
                 cpg_context_by_locus=cpg_context_by_locus,
                 allow_other_gene=bool(train_cfg.get("allow_other_gene", False)),
             )
+            flat_region_audit = assert_flat_region_index(flat_region_index)
             gene_ids = flat_region_index.gene_ids
             n_genes = flat_region_index.n_genes
             print(  # noqa: T201
@@ -1410,8 +1401,12 @@ def train_flat_baseline(
             flush=True,
         )
         flat_base = None
+        flat_feature_mode = str(model_cfg.get("flat_region_feature_mode", "full"))
         if flat_region_index is not None:
-            flat_base = build_flat_region_base_features(flat_region_index)
+            flat_base = build_flat_region_base_features(
+                flat_region_index,
+                feature_mode=flat_feature_mode,  # type: ignore[arg-type]
+            )
             print(  # noqa: T201
                 f"[flat] cached annotation base_features shape={flat_base.shape}",
                 flush=True,
@@ -1427,6 +1422,7 @@ def train_flat_baseline(
             n_cols=n_cols,
             flat_region_index=flat_region_index,
             flat_region_base_features=flat_base,
+            flat_region_feature_mode=flat_feature_mode,
         )
         if include_robust_z:
             if not train_phenotypes:
@@ -1687,10 +1683,19 @@ def train_flat_baseline(
     if age_loss_name not in {"huber", "mse"}:
         age_loss_name = "huber"
     opt_name = "adam" if overfit_fixture else str(train_cfg.get("optimizer", "adamw")).lower()
+    head_lr_mult = float(train_cfg.get("head_lr_multiplier", 1.0))
     if opt_name == "adam":
         optimizer = torch.optim.Adam(
             list(model.parameters()) + list(head.parameters()),
             lr=lr,
+            weight_decay=weight_decay,
+        )
+    elif head_lr_mult != 1.0:
+        optimizer = torch.optim.AdamW(
+            [
+                {"params": model.parameters(), "lr": lr},
+                {"params": head.parameters(), "lr": lr * head_lr_mult},
+            ],
             weight_decay=weight_decay,
         )
     else:
@@ -1700,8 +1705,21 @@ def train_flat_baseline(
             weight_decay=weight_decay,
         )
 
+    ckpt_selection_mode = str(train_cfg.get("checkpoint_selection", "min_val_loss"))
+    if topology == "flat_region" and task_kind == "multitask" and not overfit_fixture:
+        ckpt_selection_mode = str(
+            train_cfg.get(
+                "checkpoint_selection",
+                "validation_tissue_macro_f1_then_age_mae",
+            )
+        )
+    use_tissue_rank = ckpt_selection_mode == "validation_tissue_macro_f1_then_age_mae"
+    stage_a_per_epoch_eval = bool(train_cfg.get("stage_a_per_epoch_eval", False))
+
     history: list[dict[str, Any]] = []
+    val_history: list[dict[str, Any]] = []
     best_val = float("inf")
+    best_rank: tuple[float, float] | None = None
     best_epoch = 0
     stale = 0
     cfg_hash = config_sha256(config)
@@ -1853,148 +1871,185 @@ def train_flat_baseline(
         flush=True,
     )
 
-    epoch = 0
-    for epoch in range(1, epochs + 1):
-        print(f"[flat] epoch {epoch}/{epochs} train…", flush=True)  # noqa: T201
-        train_metrics = _run_epoch(
-            records=train_records,
-            phenotypes=train_phenotypes,
-            pilot_store=pilot_store,
-            model=model,
-            head=head,
-            optimizer=optimizer,
-            device=device,
-            n_genes=n_genes,
-            class_weights=class_weights,
-            use_amp=use_amp,
-            grad_clip=grad_clip,
-            train=True,
-            task=task_kind,
-            age_mean=age_mean,
-            age_std=age_std,
-            lambda_age=lambda_age,
-            lambda_tissue=lambda_tissue,
-            lambda_sex=lambda_sex,
-            lambda_disease=lambda_disease,
-            lambda_cancer=lambda_cancer,
-            huber_delta=huber_delta,
-            age_loss_name=age_loss_name,
-            batch_size=batch_size,
-            seed=seed,
-            epoch=epoch,
-            batch_token_budget=batch_token_budget,
-            control_mode=control_mode,
-            disease_maps=disease_maps,
-            cancer_maps=cancer_maps,
-            **level1_epoch_kwargs,
-        )
-        val_metrics = _run_epoch(
-            records=val_records,
-            phenotypes=val_phenotypes,
-            pilot_store=pilot_store,
-            model=model,
-            head=head,
-            optimizer=None,
-            device=device,
-            n_genes=n_genes,
-            class_weights=class_weights,
-            use_amp=use_amp,
-            grad_clip=grad_clip,
-            train=False,
-            task=task_kind,
-            age_mean=age_mean,
-            age_std=age_std,
-            lambda_age=lambda_age,
-            lambda_tissue=lambda_tissue,
-            lambda_sex=lambda_sex,
-            lambda_disease=lambda_disease,
-            lambda_cancer=lambda_cancer,
-            huber_delta=huber_delta,
-            age_loss_name=age_loss_name,
-            batch_size=batch_size,
-            seed=seed,
-            epoch=epoch,
-            batch_token_budget=batch_token_budget,
-            control_mode=control_mode,
-            disease_maps=disease_maps,
-            cancer_maps=cancer_maps,
-            **level1_epoch_kwargs,
-        )
-        print(  # noqa: T201
-            f"[flat] epoch {epoch}/{epochs} "
-            f"train_loss={train_metrics.get('loss', float('nan')):.4f} "
-            f"val_loss={val_metrics.get('loss', float('nan')):.4f}",
-            flush=True,
-        )
-        row = {
-            "epoch": epoch,
-            "train_loss": train_metrics["loss"],
-            "train_accuracy": train_metrics["accuracy"],
-            "train_mae": train_metrics["mae"],
-            "train_sex_accuracy": train_metrics.get("sex_accuracy", 0.0),
-            "val_loss": val_metrics["loss"],
-            "val_accuracy": val_metrics["accuracy"],
-            "val_mae": val_metrics["mae"],
-            "val_sex_accuracy": val_metrics.get("sex_accuracy", 0.0),
-            "learning_rate": lr,
-            "task": task_kind,
-        }
-        for key in (
-            "macro_f1",
-            "balanced_accuracy",
-            "rmse",
-            "r2",
-            "pearson_r",
-            "spearman_r",
-            "auroc",
-            "auprc",
-            "ece",
-            "disease_auroc",
-            "disease_auprc",
-            "cancer_auroc",
-            "cancer_auprc",
-        ):
-            if key in val_metrics:
-                row[f"val_{key}"] = val_metrics[key]
-        history.append(row)
-        with jsonl_path.open("a", encoding="utf-8") as jsonl_handle:
-            jsonl_handle.write(json.dumps(row) + "\n")
-        if tb_writer is not None:
-            tb_writer.add_scalar("loss/train", row["train_loss"], epoch)
-            tb_writer.add_scalar("loss/val", row["val_loss"], epoch)
-            if task_kind in {"regression", "multitask"}:
-                tb_writer.add_scalar("mae/train", row["train_mae"], epoch)
-                tb_writer.add_scalar("mae/val", row["val_mae"], epoch)
-            if task_kind in {"multiclass", "multitask"}:
-                tb_writer.add_scalar("accuracy/train", row["train_accuracy"], epoch)
-                tb_writer.add_scalar("accuracy/val", row["val_accuracy"], epoch)
-            if task_kind == "multitask":
-                tb_writer.add_scalar("sex_accuracy/train", row["train_sex_accuracy"], epoch)
-                tb_writer.add_scalar("sex_accuracy/val", row["val_sex_accuracy"], epoch)
-            tb_writer.add_scalar("lr", lr, epoch)
-        checkpoint_hashes["last.pt"] = save_checkpoint(
-            ckpt_root / "last.pt",
-            model_state=model.state_dict(),
-            head_state=head.state_dict(),
-            optimizer_state=optimizer.state_dict(),
-            epoch=epoch,
-            metrics=row,
-            config_hash=cfg_hash,
-        )
+    reeval_only = bool(train_cfg.get("reeval_only", False))
+    if reeval_only:
+        best_path = ckpt_root / "best.pt"
+        if not best_path.is_file():
+            raise FileNotFoundError(f"reeval_only requires checkpoint: {best_path}")
+        payload = torch.load(best_path, map_location=device, weights_only=False)
+        model.load_state_dict(payload["model_state"])
+        head.load_state_dict(payload["head_state"])
+        best_epoch = int(payload.get("epoch", best_epoch))
+        print(f"[flat] reeval_only loaded best.pt epoch={best_epoch}", flush=True)  # noqa: T201
+    if not reeval_only:
+        epoch = 0
+        for epoch in range(1, epochs + 1):
+            print(f"[flat] epoch {epoch}/{epochs} train…", flush=True)  # noqa: T201
+            train_metrics = _run_epoch(
+                records=train_records,
+                phenotypes=train_phenotypes,
+                pilot_store=pilot_store,
+                model=model,
+                head=head,
+                optimizer=optimizer,
+                device=device,
+                n_genes=n_genes,
+                class_weights=class_weights,
+                use_amp=use_amp,
+                grad_clip=grad_clip,
+                train=True,
+                task=task_kind,
+                age_mean=age_mean,
+                age_std=age_std,
+                lambda_age=lambda_age,
+                lambda_tissue=lambda_tissue,
+                lambda_sex=lambda_sex,
+                lambda_disease=lambda_disease,
+                lambda_cancer=lambda_cancer,
+                huber_delta=huber_delta,
+                age_loss_name=age_loss_name,
+                batch_size=batch_size,
+                seed=seed,
+                epoch=epoch,
+                batch_token_budget=batch_token_budget,
+                control_mode=control_mode,
+                disease_maps=disease_maps,
+                cancer_maps=cancer_maps,
+                **level1_epoch_kwargs,
+            )
+            val_metrics = _run_epoch(
+                records=val_records,
+                phenotypes=val_phenotypes,
+                pilot_store=pilot_store,
+                model=model,
+                head=head,
+                optimizer=None,
+                device=device,
+                n_genes=n_genes,
+                class_weights=class_weights,
+                use_amp=use_amp,
+                grad_clip=grad_clip,
+                train=False,
+                task=task_kind,
+                age_mean=age_mean,
+                age_std=age_std,
+                lambda_age=lambda_age,
+                lambda_tissue=lambda_tissue,
+                lambda_sex=lambda_sex,
+                lambda_disease=lambda_disease,
+                lambda_cancer=lambda_cancer,
+                huber_delta=huber_delta,
+                age_loss_name=age_loss_name,
+                batch_size=batch_size,
+                seed=seed,
+                epoch=epoch,
+                batch_token_budget=batch_token_budget,
+                control_mode=control_mode,
+                disease_maps=disease_maps,
+                cancer_maps=cancer_maps,
+                **level1_epoch_kwargs,
+            )
+            print(  # noqa: T201
+                f"[flat] epoch {epoch}/{epochs} "
+                f"train_loss={train_metrics.get('loss', float('nan')):.4f} "
+                f"val_loss={val_metrics.get('loss', float('nan')):.4f}",
+                flush=True,
+            )
+            row = {
+                "epoch": epoch,
+                "train_loss": train_metrics["loss"],
+                "train_accuracy": train_metrics["accuracy"],
+                "train_mae": train_metrics["mae"],
+                "train_sex_accuracy": train_metrics.get("sex_accuracy", 0.0),
+                "val_loss": val_metrics["loss"],
+                "val_accuracy": val_metrics["accuracy"],
+                "val_mae": val_metrics["mae"],
+                "val_sex_accuracy": val_metrics.get("sex_accuracy", 0.0),
+                "learning_rate": lr,
+                "task": task_kind,
+            }
+            for key in (
+                "macro_f1",
+                "balanced_accuracy",
+                "rmse",
+                "r2",
+                "pearson_r",
+                "spearman_r",
+                "auroc",
+                "auprc",
+                "ece",
+                "disease_auroc",
+                "disease_auprc",
+                "cancer_auroc",
+                "cancer_auprc",
+            ):
+                if key in val_metrics:
+                    row[f"val_{key}"] = val_metrics[key]
+            if (
+                stage_a_per_epoch_eval
+                and topology == "flat_region"
+                and task_kind == "multitask"
+                and isinstance(head, MultitaskHeads)
+                and test_phenotypes
+                and pilot_store is not None
+                and not overfit_fixture
+            ):
+                from mbs.training.flat_stage_a_eval import (  # noqa: PLC0415
+                    evaluate_flat_mbs_e2e,
+                    score_flat_mbs_matrix,
+                )
 
-        if overfit_fixture:
-            improved = train_metrics["accuracy"] >= 0.999 or train_metrics["loss"] < best_val - 1e-8
-            best_val = min(best_val, train_metrics["loss"])
-        else:
-            improved = val_metrics["loss"] < best_val - 1e-6
-            if improved:
-                best_val = val_metrics["loss"]
+                def _mat_epoch(ph: SamplePhenotype) -> FlatSampleRecord:
+                    return _materialize_record(
+                        ph,
+                        pilot_store,
+                        control_mode=control_mode,
+                        include_m_value=include_m_value,
+                        include_robust_z=include_robust_z,
+                        level1_params=level1_params,
+                    )
 
-        if improved:
-            best_epoch = epoch
-            stale = 0
-            checkpoint_hashes["best.pt"] = save_checkpoint(
-                ckpt_root / "best.pt",
+                mbs_ep, present_ep = score_flat_mbs_matrix(
+                    phenotypes=list(test_phenotypes),
+                    materialize_fn=_mat_epoch,
+                    model=model,
+                    device=device,
+                    n_genes=n_genes,
+                    batch_size=batch_size,
+                )
+                e2e_ep = evaluate_flat_mbs_e2e(
+                    heads=head,
+                    mbs_test=mbs_ep,
+                    present_test=present_ep,
+                    phenotypes_test=list(test_phenotypes),
+                    phenotypes_train=list(train_phenotypes or []),
+                    class_names=list(class_names),
+                    device=device,
+                    age_mean=age_mean,
+                    age_std=age_std,
+                    score_polarity="hyper_aligned",
+                )
+                row["stage_a_e2e_tissue_f1"] = (
+                    (e2e_ep.get("metrics") or {}).get("tissue") or {}
+                ).get("macro_f1")
+            history.append(row)
+            with jsonl_path.open("a", encoding="utf-8") as jsonl_handle:
+                jsonl_handle.write(json.dumps(row) + "\n")
+            if tb_writer is not None:
+                tb_writer.add_scalar("loss/train", row["train_loss"], epoch)
+                tb_writer.add_scalar("loss/val", row["val_loss"], epoch)
+                if task_kind in {"regression", "multitask"}:
+                    tb_writer.add_scalar("mae/train", row["train_mae"], epoch)
+                    tb_writer.add_scalar("mae/val", row["val_mae"], epoch)
+                if task_kind in {"multiclass", "multitask"}:
+                    tb_writer.add_scalar("accuracy/train", row["train_accuracy"], epoch)
+                    tb_writer.add_scalar("accuracy/val", row["val_accuracy"], epoch)
+                if task_kind == "multitask":
+                    tb_writer.add_scalar("sex_accuracy/train", row["train_sex_accuracy"], epoch)
+                    tb_writer.add_scalar("sex_accuracy/val", row["val_sex_accuracy"], epoch)
+                tb_writer.add_scalar("lr", lr, epoch)
+            checkpoint_hashes["last.pt"] = save_checkpoint(
+                ckpt_root / "last.pt",
                 model_state=model.state_dict(),
                 head_state=head.state_dict(),
                 optimizer_state=optimizer.state_dict(),
@@ -2002,13 +2057,49 @@ def train_flat_baseline(
                 metrics=row,
                 config_hash=cfg_hash,
             )
-        else:
-            stale += 1
 
-        if overfit_fixture and train_metrics["accuracy"] >= 0.999:
-            break
-        if not overfit_fixture and stale >= patience:
-            break
+            if overfit_fixture:
+                improved = train_metrics["accuracy"] >= 0.999 or train_metrics["loss"] < best_val - 1e-8
+                best_val = min(best_val, train_metrics["loss"])
+            elif use_tissue_rank and val_phenotypes and pilot_store is not None:
+                rank = validation_rank(val_metrics)
+                val_history.append(
+                    {
+                        "epoch": epoch,
+                        "rank": list(rank),
+                        "tissue_macro_f1": val_metrics.get("macro_f1"),
+                        "age_mae": val_metrics.get("mae"),
+                        "val_loss": val_metrics.get("loss"),
+                    }
+                )
+                improved = best_rank is None or rank > best_rank
+                if improved:
+                    best_rank = rank
+                    best_val = val_metrics["loss"]
+            else:
+                improved = val_metrics["loss"] < best_val - 1e-6
+                if improved:
+                    best_val = val_metrics["loss"]
+
+            if improved:
+                best_epoch = epoch
+                stale = 0
+                checkpoint_hashes["best.pt"] = save_checkpoint(
+                    ckpt_root / "best.pt",
+                    model_state=model.state_dict(),
+                    head_state=head.state_dict(),
+                    optimizer_state=optimizer.state_dict(),
+                    epoch=epoch,
+                    metrics=row,
+                    config_hash=cfg_hash,
+                )
+            else:
+                stale += 1
+
+            if overfit_fixture and train_metrics["accuracy"] >= 0.999:
+                break
+            if not overfit_fixture and stale >= patience:
+                break
 
     holdout_metrics: dict[str, Any] | None = None
     if (
@@ -2122,6 +2213,14 @@ def train_flat_baseline(
             else {"enabled": False}
         ),
     }
+    if topology == "flat_region" and flat_region_index is not None:
+        metrics_out["flat_region_graph_audit"] = flat_region_audit
+    if val_history:
+        metrics_out["checkpoint_selection"] = {
+            "selection": ckpt_selection_mode,
+            "best_epoch": best_epoch,
+            "val_history": val_history,
+        }
     if want_metadata_sidecar and train_phenotypes is not None:
         eval_sets: dict[str, list[SamplePhenotype]] = {}
         if val_phenotypes:
@@ -2179,12 +2278,9 @@ def train_flat_baseline(
         include_robust_z=include_robust_z,
         level1_params=level1_params,
         run_root=run_root,
-        ckpt_root=ckpt_root,
         run_id=run_id,
-        optimizer=optimizer,
-        cfg_hash=cfg_hash,
-        checkpoint_hashes=checkpoint_hashes,
         control_mode=control_mode,
+        feature_schema=FLAT_REGION if topology == "flat_region" else FLAT_STANDARD,
     )
     metrics_out["score_manifest"] = manifest
     if disease_maps is not None:
@@ -2242,6 +2338,11 @@ def train_flat_baseline(
             score_dir=run_root / "scores",
             defer_cpu_probes=defer_cpu,
             include_mbs_enet=include_enet,
+            score_polarity=str(manifest.get("score_polarity", "hyper_aligned")),
+            legacy_negated_heads=bool(
+                str(manifest.get("score_polarity")) == "flipped"
+                and str(manifest.get("orientation_contract_version", "1")) != "2"
+            ),
         )
         metrics_out.update(stage_a)
         metrics_out["eval_split"] = "test"

@@ -1,11 +1,11 @@
-# 7G′ Stage A: N-light-gene-max (annotated CpG → gene max).
+# Ablation: M-value only (fold 0 diagnostic).
 split_id: hub-ats-7e-3fold-v1
 sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
 cv_budget:
   max_loci: 65536
-  max_epochs: 5
+  max_epochs: 8
 experiment:
-  name: stage0_7g_gene_only_probe_light_max
+  name: stage0_7g_gene_only_probe_ablation_m_only
   seed: 42
   stage: 0
 features:
@@ -39,6 +39,7 @@ loss:
   lambda_tissue: 3.0
 model:
   topology: flat_region
+  flat_region_feature_mode: m_only
   gene_allocation: explicit_only
   encoder:
     activation: gelu
@@ -49,7 +50,7 @@ model:
   output_activation: sigmoid
   phi_hidden_dimension: 64
   phi_layers: 2
-  pooling: max
+  pooling: mean
   rho_hidden_dimension: 10
   rho_layers: 2
   type: flat_deepset
@@ -65,25 +66,19 @@ pilot:
 stage0:
   use_cpgpt_static_features: false
 training:
-  # Large micro-batch on exclusive GPU0 (~49GB Ada, sequential Stage A).
-  # Target ~20–30GB activations; back off only if OOM.
   batch_size: 256
   batch_token_budget: 16000000
-  early_stopping_patience: 5
+  checkpoint_selection: validation_tissue_macro_f1_then_age_mae
   gene_linked_only: true
   gene_allocation: explicit_only
-  primary_evaluation: mbs_e2e
-  # Screen: leave mbs_enet/rbs_enet for post-hoc (scripts/eval_mbs_enet_from_scores.py).
-  stage_a_include_mbs_enet: false
-  # Overlap sklearn linear/enet with next-fold GPU train.
-  stage_a_defer_cpu_probes: true
-  checkpoint_selection: validation_tissue_macro_f1_then_age_mae
-  gradient_clip_norm: 2.0
+  head_lr_multiplier: 8.0
   learning_rate: 0.001
-  max_epochs: 5
+  max_epochs: 8
   optimizer: adamw
   precision: bf16-mixed
+  primary_evaluation: mbs_e2e
   require_cuda: true
+  stage_a_defer_cpu_probes: false
   weight_decay: 0.0001
 device:
   torch_device: cuda

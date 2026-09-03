@@ -48,6 +48,13 @@ screen selects (or rejects) gene aggregation. Plans:
 | P4 mean/mean e2e | `P4-G` | 0.370 (±0.059) | Tied with P2 within noise |
 | P5 longer max train | `P5-G-max` | 0.356 (±0.042) | Did not help |
 | Invalid (do not cite) | pre-fix `mbs_e2e` on P*-G | ~0.67–0.70 | train+val+test leak |
+| Invalid (do not cite) | pre-fix `N-light-gene-*` **`mbs_e2e`** | ~0.000–0.001 | orientation anchor + head/score mismatch; **linear/enet probes valid** |
+
+**N-light repair (2026-03):** orientation contract **v2** (manifest-only flip;
+eval applies `1-MBS` pairing for legacy negated heads). Re-eval without retrain:
+`scripts/reeval_7g_light_stage_a.py`. One-hop is **not** rejected — frozen MBS
+probes show representation signal. Diagnostic fold-0 mean run:
+`configs/experiment/stage0_7g_gene_only_probe_light_mean_diag.yaml`.
 
 **Provisional lock:** `P2-G` max/max, 15 epochs (`lock_recommendation.json`);
 cascade is **not** clearly ahead of classical. Stage A screen may revise the
