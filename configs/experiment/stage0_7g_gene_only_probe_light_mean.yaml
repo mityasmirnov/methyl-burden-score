@@ -73,6 +73,10 @@ training:
   gene_linked_only: true
   gene_allocation: explicit_only
   primary_evaluation: mbs_e2e
+  # Screen: leave mbs_enet/rbs_enet for post-hoc (scripts/eval_mbs_enet_from_scores.py).
+  stage_a_include_mbs_enet: false
+  # Overlap sklearn linear/enet with next-fold GPU train.
+  stage_a_defer_cpu_probes: true
   gradient_clip_norm: 2.0
   learning_rate: 0.001
   max_epochs: 5

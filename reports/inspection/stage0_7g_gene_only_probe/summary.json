@@ -1,10 +1,12 @@
 {
   "arms_run": [
-    "P2-G",
-    "P2-orphan-ablation",
-    "P4-G",
-    "P5-G-max"
+    "N-light-gene-mean"
   ],
+  "gene_panel": {
+    "graph_content_hash": null,
+    "n_gene_cols": 51375,
+    "n_other_gene_edges": 0
+  },
   "milestone": "7G-prime-stage-A",
   "report_dir": "/data/projects/methyl-burden-score/reports/inspection/stage0_7g_gene_only_probe"
 }

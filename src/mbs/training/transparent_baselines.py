@@ -58,15 +58,16 @@ def _fit_tissue_classifier(
 ) -> Any:
     """Multiclass tissue head for transparent / late-fusion baselines."""
     if tissue_solver == "logistic":
-        return LogisticRegression(max_iter=1000).fit(x, y)
+        return LogisticRegression(max_iter=1000, n_jobs=-1).fit(x, y)
     if tissue_solver == "balanced_logistic":
-        return LogisticRegression(max_iter=1000, class_weight="balanced").fit(x, y)
+        return LogisticRegression(max_iter=1000, class_weight="balanced", n_jobs=-1).fit(x, y)
     if tissue_solver == "sgd_ovr":
         return SGDClassifier(
             loss="log_loss",
             class_weight="balanced",
             max_iter=1000,
             random_state=0,
+            n_jobs=-1,
         ).fit(x, y)
     raise ValueError(f"unknown tissue_solver: {tissue_solver}")
 
@@ -340,23 +341,28 @@ def fit_elasticnet_phenotype(
     x = np.asarray(x_train, dtype=np.float64)
     y = np.asarray(y_train)
     n_features = int(x.shape[1]) if x.ndim == 2 else 0
-    # ponytail: saga one-vs-rest on ~15k RBS columns is multi-hour; SGD for wide diagnostic.
-    wide = n_features > 4096
+    # ponytail: saga OVR on gene-MBS (~2–3k cols, many tissues) is multi-hour;
+    # SGD for Stage A diagnostics and any moderately wide panel.
+    wide = n_features > 512
     if task == "regression":
         iters = 400 if wide else (max_iter if max_iter is not None else 2000)
         model = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, max_iter=iters)
         model.fit(x, y.astype(np.float64))
         return model
     if wide:
-        iters = max_iter if max_iter is not None else 200
+        # SGDClassifier.alpha ≠ LogisticRegression C=1/alpha. Scale by n_samples so
+        # Stage A gene-MBS (~2–3k dims) matches short-saga tissue F1 in ~20s not hours.
+        iters = max_iter if max_iter is not None else 800
+        sgd_alpha = float(alpha) / max(int(x.shape[0]), 1)
         model = SGDClassifier(
             loss="log_loss",
             penalty="elasticnet",
-            alpha=float(alpha),
+            alpha=max(sgd_alpha, 1e-8),
             l1_ratio=float(l1_ratio),
             max_iter=iters,
             tol=1e-3,
             random_state=0,
+            n_jobs=-1,
         )
         model.fit(x, y.astype(np.int64))
         return model
@@ -368,6 +374,7 @@ def fit_elasticnet_phenotype(
         l1_ratio=l1_ratio,
         C=1.0 / max(alpha, 1e-6),
         max_iter=iters,
+        n_jobs=-1,
     )
     model.fit(x, y.astype(np.int64))
     return model

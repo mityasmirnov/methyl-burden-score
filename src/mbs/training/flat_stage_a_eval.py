@@ -1,8 +1,9 @@
 """Stage A evaluation suite for FlatDeepSetRegion (N-light-gene-*) arms.
 
-Mirrors cascade P2/P4 readouts on frozen MBS: ``mbs_e2e``, ``mbs_linear_probe``,
-``mbs_enet`` (test split only). One-hop models have no region RBS layer, so
-``rbs_*`` / orphan fusion modes are omitted.
+Inline screen (P2/P4-like): ``mbs_e2e`` + ``mbs_linear_probe`` (test split only).
+``mbs_enet`` is **post-hoc** via ``scripts/eval_mbs_enet_from_scores.py`` so the
+GPU queue is not blocked on sklearn elastic-net. One-hop models have no region
+RBS layer, so ``rbs_*`` / orphan fusion modes are omitted.
 """
 
 from __future__ import annotations
@@ -178,6 +179,7 @@ def evaluate_flat_mbs_linear_probe(
         sex_mask_test=arrays["sex_mask"][test_idx],
         study_ids_test=arrays["study_ids"][test_idx],
         tissue_class_names=list(class_names) if class_names else None,
+        # Match cascade P2/P4 linear probe (default lbfgs LogReg).
         fusion=None,
     )
     out["evaluation"] = "mbs_linear_probe"
@@ -223,6 +225,138 @@ def evaluate_flat_mbs_enet(
     return out
 
 
+def _run_inline_cpu_probes(
+    *,
+    mbs_all: np.ndarray,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
+    arrays: dict[str, np.ndarray],
+    class_names: list[str],
+    include_mbs_enet: bool = False,
+) -> dict[str, Any]:
+    """Fit Stage A CPU probes. Default: linear only (enet is post-hoc)."""
+    print("[flat] Stage A CPU probe: mbs_linear_probe…", flush=True)  # noqa: T201
+    out: dict[str, Any] = {
+        "mbs_linear_probe": evaluate_flat_mbs_linear_probe(
+            mbs_all=mbs_all,
+            train_idx=train_idx,
+            test_idx=test_idx,
+            arrays=arrays,
+            class_names=list(class_names),
+        )
+    }
+    if include_mbs_enet:
+        print("[flat] Stage A CPU probe: mbs_enet (inline; prefer post-hoc)…", flush=True)  # noqa: T201
+        out["mbs_enet"] = evaluate_flat_mbs_enet(
+            mbs_all=mbs_all,
+            train_idx=train_idx,
+            test_idx=test_idx,
+            arrays=arrays,
+            class_names=list(class_names),
+        )
+    return out
+
+
+def save_stage_a_probe_inputs(
+    score_dir: Path,
+    *,
+    mbs_all: np.ndarray,
+    present_all: np.ndarray,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
+    arrays: dict[str, np.ndarray],
+    class_names: list[str],
+    sample_ids: list[str],
+) -> None:
+    """Persist frozen-MBS probe inputs so CPU eval can overlap the next GPU fold."""
+    score_dir.mkdir(parents=True, exist_ok=True)
+    np.save(score_dir / "mbs.npy", mbs_all)
+    np.save(score_dir / "mbs_present.npy", present_all.astype(np.uint8))
+    np.savez_compressed(
+        score_dir / "stage_a_probe_inputs.npz",
+        train_idx=np.asarray(train_idx, dtype=np.int64),
+        test_idx=np.asarray(test_idx, dtype=np.int64),
+        age=np.asarray(arrays["age"], dtype=np.float64),
+        age_mask=np.asarray(arrays["age_mask"], dtype=bool),
+        tissue=np.asarray(arrays["tissue"], dtype=np.int64),
+        tissue_mask=np.asarray(arrays["tissue_mask"], dtype=bool),
+        sex=np.asarray(arrays["sex"], dtype=np.int64),
+        sex_mask=np.asarray(arrays["sex_mask"], dtype=bool),
+        study_ids=np.asarray(arrays["study_ids"], dtype=object),
+    )
+    import json
+
+    (score_dir / "sample_ids.json").write_text(
+        json.dumps(list(sample_ids), indent=2) + "\n", encoding="utf-8"
+    )
+    (score_dir / "stage_a_probe_meta.json").write_text(
+        json.dumps({"class_names": list(class_names), "pending_cpu_probes": True}, indent=2)
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def complete_flat_stage_a_cpu_probes(
+    run_root: str | Path,
+    *,
+    include_mbs_enet: bool = False,
+) -> dict[str, Any]:
+    """Finish deferred ``mbs_linear_probe`` (and optional enet) into metrics.json."""
+    import json
+
+    run_root_p = Path(run_root)
+    score_dir = run_root_p / "scores"
+    metrics_path = run_root_p / "metrics.json"
+    inputs_path = score_dir / "stage_a_probe_inputs.npz"
+    meta_path = score_dir / "stage_a_probe_meta.json"
+    mbs_path = score_dir / "mbs.npy"
+    if not inputs_path.is_file() or not mbs_path.is_file():
+        raise FileNotFoundError(f"missing Stage A probe inputs under {score_dir}")
+    blob = np.load(inputs_path, allow_pickle=True)
+    mbs_all = np.load(mbs_path)
+    arrays = {
+        "age": blob["age"],
+        "age_mask": blob["age_mask"],
+        "tissue": blob["tissue"],
+        "tissue_mask": blob["tissue_mask"],
+        "sex": blob["sex"],
+        "sex_mask": blob["sex_mask"],
+        "study_ids": blob["study_ids"],
+    }
+    class_names = ["tissue"]
+    if meta_path.is_file():
+        class_names = list(json.loads(meta_path.read_text(encoding="utf-8")).get("class_names") or class_names)
+    metrics = {}
+    if metrics_path.is_file():
+        metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+    if "include_mbs_enet" in metrics:
+        include_mbs_enet = bool(metrics.get("include_mbs_enet"))
+    probes = _run_inline_cpu_probes(
+        mbs_all=mbs_all,
+        train_idx=blob["train_idx"],
+        test_idx=blob["test_idx"],
+        arrays=arrays,
+        class_names=class_names,
+        include_mbs_enet=include_mbs_enet,
+    )
+    evaluations = dict(metrics.get("evaluations") or {})
+    evaluations.update(probes)
+    metrics["evaluations"] = evaluations
+    metrics["cpu_probes_pending"] = False
+    metrics["include_mbs_enet"] = bool(include_mbs_enet)
+    metrics_path.write_text(json.dumps(metrics, indent=2, default=str) + "\n", encoding="utf-8")
+    if meta_path.is_file():
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        meta["pending_cpu_probes"] = False
+        meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    print(  # noqa: T201
+        f"[flat] deferred CPU probes complete for {run_root_p.name}: "
+        + ", ".join(sorted(probes.keys())),
+        flush=True,
+    )
+    return probes
+
+
 def build_stage_a_flat_evaluations(
     *,
     model: FlatDeepSet,
@@ -238,8 +372,16 @@ def build_stage_a_flat_evaluations(
     age_std: float,
     batch_size: int,
     score_dir: Path | None = None,
+    defer_cpu_probes: bool = False,
+    include_mbs_enet: bool = False,
 ) -> dict[str, Any]:
-    """Score train/val/test MBS and return Stage A evaluation dict."""
+    """Score train/val/test MBS and return Stage A evaluation dict.
+
+    Default inline suite matches P2/P4 screen: ``mbs_e2e`` + ``mbs_linear_probe``.
+    ``mbs_enet`` stays off unless ``include_mbs_enet`` (prefer post-hoc script).
+    When ``defer_cpu_probes`` is true, only ``mbs_e2e`` runs here; linear inputs
+    are written under ``score_dir`` for ``complete_flat_stage_a_cpu_probes``.
+    """
     if not isinstance(head, MultitaskHeads):
         raise TypeError("Stage A flat evaluations require MultitaskHeads")
     val_ph = list(val_phenotypes or [])
@@ -258,14 +400,6 @@ def build_stage_a_flat_evaluations(
         n_genes=n_genes,
         batch_size=batch_size,
     )
-    if score_dir is not None:
-        score_dir.mkdir(parents=True, exist_ok=True)
-        np.save(score_dir / "mbs.npy", mbs_all)
-        np.save(score_dir / "mbs_present.npy", present_all.astype(np.uint8))
-        (score_dir / "sample_ids.json").write_text(
-            __import__("json").dumps([p.sample_id for p in ordered], indent=2) + "\n",
-            encoding="utf-8",
-        )
     n_train = len(train_phenotypes)
     n_val = len(val_ph)
     train_idx = np.arange(0, n_train, dtype=np.int64)
@@ -273,6 +407,17 @@ def build_stage_a_flat_evaluations(
     arrays = _phenotype_arrays(ordered)
     mbs_te = mbs_all[test_idx]
     present_te = present_all[test_idx]
+    if score_dir is not None:
+        save_stage_a_probe_inputs(
+            score_dir,
+            mbs_all=mbs_all,
+            present_all=present_all,
+            train_idx=train_idx,
+            test_idx=test_idx,
+            arrays=arrays,
+            class_names=list(class_names),
+            sample_ids=[p.sample_id for p in ordered],
+        )
     evaluations: dict[str, Any] = {
         "mbs_e2e": evaluate_flat_mbs_e2e(
             heads=head,
@@ -285,21 +430,33 @@ def build_stage_a_flat_evaluations(
             age_mean=age_mean,
             age_std=age_std,
         ),
-        "mbs_linear_probe": evaluate_flat_mbs_linear_probe(
-            mbs_all=mbs_all,
-            train_idx=train_idx,
-            test_idx=test_idx,
-            arrays=arrays,
-            class_names=list(class_names),
-        ),
-        "mbs_enet": evaluate_flat_mbs_enet(
-            mbs_all=mbs_all,
-            train_idx=train_idx,
-            test_idx=test_idx,
-            arrays=arrays,
-            class_names=list(class_names),
-        ),
     }
+    if defer_cpu_probes:
+        print(  # noqa: T201
+            "[flat] deferring CPU linear probe to overlap next fold GPU train "
+            f"(mbs_enet inline={'on' if include_mbs_enet else 'off → post-hoc'})",
+            flush=True,
+        )
+        return {
+            "evaluations": evaluations,
+            "primary_evaluation": "mbs_e2e",
+            "gene_linked_only": True,
+            "n_genes": int(n_genes),
+            "score_dir": None if score_dir is None else str(score_dir),
+            "cpu_probes_pending": True,
+            "include_mbs_enet": bool(include_mbs_enet),
+            "eval_split": "test",
+        }
+    evaluations.update(
+        _run_inline_cpu_probes(
+            mbs_all=mbs_all,
+            train_idx=train_idx,
+            test_idx=test_idx,
+            arrays=arrays,
+            class_names=list(class_names),
+            include_mbs_enet=include_mbs_enet,
+        )
+    )
     print(  # noqa: T201
         "[flat] Stage A evaluations ready: "
         + ", ".join(sorted(evaluations.keys())),
@@ -311,4 +468,7 @@ def build_stage_a_flat_evaluations(
         "gene_linked_only": True,
         "n_genes": int(n_genes),
         "score_dir": None if score_dir is None else str(score_dir),
+        "cpu_probes_pending": False,
+        "include_mbs_enet": bool(include_mbs_enet),
+        "eval_split": "test",
     }

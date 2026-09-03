@@ -738,8 +738,9 @@ def _evaluations_incomplete(metrics: dict[str, Any]) -> bool:
     e2e = ev.get("mbs_e2e")
     if not isinstance(e2e, dict) or e2e.get("eval_split") != "test":
         return True
-    # Stage A screen: gene-linked runs should expose RBS frozen readouts.
-    if bool(metrics.get("gene_linked_only")) and "rbs_enet" not in ev:
+    # Gene-linked Stage A: need frozen RBS linear probe. Elastic-net (mbs_enet /
+    # rbs_enet) is post-hoc and must not block the GPU screen queue.
+    if bool(metrics.get("gene_linked_only")) and "rbs_linear_probe" not in ev:
         return True
     return False
 
@@ -786,8 +787,13 @@ def train_cascade_on_arrays(
     eval_only: bool = False,
     train_batch_size: int | str | None = "auto",
     gpu_share: int = 1,
+    include_mbs_enet: bool = True,
 ) -> dict[str, Any]:
-    """Train CascadeDeepSet + MBS heads; write scores; evaluate; return metrics."""
+    """Train CascadeDeepSet + MBS heads; write scores; evaluate; return metrics.
+
+    ``include_mbs_enet``: when False, skip inline ``mbs_enet`` / ``rbs_enet`` (Stage A
+    screen default — run ``scripts/eval_mbs_enet_from_scores.py`` post-hoc).
+    """
     score_dir = out_dir / "scores"
     manifest_path = score_dir / "score_manifest.json"
     metrics_path = out_dir / "metrics.json"
@@ -883,7 +889,7 @@ def train_cascade_on_arrays(
     out_dir.mkdir(parents=True, exist_ok=True)
     ckpt_path = out_dir / "best.pt"
     # Re-score / re-eval without retraining when a checkpoint already exists but
-    # Stage A diagnostics (e.g. rbs_enet) are missing.
+    # Stage A diagnostics (e.g. rbs_linear_probe) are missing.
     if (
         not eval_only
         and ckpt_path.is_file()
@@ -1233,19 +1239,22 @@ def train_cascade_on_arrays(
         class_names=list(class_names),
         fusion=fusion,
     )
-    evaluations["mbs_enet"] = _evaluate_mbs_enet(
-        blocks,
-        train_idx=train_idx,
-        test_idx=test_idx,
-        ages=ages,
-        age_mask=age_mask_a,
-        tissue=tissue,
-        tissue_mask=tissue_mask_a,
-        sex=sex,
-        sex_mask=sex_mask_a,
-        study_ids=study_ids,
-        class_names=list(class_names),
-    )
+    if include_mbs_enet:
+        evaluations["mbs_enet"] = _evaluate_mbs_enet(
+            blocks,
+            train_idx=train_idx,
+            test_idx=test_idx,
+            ages=ages,
+            age_mask=age_mask_a,
+            tissue=tissue,
+            tissue_mask=tissue_mask_a,
+            sex=sex,
+            sex_mask=sex_mask_a,
+            study_ids=study_ids,
+            class_names=list(class_names),
+        )
+    else:
+        print("[cascade] skipping inline mbs_enet (post-hoc)", flush=True)
     if "all_gene_rbs" in blocks and blocks["all_gene_rbs"].shape[1] > 0:
         rbs_blocks = {"mbs": blocks["all_gene_rbs"]}
         evaluations["rbs_linear_probe"] = _evaluate_fusion_mode(
@@ -1264,20 +1273,21 @@ def train_cascade_on_arrays(
             fusion=fusion,
         )
         evaluations["rbs_linear_probe"]["evaluation"] = "rbs_linear_probe"
-        evaluations["rbs_enet"] = _evaluate_mbs_enet(
-            rbs_blocks,
-            train_idx=train_idx,
-            test_idx=test_idx,
-            ages=ages,
-            age_mask=age_mask_a,
-            tissue=tissue,
-            tissue_mask=tissue_mask_a,
-            sex=sex,
-            sex_mask=sex_mask_a,
-            study_ids=study_ids,
-            class_names=list(class_names),
-        )
-        evaluations["rbs_enet"]["evaluation"] = "rbs_enet"
+        if include_mbs_enet:
+            evaluations["rbs_enet"] = _evaluate_mbs_enet(
+                rbs_blocks,
+                train_idx=train_idx,
+                test_idx=test_idx,
+                ages=ages,
+                age_mask=age_mask_a,
+                tissue=tissue,
+                tissue_mask=tissue_mask_a,
+                sex=sex,
+                sex_mask=sex_mask_a,
+                study_ids=study_ids,
+                class_names=list(class_names),
+            )
+            evaluations["rbs_enet"]["evaluation"] = "rbs_enet"
 
     fusion_modes: list[FusionBlockMode] = ["full"]
     for mode in extra_fusion_modes:
@@ -1308,6 +1318,7 @@ def train_cascade_on_arrays(
         "primary_evaluation": primary_evaluation,
         "evaluations": evaluations,
         "gene_linked_only": bool(gene_linked_only),
+        "include_mbs_enet": bool(include_mbs_enet),
         "n_gene_cols": int(gene_cols.size),
         "n_orphan_rbs": int(assignment.n_orphan_rbs),
         "n_direct": int(assignment.n_direct),
@@ -1716,6 +1727,7 @@ def run_cascade_hub(
             eval_only=eval_only,
             train_batch_size=train_batch_size,
             gpu_share=gpu_share,
+            include_mbs_enet=bool(training_cfg.get("stage_a_include_mbs_enet", False)),
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
         fold_summaries.append(metrics)

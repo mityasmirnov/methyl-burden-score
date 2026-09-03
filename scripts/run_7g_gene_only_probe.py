@@ -199,9 +199,11 @@ def train_flat_region_arm(
     report_dir: Path,
 ) -> list[dict[str, Any]]:
     """Train FlatDeepSetRegion per frozen fold via ``mbs train flat``."""
+    from concurrent.futures import Future, ThreadPoolExecutor
     from copy import deepcopy
 
     from mbs.training.dev_cv import inject_fold_into_config, load_frozen_folds
+    from mbs.training.flat_stage_a_eval import complete_flat_stage_a_cpu_probes
     from mbs.training.loop import load_experiment_config, train_flat_baseline
 
     cfg = load_experiment_config(config_path)
@@ -212,55 +214,102 @@ def train_flat_region_arm(
     max_loci = int(raw_max_loci) if raw_max_loci not in (None, "", 0) else None
     raw_max_epochs = cv_budget.get("max_epochs", (cfg.get("training") or {}).get("max_epochs"))
     max_epochs = int(raw_max_epochs) if raw_max_epochs not in (None, "", 0) else None
+    # Default on: GPU trains next fold while CPU finishes linear/enet on prior fold.
+    # Threads (not processes): avoids stale forked imports after code hotfixes mid-queue.
+    defer_cpu = bool((cfg.get("training") or {}).get("stage_a_defer_cpu_probes", True))
     folds_out: list[dict[str, Any]] = []
-    for fold_i, fold in enumerate(fold_pack["folds"]):
+    probe_futures: list[tuple[str, Future[dict[str, Any]]]] = []
+    executor: ThreadPoolExecutor | None = None
+    if defer_cpu:
+        executor = ThreadPoolExecutor(max_workers=1)
+
+    def _drain_ready(*, block: bool = False) -> None:
+        nonlocal probe_futures
+        still: list[tuple[str, Future[dict[str, Any]]]] = []
+        for run_id, fut in probe_futures:
+            if block or fut.done():
+                fut.result()
+                print(f"[gene-probe] CPU probes finished {run_id}", flush=True)
+            else:
+                still.append((run_id, fut))
+        probe_futures = still
+
+    try:
+        for fold_i, fold in enumerate(fold_pack["folds"]):
+            run_id = f"{run_prefix}-f{fold_i}"
+            run_root = paths.artifact_root / "runs" / run_id
+            metrics_path = run_root / "metrics.json"
+            if metrics_path.is_file():
+                metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+                ev = metrics.get("evaluations") or {}
+                pending = bool(metrics.get("cpu_probes_pending")) or (
+                    "mbs_e2e" in ev and "mbs_linear_probe" not in ev
+                )
+                if pending and executor is not None:
+                    print(f"[gene-probe] queue deferred CPU probes {run_id}", flush=True)
+                    probe_futures.append(
+                        (run_id, executor.submit(complete_flat_stage_a_cpu_probes, str(run_root)))
+                    )
+                else:
+                    folds_out.append(metrics)
+                    print(f"[gene-probe] skip-if-done {run_id}", flush=True)
+                _drain_ready()
+                continue
+            fold_cfg = inject_fold_into_config(deepcopy(cfg), fold, seed=42 + fold_i)
+            fold_cfg.setdefault("training", {})["stage_a_defer_cpu_probes"] = defer_cpu
+            print(
+                f"[gene-probe flat] train {run_id} max_loci={max_loci} max_epochs={max_epochs} "
+                f"defer_cpu_probes={defer_cpu}",
+                flush=True,
+            )
+            result = train_flat_baseline(
+                project_root=paths.project_root,
+                data_root=paths.data_root,
+                artifact_root=paths.artifact_root,
+                config=fold_cfg,
+                run_id=run_id,
+                device_str=device,
+                max_epochs=max_epochs,
+                max_loci=max_loci,
+            )
+            metrics = dict(result.metrics) if hasattr(result, "metrics") else {}
+            if not metrics and metrics_path.is_file():
+                metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+            if "evaluations" not in metrics and "tissue" in metrics:
+                metrics = {
+                    "evaluations": {
+                        "mbs_e2e": {
+                            "metrics": metrics,
+                            "eval_split": "test",
+                        }
+                    },
+                    "metrics": metrics,
+                    "eval_split": "test",
+                }
+            metrics_path.parent.mkdir(parents=True, exist_ok=True)
+            metrics_path.write_text(json.dumps(metrics, indent=2, default=str), encoding="utf-8")
+            folds_out.append(metrics)
+            if defer_cpu and executor is not None and bool(metrics.get("cpu_probes_pending")):
+                print(f"[gene-probe] queue deferred CPU probes {run_id}", flush=True)
+                probe_futures.append(
+                    (run_id, executor.submit(complete_flat_stage_a_cpu_probes, str(run_root)))
+                )
+            staging = report_dir / f"_staging_{run_prefix.replace('-', '_')}_fold_{fold_i}"
+            staging.mkdir(parents=True, exist_ok=True)
+            _drain_ready()
+        _drain_ready(block=True)
+    finally:
+        if executor is not None:
+            executor.shutdown(wait=True)
+
+    # Reload metrics after deferred probes so per_arm means include enet/linear.
+    refreshed: list[dict[str, Any]] = []
+    for fold_i, _fold in enumerate(fold_pack["folds"]):
         run_id = f"{run_prefix}-f{fold_i}"
-        run_root = paths.artifact_root / "runs" / run_id
-        metrics_path = run_root / "metrics.json"
+        metrics_path = paths.artifact_root / "runs" / run_id / "metrics.json"
         if metrics_path.is_file():
-            folds_out.append(json.loads(metrics_path.read_text(encoding="utf-8")))
-            print(f"[gene-probe] skip-if-done {run_id}", flush=True)
-            continue
-        fold_cfg = inject_fold_into_config(deepcopy(cfg), fold, seed=42 + fold_i)
-        print(
-            f"[gene-probe flat] train {run_id} max_loci={max_loci} max_epochs={max_epochs}",
-            flush=True,
-        )
-        result = train_flat_baseline(
-            project_root=paths.project_root,
-            data_root=paths.data_root,
-            artifact_root=paths.artifact_root,
-            config=fold_cfg,
-            run_id=run_id,
-            device_str=device,
-            max_epochs=max_epochs,
-            max_loci=max_loci,
-        )
-        metrics = dict(result.metrics) if hasattr(result, "metrics") else {}
-        if not metrics and metrics_path.is_file():
-            metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
-        # Normalize to Stage A evaluation shape when flat trainer returns flat metrics.
-        if "evaluations" not in metrics and "tissue" in metrics:
-            metrics = {
-                "evaluations": {
-                    "mbs_e2e": {
-                        "metrics": metrics,
-                        "eval_split": "test",
-                    }
-                },
-                "metrics": metrics,
-                "eval_split": "test",
-            }
-            metrics_path.parent.mkdir(parents=True, exist_ok=True)
-            metrics_path.write_text(json.dumps(metrics, indent=2, default=str), encoding="utf-8")
-        elif "evaluations" in metrics:
-            # Persist Stage A suite written by train_flat_baseline.
-            metrics_path.parent.mkdir(parents=True, exist_ok=True)
-            metrics_path.write_text(json.dumps(metrics, indent=2, default=str), encoding="utf-8")
-        folds_out.append(metrics)
-        staging = report_dir / f"_staging_{run_prefix.replace('-', '_')}_fold_{fold_i}"
-        staging.mkdir(parents=True, exist_ok=True)
-    return folds_out
+            refreshed.append(json.loads(metrics_path.read_text(encoding="utf-8")))
+    return refreshed or folds_out
 
 
 def main() -> None:

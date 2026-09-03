@@ -34,5 +34,7 @@ training:
   sex_loss_weight: 1.0
   gene_linked_only: true
   primary_evaluation: mbs_e2e
+  # Screen: leave mbs_enet/rbs_enet for post-hoc (scripts/eval_mbs_enet_from_scores.py).
+  stage_a_include_mbs_enet: false
 device:
   torch_device: cuda

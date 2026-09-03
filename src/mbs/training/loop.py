@@ -2223,6 +2223,9 @@ def train_flat_baseline(
                 level1_params=level1_params,
             )
 
+        defer_cpu = bool(train_cfg.get("stage_a_defer_cpu_probes", True))
+        # Screen default: leave mbs_enet for post-hoc (P2/P4 workflow).
+        include_enet = bool(train_cfg.get("stage_a_include_mbs_enet", False))
         stage_a = build_stage_a_flat_evaluations(
             model=model,
             head=head,
@@ -2237,6 +2240,8 @@ def train_flat_baseline(
             age_std=age_std,
             batch_size=batch_size,
             score_dir=run_root / "scores",
+            defer_cpu_probes=defer_cpu,
+            include_mbs_enet=include_enet,
         )
         metrics_out.update(stage_a)
         metrics_out["eval_split"] = "test"
