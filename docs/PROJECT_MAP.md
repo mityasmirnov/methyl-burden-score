@@ -32,6 +32,7 @@ src/mbs/catalog.py       DuckDB catalog builder / init (schema; 7A populates)
 src/mbs/inspect_source.py shallow source inventory reports
 src/mbs/inspect_cpgcorpus.py CpGCorpus GSE/GPL scientific inspection
 src/mbs/inspect_ewas_metadata.py Atlas small tables + Hub sample-info profiles
+src/mbs/geo_metadata.py      GEO family SOFT parse + EWAS_db-only sample backfill
 src/mbs/registry/sample_info.py Hub sample-info txt/zip → Parquet export
 src/mbs/batch.py         ragged batch contract
 src/mbs/segment_ops.py   permutation-invariant segment reductions

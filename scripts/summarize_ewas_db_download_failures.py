@@ -88,8 +88,8 @@ def write_markdown(
             "",
             "- Re-run `bash scripts/download_ewas_datahub.sh EWAS_db` to resume; "
             "successful files are skipped via `wget -c`.",
-            "- Post-download hook runs `mbs catalog refresh-release` automatically "
-            "(disable with `EWAS_DATAHUB_SKIP_POST_HOOK=1`).",
+            "- Post-download hook runs `make catalog-refresh-release` automatically "
+            "(Atlas GSE map seed + census; disable with `EWAS_DATAHUB_SKIP_POST_HOOK=1`).",
             "",
         ]
     )

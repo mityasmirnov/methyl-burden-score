@@ -181,8 +181,8 @@ re-run the versioned catalog release — it rescans the tree and upserts studies
 without rebuilding Hub phenotypes from scratch:
 
 ```bash
-uv run mbs catalog refresh-release
-# or: make catalog-refresh-release
+make catalog-refresh-release   # seeds Atlas GSE map (NCBI) + full refresh + census
+# or stepwise: make seed-atlas-gse-map && uv run mbs catalog refresh-release ...
 uv run mbs catalog validate-release
 uv run mbs catalog phenotype-census
 ```
@@ -209,7 +209,9 @@ After the mirror finishes (or on demand), the download script runs
 `scripts/post_ewas_datahub_download.sh`: parses `WARN: failed` lines into
 `reports/inspection/deepmat_data_v1/ewas_db_download_failures.{json,md}`,
 writes `artifacts/logs/downloads/ewas_db_retry_manifest.tsv`, then
-`mbs catalog refresh-release`. Skip the hook with `EWAS_DATAHUB_SKIP_POST_HOOK=1`.
+`make catalog-refresh-release` (includes `seed-atlas-gse-map` from NCBI GEO
+PubMed IDs → Atlas PMID index). Skip the hook with `EWAS_DATAHUB_SKIP_POST_HOOK=1`.
+Sample-level GEO backfill for EWAS_db-only GSM: [`plans/geo-metadata-backfill-ewas-db.md`](plans/geo-metadata-backfill-ewas-db.md).
 
 Retry only missing GSM files:
 

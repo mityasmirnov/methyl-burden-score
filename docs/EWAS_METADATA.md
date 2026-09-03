@@ -65,6 +65,59 @@ $MBS_DATA_ROOT/raw/ewas_datahub/download/sample_{family}_methylation_v1.zip
 → $MBS_DATA_ROOT/canonical/phenotypes/{family}_sample_info.parquet
 ```
 
+## Study-level Atlas enrichment (catalog)
+
+On `mbs catalog refresh-release`, the release builder attaches **study-level**
+Atlas context for external stratification (not sample phenotype labels):
+
+- Parquet: `deepmat-data-v1/catalog/tables/study_atlas_enrichment.parquet`
+- DuckDB: `study_atlas_enrichment`, view `v_study_atlas_enrichment`
+- Report: `reports/inspection/deepmat_data_v1/study_atlas_enrichment.{json,md}`
+- Also merged into `study.metadata_json` under `atlas_enrichment`
+
+Join rules (never raw `GSE*` = `ES*` equality):
+
+1. Optional curated map [`configs/data/atlas_gse_es_map.tsv`](../configs/data/atlas_gse_es_map.tsv)
+   (`gse_id`, `atlas_study_id`, `pmid`, `source`)
+2. PMID bridge when the map supplies `pmid` without `atlas_study_id`
+3. Direct when catalog `study_id` is already an Atlas `ES*` accession
+
+Fields include cohort count, total Atlas sample size, tissues, cohort
+descriptions (disease area), platforms, ancestries, and Atlas trait names.
+
+```bash
+source scripts/activate_data_environment.sh
+make catalog-refresh-release
+```
+
+Populate the curated map as GSE↔publication links are verified (GEO, papers).
+Runs automatically before every `make catalog-refresh-release` (including the
+EWAS_db post-download hook). Manual re-seed:
+
+```bash
+source scripts/activate_data_environment.sh
+make seed-atlas-gse-map          # or: make catalog-refresh-release
+# skip NCBI: MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
+```
+
+Sample-level GEO backfill for EWAS_db-only GSM is a **separate catalog lane**
+from Atlas enrichment. Atlas stays study-level. GEO writes GSM phenotypes with
+`source_family=geo_metadata_backfill`. Hub sample-info still wins on overlapping
+GSM. Operator brief, join keys, GPL map, and audit:
+[`plans/geo-metadata-backfill-ewas-db.md`](plans/geo-metadata-backfill-ewas-db.md).
+
+```bash
+source scripts/activate_data_environment.sh
+make fetch-geo-sample-metadata
+# merge on next refresh (parquet present). Skip merge: MBS_SKIP_GEO_BACKFILL=1
+make catalog-refresh-release
+```
+
+Report: `reports/inspection/deepmat_data_v1/geo_backfill_pilot/summary.{json,md}`.
+
+This does **not** assign training labels from Atlas cohort tables, and GEO rows
+are not MBS encoder features.
+
 ```bash
 source scripts/activate_data_environment.sh
 uv run mbs inspect ewas-metadata

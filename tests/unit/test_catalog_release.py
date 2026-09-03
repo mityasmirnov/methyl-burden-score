@@ -422,3 +422,75 @@ def test_platform_alias_450k_to_hm450_on_refresh(release_workspace: Path) -> Non
     con.close()
     assert "450K" not in platforms
     assert "HM450" in platforms
+
+
+def test_geo_backfill_merges_ewas_only_not_hub(release_workspace: Path) -> None:
+    paths = _seed_hub_and_ewas(release_workspace)
+    ewas = paths.data_root / "raw" / "ewas_datahub" / "EWAS_db"
+    _write_gsm(ewas / "GSE_ONLY" / "GSM_ONLY.txt")
+    geo_frame = pd.DataFrame(
+        [
+            {
+                "sample_id": "GSM1",
+                "study_id": "GSE_A",
+                "source_name": "should-not-apply",
+                "platform_id": "GPL21145",
+                "catalog_platform_id": "EPIC",
+                "pubmed_ids": "[]",
+                "characteristics_raw": "{}",
+                "age": 99.0,
+                "sex": "Female",
+                "sex_label_status": "observed",
+                "tissue": "ignored",
+                "disease": None,
+                "disease_label_status": None,
+                "cancer": None,
+                "cancer_label_status": None,
+                "fetched_at": "2026-01-01T00:00:00Z",
+                "soft_sha256": "abc",
+            },
+            {
+                "sample_id": "GSM_ONLY",
+                "study_id": "GSE_ONLY",
+                "source_name": "ewas-only blood",
+                "platform_id": "GPL6883",
+                "catalog_platform_id": "HM450",
+                "pubmed_ids": "[\"999\"]",
+                "characteristics_raw": "{\"tissue\": \"blood\"}",
+                "age": 33.0,
+                "sex": "Male",
+                "sex_label_status": "observed",
+                "tissue": "blood",
+                "disease": None,
+                "disease_label_status": None,
+                "cancer": None,
+                "cancer_label_status": None,
+                "fetched_at": "2026-01-01T00:00:00Z",
+                "soft_sha256": "def",
+            },
+        ]
+    )
+    geo_frame.to_parquet(
+        paths.data_root / "canonical" / "phenotypes" / "geo_sample_metadata.parquet",
+        index=False,
+    )
+    refresh_release(paths=paths, report_dir=None)
+    rp = release_paths(paths.data_root)
+    con = duckdb.connect(str(rp.catalog_db), read_only=True)
+    try:
+        hub_geo = con.execute(
+            """
+            SELECT count(*) FROM sample_phenotype
+            WHERE sample_id = 'GSM1' AND source_family = 'geo_metadata_backfill'
+            """
+        ).fetchone()
+        ewas_geo = con.execute(
+            """
+            SELECT count(*) FROM sample_phenotype
+            WHERE sample_id = 'GSM_ONLY' AND source_family = 'geo_metadata_backfill'
+            """
+        ).fetchone()
+    finally:
+        con.close()
+    assert hub_geo is not None and int(hub_geo[0]) == 0
+    assert ewas_geo is not None and int(ewas_geo[0]) >= 1

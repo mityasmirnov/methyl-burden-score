@@ -83,6 +83,12 @@ def _example_rows(frame: pd.DataFrame, *, n: int = 2) -> list[dict[str, Any]]:
     return rows
 
 
+def read_atlas_tsv(path: Path) -> pd.DataFrame:
+    """Read Atlas TSV; tolerate rare malformed rows with extra tabs."""
+    frame, _ = _read_atlas_tsv(path)
+    return frame
+
+
 def _read_atlas_tsv(path: Path) -> tuple[pd.DataFrame, int]:
     """Read Atlas TSV; tolerate rare malformed rows with extra tabs."""
     try:

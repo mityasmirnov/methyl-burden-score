@@ -8,7 +8,7 @@ SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
 CACHE_ROOT ?= $(PROJECT_ROOT)/cache
 ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
-.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build catalog-refresh-release summarize-ewas-db-failures retry-ewas-db-failures agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info 7b-status 7b-convert-bg
+.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build seed-atlas-gse-map fetch-geo-sample-metadata catalog-refresh-release summarize-ewas-db-failures retry-ewas-db-failures agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info 7b-status 7b-convert-bg
 
 help:
 	@printf '%s\n' \
@@ -23,7 +23,9 @@ help:
 	  'test-cov       Run tests with coverage' \
 	  'catalog-init   Create dirs and apply sql/*.sql to the default DuckDB catalog' \
 	  'catalog-build  Build the DuckDB catalog from SQL and Parquet inputs' \
-	  'catalog-refresh-release  Populate deepmat-data-v1 + phenotype census' \
+	  'seed-atlas-gse-map  Refresh GSE↔Atlas map from NCBI GEO PubMed IDs' \
+	  'fetch-geo-sample-metadata  Fetch pilot GEO SOFT → geo_sample_metadata.parquet' \
+	  'catalog-refresh-release  Seed Atlas map + deepmat-data-v1 + phenotype census' \
 	  '7b-status      Refresh + print Milestone 7B Hub matrix convert progress' \
 	  '7b-convert-bg  Background 7B convert watcher (progress docs + finalize)' \
 	  'agent-context  Print a concise context summary for coding agents' \
@@ -82,7 +84,18 @@ catalog-build:
 	  --sql-dir "$(PROJECT_ROOT)/sql" \
 	  --parquet-root "$(DATA_ROOT)/canonical/catalog/tables"
 
-catalog-refresh-release:
+seed-atlas-gse-map:
+	@if [[ "$${MBS_SKIP_ATLAS_SEED:-0}" != "1" ]]; then \
+	  uv run python scripts/seed_atlas_gse_es_map.py; \
+	else \
+	  printf 'skip seed-atlas-gse-map (MBS_SKIP_ATLAS_SEED=1)\n'; \
+	fi
+
+fetch-geo-sample-metadata:
+	uv run python scripts/fetch_geo_sample_metadata.py \
+	  --studies-file configs/data/geo_backfill_pilot_gse.txt
+
+catalog-refresh-release: seed-atlas-gse-map
 	uv run mbs catalog refresh-release
 	uv run mbs catalog validate-release
 	uv run mbs catalog phenotype-census

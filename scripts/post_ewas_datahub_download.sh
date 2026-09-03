@@ -11,6 +11,7 @@ LOG="${EWAS_DATAHUB_LOG:-$MBS_ARTIFACT_ROOT/logs/downloads/ewas_datahub_EWAS_db.
 
 printf '=== post EWAS DataHub download hook ===\n'
 printf 'log=%s\n' "$LOG"
+printf 'chain: summarize failures → seed Atlas GSE map (NCBI) → catalog-refresh-release\n'
 
 if [[ -f "$LOG" ]]; then
   uv run python "$SCRIPT_DIR/summarize_ewas_db_download_failures.py" --log "$LOG" || {
@@ -20,7 +21,7 @@ else
   printf 'WARN: download log missing (%s); skipping failure summary\n' "$LOG" >&2
 fi
 
-printf '=== catalog refresh-release ===\n'
+printf '=== catalog refresh-release (includes seed-atlas-gse-map) ===\n'
 make catalog-refresh-release
 
 printf '=== post hook complete ===\n'

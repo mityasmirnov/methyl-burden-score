@@ -167,7 +167,7 @@ numeric_value          # SQL column name (not value_numeric)
 categorical_value      # SQL column name (not value_categorical)
 label_status           # observed | unknown | control | case
 is_observed
-source_family
+source_family          # hub pack name, or geo_metadata_backfill for GEO SOFT backfill
 source_record_id
 ontology_id
 ```
@@ -175,6 +175,18 @@ ontology_id
 Observation uniqueness: `(sample_id, phenotype_id, source_family)` or an
 explicit `observation_id`. Wide `sample_phenotype_table.parquet` used for
 training remains a **derived** join table.
+
+**GEO backfill (`source_family=geo_metadata_backfill`):** sample-level rows from
+NCBI GEO family SOFT for EWAS_db-only GSM. Join is GSM=`sample_id`, GSE=`study_id`.
+Hub pack rows win: GEO rows are omitted for GSM already present from Hub
+sample-info (no `superseded` status). Disease/cancer GEO rows require explicit
+case/control language; diagnosis text without status stays in
+`sample.metadata_json.geo` only. Batch/treatment GEO fields never become
+phenotype rows. GPL is stored on `sample.metadata_json.geo.platform_id`; catalog
+`study.platform_id` is filled only for a single known methylation GPL
+(GPL13534→HM450, GPL21145→EPIC, GPL23976→EPICv2) when Hub left it null.
+Atlas enrichment remains on `study.metadata_json` only.
+Operator brief: [`plans/geo-metadata-backfill-ewas-db.md`](plans/geo-metadata-backfill-ewas-db.md).
 
 ### `probe`
 

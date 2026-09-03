@@ -1,0 +1,17 @@
+# Pilot GSE list for GEO sample metadata backfill (high-N EWAS_db studies).
+# See docs/plans/geo-metadata-backfill-ewas-db.md
+GSE197678
+GSE55763
+GSE145361
+GSE105018
+GSE140686
+GSE130051
+GSE185920
+GSE210255
+GSE157131
+GSE56046
+GSE147740
+GSE224124
+GSE109379
+GSE68379
+GSE270375

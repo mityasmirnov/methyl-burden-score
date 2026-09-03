@@ -17,7 +17,20 @@ import pandas as pd
 
 from mbs.annotation.build import DEFAULT_GRAPH_ID
 from mbs.annotation.manifest import git_commit, sha256_file, utc_now_iso, write_json
+from mbs.atlas_study_enrichment import (
+    build_study_atlas_enrichment,
+    merge_atlas_enrichment_into_studies,
+    write_study_atlas_enrichment_report,
+)
 from mbs.catalog import build_catalog
+from mbs.geo_metadata import (
+    GEO_PARQUET_NAME,
+    geo_backfill_enabled,
+    load_census_snapshot,
+    load_geo_frame,
+    merge_geo_sample_metadata,
+    write_geo_backfill_pilot_report,
+)
 from mbs.paths import DataPaths
 from mbs.platform_id import PLATFORM_ALIASES, normalize_platform
 from mbs.registry.sample_info import FAMILY_VALUE_COLUMN
@@ -885,6 +898,7 @@ def _populate_duckdb(
             "artifact",
             "experiment",
             "trait_eligibility",
+            "study_atlas_enrichment",
         ]
         for table in order:
             _load_table(connection, table, tables_dir / f"{table}.parquet")
@@ -995,6 +1009,14 @@ def refresh_release(
             "metadata_json": json.dumps({"lanes": ["ewas_datahub_db"]}),
         }
     studies = pd.DataFrame(list(study_rows.values())) if study_rows else pd.DataFrame()
+
+    atlas_enrichment = build_study_atlas_enrichment(
+        catalog_study_ids=[str(s) for s in studies["study_id"].tolist()] if not studies.empty else [],
+        atlas_root=paths.data_root / "raw" / "ewas_atlas",
+        gse_map_path=paths.project_root / "configs/data/atlas_gse_es_map.tsv",
+    )
+    if not studies.empty and not atlas_enrichment.empty:
+        studies = merge_atlas_enrichment_into_studies(studies, atlas_enrichment)
 
     sample_frames: list[pd.DataFrame] = []
     if not hub_samples.empty:
@@ -1125,6 +1147,19 @@ def refresh_release(
         )
     if not fold_rows.empty and not samples.empty:
         fold_rows = _as_dataframe(fold_rows[fold_rows["sample_id"].isin(samples["sample_id"])])
+
+    geo_merge_stats: dict[str, Any] = {"enabled": False}
+    geo_path = paths.data_root / "canonical" / "phenotypes" / GEO_PARQUET_NAME
+    if geo_backfill_enabled() and geo_path.is_file():
+        geo_frame = load_geo_frame(paths.data_root)
+        samples, phenotypes, studies, geo_merge_stats = merge_geo_sample_metadata(
+            samples=samples,
+            phenotypes=phenotypes,
+            studies=studies,
+            geo_frame=geo_frame,
+        )
+        geo_merge_stats["enabled"] = True
+        geo_merge_stats["parquet_path"] = str(geo_path)
 
     if not samples.empty and study_rows:
         samples_for_elig = samples.copy()
@@ -1291,6 +1326,22 @@ def refresh_release(
             "exclusion_reason",
         ],
     )
+    atlas_enrichment = _ensure(
+        atlas_enrichment,
+        [
+            "study_id",
+            "join_method",
+            "atlas_study_ids",
+            "pmid",
+            "n_atlas_cohorts",
+            "total_sample_size",
+            "tissues",
+            "cohort_descriptions",
+            "platforms",
+            "ancestries",
+            "atlas_traits",
+        ],
+    )
 
     # Durable parquet
     _write_parquet(rp.catalog_tables / "source_release.parquet", source_releases)
@@ -1308,6 +1359,7 @@ def refresh_release(
     _write_parquet(rp.catalog_tables / "experiment.parquet", experiments)
     _write_parquet(rp.catalog_tables / "trait_eligibility.parquet", eligibility)
     _write_parquet(rp.catalog_tables / "ewas_db_study_inventory.parquet", study_inv)
+    _write_parquet(rp.catalog_tables / "study_atlas_enrichment.parquet", atlas_enrichment)
     _write_parquet(rp.phenotypes_dir / "sample_phenotype.parquet", phenotypes)
     _write_parquet(rp.phenotypes_dir / "sample_source_membership.parquet", membership)
     _write_parquet(rp.matrices_dir / "index.parquet", matrix_artifacts)
@@ -1393,6 +1445,15 @@ def refresh_release(
                 "byte_size": int(inv_path.stat().st_size),
             }
         )
+    if geo_path.is_file():
+        source_checksums.append(
+            {
+                "path": str(geo_path),
+                "sha256": sha256_file(geo_path),
+                "role": "geo_sample_metadata_backfill",
+                "byte_size": int(geo_path.stat().st_size),
+            }
+        )
 
     present_families = sorted(
         set(membership["phenotype_family"].tolist()) if not membership.empty else []
@@ -1425,6 +1486,7 @@ def refresh_release(
             "total_bytes": total_bytes,
             "remote_index_fetched": remote_names is not None,
         },
+        "geo_backfill": geo_merge_stats,
         "catalog_path": str(rp.catalog_db),
         "notes": (
             "Re-run mbs catalog refresh-release after EWAS_db download adds study dirs. "
@@ -1435,6 +1497,7 @@ def refresh_release(
     write_json(rp.manifest_path, manifest)
 
     resolved_report = report_dir
+    census_before = load_census_snapshot(resolved_report) if resolved_report is not None else None
     if resolved_report is not None:
         write_phenotype_census_report(
             database=rp.catalog_db,
@@ -1445,6 +1508,18 @@ def refresh_release(
             database=rp.catalog_db,
             report_dir=resolved_report,
         )
+        write_study_atlas_enrichment_report(
+            enrichment=atlas_enrichment,
+            report_dir=resolved_report,
+        )
+        if geo_merge_stats.get("enabled"):
+            write_geo_backfill_pilot_report(
+                stats=geo_merge_stats,
+                database=rp.catalog_db,
+                report_dir=resolved_report,
+                census_before=census_before,
+                census_after=load_census_snapshot(resolved_report),
+            )
 
     return RefreshResult(
         release_id=release_id,

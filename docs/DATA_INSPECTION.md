@@ -277,6 +277,26 @@ Do not invent Hub column names; use `FAMILY_VALUE_COLUMN` in
 `mbs.registry.sample_info`. Each zip also contains RData (`RDX3`); prefer the
 `.txt` member.
 
+## GEO sample metadata backfill (EWAS_db-only GSM)
+
+Hub sample-info does not cover EWAS_db-only GSM. Public GEO family SOFT fills
+catalog `sample_phenotype` with `source_family=geo_metadata_backfill` for those
+GSM only. Inspect the committed audit, not raw SOFT:
+
+```text
+reports/inspection/deepmat_data_v1/geo_backfill_pilot/summary.md
+reports/inspection/deepmat_data_v1/geo_backfill_pilot/summary.json
+```
+
+Must stay true: Hub GSM omitted; Atlas not copied onto samples; disease/cancer
+only with explicit case/control; batch fields never become phenotypes. Full
+contract: [`plans/geo-metadata-backfill-ewas-db.md`](plans/geo-metadata-backfill-ewas-db.md).
+
+```bash
+make fetch-geo-sample-metadata
+MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
+```
+
 Shallow download layout / sizes / sample Ns:
 [`reports/inspection/raw_inventory/`](../reports/inspection/raw_inventory/) and
 [`DATA_CATALOG.md`](DATA_CATALOG.md) (refresh with

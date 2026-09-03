@@ -1,0 +1,297 @@
+{
+  "census_after": {
+    "generated_at": "2026-09-03T09:22:12Z",
+    "geo_prevalence": [
+      {
+        "n_categorical_levels": 0,
+        "n_observed": 7652,
+        "n_rows": 7652,
+        "n_samples": 7652,
+        "phenotype_id": "age",
+        "source_family": "geo_metadata_backfill"
+      },
+      {
+        "n_categorical_levels": 2,
+        "n_observed": 2058,
+        "n_rows": 2058,
+        "n_samples": 2058,
+        "phenotype_id": "disease",
+        "source_family": "geo_metadata_backfill"
+      },
+      {
+        "n_categorical_levels": 2,
+        "n_observed": 12729,
+        "n_rows": 12729,
+        "n_samples": 12729,
+        "phenotype_id": "sex",
+        "source_family": "geo_metadata_backfill"
+      },
+      {
+        "n_categorical_levels": 7,
+        "n_observed": 10528,
+        "n_rows": 10528,
+        "n_samples": 10528,
+        "phenotype_id": "tissue",
+        "source_family": "geo_metadata_backfill"
+      }
+    ],
+    "pack_row_sum": 47843,
+    "unique_gsm": 150947
+  },
+  "census_before": {
+    "generated_at": "2026-09-03T01:55:06Z",
+    "geo_prevalence": [
+      {
+        "n_categorical_levels": 0,
+        "n_observed": 7652,
+        "n_rows": 7652,
+        "n_samples": 7652,
+        "phenotype_id": "age",
+        "source_family": "geo_metadata_backfill"
+      },
+      {
+        "n_categorical_levels": 2,
+        "n_observed": 2058,
+        "n_rows": 2058,
+        "n_samples": 2058,
+        "phenotype_id": "disease",
+        "source_family": "geo_metadata_backfill"
+      },
+      {
+        "n_categorical_levels": 2,
+        "n_observed": 12729,
+        "n_rows": 12729,
+        "n_samples": 12729,
+        "phenotype_id": "sex",
+        "source_family": "geo_metadata_backfill"
+      },
+      {
+        "n_categorical_levels": 7,
+        "n_observed": 10528,
+        "n_rows": 10528,
+        "n_samples": 10528,
+        "phenotype_id": "tissue",
+        "source_family": "geo_metadata_backfill"
+      }
+    ],
+    "pack_row_sum": 47843,
+    "unique_gsm": 150725
+  },
+  "census_delta": {
+    "geo_observed_rows_after": 32967,
+    "geo_observed_rows_before": 32967,
+    "n_geo_observed_samples": 18599,
+    "phenotypes_by_id": {
+      "age": 7652,
+      "disease": 2058,
+      "sex": 12729,
+      "tissue": 10528
+    },
+    "unique_gsm_after": 150947,
+    "unique_gsm_before": 150725
+  },
+  "eligibility": [
+    {
+      "eligible_auxiliary_task": true,
+      "eligible_core_task": true,
+      "exclusion_reason": NaN,
+      "n_cases": null,
+      "n_controls": null,
+      "n_samples": 7652,
+      "n_unknown": 0,
+      "phenotype_id": "age"
+    },
+    {
+      "eligible_auxiliary_task": false,
+      "eligible_core_task": false,
+      "exclusion_reason": "need \u2265200 cases, \u2265200 controls, \u22653 studies (unknown\u2260control)",
+      "n_cases": 0,
+      "n_controls": 2058,
+      "n_samples": 2058,
+      "n_unknown": 0,
+      "phenotype_id": "disease"
+    },
+    {
+      "eligible_auxiliary_task": true,
+      "eligible_core_task": false,
+      "exclusion_reason": "sex is auxiliary biological / QC, not a core burden target",
+      "n_cases": null,
+      "n_controls": null,
+      "n_samples": 12729,
+      "n_unknown": 0,
+      "phenotype_id": "sex"
+    },
+    {
+      "eligible_auxiliary_task": true,
+      "eligible_core_task": true,
+      "exclusion_reason": NaN,
+      "n_cases": null,
+      "n_controls": null,
+      "n_samples": 10528,
+      "n_unknown": 0,
+      "phenotype_id": "tissue"
+    }
+  ],
+  "generated_at": "2026-09-03T09:22:12Z",
+  "geo_source_family": "geo_metadata_backfill",
+  "invariants": {
+    "atlas_enrichment_on_sample": 0,
+    "hub_wins_geo_rows_on_hub_membership_gsm": 0,
+    "sample_source_membership_includes_geo": false
+  },
+  "label_status": [
+    {
+      "label_status": "observed",
+      "n": 7652,
+      "phenotype_id": "age"
+    },
+    {
+      "label_status": "control",
+      "n": 2058,
+      "phenotype_id": "disease"
+    },
+    {
+      "label_status": "observed",
+      "n": 12729,
+      "phenotype_id": "sex"
+    },
+    {
+      "label_status": "observed",
+      "n": 10528,
+      "phenotype_id": "tissue"
+    }
+  ],
+  "merge_stats": {
+    "enabled": true,
+    "n_geo_rows_input": 23217,
+    "n_phenotype_rows_added": 32967,
+    "n_samples_skipped_hub": 2210,
+    "n_samples_skipped_missing": 386,
+    "n_samples_touched": 20621,
+    "parquet_path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/geo_sample_metadata.parquet",
+    "per_study": {
+      "GSE105018": {
+        "phenotypes": 1230,
+        "samples": 1230
+      },
+      "GSE109379": {
+        "phenotypes": 1104,
+        "samples": 1104
+      },
+      "GSE130051": {
+        "phenotypes": 1501,
+        "samples": 1501
+      },
+      "GSE140686": {
+        "phenotypes": 1504,
+        "samples": 1504
+      },
+      "GSE145361": {
+        "phenotypes": 4708,
+        "samples": 1889
+      },
+      "GSE147740": {
+        "phenotypes": 3384,
+        "samples": 1128
+      },
+      "GSE157131": {
+        "phenotypes": 2436,
+        "samples": 1218
+      },
+      "GSE185920": {
+        "phenotypes": 2942,
+        "samples": 1471
+      },
+      "GSE197678": {
+        "phenotypes": 5844,
+        "samples": 2922
+      },
+      "GSE210255": {
+        "phenotypes": 1394,
+        "samples": 1394
+      },
+      "GSE224124": {
+        "phenotypes": 1107,
+        "samples": 1107
+      },
+      "GSE270375": {
+        "phenotypes": 0,
+        "samples": 994
+      },
+      "GSE55763": {
+        "phenotypes": 5523,
+        "samples": 1841
+      },
+      "GSE56046": {
+        "phenotypes": 290,
+        "samples": 290
+      },
+      "GSE68379": {
+        "phenotypes": 0,
+        "samples": 1028
+      }
+    },
+    "phenotypes_by_id": {
+      "age": 7652,
+      "disease": 2058,
+      "sex": 12729,
+      "tissue": 10528
+    },
+    "studies_touched": [
+      "GSE105018",
+      "GSE109379",
+      "GSE130051",
+      "GSE140686",
+      "GSE145361",
+      "GSE147740",
+      "GSE157131",
+      "GSE185920",
+      "GSE197678",
+      "GSE210255",
+      "GSE224124",
+      "GSE270375",
+      "GSE55763",
+      "GSE56046",
+      "GSE68379"
+    ]
+  },
+  "n_samples_with_geo_json": 20621,
+  "n_samples_with_geo_phenotype": 18599,
+  "notes": [
+    "GEO rows are omitted for Hub GSM (Hub wins).",
+    "Atlas enrichment stays on study.metadata_json only.",
+    "Disease/cancer rows need explicit case/control tokens.",
+    "Diagnosis-only text stays in metadata_json.",
+    "Training heads read Hub pack Parquet, not geo_metadata_backfill."
+  ],
+  "prevalence": [
+    {
+      "n_observed": 7652,
+      "n_rows": 7652,
+      "n_samples": 7652,
+      "phenotype_id": "age",
+      "source_family": "geo_metadata_backfill"
+    },
+    {
+      "n_observed": 2058,
+      "n_rows": 2058,
+      "n_samples": 2058,
+      "phenotype_id": "disease",
+      "source_family": "geo_metadata_backfill"
+    },
+    {
+      "n_observed": 12729,
+      "n_rows": 12729,
+      "n_samples": 12729,
+      "phenotype_id": "sex",
+      "source_family": "geo_metadata_backfill"
+    },
+    {
+      "n_observed": 10528,
+      "n_rows": 10528,
+      "n_samples": 10528,
+      "phenotype_id": "tissue",
+      "source_family": "geo_metadata_backfill"
+    }
+  ]
+}

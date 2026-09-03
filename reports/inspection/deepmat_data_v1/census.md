@@ -1,7 +1,7 @@
 # Phenotype census (deepmat-data-v1)
 
-- Generated: `2026-09-02T10:50:27Z`
-- Unique GSM (`sample`): **149256**
+- Generated: `2026-09-03T09:22:26Z`
+- Unique GSM (`sample`): **150947**
 - Pack membership row sum: **47843**
 - Pack row sum counts Hub membership only; unique GSM also includes EWAS_db-only samples. Pack row sum can exceed unique Hub GSMs when samples appear in multiple packs.
 
@@ -35,8 +35,8 @@ Rows: 0 (capped at 50 in report).
 
 ## EWAS_db ingest
 
-- Local studies: `1353` / advertised `1989` (mirror_complete=False)
-- Local GSM files: `132301`
+- Local studies: `1384` / advertised `1989` (mirror_complete=False)
+- Local GSM files: `135068`
 
 ## Donor / replicate (when present)
 
@@ -83,6 +83,9 @@ Hub sample-info currently lacks donor columns for most packs; counts stay 0 unti
 | `GSE116379` | 45 | 44.6 | 50.84 | 47.498571428571424 |
 | `GSE117050` | 38 | 45.0 | 80.0 | 64.15789473684211 |
 | `GSE120307` | 4 | 23.0 | 39.0 | 29.2 |
+| `GSE147740` | 1128 | 25.0 | 60.0 | 41.183510638297875 |
+| `GSE185920` | 1471 | 20.0 | 60.0 | 32.76206662134602 |
+| `GSE197678` | 2922 | 5.99 | 70.19018639 | 31.413054213377876 |
 | `GSE30870` | 40 | 0.0 | 103.0 | 45.888888888888886 |
 | `GSE32146` | 10 | 3.5 | 17.5 | 12.95 |
 | `GSE32148` | 36 | 3.5 | 76.0 | 21.346153846153847 |
@@ -98,10 +101,7 @@ Hub sample-info currently lacks donor columns for most packs; counts stay 0 unti
 | `GSE43091` | 4 | 37.0 | 71.0 | 50.9 |
 | `GSE43414` | 520 | 40.0 | 105.0 | 83.68386388583974 |
 | `GSE43976` | 50 | 26.0 | 59.0 | 37.88 |
-| `GSE44684` | 6 | 0.345205 | 87.0 | 23.677690714285713 |
-| `GSE46648` | 3 | 27.0 | 29.0 | 28.0 |
-| `GSE47512` | 11 | 24.0 | 35.0 | 28.0 |
-| … | (193 more studies) | | | |
+| … | (196 more studies) | | | |
 
 ## Within-study BMI ranges
 
