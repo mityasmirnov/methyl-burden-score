@@ -79,9 +79,9 @@ training:
   early_stopping_patience: 5
   gene_linked_only: true
   gene_allocation: explicit_only
-  head_lr_multiplier: 8.0
   learning_rate: 0.001
   max_epochs: 10
+  early_stopping_start_epoch: 5
   optimizer: adamw
   precision: bf16-mixed
   primary_evaluation: mbs_e2e

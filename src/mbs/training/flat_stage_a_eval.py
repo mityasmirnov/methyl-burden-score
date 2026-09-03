@@ -98,19 +98,26 @@ def evaluate_flat_mbs_e2e(
 ) -> dict[str, Any]:
     """End-to-end MultitaskHeads on test MBS only (destandardize age to years).
 
-    Contract v2: orient exported MBS via ``score_polarity``; heads unchanged.
-    Legacy repair: when ``legacy_negated_heads`` and flipped, use ``1 - mbs`` with
-    already-negated checkpoint weights (logit-preserving).
+    Phenotype heads always receive **raw** encoder MBS.  They were trained on raw
+    scores; passing a transformed score through unchanged weights gives wrong logits.
+    Orientation (``score_polarity``) affects only the exported association artifact,
+    not what the heads see.
+
+    Legacy repair: when ``legacy_negated_heads`` and ``score_polarity == "flipped"``,
+    the checkpoint head weights were already negated (old contract), so presenting
+    ``1 - mbs`` is logit-preserving and correct for that checkpoint only.
     """
     if not phenotypes_test:
         raise ValueError("evaluate_flat_mbs_e2e requires test phenotypes")
     heads.eval()
     mbs_arr = np.asarray(mbs_test, dtype=np.float32)
     if legacy_negated_heads and score_polarity == "flipped":
-        mbs_eval = 1.0 - mbs_arr
+        # Legacy: checkpoint W was negated; (1-x) with -W preserves logits.
+        mbs_for_heads = 1.0 - mbs_arr
     else:
-        mbs_eval = orient_mbs_array(mbs_arr, score_polarity=score_polarity)
-    mbs_t = torch.from_numpy(mbs_eval).to(device)
+        # Contract v2 and hyper_aligned: heads always see raw encoder output.
+        mbs_for_heads = mbs_arr
+    mbs_t = torch.from_numpy(mbs_for_heads).to(device)
     present_t = torch.from_numpy(np.asarray(present_test, dtype=bool)).to(device)
     with torch.no_grad():
         age_hat = heads.forward_age(mbs_t, present_t).detach().cpu().numpy().reshape(-1)

@@ -948,6 +948,7 @@ def train_flat_baseline(
 
     epochs = int(max_epochs if max_epochs is not None else train_cfg.get("max_epochs", 50))
     patience = int(train_cfg.get("early_stopping_patience", 10))
+    early_stopping_start_epoch = int(train_cfg.get("early_stopping_start_epoch", 0))
     lr = float(train_cfg.get("learning_rate", 1e-3))
     weight_decay = float(train_cfg.get("weight_decay", 1e-4))
     grad_clip = float(train_cfg.get("gradient_clip_norm", 2.0))
@@ -2109,7 +2110,7 @@ def train_flat_baseline(
 
             if overfit_fixture and train_metrics["accuracy"] >= 0.999:
                 break
-            if not overfit_fixture and stale >= patience:
+            if not overfit_fixture and stale >= patience and epoch >= early_stopping_start_epoch:
                 break
 
     holdout_metrics: dict[str, Any] | None = None

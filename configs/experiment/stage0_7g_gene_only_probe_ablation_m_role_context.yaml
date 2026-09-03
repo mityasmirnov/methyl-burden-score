@@ -4,6 +4,7 @@ sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_s
 cv_budget:
   max_loci: 65536
   max_epochs: 8
+  early_stopping_start_epoch: 5
 experiment:
   name: stage0_7g_gene_only_probe_ablation_m_role_context
   seed: 42
@@ -71,9 +72,9 @@ training:
   checkpoint_selection: validation_tissue_macro_f1_then_age_mae
   gene_linked_only: true
   gene_allocation: explicit_only
-  head_lr_multiplier: 8.0
   learning_rate: 0.001
   max_epochs: 8
+  early_stopping_start_epoch: 5
   optimizer: adamw
   precision: bf16-mixed
   primary_evaluation: mbs_e2e
