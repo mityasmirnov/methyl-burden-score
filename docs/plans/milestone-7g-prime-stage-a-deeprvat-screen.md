@@ -5,8 +5,12 @@ Status: **in progress** — Stage A reopened for compute-efficient screening
 /`C-mvalue-*-G` GPU runs already landed; cascade is **not** ≥0.03 ahead of
 classical. **P5 inactive.** Stage B GPU and Milestone **7** remain blocked.
 
-Last updated: **2026-09-03** (orientation contract v2 fix; L1/L5 training configs;
-`early_stopping_start_epoch`; annotation ablation grid).
+Last updated: **2026-09-03** (scalar mixed-pooling + vector cascade arms
+nearly complete; `mbs_enet` / `rbs_enet` moved to post-hoc for screen speed;
+`N-light-gene-max` f0 complete with v2 contract; light-max f1/f2 and all
+light-mean folds need retrain after orientation v2 + checkpoint-selection bug;
+`N-cascade-scalar-max-mean` tentative screen leader at ~0.36 mean e2e F1;
+`N-cascade-vector-max-max` fold 2 running).
 
 Parent: [`milestone-7g-prime-matched-probe-lightweight.md`](milestone-7g-prime-matched-probe-lightweight.md).
 Normative: [ADR 0010](../adr/0010-gene-allocation-policy.md),
@@ -164,6 +168,36 @@ Unit tests: `tests/unit/test_orientation_eval.py` —
 `test_legacy_path_heads_see_one_minus_mbs_when_flipped`,
 `test_hyper_aligned_heads_always_see_raw`.
 
+### Third compounding bug: checkpoint selection silently no-op
+
+Independently of the orientation bug above, `checkpoint_selection:
+validation_tissue_macro_f1_then_age_mae` (set in `light_mean.yaml`/
+`light_max.yaml`) was **also** broken: ranking checkpoints by validation
+tissue-F1 requires that metric to be computed every epoch, which is gated by
+a separate `stage_a_per_epoch_eval` flag that neither config set. Without it,
+`validation_rank()` always compared missing values, so epoch 1 (near-random
+weights) satisfied `best_rank is None` once and no later epoch could ever
+`> ` it — the saved `best.pt` was permanently the first-epoch checkpoint
+regardless of `max_epochs`. Confirmed via `checkpoint_selection.best_epoch: 1`
+on every affected fold.
+
+Fixed in `loop.py`: `stage_a_per_epoch_eval` is now implied by
+`use_tissue_rank` (`... or use_tissue_rank`), so this class of bug can't
+recur regardless of config. Also added the flag explicitly to
+`light_mean.yaml`/`light_max.yaml` for clarity. Old checkpoints moved aside
+as `artifacts/runs/*.stale-epoch1-bug` (not deleted).
+
+**Sequencing note:** this fix and the orientation-v2 fix (`fc8cd6f`) landed
+within ~25 minutes of each other in the same shared checkout. A retrain
+launched between the two only gets the fix that existed when its Python
+process started (module imports are cached in-process; edits on disk after
+that don't take effect until the next fresh process). One retrain pass was
+discarded for exactly this reason — moved aside as
+`artifacts/runs/*.stale-preorientation-fix` — and redone from a fresh process
+after both fixes were on disk. When rerunning any `N-light-gene-*` arm, check
+`git log -1 --format=%cI -- src/mbs/training/loop.py` against the launching
+process's start time before trusting the result.
+
 ### GPU run sequence for one-hop (fold 0)
 
 Run in this order; do not start annotation ablations before L1 numbers are in.
@@ -195,6 +229,198 @@ Each arm has two seeds (`_s2` suffix). Report bootstrap CIs and representation
 diagnostics via `write_7g_gene_only_probe_report.py`.
 
 5. **Post-hoc direct/orphan fusion** — deferred until ablation grid is scored.
+
+## Handoff — 2026-09-03 (all background jobs stopped; GPU free)
+
+No training is running. GPU 0 is free (~39.7 GB / 49.1 GB free at handoff time).
+This section is the complete state for whoever (or whichever fresh agent)
+picks this up next.
+
+### Done and trustworthy — cascade arm sweep is complete
+
+All four previously-missing cascade arms landed this session, gene-linked
+panel (`explicit_only`, 51 375 CpGs), `mbs_e2e` (`eval_split=test`), Tier 1
+(5 epochs), 3/3 folds each:
+
+| Arm | `mbs_e2e` tissue F1 | Notes |
+|---|---:|---|
+| `N-cascade-scalar-mean-max` | 0.359 (±0.075) | |
+| `N-cascade-vector-max-max` | 0.343 (±0.063) | |
+| `N-cascade-vector-mean-max` | 0.337 (±0.036) | plan's "preferred" hypothesis — did **not** clearly beat scalar |
+| `N-cascade-scalar-max-mean` | 0.331 (±0.020) | |
+
+Combined with the already-landed `P2-G` (0.373), `P4-G` (0.370), `P5-G-max`
+(0.356, inactive) and `C-mvalue-enet-G` (0.388, classical), all six neural
+scalar/vector cascade variants now cluster in **0.33–0.37**, all still below
+classical elastic-net (0.388) but within noise of each other and of it. No
+pooling combination or scalar-vs-vector choice produced a decisive winner.
+This is real signal, not an artifact — these runs are unaffected by either
+bug below (they don't use `train_flat_baseline`/`checkpoint_selection`).
+
+`analysis.md` is current for these arms (regenerated automatically when the
+sweep's own process finished, 17:42).
+
+### NOT done — `N-light-gene-mean` / `N-light-gene-max` need a full clean redo
+
+Both per_arm files in the current `analysis.md` are **stale** and must not be
+used for the model-selection report:
+
+- `N-light-gene-mean.json` (mtime 15:03): predates **both** fixes below — the
+  original fully-broken run (no `mbs_e2e` row at all in the report).
+- `N-light-gene-max.json` (mtime 17:31): predates **only** the orientation fix
+  — checkpoint selection now works (`best_epoch` 4–5, not stuck at 1), but
+  heads may still have seen `1-MBS` instead of raw MBS during training
+  (see "Third compounding bug" above and the orientation section before it).
+  Reported `mbs_e2e` F1 = 0.122 is **not trustworthy**.
+
+Two retrain attempts were made and both discarded (moved to
+`artifacts/runs/*.stale-epoch1-bug` and `*.stale-preorientation-fix`
+respectively) — not because the fixes are wrong, but because of process
+timing: a long-running Python process keeps its imports from when it started,
+so a retrain launched between the two fixes landing only picks up whichever
+fix existed at that moment. **Before launching, confirm both fixes are on
+disk and start a fresh process after that:**
+
+```bash
+# sanity check both fixes are present
+grep -n "stage_a_per_epoch_eval = bool.*or use_tissue_rank" src/mbs/training/loop.py
+git log -1 --format='%H %cI' -- src/mbs/training/loop.py   # should be >= fc8cd6f
+
+# then, fresh process, both arms, full 3 folds each (~20-30 min on a free GPU 0)
+cd /data/projects/methyl-burden-score
+source scripts/activate_data_environment.sh
+CUDA_VISIBLE_DEVICES=0 MBS_CASCADE_GPU_SHARE=1 PYTHONUNBUFFERED=1 \
+  uv run python scripts/run_7g_gene_only_probe.py \
+  --config configs/experiment/stage0_7g_gene_only_probe.yaml \
+  --arm N-light-gene-mean --arm N-light-gene-max --device cuda
+
+# then refresh the report
+uv run python scripts/write_7g_gene_only_probe_report.py
+```
+
+The stale run directories were intentionally left in place (not deleted) in
+case anyone wants to diff old-vs-new numbers; the new run will not reuse them
+(different arm ids reuse the same `run_id`s and will overwrite in place once
+started — the `.stale-*` copies are the only preserved snapshots).
+
+### Blocked on the above: the full model-selection report
+
+You (Dima) asked for a comprehensive report update to `analysis.md` — current
+valid baselines, four scalar pooling combos, RBS-only readouts, vector
+cascade, one-hop, parameter counts, epoch/runtime/GPU-memory estimates, all
+three task metrics, per-fold tables, Pareto table, architecture diagrams, and
+explicit answers to the 7 questions at the bottom of this plan (mean vs max at
+each level, does scalar RBS discard information, does gene pooling discard
+information relative to RBS, does one-hop match/beat the cascade, is one
+scalar per gene sufficient, best performance/compute trade-off — not decided
+on tissue F1 alone). That report is **not written yet** — six of the ten
+arms it needs (all cascade + classical) are ready now; the one-hop numbers
+above are exactly the piece the clean redo produces. Write it after the redo
+lands, not before, or the one-hop conclusions will be wrong a third time.
+
+## Current screen status (2026-09-03 evening)
+
+> **Update (post-handoff):** `N-cascade-vector-max-max` finished all 3/3 folds
+> and its own process wrote `per_arm/N-cascade-vector-max-max.json` +
+> regenerated `analysis.md` at 17:42 — mean `e2e` tissue F1 **0.343 (±0.063)**.
+> The runner PID below (885721) has since exited normally; the "fold 2
+> training now" row is stale. See the "Handoff" section above for the fuller
+> post-completion picture (all four screen arms landed, none decisive vs
+> classical or each other).
+
+### Arms complete / near-complete (Tier-1 scalar + vector)
+
+| Arm | Folds done | Mean e2e tissue F1 | Mean linear F1 | Notes |
+|-----|-----------|-------------------|---------------|-------|
+| `N-cascade-scalar-mean-max` | 3/3 ✓ | 0.332 | 0.375 | per_arm JSON ready |
+| `N-cascade-scalar-max-mean` | 3/3 ✓ | 0.359 | 0.370 | tentative screen leader; per_arm JSON ready |
+| `N-cascade-vector-mean-max` | 3/3 ✓ | 0.337 | 0.360 | per_arm JSON ready |
+| `N-cascade-vector-max-max` | 3/3 ✓ | 0.343 | 0.367 | **done** (see update note above) |
+| `N-light-gene-max` | 1/3 🔄 | — | — | f0 rerun post-fix (e2e 0.116); f1/f2 need retrain |
+| `N-light-gene-mean` | 0/3 ✗ | — | — | all folds stale (pre-orientation fix + checkpoint-bug) |
+
+> **Reference baselines:** `P2-G` (max/max 15ep): 0.373 e2e / 0.385 enet;
+> `C-mvalue-enet-G`: 0.388 classical. Screen arms are ~0.03–0.04 behind P2-G e2e.
+
+### What is done (code + policy)
+
+- `mbs_enet` / `rbs_enet` deferred to post-hoc for all screen arms
+  (`stage_a_include_mbs_enet: false` in all arm YAML configs).
+- Post-hoc script: `scripts/eval_mbs_enet_from_scores.py` supports
+  `--run-prefix` for flat `-f{i}` runs **and** `--run-id` for cascade folds.
+- Orientation contract v2 (`fc8cd6f`): `evaluate_flat_mbs_e2e` passes raw MBS
+  to heads; `orient_mbs_array` only affects exported association artifact.
+- Checkpoint-selection bug fixed: `stage_a_per_epoch_eval` now implied by
+  `use_tissue_rank` in `loop.py`; configs updated explicitly.
+- `ThreadPoolExecutor` for deferred CPU probes (avoids stale-import issues with
+  `ProcessPoolExecutor` after mid-queue hotfixes).
+- `mbs_linear_probe` uses default `lbfgs LogisticRegression` (`fusion=None`)
+  matching P2/P4 baseline.
+- `SGDClassifier` alpha scaled by `n_samples` for wide tissue classification
+  (speeds up `mbs_enet` when eventually run post-hoc).
+
+### What remains to be done / redone
+
+#### Immediate (in-flight GPU queue)
+
+1. ~~**`N-cascade-vector-max-max` fold 2**~~ — **done**, no longer in the
+   queue. All 3 folds finished, `per_arm/N-cascade-vector-max-max.json`
+   written and `analysis.md` already regenerated (17:42). See the "Handoff"
+   section above.
+
+#### Short-term (next GPU slots)
+
+2. **`N-light-gene-max` folds 1 and 2 retrain** — the existing f1/f2 checkpoints
+   were saved at 17:18/17:28 UTC+2, before the orientation-v2 fix commit
+   at 17:30. Per-arm JSON uses their stale numbers (e2e ~0.12). Retrain from
+   fresh process after both fixes are confirmed on disk. Runner:
+   ```bash
+   uv run python scripts/run_7g_gene_only_probe.py \
+     --config configs/experiment/stage0_7g_gene_only_probe.yaml \
+     --device cuda --arm N-light-gene-max --fold 1 --fold 2
+   ```
+3. **`N-light-gene-mean` all 3 folds retrain** — all existing checkpoints are
+   stale (pre-fix or pre-checkpoint-bug-fix). The mean-pooling variant is needed
+   to answer whether mean vs max matters for the one-hop architecture. Runner:
+   ```bash
+   uv run python scripts/run_7g_gene_only_probe.py \
+     --config configs/experiment/stage0_7g_gene_only_probe.yaml \
+     --device cuda --arm N-light-gene-mean --fold 0 --fold 1 --fold 2
+   ```
+4. **Post-hoc `mbs_enet`** on all screen arms that have saved `mbs.npy` scores:
+   ```bash
+   # For flat (light) arms:
+   uv run python scripts/eval_mbs_enet_from_scores.py \
+     --run-prefix stage0-7g-gene-probe-light-max --n-folds 3
+   uv run python scripts/eval_mbs_enet_from_scores.py \
+     --run-prefix stage0-7g-gene-probe-light-mean --n-folds 3
+   # For cascade arms (after per-arm JSONs ready):
+   uv run python scripts/eval_mbs_enet_from_scores.py \
+     --run-id stage0-7g-gene-probe-scalar-max-mean
+   uv run python scripts/eval_mbs_enet_from_scores.py \
+     --run-id stage0-7g-gene-probe-scalar-mean-max
+   uv run python scripts/eval_mbs_enet_from_scores.py \
+     --run-id stage0-7g-gene-probe-vector-mean-max
+   uv run python scripts/eval_mbs_enet_from_scores.py \
+     --run-id stage0-7g-gene-probe-vector-max-max
+   ```
+5. **Regenerate `analysis.md`** once vector-max-max and light retrains land:
+   ```bash
+   uv run python scripts/write_7g_gene_only_probe_report.py
+   ```
+
+#### Deferred (after screen arms stabilize)
+
+6. **Annotation ablation grid** (fold 0 only; A0–A7, N0–N3, two seeds each) —
+   runs the one-hop `FlatDeepSetRegion` with different feature modes to test
+   whether `cpg_context` / gene-role annotations add measurable signal over
+   M-only. Use `run_7g_gene_only_probe.py --fold 0 --device cuda` with the
+   `ablation_*` config suffixes. Start **after** L1 baseline (item 3 above)
+   numbers are in and representation diagnostics reviewed.
+7. **Post-hoc direct/orphan fusion** — deferred until ablation grid scored.
+8. **Stage B GPU run** — after screen selects (or rejects) a gene-aggregation
+   architecture. Requires `direct_cpg.zarr` and fold panel artifacts. Runner:
+   `scripts/run_7g_prime_stage_b.py`.
 
 ## Open questions (resolved by this screen)
 

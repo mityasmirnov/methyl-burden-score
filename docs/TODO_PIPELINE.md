@@ -34,6 +34,13 @@ screen selects (or rejects) gene aggregation. Plans:
 | Stage B selector / panel artifact / honest fusion names | **done** (code only) |
 | 7G″ expression plan | **done** (deferred; no training code) |
 | Stage A required GPU arms (P2/P4/P5-max/`C-*-G`) | **done** (P5 inactive thereafter) |
+| Screen policy: `mbs_enet`/`rbs_enet` post-hoc | **done** (`stage_a_include_mbs_enet: false`; `eval_mbs_enet_from_scores.py`) |
+| Scalar mixed-pooling arms (`mean-max`, `max-mean`) | **done** 3/3 folds each |
+| Vector cascade arms (`vector-mean-max`, `vector-max-max`) | **in_progress** (f2 running) |
+| `N-light-gene-max` one-hop | **in_progress** (f0 ✓; f1/f2 need retrain post orientation-v2 fix) |
+| `N-light-gene-mean` one-hop | **pending** (all 3 folds need retrain) |
+| Post-hoc `mbs_enet` on screen arms | **pending** (after GPU queue) |
+| Annotation ablation grid (A0–A7, N0–N3) | **pending** (after light-mean numbers in) |
 | Stage A DeepRVAT screen | **in_progress** ← **current ops gate** |
 | Stage B GPU run | **pending** (after screen) |
 | Milestone **7** 5×6 OOF | **blocked** |
@@ -46,7 +53,10 @@ screen selects (or rejects) gene aggregation. Plans:
 | Best MBS readout | `P2-G` **`mbs_enet`** | 0.385 (±0.053) | Same encoder as e2e; elastic-net heads |
 | Best cascade product path | `P2-G` **`mbs_e2e`** | 0.373 (±0.038) | max/max, 15 epochs; P4 mean 0.370 |
 | P4 mean/mean e2e | `P4-G` | 0.370 (±0.059) | Tied with P2 within noise |
+| Screen leader (Tier-1, 5ep) | `N-cascade-scalar-max-mean` **`mbs_e2e`** | ~0.359 (3 folds) | max CpG→region, mean region→gene |
 | P5 longer max train | `P5-G-max` | 0.356 (±0.042) | Did not help |
+| Screen — vector cascade | `N-cascade-vector-mean-max/max-max` | ~0.333–0.362 | Tier-1; vector-max-max fold 2 pending |
+| Screen — scalar-mean-max | `N-cascade-scalar-mean-max` | ~0.332 (3 folds) | Tier-1 5 ep |
 | Invalid (do not cite) | pre-fix `mbs_e2e` on P*-G | ~0.67–0.70 | train+val+test leak |
 | Invalid (do not cite) | pre-fix `N-light-gene-*` **`mbs_e2e`** | ~0.000–0.001 | orientation anchor + head/score mismatch; **linear/enet probes valid** |
 
