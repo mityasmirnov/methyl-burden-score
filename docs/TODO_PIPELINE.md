@@ -50,22 +50,34 @@ screen selects (or rejects) gene aggregation. Plans:
 | Invalid (do not cite) | pre-fix `mbs_e2e` on P*-G | ~0.67–0.70 | train+val+test leak |
 | Invalid (do not cite) | pre-fix `N-light-gene-*` **`mbs_e2e`** | ~0.000–0.001 | orientation anchor + head/score mismatch; **linear/enet probes valid** |
 
-**N-light repair (2026-03):** orientation contract **v2** (manifest-only flip;
-eval applies `1-MBS` pairing for legacy negated heads). Re-eval without retrain:
-`scripts/reeval_7g_light_stage_a.py`. One-hop is **not** rejected — frozen MBS
-probes show representation signal. Diagnostic fold-0 mean run:
-`configs/experiment/stage0_7g_gene_only_probe_light_mean_diag.yaml`.
+**N-light repair (2026-09-03, commit `fc8cd6f`):**
+- Orientation contract **v2**: `evaluate_flat_mbs_e2e` always passes **raw** encoder
+  MBS to phenotype heads; `orient_mbs_array` affects only exported association
+  artifacts. Legacy checkpoints with negated weights use repair path
+  (`legacy_negated_heads=True`). See
+  [`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md)
+  § *N-light one-hop status and repair*.
+- Re-eval legacy checkpoints without retrain: `scripts/reeval_7g_light_stage_a.py`.
+- One-hop **not** rejected — frozen MBS probes (linear/enet) showed valid
+  representation signal throughout.
+- Unit tests: `tests/unit/test_orientation_eval.py` (3 new contract tests).
+
+**Training configs (2026-09-03):**
+- `light_mean_l1.yaml` — DeepRVAT-like single LR `1e-3`, M-only, mean pool,
+  fold 0; `early_stopping_start_epoch: 5`. **Run first.**
+- `light_mean_l5.yaml` — head LR 5× diagnostic; run only if L1 diagnostics justify.
+- `light_mean_diag.yaml` — quick diagnostic (no `head_lr_multiplier`).
+- `early_stopping_start_epoch` key added to `loop.py` (default 0).
 
 **Static annotation channels (2026-09):** `cpg_context` (UCSC CGI, Milestone 3
-artifact at `data/canonical/annotations/loci.parquet`) is now wired into
-`build_gene_cols()` and `build_flat_region_gene_index()`. Regulatory channels
-(cCRE/DHS/ChromHMM) remain zero — source files not on disk (Stage A non-goal).
-Versioned annotation artifacts: `scripts/build_stage_a_locus_annotations.py`
-→ `reports/inspection/stage0_7g_gene_only_probe/locus_annotations/`.
-Ablation grid (fold 0, 8 ep, two seeds):
+artifact at `data/canonical/annotations/loci.parquet`) is wired into
+`build_gene_cols()` and `build_flat_region_gene_index()`. Gene-role one-hot
+populated. Regulatory channels (cCRE/DHS/ChromHMM) reserved as zero slots —
+sources not on disk (Stage A non-goal).
+Ablation grid (fold 0, `early_stopping_start_epoch: 5`, two seeds, no `head_lr_multiplier`):
 A0 `m_only` | A1 `m_role` | A2 `m_context` | A3 `m_role_context` | A4/A7 `full` |
 N0 `obs_only` | N1 `anno_only` | N2 reg-permuted | N3 reg-zero.
-Run all arms with `--fold 0 --device cuda` via `run_7g_gene_only_probe.py`.
+Run after L1 baseline: `run_7g_gene_only_probe.py --fold 0 --device cuda`.
 
 **Provisional lock:** `P2-G` max/max, 15 epochs (`lock_recommendation.json`);
 cascade is **not** clearly ahead of classical. Stage A screen may revise the

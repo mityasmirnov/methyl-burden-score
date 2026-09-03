@@ -65,8 +65,14 @@ extra readout of encoder quality, not a lock substitute. **P5 is inactive**
 ### Next (ordered)
 
 1. **Stage A DeepRVAT screen** ([plan](milestone-7g-prime-stage-a-deeprvat-screen.md)):
-   mixed scalar pooling, RBS diagnostic, vector cascade, one-hop; Tier 1 (5 ep)
-   then Tier 2 (15 ep) for promoted arms.
+   - **Orientation contract v2 fix** applied (2026-09-03, commit `fc8cd6f`):
+     `evaluate_flat_mbs_e2e` now passes raw encoder MBS to heads; L1/L5 training
+     configs added; `early_stopping_start_epoch` supported; annotation ablation
+     configs cleaned up (no `head_lr_multiplier`).
+   - GPU sequence: **L1 baseline first** → inspect representation diagnostics →
+     L5 if justified → annotation ablation grid (A0–A7, N0–N3, fold 0).
+   - Mixed scalar pooling, RBS diagnostic, vector cascade follow after one-hop
+     numbers are in. Tier 1 (5 ep) then Tier 2 (15 ep) for promoted arms.
 2. **Stage B GPU run** after screen selects (or rejects) gene aggregation
    (`stage0_7g_prime_stage_b.yaml`); seed-gene transfer is a **separate** design.
 3. Optional **7G″** expression pilot (not a gate).
