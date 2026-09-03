@@ -359,7 +359,8 @@ def render_task_comparison_section(rows: list[dict[str, Any]]) -> list[str]:
         "Compare rows as alternative **readouts** of one encoder (`mbs_e2e` / "
         "`mbs_linear_probe` / `mbs_enet`) versus classical models on raw CpG M-values. "
         "`mbs_e2e` sex AUROC is unavailable (class argmax only). "
-        "Classical enet age is blanked when SGD MAE exploded. "
+        "Classical enet age uses Huber SGD elastic-net (year-scale target + "
+        "eta0=1e-4); unscaled squared-error SGD exploded on this panel. "
         "Horvath-style clocks are not in this table.",
         "",
         "| Arm | Readout | Tissue F1 | Age MAE | Age R² | Sex AUROC | Sex F1 | folds |",

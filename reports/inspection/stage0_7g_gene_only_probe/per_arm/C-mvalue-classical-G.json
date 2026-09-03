@@ -10,8 +10,13 @@
     {
       "arms": {
         "C-mvalue-enet-G": {
-          "age": null,
-          "age_note": "blanked: SGD elastic-net age MAE exploded",
+          "age": {
+            "mae": 8.94345318259876,
+            "pearson_r": 0.901152834450397,
+            "r2": 0.7792256133654158,
+            "rmse": 12.147040330528293,
+            "spearman_r": 0.8943307061641114
+          },
           "kind": "enet",
           "sex": {
             "auroc": 0.853912081299077,
@@ -99,13 +104,13 @@
           "tissue": {
             "balanced_accuracy": 0.4206154810522804,
             "excluded_zero_shot_test_counts": {
-              "3": 13,
-              "8": 11,
               "17": 13,
               "19": 39,
               "20": 11,
               "26": 84,
-              "44": 22
+              "3": 13,
+              "44": 22,
+              "8": 11
             },
             "macro_f1": 0.3665891172972379,
             "n_classes_scored": 38
@@ -414,13 +419,13 @@
           "tissue": {
             "balanced_accuracy": 0.10537206238367579,
             "excluded_zero_shot_test_counts": {
-              "3": 13,
-              "8": 11,
               "17": 13,
               "19": 39,
               "20": 11,
               "26": 84,
-              "44": 22
+              "3": 13,
+              "44": 22,
+              "8": 11
             },
             "macro_f1": 0.09835415402385031,
             "n_classes_scored": 38
@@ -707,13 +712,13 @@
           "tissue": {
             "balanced_accuracy": 0.33823557837073154,
             "excluded_zero_shot_test_counts": {
-              "3": 13,
-              "8": 11,
               "17": 13,
               "19": 39,
               "20": 11,
               "26": 84,
-              "44": 22
+              "3": 13,
+              "44": 22,
+              "8": 11
             },
             "macro_f1": 0.31960106841957925,
             "n_classes_scored": 38
@@ -984,13 +989,13 @@
           "tissue": {
             "balanced_accuracy": 0.3341396570957036,
             "excluded_zero_shot_test_counts": {
-              "3": 13,
-              "8": 11,
               "17": 13,
               "19": 39,
               "20": 11,
               "26": 84,
-              "44": 22
+              "3": 13,
+              "44": 22,
+              "8": 11
             },
             "macro_f1": 0.31528534672062125,
             "n_classes_scored": 38
@@ -1114,8 +1119,13 @@
     {
       "arms": {
         "C-mvalue-enet-G": {
-          "age": null,
-          "age_note": "blanked: SGD elastic-net age MAE exploded",
+          "age": {
+            "mae": 7.948973297307508,
+            "pearson_r": 0.8798637572956053,
+            "r2": 0.7698466090746483,
+            "rmse": 11.078280800247052,
+            "spearman_r": 0.872506071246534
+          },
           "kind": "enet",
           "sex": {
             "auroc": 0.9180310470796809,
@@ -1253,11 +1263,11 @@
           "tissue": {
             "balanced_accuracy": 0.461441857796937,
             "excluded_zero_shot_test_counts": {
-              "4": 52,
               "10": 12,
               "18": 90,
               "27": 25,
               "33": 85,
+              "4": 52,
               "42": 87
             },
             "macro_f1": 0.39463742417916453,
@@ -1563,11 +1573,11 @@
           "tissue": {
             "balanced_accuracy": 0.0671013759187388,
             "excluded_zero_shot_test_counts": {
-              "4": 52,
               "10": 12,
               "18": 90,
               "27": 25,
               "33": 85,
+              "4": 52,
               "42": 87
             },
             "macro_f1": 0.04211085022252477,
@@ -1849,11 +1859,11 @@
           "tissue": {
             "balanced_accuracy": 0.4128914427235041,
             "excluded_zero_shot_test_counts": {
-              "4": 52,
               "10": 12,
               "18": 90,
               "27": 25,
               "33": 85,
+              "4": 52,
               "42": 87
             },
             "macro_f1": 0.38287198720278376,
@@ -2127,11 +2137,11 @@
           "tissue": {
             "balanced_accuracy": 0.39949426378850106,
             "excluded_zero_shot_test_counts": {
-              "4": 52,
               "10": 12,
               "18": 90,
               "27": 25,
               "33": 85,
+              "4": 52,
               "42": 87
             },
             "macro_f1": 0.3646316845911117,
@@ -2288,8 +2298,13 @@
     {
       "arms": {
         "C-mvalue-enet-G": {
-          "age": null,
-          "age_note": "blanked: SGD elastic-net age MAE exploded",
+          "age": {
+            "mae": 7.557513640793377,
+            "pearson_r": 0.9198793990851551,
+            "r2": 0.842078998783772,
+            "rmse": 9.83072919979007,
+            "spearman_r": 0.9125291023511817
+          },
           "kind": "enet",
           "sex": {
             "auroc": 0.8743957677860678,

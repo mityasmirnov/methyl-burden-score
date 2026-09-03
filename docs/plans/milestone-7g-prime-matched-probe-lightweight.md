@@ -34,7 +34,7 @@ Replaces the former **7H** plan
 
 | Rank | Arm | Panel | Eval | Tissue F1 | Notes |
 |------|-----|-------|------|----------:|-------|
-| 1 | `C-mvalue-enet-G` | gene 51 375 | classical | **0.388** | Tissue leader; age blanked |
+| 1 | `C-mvalue-enet-G` | gene 51 375 | classical | **0.388** | Tissue leader; age MAE now reported (Huber SGD) |
 | 2 | `P2-G` | gene 51 375 | `mbs_enet` | 0.385 | Frozen MBS + elastic-net heads |
 | 3 | `P2-G` | gene 51 375 | `mbs_e2e` | 0.373 | **Locked cascade** (max/max, 15 ep) |
 | 4 | `P4-G` | gene 51 375 | `mbs_e2e` | 0.370 | mean/mean; tied with P2 within noise |

@@ -75,11 +75,11 @@ Compare **only within the same row group** (same panel and eval mode). Stage A p
 
 ## Task comparison (tissue / age / sex)
 
-Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare rows as alternative **readouts** of one encoder (`mbs_e2e` / `mbs_linear_probe` / `mbs_enet`) versus classical models on raw CpG M-values. `mbs_e2e` sex AUROC is unavailable (class argmax only). Classical enet age is blanked when SGD MAE exploded. Horvath-style clocks are not in this table.
+Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare rows as alternative **readouts** of one encoder (`mbs_e2e` / `mbs_linear_probe` / `mbs_enet`) versus classical models on raw CpG M-values. `mbs_e2e` sex AUROC is unavailable (class argmax only). Classical enet age uses Huber SGD elastic-net (year-scale target + eta0=1e-4); unscaled squared-error SGD exploded on this panel. Horvath-style clocks are not in this table.
 
 | Arm | Readout | Tissue F1 | Age MAE | Age R² | Sex AUROC | Sex F1 | folds |
 |-----|---------|----------:|--------:|-------:|----------:|-------:|------:|
-| `C-mvalue-enet-G` | `classical` | 0.388 (±0.018) | — | — | 0.882 (±0.033) | — | 3 |
+| `C-mvalue-enet-G` | `classical` | 0.388 (±0.018) | 8.150 (±0.714) | 0.797 (±0.039) | 0.882 (±0.033) | — | 3 |
 | `P2-G` | `mbs_enet` | 0.385 (±0.053) | 14.393 (±0.655) | 0.452 (±0.054) | 0.765 (±0.027) | 0.702 (±0.026) | 3 |
 | `P4-G` | `mbs_linear_probe` | 0.379 (±0.055) | 11.609 (±1.405) | 0.611 (±0.067) | 0.800 (±0.055) | 0.732 (±0.046) | 3 |
 | `P4-G` | `mbs_enet` | 0.379 (±0.059) | 16.011 (±3.018) | 0.350 (±0.141) | 0.789 (±0.057) | 0.723 (±0.049) | 3 |
@@ -110,7 +110,7 @@ Same **51,375 gene-linked CpGs** as neural arms (`explicit_only`): ridge, elasti
 
 | Arm | tissue F1 | age MAE | age R² | sex AUROC |
 |-----|----------:|--------:|-------:|----------:|
-| C-mvalue-enet-G | 0.388 (±0.018) | — | — | 0.882 |
+| C-mvalue-enet-G | 0.388 (±0.018) | 8.150 | 0.797 | 0.882 |
 | C-mvalue-sva-G | 0.348 (±0.028) | 12.920 | 0.083 | 0.851 |
 | C-mvalue-ridge-G | 0.337 (±0.040) | 6.489 | 0.856 | 0.904 |
 | C-mvalue-hgb-G | 0.114 (±0.081) | 9.066 | 0.753 | 0.938 |

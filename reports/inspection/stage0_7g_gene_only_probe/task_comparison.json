@@ -136,10 +136,10 @@
       "tissue_f1_std": 0.040153529114743125
     },
     {
-      "age_mae": null,
-      "age_mae_std": null,
-      "age_r2": null,
-      "age_r2_std": null,
+      "age_mae": 8.149980040233215,
+      "age_mae_std": 0.7144997455640769,
+      "age_r2": 0.7970504070746122,
+      "age_r2_std": 0.03927686321301933,
       "arm_id": "C-mvalue-enet-G",
       "n_folds": 3,
       "readout": "classical",

@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from sklearn.compose import TransformedTargetRegressor
 from sklearn.decomposition import PCA
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 from sklearn.impute import SimpleImputer
@@ -63,10 +64,27 @@ def _sgd_regressor(*, penalty: str, l1_ratio: float = 0.5) -> Pipeline:
         "max_iter": 80,
         "tol": 1e-3,
         "random_state": 42,
+        "eta0": 1e-4,
+        "learning_rate": "invscaling",
+        "average": True,
+        "loss": "huber",
     }
     if penalty == "elasticnet":
         kwargs["l1_ratio"] = l1_ratio
-    return Pipeline([("scale", StandardScaler(with_mean=True)), ("sgd", SGDRegressor(**kwargs))])
+    # Default eta0=0.01 explodes on high-p M-values; unscaled years underfit.
+    # Scale X and y, then Huber SGD with a smaller step.
+    return Pipeline(
+        [
+            ("scale", StandardScaler(with_mean=True)),
+            (
+                "sgd",
+                TransformedTargetRegressor(
+                    regressor=SGDRegressor(**kwargs),
+                    transformer=StandardScaler(),
+                ),
+            ),
+        ]
+    )
 
 
 def impute_median(train: np.ndarray, test: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -152,11 +170,13 @@ def fit_eval_mvalue_fold(
     kind: str,
     *,
     impute: bool = True,
+    tasks: tuple[str, ...] = ("age", "tissue", "sex"),
 ) -> dict[str, Any]:
     """Fit one classical kind on train; metrics on test (masked phenotypes)."""
     if impute:
         x_tr, x_te = impute_median(x_tr, x_te)
     out: dict[str, Any] = {"kind": kind}
+    want = set(tasks)
     age_m = np.asarray(ph_tr["age_mask"], dtype=bool)
     tissue_m = np.asarray(ph_tr["tissue_mask"], dtype=bool)
     sex_m = np.asarray(ph_tr["sex_mask"], dtype=bool)
@@ -201,23 +221,26 @@ def fit_eval_mvalue_fold(
         tissue_model = _sgd_classifier(penalty="l2")
         sex_model = _sgd_classifier(penalty="l2")
 
-    if age_m.any():
+    if "age" in want and age_m.any():
         age_model.fit(x_tr[age_m], ph_tr["age"][age_m])
-    if tissue_m.any():
+    if "tissue" in want and tissue_m.any():
         tissue_model.fit(x_tr[tissue_m], ph_tr["tissue"][tissue_m])
-    if sex_m.any() and len(np.unique(ph_tr["sex"][sex_m])) >= 2:
+    if "sex" in want and sex_m.any() and len(np.unique(ph_tr["sex"][sex_m])) >= 2:
         sex_model.fit(x_tr[sex_m], ph_tr["sex"][sex_m])
 
-    if age_mt.any() and age_m.any():
+    if "age" in want and age_mt.any() and age_m.any():
         pred = age_model.predict(x_te[age_mt])
         age_metrics = regression_metrics(ph_te["age"][age_mt], pred)
         # Clamp exploded enet age (same policy as 7E).
         if kind == "enet" and float(age_metrics.get("mae", 0.0)) > 100.0:
             out["age"] = None
-            out["age_note"] = "blanked: SGD elastic-net age MAE exploded"
+            out["age_note"] = (
+                "blanked: SGD elastic-net age MAE exploded "
+                f"({float(age_metrics['mae']):.3g})"
+            )
         else:
             out["age"] = age_metrics
-    if tissue_mt.any() and tissue_m.any():
+    if "tissue" in want and tissue_mt.any() and tissue_m.any():
         pred_t = tissue_model.predict(x_te[tissue_mt])
         yt = ph_te["tissue"][tissue_mt]
         tissue_valid_classes = set(ph_tr["tissue"][tissue_m].tolist())
@@ -240,7 +263,7 @@ def fit_eval_mvalue_fold(
                 out["tissue_roc"] = tissue_ovr_curves(
                     yt, ph_te["tissues"][tissue_mt].astype(str).tolist(), proba, classes
                 )
-    if sex_mt.any() and hasattr(sex_model, "predict_proba") and sex_m.any():
+    if "sex" in want and sex_mt.any() and hasattr(sex_model, "predict_proba") and sex_m.any():
         try:
             proba = np.asarray(sex_model.predict_proba(x_te[sex_mt]))
             classes = _model_classes(sex_model)
@@ -270,11 +293,14 @@ def run_classical_mvalue(
     max_loci: int = 65536,
     matrix_id: str = "matrix-hub-age-tissue-sex-full-v1",
     gene_cols: np.ndarray | None = None,
+    kinds: tuple[str, ...] | None = None,
+    tasks: tuple[str, ...] = ("age", "tissue", "sex"),
 ) -> dict[str, Any]:
     """Run C-mvalue-* arms on frozen folds; methylation matrix only.
 
     When ``gene_cols`` is set, slice to those column indices and suffix arm names
-  with ``-G`` (matched gene-linked panel for 7G′ Stage A).
+    with ``-G`` (matched gene-linked panel for 7G′ Stage A).
+    ``kinds`` restricts to a subset of ``ridge`` / ``enet`` / ``hgb`` / ``sva``.
     """
     matrix_paths = matrix_store_paths(data_root / "canonical" / "matrices" / matrix_id)
     sample_index = read_sample_index(matrix_paths.sample_index_path)
@@ -317,6 +343,11 @@ def run_classical_mvalue(
     else:
         arms_to_run = list(CLASSICAL_ARMS)
         panel_note = ""
+    if kinds is not None:
+        wanted = set(kinds)
+        arms_to_run = [(name, kind) for name, kind in arms_to_run if kind in wanted]
+        if not arms_to_run:
+            raise ValueError(f"no classical arms match kinds={kinds!r}")
 
     def matrix_for(ids: list[str]) -> np.ndarray:
         rows = np.asarray([row_by_id[s] for s in ids], dtype=np.int64)
@@ -373,7 +404,7 @@ def run_classical_mvalue(
                 extra_impute = True
             print(f"  {arm_name}…", flush=True)
             metrics = fit_eval_mvalue_fold(
-                xtr, xte, ph_tr, ph_te, kind_fit, impute=extra_impute
+                xtr, xte, ph_tr, ph_te, kind_fit, impute=extra_impute, tasks=tasks
             )
             slim = {
                 k: metrics[k]
