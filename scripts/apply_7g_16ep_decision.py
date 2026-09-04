@@ -225,24 +225,37 @@ def decide(report_dir: Path) -> dict[str, Any]:
     }
 
     summary["screen_complete"] = ready
+    r1b = bool(summary["rules"].get("one_hop_mean_near_p2", {}).get("fired"))
     if not ready:
         summary["next_gate"] = "matched_16ep_promotion_screen"
         summary["recommendation"] = "Wait for all 16-ep promotion folds before deciding."
     elif r1:
         summary["next_gate"] = "prefer_one_hop_max"
-        summary["recommendation"] = "One-hop max is preferred smaller architecture."
+        summary["recommendation"] = (
+            "One-hop max is preferred smaller architecture; still run age-primary seed-mask next."
+        )
     elif r2:
         summary["next_gate"] = "typed_rbs_aggregation"
-        summary["recommendation"] = "Pursue typed-RBS aggregation (not scalar MBS)."
+        summary["recommendation"] = (
+            "Pursue typed-RBS aggregation (CPU); age-primary seed-mask remains the next GPU gate."
+        )
     elif r3:
         summary["next_gate"] = "retain_pooling_2x2"
-        summary["recommendation"] = "Retain full 2×2 pooling result; no pooling lock."
-    elif r4:
+        summary["recommendation"] = (
+            "Retain full 2×2 pooling result; no pooling lock. Proceed to age-primary seed-mask."
+        )
+    elif r4 or r1b:
         summary["next_gate"] = "age_primary_seed_mask"
-        summary["recommendation"] = "No promoted architecture beats P2-G/classical; start seed-mask."
+        summary["recommendation"] = (
+            "Matched screen complete; start age-primary seed-gene experiment "
+            "(one-hop mean near P2 and/or nothing beats P2/classical)."
+        )
     else:
-        summary["next_gate"] = "manual_review"
-        summary["recommendation"] = "Screen complete but no rule fired cleanly; review Pareto."
+        # Screen finished without a clean architecture win — still unlock seed-mask GPU.
+        summary["next_gate"] = "age_primary_seed_mask"
+        summary["recommendation"] = (
+            "Screen complete; review Pareto, then run age-primary seed-mask (not Stage B)."
+        )
 
     return summary
 
