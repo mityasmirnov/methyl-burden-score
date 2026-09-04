@@ -194,7 +194,7 @@ Ceiling is the configured `max_epochs`. **Ran** is how many epochs the trainer c
 
 ## Cascade arms (gene-linked CpGs only)
 
-Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** are readouts of the **same frozen MBS**; **`rbs_*`** use gene-linked RBS. Contaminated pre-fix **`mbs_e2e`** shown as *invalid*. **Best ep** = checkpoint epoch used for test eval; **ran** = epochs completed.
+Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** are readouts of the **same frozen MBS**; **`rbs_linear_probe`** / **`rbs_enet`** use gene-linked RBS (`all_gene_rbs.zarr`, 13 212 regions). Contaminated pre-fix **`mbs_e2e`** shown as *invalid*. **Best ep** = checkpoint epoch used for test eval; **ran** = epochs completed.
 
 | Arm | mbs_e2e F1 | linear probe F1 | mbs_enet F1 | age MAE (e2e) | sex AUROC (probe) | best ep | ran | folds |
 |-----|-----------:|----------------:|------------:|--------------:|------------------:|--------:|----:|------:|
@@ -207,6 +207,15 @@ Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`
 | N-cascade-scalar-mean-max | 0.331 (±0.020) | 0.375 | — | 20.713 | 0.711 | 5,5,4 (μ=4.7) | 5,5,5 (μ=5.0) | 3 |
 | N-light-gene-max | 0.305 (±0.000) | 0.327 | — | 18.058 | 0.776 | 16 | 21 | 1 |
 | N-light-gene-mean | 0.126 (±0.064) | 0.345 | 0.278 (±0.000) | 23.082 | 0.770 | 5,4,5 (μ=4.7) | 5,5,5 (μ=5.0) | 3 |
+
+### RBS frozen readouts (scalar mixed arms — post-hoc `rbs_enet` landed)
+
+| Arm | `rbs_enet` tissue F1 | `rbs_enet` age MAE | `rbs_enet` sex AUROC | `rbs_linear` tissue F1 | `rbs_linear` age MAE | folds |
+|-----|---------------------:|-------------------:|---------------------:|-----------------------:|---------------------:|------:|
+| `N-cascade-scalar-mean-max` | **0.390** (±0.045) | 12.578 (±1.476) | 0.762 (±0.024) | 0.385 (±0.042) | 14.668 (±1.041) | 3 |
+| `N-cascade-scalar-max-mean` | 0.372 (±0.061) | **11.254** (±2.129) | **0.789** (±0.057) | 0.383 (±0.066) | 13.507 (±2.237) | 3 |
+
+`rbs_enet` via `scripts/eval_mbs_enet_from_scores.py --which rbs` on saved `all_gene_rbs.zarr` (no encoder retrain). Vector-cascade / P2-G `rbs_enet` not run yet.
 
 ## Classical arms (-G panel)
 
@@ -292,7 +301,7 @@ Computed post-hoc from saved `scores/mbs.npy` (+ `mbs_present.npy`), checkpoint 
 
 - **Stage A Tier-1 screen + annotation ablations:** complete (2026-09-04). Lock stays `P2-G` max/max 15 ep; no Tier-2 promotions.
 - **Representation diagnostics:** post-hoc from `mbs.npy` / checkpoints (`scripts/compute_7g_repr_diagnostics.py` → `repr_diagnostics.json`).
-- **Post-hoc still open:** `mbs_enet` / `rbs_enet` on screen arms; optional P2-G `rbs_linear_probe` backfill (folds 1–2 lack `all_gene_rbs.zarr`).
+- **Post-hoc:** scalar mixed-arm **`rbs_enet` done** (see cascade § above). Still open: `mbs_enet` on screen arms; vector/P2 `rbs_enet`; optional P2-G `rbs_linear_probe` backfill (folds 1–2 lack `all_gene_rbs.zarr`).
 - **Encoder parity (optional):** FlatDeepSet + HierarchicalDeepSet on same `gene_cols` (cascade not ≥0.03 ahead of classical).
 - **Stage B GPU:** fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type` (prefer M-only features), post-hoc fusion, `direct_cpg.zarr`.
 
@@ -302,8 +311,9 @@ Ordered ops (do in this sequence):
 
 1. **Keep Stage A lock:** `P2-G` max/max, 15 epochs — do not start more pooling/vector Tier-2 trains.
 2. **Optional CPU diagnostics (can overlap Stage B prep):**
-   - `uv run python scripts/eval_mbs_enet_from_scores.py` on cascade + light run prefixes
-   - `rbs_enet` same path if desired; screen `rbs_linear_probe` already landed
+   - ~~scalar `rbs_enet`~~ (**done** for `N-cascade-scalar-mean-max` / `max-mean`)
+   - `uv run python scripts/eval_mbs_enet_from_scores.py --which mbs` on cascade + light prefixes
+   - optional: `--which rbs` for vector / P2-G if `all_gene_rbs.zarr` present
 3. **Stage B GPU (current gate):** `scripts/run_7g_prime_stage_b.py --device cuda` with locked `P2-G` params; one-hop / light arms use **M-only** features.
 4. **Milestone 7** 5×6 OOF only after Stage B report + `direct_cpg.zarr`.
 
