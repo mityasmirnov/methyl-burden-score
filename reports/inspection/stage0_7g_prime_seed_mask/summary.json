@@ -1,0 +1,14 @@
+{
+  "arms": {},
+  "checkpoint_selection": "validation_age_mae_then_tissue_f1_then_sex_auroc",
+  "folds": [
+    0
+  ],
+  "milestone": "7G-prime-seed-mask",
+  "n_seed_genes": 256,
+  "seeds": [
+    42,
+    43
+  ],
+  "selection_source": "internal_fold"
+}

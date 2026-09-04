@@ -32,6 +32,11 @@ _BODY_ROLES = frozenset({"gene_body", "three_prime"})
 _SEX_CHROMS = frozenset({"chrx", "chry", "x", "y"})
 DEFAULT_STRENGTH_CAP_QUANTILE = 0.99
 DEFAULT_MIN_FREQUENCY = 0.34
+# ponytail: full 51k-col × 5×3×9 enet grid is multi-hour; univariate prefilter
+# + lighter CV keeps DeepRVAT-faithful fold-fitting while finishing a screen.
+DEFAULT_PREFILTER_MAX_COLS = 4096
+DEFAULT_N_INNER_FOLDS = 2
+DEFAULT_N_REPEATS = 2
 SELECTION_METHOD = "study_grouped_enet_stability_gene_first"
 
 
@@ -122,6 +127,41 @@ def _gene_chrom_is_autosomal(
     return True
 
 
+def _univariate_prefilter(
+    x: np.ndarray,
+    y: np.ndarray,
+    *,
+    task: Literal["age", "sex", "tissue"],
+    max_cols: int,
+) -> np.ndarray:
+    """Keep the top ``max_cols`` by univariate association (outer-train only)."""
+    n_cols = int(x.shape[1])
+    if n_cols <= max_cols:
+        return np.arange(n_cols, dtype=np.int64)
+    x64 = np.asarray(x, dtype=np.float64)
+    # Column-wise nan-safe centering for correlation / mean diffs.
+    col_mean = np.nanmean(x64, axis=0)
+    filled = np.where(np.isfinite(x64), x64, col_mean)
+    if task == "age":
+        y64 = np.asarray(y, dtype=np.float64)
+        y_c = y64 - float(np.mean(y64))
+        x_c = filled - filled.mean(axis=0, keepdims=True)
+        denom = np.sqrt((x_c * x_c).sum(axis=0) * float((y_c * y_c).sum())) + 1e-12
+        score = np.abs((x_c * y_c[:, None]).sum(axis=0) / denom)
+    else:
+        y_i = np.asarray(y).astype(np.int64, copy=False)
+        classes = np.unique(y_i)
+        score = np.zeros(n_cols, dtype=np.float64)
+        for c in classes:
+            mask_c = y_i == c
+            if not mask_c.any() or mask_c.all():
+                continue
+            diff = filled[mask_c].mean(axis=0) - filled[~mask_c].mean(axis=0)
+            score = np.maximum(score, np.abs(diff))
+    order = np.argsort(-score, kind="stable")
+    return order[:max_cols].astype(np.int64)
+
+
 def _select_trait_genes(
     *,
     trait: str,
@@ -133,6 +173,9 @@ def _select_trait_genes(
     seed: int,
     strength_cap_quantile: float,
     min_frequency: float,
+    prefilter_max_cols: int = DEFAULT_PREFILTER_MAX_COLS,
+    n_inner_folds: int = DEFAULT_N_INNER_FOLDS,
+    n_repeats: int = DEFAULT_N_REPEATS,
 ) -> dict[str, Any] | None:
     """Run stability selection for one trait; score + rank supported genes."""
     trait_mask = np.asarray(mask, dtype=bool)
@@ -143,25 +186,31 @@ def _select_trait_genes(
     task: Literal["age", "sex", "tissue"] = (
         "age" if trait == "age" else "sex" if trait == "sex" else "tissue"
     )
-    cols, meta = stability_select_columns(
-        x_train[trait_mask],
-        np.asarray(y)[trait_mask],
-        study_ids=np.asarray(study_ids, dtype=object)[trait_mask],
+    x_labeled = x_train[trait_mask]
+    y_labeled = np.asarray(y)[trait_mask]
+    studies_labeled = np.asarray(study_ids, dtype=object)[trait_mask]
+    keep = _univariate_prefilter(
+        x_labeled, y_labeled, task=task, max_cols=prefilter_max_cols
+    )
+    cols_local, meta = stability_select_columns(
+        x_labeled[:, keep],
+        y_labeled,
+        study_ids=studies_labeled,
         task=task,
         min_frequency=min_frequency,
         seed=seed,
+        n_inner_folds=n_inner_folds,
+        n_repeats=n_repeats,
     )
-    seed_cols = [int(c) for c in np.asarray(cols, dtype=np.int64).tolist()]
+    # Remap local prefilter indices back to matrix columns.
+    seed_cols = [int(keep[int(c)]) for c in np.asarray(cols_local, dtype=np.int64).tolist()]
     coef_meta: dict[int, float] = {
-        int(k): float(v) for k, v in meta.get("mean_abs_coef", {}).items()
+        int(keep[int(k)]): float(v) for k, v in meta.get("mean_abs_coef", {}).items()
     }
     coefs = np.asarray([coef_meta.get(c, 0.0) for c in seed_cols], dtype=np.float64)
     # ponytail: data-adaptive burden cap (upper quantile) so one runaway CpG
     # cannot dominate a gene's rank; a fixed global cap is the upgrade path.
     cap = float(np.quantile(coefs, strength_cap_quantile)) if coefs.size else 0.0
-
-    x_labeled = x_train[trait_mask]
-    studies_labeled = np.asarray(study_ids, dtype=object)[trait_mask]
 
     gene_score: dict[int, float] = defaultdict(float)
     gene_coefs: dict[int, list[float]] = defaultdict(list)
@@ -201,6 +250,10 @@ def _select_trait_genes(
             "n_runs": int(meta.get("n_runs", 0)),
             "n_selected_cols": len(seed_cols),
             "strength_cap": cap,
+            "prefilter_max_cols": int(prefilter_max_cols),
+            "n_cols_prefiltered": int(keep.size),
+            "n_inner_folds": int(n_inner_folds),
+            "n_repeats": int(n_repeats),
         },
     }
 
@@ -251,6 +304,7 @@ def build_internal_fold_seed_panel(
 
     for trait in TRAITS:
         y, mask = trait_inputs[trait]
+        print(f"[seed_panel] selecting trait={trait} …", flush=True)
         result = _select_trait_genes(
             trait=trait,
             y=y,
@@ -466,3 +520,15 @@ def write_seed_panel(out_dir: Path, artifacts: SeedPanelArtifacts) -> dict[str, 
         "seed_panel_locus_parquet": str(locus_path),
         "panel_hash": artifacts.panel_hash,
     }
+
+
+def load_seed_panel(out_dir: Path) -> SeedPanelArtifacts:
+    """Reload hashed panel artifacts written by :func:`write_seed_panel`."""
+    out_dir = Path(out_dir)
+    panel_json = json.loads((out_dir / "seed_panel.json").read_text(encoding="utf-8"))
+    genes = pd.read_parquet(out_dir / "seed_panel_gene.parquet")
+    loci = pd.read_parquet(out_dir / "seed_panel_locus.parquet")
+    panel_hash = str(panel_json.get("panel_hash") or _panel_hash(genes, loci))
+    return SeedPanelArtifacts(
+        panel_json=panel_json, genes=genes, loci=loci, panel_hash=panel_hash
+    )

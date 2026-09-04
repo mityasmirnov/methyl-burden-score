@@ -38,6 +38,7 @@ from mbs.training.phenotypes import load_multitask_phenotypes
 from mbs.training.seed_panel import (
     build_internal_fold_seed_panel,
     gene_mask_tensor,
+    load_seed_panel,
     matched_random_gene_panel,
     write_seed_panel,
 )
@@ -137,6 +138,11 @@ def main() -> None:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--arm", action="append", default=[], help="Subset of arm ids")
     parser.add_argument("--dry-run-panels", action="store_true", help="Build panels only")
+    parser.add_argument(
+        "--reuse-panels",
+        action="store_true",
+        help="Skip internal_fold rebuild when seed_panel.json already exists",
+    )
     args = parser.parse_args()
 
     paths = DataPaths.from_environment()
@@ -251,27 +257,31 @@ def main() -> None:
         excluded = sorted({str(ph_by_id[s].study_id or "NA") for s in test_ids})
 
         print(f"[seed-mask] fold={fold_idx} building internal_fold panel K={n_seed_genes}", flush=True)
-        artifacts = build_internal_fold_seed_panel(
-            x_train=m_vals[train_idx][:, gene_cols],
-            age=ph["age"][train_idx],
-            age_mask=ph["age_mask"][train_idx],
-            sex=ph["sex"][train_idx],
-            sex_mask=ph["sex_mask"][train_idx],
-            tissue=ph["tissue"][train_idx],
-            tissue_mask=ph["tissue_mask"][train_idx],
-            study_ids=studies[train_idx],
-            assignment=local_assignment,
-            locus_chrom=None if locus_chrom is None else locus_chrom[gene_cols],
-            n_genes=n_seed_genes,
-            fold_id=fold_idx,
-            excluded_study_ids=excluded,
-            graph_id=graph_id,
-            matrix_id=matrix_id,
-            seed=42 + fold_idx,
-            min_genes=min_genes,
-        )
         panel_dir = panel_root / f"fold_{fold_idx}"
-        write_seed_panel(panel_dir, artifacts)
+        if args.reuse_panels and (panel_dir / "seed_panel.json").is_file():
+            print(f"[seed-mask] reusing panels under {panel_dir}", flush=True)
+            artifacts = load_seed_panel(panel_dir)
+        else:
+            artifacts = build_internal_fold_seed_panel(
+                x_train=m_vals[train_idx][:, gene_cols],
+                age=ph["age"][train_idx],
+                age_mask=ph["age_mask"][train_idx],
+                sex=ph["sex"][train_idx],
+                sex_mask=ph["sex_mask"][train_idx],
+                tissue=ph["tissue"][train_idx],
+                tissue_mask=ph["tissue_mask"][train_idx],
+                study_ids=studies[train_idx],
+                assignment=local_assignment,
+                locus_chrom=None if locus_chrom is None else locus_chrom[gene_cols],
+                n_genes=n_seed_genes,
+                fold_id=fold_idx,
+                excluded_study_ids=excluded,
+                graph_id=graph_id,
+                matrix_id=matrix_id,
+                seed=42 + fold_idx,
+                min_genes=min_genes,
+            )
+            write_seed_panel(panel_dir, artifacts)
 
         age_idx = _gene_indices_for_trait(artifacts, "age", gene_ids)
         tissue_idx = _gene_indices_for_trait(artifacts, "tissue", gene_ids)
