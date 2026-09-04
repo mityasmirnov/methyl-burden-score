@@ -1,0 +1,663 @@
+{
+  "arms": {
+    "N-light-gene-ablation-full": {
+      "folds": [
+        {
+          "best_epoch": 8,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-full-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": 0.008816728410298074,
+          "gene_score_sd": 0.18595614828411083,
+          "head_weight_l2": 353.29297908724834,
+          "mean_per_gene_sd": 0.07000823283156686,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-full-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.7920622229576111,
+          "score_mean": 0.5585108809833069,
+          "score_min": 0.30424317717552185
+        }
+      ],
+      "mean": {
+        "best_epoch": 8.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.008816728410298074,
+        "gene_score_sd": 0.18595614828411083,
+        "head_weight_l2": 353.29297908724834,
+        "mean_per_gene_sd": 0.07000823283156686,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-full-s2": {
+      "folds": [
+        {
+          "best_epoch": 8,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-full-s2-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": 0.005787923421779854,
+          "gene_score_sd": 0.1897015243414415,
+          "head_weight_l2": 353.29253930033036,
+          "mean_per_gene_sd": 0.07155671598110855,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-full-s2-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.7909566164016724,
+          "score_mean": 0.5586903151343934,
+          "score_min": 0.2952066659927368
+        }
+      ],
+      "mean": {
+        "best_epoch": 8.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.005787923421779854,
+        "gene_score_sd": 0.1897015243414415,
+        "head_weight_l2": 353.29253930033036,
+        "mean_per_gene_sd": 0.07155671598110855,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-m-context": {
+      "folds": [
+        {
+          "best_epoch": 7,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-m-context-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": 0.028596366048813517,
+          "gene_score_sd": 0.14538753942497537,
+          "head_weight_l2": 353.24261208905654,
+          "mean_per_gene_sd": 0.04046290794050925,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-m-context-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.7528879642486572,
+          "score_mean": 0.49849001342458543,
+          "score_min": 0.3646658957004547
+        }
+      ],
+      "mean": {
+        "best_epoch": 7.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.028596366048813517,
+        "gene_score_sd": 0.14538753942497537,
+        "head_weight_l2": 353.24261208905654,
+        "mean_per_gene_sd": 0.04046290794050925,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-m-context-s2": {
+      "folds": [
+        {
+          "best_epoch": 7,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-m-context-s2-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": 0.029038589359470127,
+          "gene_score_sd": 0.1450629230751767,
+          "head_weight_l2": 353.2416931431534,
+          "mean_per_gene_sd": 0.040247243173964574,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-m-context-s2-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.7526404857635498,
+          "score_mean": 0.4978213638869373,
+          "score_min": 0.36493170261383057
+        }
+      ],
+      "mean": {
+        "best_epoch": 7.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.029038589359470127,
+        "gene_score_sd": 0.1450629230751767,
+        "head_weight_l2": 353.2416931431534,
+        "mean_per_gene_sd": 0.040247243173964574,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-m-only": {
+      "folds": [
+        {
+          "best_epoch": 8,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-m-only-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": -0.010976756587388085,
+          "gene_score_sd": 0.14892016828356028,
+          "head_weight_l2": 353.2885093028056,
+          "mean_per_gene_sd": 0.08762590275705044,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-m-only-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.8182196617126465,
+          "score_mean": 0.41716231207156673,
+          "score_min": 0.24204201996326447
+        }
+      ],
+      "mean": {
+        "best_epoch": 8.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": -0.010976756587388085,
+        "gene_score_sd": 0.14892016828356028,
+        "head_weight_l2": 353.2885093028056,
+        "mean_per_gene_sd": 0.08762590275705044,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-m-only-s2": {
+      "folds": [
+        {
+          "best_epoch": 8,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-m-only-s2-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": -0.010889955858736401,
+          "gene_score_sd": 0.14977503398989825,
+          "head_weight_l2": 353.28788729075137,
+          "mean_per_gene_sd": 0.08856722363647491,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-m-only-s2-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.8159359097480774,
+          "score_mean": 0.418080587439241,
+          "score_min": 0.24191902577877045
+        }
+      ],
+      "mean": {
+        "best_epoch": 8.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": -0.010889955858736401,
+        "gene_score_sd": 0.14977503398989825,
+        "head_weight_l2": 353.28788729075137,
+        "mean_per_gene_sd": 0.08856722363647491,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-m-role": {
+      "folds": [
+        {
+          "best_epoch": 6,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-m-role-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": 0.004358049790853049,
+          "gene_score_sd": 0.10469201029052137,
+          "head_weight_l2": 353.2177021927908,
+          "mean_per_gene_sd": 0.02764618440592005,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-m-role-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.7273853421211243,
+          "score_mean": 0.5264634646089035,
+          "score_min": 0.4281328320503235
+        }
+      ],
+      "mean": {
+        "best_epoch": 6.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.004358049790853049,
+        "gene_score_sd": 0.10469201029052137,
+        "head_weight_l2": 353.2177021927908,
+        "mean_per_gene_sd": 0.02764618440592005,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-m-role-context": {
+      "folds": [
+        {
+          "best_epoch": 8,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-m-role-context-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": 0.007546088796040723,
+          "gene_score_sd": 0.18871929840195462,
+          "head_weight_l2": 353.2919399619531,
+          "mean_per_gene_sd": 0.07102198716984653,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-m-role-context-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.7911788821220398,
+          "score_mean": 0.5566320684647311,
+          "score_min": 0.29903581738471985
+        }
+      ],
+      "mean": {
+        "best_epoch": 8.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.007546088796040723,
+        "gene_score_sd": 0.18871929840195462,
+        "head_weight_l2": 353.2919399619531,
+        "mean_per_gene_sd": 0.07102198716984653,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-m-role-context-s2": {
+      "folds": [
+        {
+          "best_epoch": 8,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-m-role-context-s2-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": 0.005925865635827214,
+          "gene_score_sd": 0.1887248812421996,
+          "head_weight_l2": 353.29255337258707,
+          "mean_per_gene_sd": 0.07118081462573154,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-m-role-context-s2-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.7905059456825256,
+          "score_mean": 0.5592091902642641,
+          "score_min": 0.29527902603149414
+        }
+      ],
+      "mean": {
+        "best_epoch": 8.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.005925865635827214,
+        "gene_score_sd": 0.1887248812421996,
+        "head_weight_l2": 353.29255337258707,
+        "mean_per_gene_sd": 0.07118081462573154,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-m-role-s2": {
+      "folds": [
+        {
+          "best_epoch": 6,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-m-role-s2-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": 0.005022673202669493,
+          "gene_score_sd": 0.10348084840035547,
+          "head_weight_l2": 353.21769207292857,
+          "mean_per_gene_sd": 0.027546775728255576,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-m-role-s2-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.7278366684913635,
+          "score_mean": 0.5258315643584062,
+          "score_min": 0.42843666672706604
+        }
+      ],
+      "mean": {
+        "best_epoch": 6.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.005022673202669493,
+        "gene_score_sd": 0.10348084840035547,
+        "head_weight_l2": 353.21769207292857,
+        "mean_per_gene_sd": 0.027546775728255576,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-n0-obs-only": {
+      "folds": [
+        {
+          "best_epoch": 3,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-n0-obs-only-f0/best.pt",
+          "constant_score_fraction": 1.0,
+          "corr_mean_m": NaN,
+          "gene_score_sd": 0.0,
+          "head_weight_l2": 353.1494622471879,
+          "mean_per_gene_sd": 0.0,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-n0-obs-only-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.45243039727211,
+          "score_mean": 0.45243039727211,
+          "score_min": 0.45243039727211
+        }
+      ],
+      "mean": {
+        "best_epoch": 3.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 1.0,
+        "corr_mean_m": NaN,
+        "gene_score_sd": 0.0,
+        "head_weight_l2": 353.1494622471879,
+        "mean_per_gene_sd": 0.0,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-n0-obs-only-s2": {
+      "folds": [
+        {
+          "best_epoch": 7,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-n0-obs-only-s2-f0/best.pt",
+          "constant_score_fraction": 1.0,
+          "corr_mean_m": NaN,
+          "gene_score_sd": 0.0,
+          "head_weight_l2": 353.17688231493025,
+          "mean_per_gene_sd": 0.0,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-n0-obs-only-s2-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.45783087611198425,
+          "score_mean": 0.45783087611198425,
+          "score_min": 0.45783087611198425
+        }
+      ],
+      "mean": {
+        "best_epoch": 7.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 1.0,
+        "corr_mean_m": NaN,
+        "gene_score_sd": 0.0,
+        "head_weight_l2": 353.17688231493025,
+        "mean_per_gene_sd": 0.0,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-n1-anno-only": {
+      "folds": [
+        {
+          "best_epoch": 7,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-n1-anno-only-f0/best.pt",
+          "constant_score_fraction": 0.03363567649281935,
+          "corr_mean_m": -0.09336081180233982,
+          "gene_score_sd": 0.041429149134447577,
+          "head_weight_l2": 353.1840967046468,
+          "mean_per_gene_sd": 0.0029224256901633798,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-n1-anno-only-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.6139819622039795,
+          "score_mean": 0.5331654238081399,
+          "score_min": 0.4639909863471985
+        }
+      ],
+      "mean": {
+        "best_epoch": 7.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.03363567649281935,
+        "corr_mean_m": -0.09336081180233982,
+        "gene_score_sd": 0.041429149134447577,
+        "head_weight_l2": 353.1840967046468,
+        "mean_per_gene_sd": 0.0029224256901633798,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-n1-anno-only-s2": {
+      "folds": [
+        {
+          "best_epoch": 7,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-n1-anno-only-s2-f0/best.pt",
+          "constant_score_fraction": 0.03325774754346183,
+          "corr_mean_m": -0.09306841764317798,
+          "gene_score_sd": 0.04272630548821218,
+          "head_weight_l2": 353.18304547793264,
+          "mean_per_gene_sd": 0.0029386665496615068,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-n1-anno-only-s2-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.6120782494544983,
+          "score_mean": 0.5272211311020631,
+          "score_min": 0.4604440927505493
+        }
+      ],
+      "mean": {
+        "best_epoch": 7.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.03325774754346183,
+        "corr_mean_m": -0.09306841764317798,
+        "gene_score_sd": 0.04272630548821218,
+        "head_weight_l2": 353.18304547793264,
+        "mean_per_gene_sd": 0.0029386665496615068,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-n2-reg-permuted": {
+      "folds": [
+        {
+          "best_epoch": 8,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-n2-reg-permuted-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": 0.008419805756991713,
+          "gene_score_sd": 0.18824249079108726,
+          "head_weight_l2": 353.2917543221549,
+          "mean_per_gene_sd": 0.07087437463604465,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-n2-reg-permuted-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.791202187538147,
+          "score_mean": 0.5558090746701521,
+          "score_min": 0.3022259771823883
+        }
+      ],
+      "mean": {
+        "best_epoch": 8.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.008419805756991713,
+        "gene_score_sd": 0.18824249079108726,
+        "head_weight_l2": 353.2917543221549,
+        "mean_per_gene_sd": 0.07087437463604465,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-n2-reg-permuted-s2": {
+      "folds": [
+        {
+          "best_epoch": 8,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-n2-reg-permuted-s2-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": 0.00863850399877375,
+          "gene_score_sd": 0.1873559028823893,
+          "head_weight_l2": 353.29215327846157,
+          "mean_per_gene_sd": 0.07064502726270523,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-n2-reg-permuted-s2-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.7913945913314819,
+          "score_mean": 0.5570899028685659,
+          "score_min": 0.3043619990348816
+        }
+      ],
+      "mean": {
+        "best_epoch": 8.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.00863850399877375,
+        "gene_score_sd": 0.1873559028823893,
+        "head_weight_l2": 353.29215327846157,
+        "mean_per_gene_sd": 0.07064502726270523,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-n3-reg-zero": {
+      "folds": [
+        {
+          "best_epoch": 8,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-n3-reg-zero-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": 0.008361369311919208,
+          "gene_score_sd": 0.18775135728333694,
+          "head_weight_l2": 353.2920114691436,
+          "mean_per_gene_sd": 0.07073842335533016,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-n3-reg-zero-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.7911964654922485,
+          "score_mean": 0.5567622818388702,
+          "score_min": 0.30341869592666626
+        }
+      ],
+      "mean": {
+        "best_epoch": 8.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.008361369311919208,
+        "gene_score_sd": 0.18775135728333694,
+        "head_weight_l2": 353.2920114691436,
+        "mean_per_gene_sd": 0.07073842335533016,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N-light-gene-ablation-n3-reg-zero-s2": {
+      "folds": [
+        {
+          "best_epoch": 8,
+          "checkpoint": "/data/projects/methyl-burden-score/artifacts/checkpoints/stage0-7g-gene-probe-ablation-n3-reg-zero-s2-f0/best.pt",
+          "constant_score_fraction": 0.0,
+          "corr_mean_m": 0.00749007979676579,
+          "gene_score_sd": 0.18885217843731783,
+          "head_weight_l2": 353.2920683728189,
+          "mean_per_gene_sd": 0.07108429861291195,
+          "n_genes": 2646,
+          "n_samples": 13548,
+          "n_scores": 35555564,
+          "run_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-ablation-n3-reg-zero-s2-f0",
+          "saturation_fraction": 0.0,
+          "score_max": 0.7911046147346497,
+          "score_mean": 0.5565278031868783,
+          "score_min": 0.2996527850627899
+        }
+      ],
+      "mean": {
+        "best_epoch": 8.0,
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.00749007979676579,
+        "gene_score_sd": 0.18885217843731783,
+        "head_weight_l2": 353.2920683728189,
+        "mean_per_gene_sd": 0.07108429861291195,
+        "saturation_fraction": 0.0
+      }
+    }
+  },
+  "by_label": {
+    "A0": {
+      "mean": {
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": -0.010933356223062244,
+        "gene_score_sd": 0.14934760113672926,
+        "head_weight_l2": 353.2881982967785,
+        "mean_per_gene_sd": 0.08809656319676268,
+        "saturation_fraction": 0.0
+      }
+    },
+    "A1": {
+      "mean": {
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.0046903614967612715,
+        "gene_score_sd": 0.10408642934543842,
+        "head_weight_l2": 353.2176971328597,
+        "mean_per_gene_sd": 0.027596480067087814,
+        "saturation_fraction": 0.0
+      }
+    },
+    "A2": {
+      "mean": {
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.028817477704141822,
+        "gene_score_sd": 0.14522523125007603,
+        "head_weight_l2": 353.24215261610493,
+        "mean_per_gene_sd": 0.040355075557236914,
+        "saturation_fraction": 0.0
+      }
+    },
+    "A3": {
+      "mean": {
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.006735977215933968,
+        "gene_score_sd": 0.1887220898220771,
+        "head_weight_l2": 353.2922466672701,
+        "mean_per_gene_sd": 0.07110140089778905,
+        "saturation_fraction": 0.0
+      }
+    },
+    "A4/A7": {
+      "mean": {
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.007302325916038964,
+        "gene_score_sd": 0.18782883631277617,
+        "head_weight_l2": 353.2927591937894,
+        "mean_per_gene_sd": 0.0707824744063377,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N0": {
+      "mean": {
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 1.0,
+        "corr_mean_m": NaN,
+        "gene_score_sd": 0.0,
+        "head_weight_l2": 353.1631722810591,
+        "mean_per_gene_sd": 0.0,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N1": {
+      "mean": {
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.03344671201814059,
+        "corr_mean_m": -0.09321461472275891,
+        "gene_score_sd": 0.042077727311329874,
+        "head_weight_l2": 353.1835710912897,
+        "mean_per_gene_sd": 0.0029305461199124433,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N2": {
+      "mean": {
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.008529154877882732,
+        "gene_score_sd": 0.1877991968367383,
+        "head_weight_l2": 353.2919538003082,
+        "mean_per_gene_sd": 0.07075970094937495,
+        "saturation_fraction": 0.0
+      }
+    },
+    "N3": {
+      "mean": {
+        "best_val_tissue_f1": NaN,
+        "constant_score_fraction": 0.0,
+        "corr_mean_m": 0.0079257245543425,
+        "gene_score_sd": 0.18830176786032737,
+        "head_weight_l2": 353.2920399209812,
+        "mean_per_gene_sd": 0.07091136098412106,
+        "saturation_fraction": 0.0
+      }
+    }
+  }
+}

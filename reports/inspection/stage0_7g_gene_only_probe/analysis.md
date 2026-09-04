@@ -143,28 +143,28 @@ Tier-1 DeepRVAT screen + fold-0 annotation ablations are in. **No new arm displa
 ### RBS-only frozen diagnostic (`rbs_linear_probe`)
 
 **It did run** on all four screen cascade arms (inline; `rbs_enet` deferred with
-screen `mbs_enet` policy). It was **missing from this report** until a bugfix:
-`_metric_from_fold` omitted `rbs_*` from evaluation keys, so means/`task_comparison`
-dropped those rows. **`P2-G` / `P4-G` still lack `rbs_linear_probe`** in metrics
+screen `mbs_enet` policy). Report writer previously omitted `rbs_*` from eval
+keys (fixed). **`P2-G` / `P4-G` still lack `rbs_linear_probe`** in metrics
 (historical runs; only fold 0 has `all_gene_rbs.zarr` for P2).
 
-| Arm | RBS linear F1 | MBS linear F1 | RBS age MAE | MBS age MAE | RBS sex AUROC | MBS sex AUROC |
-|-----|-------------:|-------------:|------------:|------------:|--------------:|--------------:|
-| `N-cascade-scalar-mean-max` | 0.385 | 0.375 | 14.67 | 14.38 | 0.773 | 0.711 |
-| `N-cascade-scalar-max-mean` | 0.383 | 0.367 | 13.51 | 12.25 | 0.811 | 0.800 |
-| `N-cascade-vector-mean-max` | 0.368 | 0.360 | **10.46** | **15.05** | **0.842** | **0.697** |
-| `N-cascade-vector-max-max` | 0.329 | 0.367 | 12.10 | 14.86 | 0.803 | 0.687 |
+On **vector-mean-max**, RBS beats MBS on age (~4.6 y) and sex (+0.15 AUROC) —
+evidence that **region→gene pooling discards age/sex signal** even though vector
+e2e did not beat scalar P2. Tissue is near-neutral across gene pooling.
 
-**Read:** tissue is near-neutral across gene pooling. On **vector-mean-max**, RBS
-beats MBS on age (~4.6 y) and sex (+0.15 AUROC) — evidence that **region→gene
-pooling discards age/sex signal** even though vector e2e did not beat scalar P2.
-Scalar arms show little age loss at the gene pool (sometimes MBS age is slightly
-better). Classical age (8.15) remains far ahead of both RBS and MBS.
+### Annotation + representation diagnostics
+
+- **`m_only` (A0)** leads ablation e2e (0.276) and linear (0.350); gene-role hurts;
+  context/full ≤ M-only; N0/N1 near chance.
+- **Repr (post-hoc):** A0 gene-score SD≈0.15 (encoder not collapsed); N0 const-score=1
+  (obs-only collapsed — good control); no 0/1 saturation; corr(mean MBS, panel mean-M)≈0
+  (gene MBS is not bulk methylation intensity). Head ‖w‖₂ similar across arms — do **not**
+  block on L5.
 
 ### Lock (unchanged)
 
-Keep **`P2-G` max/max 15 ep**. No Tier-2 promotions. Next: Stage B GPU; optional
-post-hoc `mbs_enet` / `rbs_enet` and backfill P2-G RBS probe if desired.
+Keep **`P2-G` max/max 15 ep**. Next: **Stage B GPU**; optional post-hoc `mbs_enet` /
+`rbs_enet`.
+
 ## Architecture questions (Stage A screen)
 
 1. **CpG → region pool (mean vs max):** `mean-max` tissue F1=0.331 vs `max-max` 0.373; age MAE 20.713 vs 15.637. Prefer **`P2-G`** on this slice (check Pareto).
@@ -254,29 +254,40 @@ Fold 0, `mean` pooling, ≤8 epochs, **two seeds** (primary + `-s2`) pooled. Boo
 
 ### Representation diagnostics (fold 0 mean across seeds)
 
-> Values populated only when `stage_a_per_epoch_eval: true` and `repr_diagnostics` logged on `mbs_e2e` (often empty for these short runs).
+Computed post-hoc from saved `scores/mbs.npy` (+ `mbs_present.npy`), checkpoint `head_state`, and Pearson r of per-sample mean MBS vs mean M-value over the gene-linked CpG panel (`sample_mean_m_gene_panel.npy`). Saturation = fraction of present scores ≤0.05 or ≥0.95; const-score = fraction of genes with SD < 1e-4 across samples.
 
-| Arm | Gene-score SD | Saturation frac | Const-score frac | Corr w/ mean-M |
-|-----|:-------------:|:---------------:|:----------------:|:--------------:|
-| A0 | — | — | — | — |
-| A1 | — | — | — | — |
-| A2 | — | — | — | — |
-| A3 | — | — | — | — |
-| A4/A7 | — | — | — | — |
-| N0 | — | — | — | — |
-| N1 | — | — | — | — |
-| N2 | — | — | — | — |
-| N3 | — | — | — | — |
+| Arm | Gene-score SD | Saturation frac | Const-score frac | Corr w/ mean-M | Head ‖w‖₂ | Best ep |
+|-----|:-------------:|:---------------:|:----------------:|:--------------:|:---------:|:-------:|
+| A0 | 0.149 | 0.000 | 0.000 | -0.011 | 353.288 | 8 |
+| A1 | 0.104 | 0.000 | 0.000 | 0.005 | 353.218 | 6 |
+| A2 | 0.145 | 0.000 | 0.000 | 0.029 | 353.242 | 7 |
+| A3 | 0.189 | 0.000 | 0.000 | 0.007 | 353.292 | 8 |
+| A4/A7 | 0.188 | 0.000 | 0.000 | 0.007 | 353.293 | 8 |
+| N0 | 0.000 | 0.000 | 1.000 | — | 353.163 | 5 |
+| N1 | 0.042 | 0.000 | 0.033 | -0.093 | 353.184 | 7 |
+| N2 | 0.188 | 0.000 | 0.000 | 0.009 | 353.292 | 8 |
+| N3 | 0.188 | 0.000 | 0.000 | 0.008 | 353.292 | 8 |
+
+**Repr read:** A0 gene-score SD≈0.149 (non-collapsed encoder); N0 const-score≈1 (obs-only scores collapsed — control OK); corr(mean MBS, panel mean-M)≈0 across arms (gene MBS ≠ bulk methylation intensity); no score saturation (not stuck at 0/1).
+
 
 ## Parallel / follow-on work
 
-- **Stage A required GPU arms** (`P2-G`, `P4-G`, `P5-G-max`, `C-mvalue-*-G`) are complete on `explicit_only`. Optional `P5-G-mean` was not run.
-- **Stage A screen (sequential):** train one arm at a time and regenerate this report after each. Order: `N-light-gene-max` → `N-light-gene-mean` → mixed scalar cascades → vector cascades; promote Tier-2 (15 ep) only if Pareto/near-best.
-- **Encoder parity (optional):** FlatDeepSet + HierarchicalDeepSet on same `gene_cols` if cascade does not lead classical by ≥0.03 F1.
-- **Stage B (after lock):** fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type`, `direct_cpg.zarr`, full-model fusion arms.
+- **Stage A Tier-1 screen + annotation ablations:** complete (2026-09-04). Lock stays `P2-G` max/max 15 ep; no Tier-2 promotions.
+- **Representation diagnostics:** post-hoc from `mbs.npy` / checkpoints (`scripts/compute_7g_repr_diagnostics.py` → `repr_diagnostics.json`).
+- **Post-hoc still open:** `mbs_enet` / `rbs_enet` on screen arms; optional P2-G `rbs_linear_probe` backfill (folds 1–2 lack `all_gene_rbs.zarr`).
+- **Encoder parity (optional):** FlatDeepSet + HierarchicalDeepSet on same `gene_cols` (cascade not ≥0.03 ahead of classical).
+- **Stage B GPU:** fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type` (prefer M-only features), post-hoc fusion, `direct_cpg.zarr`.
 
 ## Next
 
-- **Stage A screen (sequential):** continue remaining Tier-1 arms after each landed light arm updates this report.
-- Stage B (after lock): fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type` (FlatDeepSetRegion), `N-mbs-posthoc-full-fusion` / `N-mbs-posthoc-mbs-direct`, plus `direct_cpg.zarr`.
-- Milestone **7** 5×6 OOF remains blocked until Stage B completes.
+Ordered ops (do in this sequence):
+
+1. **Keep Stage A lock:** `P2-G` max/max, 15 epochs — do not start more pooling/vector Tier-2 trains.
+2. **Optional CPU diagnostics (can overlap Stage B prep):**
+   - `uv run python scripts/eval_mbs_enet_from_scores.py` on cascade + light run prefixes
+   - `rbs_enet` same path if desired; screen `rbs_linear_probe` already landed
+3. **Stage B GPU (current gate):** `scripts/run_7g_prime_stage_b.py --device cuda` with locked `P2-G` params; one-hop / light arms use **M-only** features.
+4. **Milestone 7** 5×6 OOF only after Stage B report + `direct_cpg.zarr`.
+
+Do **not** block Stage B on L5 / more annotation trains: ablation `m_only` already beats annotated modes, and one-hop e2e remains far behind cascade.

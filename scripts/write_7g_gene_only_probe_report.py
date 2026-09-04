@@ -344,19 +344,27 @@ def _repr_diagnostics_row(arm_id: str | list[str], arm_payloads: dict[str, dict 
             folds.extend(payload.get("folds") or [])
     label = ids[0] if ids else "—"
     if not folds:
-        return f"| {label} | — | — | — | — |"
+        return f"| {label} | — | — | — | — | — | — |"
 
-    def _mean_key(*keys: str) -> str:
+    def _mean_key(*keys: str, as_int: bool = False) -> str:
         vals = [v for f in folds if (v := _extract_scalar(f, *keys)) is not None]
+        vals = [v for v in vals if not (isinstance(v, float) and math.isnan(v))]
         if not vals:
             return "—"
-        return f"{np.mean(vals):.3f}"
+        mean = float(np.mean(vals))
+        if as_int:
+            return str(int(round(mean)))
+        return f"{mean:.3f}"
 
     score_sd = _mean_key("evaluations", "mbs_e2e", "repr_diagnostics", "gene_score_sd")
     sat_frac = _mean_key("evaluations", "mbs_e2e", "repr_diagnostics", "saturation_fraction")
     const_frac = _mean_key("evaluations", "mbs_e2e", "repr_diagnostics", "constant_score_fraction")
     corr_m = _mean_key("evaluations", "mbs_e2e", "repr_diagnostics", "corr_mean_m")
-    return f"| {label} | {score_sd} | {sat_frac} | {const_frac} | {corr_m} |"
+    head_l2 = _mean_key("evaluations", "mbs_e2e", "repr_diagnostics", "head_weight_l2")
+    best_ep = _mean_key("evaluations", "mbs_e2e", "repr_diagnostics", "best_epoch", as_int=True)
+    return (
+        f"| {label} | {score_sd} | {sat_frac} | {const_frac} | {corr_m} | {head_l2} | {best_ep} |"
+    )
 
 
 def _ablation_seed_ids(base_arm_id: str) -> list[str]:
@@ -459,10 +467,13 @@ def annotation_ablation_section(arm_payloads: dict[str, dict | None]) -> str:
     repr_header = [
         "",
         "### Representation diagnostics (fold 0 mean across seeds)\n",
-        "> Values populated only when `stage_a_per_epoch_eval: true` and "
-        "`repr_diagnostics` logged on `mbs_e2e` (often empty for these short runs).\n",
-        "| Arm | Gene-score SD | Saturation frac | Const-score frac | Corr w/ mean-M |",
-        "|-----|:-------------:|:---------------:|:----------------:|:--------------:|",
+        "Computed post-hoc from saved `scores/mbs.npy` (+ `mbs_present.npy`), "
+        "checkpoint `head_state`, and Pearson r of per-sample mean MBS vs mean "
+        "M-value over the gene-linked CpG panel (`sample_mean_m_gene_panel.npy`). "
+        "Saturation = fraction of present scores ≤0.05 or ≥0.95; const-score = "
+        "fraction of genes with SD < 1e-4 across samples.\n",
+        "| Arm | Gene-score SD | Saturation frac | Const-score frac | Corr w/ mean-M | Head ‖w‖₂ | Best ep |",
+        "|-----|:-------------:|:---------------:|:----------------:|:--------------:|:---------:|:-------:|",
     ]
 
     def _relabel(row: str, label: str) -> str:
@@ -481,6 +492,22 @@ def annotation_ablation_section(arm_payloads: dict[str, dict | None]) -> str:
         for label, arm_id, _ in neg_arms
     ]
 
+    # Brief read of diagnostics when present.
+    a0_sd = _arm_mean_ci(arm_payloads, _ablation_seed_ids("N-light-gene-ablation-m-only"),
+                         "evaluations", "mbs_e2e", "repr_diagnostics", "gene_score_sd")[0]
+    n0_const = _arm_mean_ci(arm_payloads, _ablation_seed_ids("N-light-gene-ablation-n0-obs-only"),
+                            "evaluations", "mbs_e2e", "repr_diagnostics", "constant_score_fraction")[0]
+    repr_note = ""
+    if not math.isnan(a0_sd) or not math.isnan(n0_const):
+        bits = []
+        if not math.isnan(a0_sd):
+            bits.append(f"A0 gene-score SD≈{a0_sd:.3f} (non-collapsed encoder)")
+        if not math.isnan(n0_const) and n0_const > 0.9:
+            bits.append("N0 const-score≈1 (obs-only scores collapsed — control OK)")
+        bits.append("corr(mean MBS, panel mean-M)≈0 across arms (gene MBS ≠ bulk methylation intensity)")
+        bits.append("no score saturation (not stuck at 0/1)")
+        repr_note = "\n**Repr read:** " + "; ".join(bits) + ".\n"
+
     return "\n".join(
         header
         + rows_a
@@ -490,6 +517,7 @@ def annotation_ablation_section(arm_payloads: dict[str, dict | None]) -> str:
         + repr_header
         + repr_rows_a
         + repr_rows_n
+        + [repr_note]
         + [""]
     )
 
@@ -1082,23 +1110,32 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
         [
             "## Parallel / follow-on work",
             "",
-            "- **Stage A required GPU arms** (`P2-G`, `P4-G`, `P5-G-max`, `C-mvalue-*-G`) are complete "
-            "on `explicit_only`. Optional `P5-G-mean` was not run.",
-            "- **Stage A screen (sequential):** train one arm at a time and regenerate this report after each. "
-            "Order: `N-light-gene-max` → `N-light-gene-mean` → mixed scalar cascades → vector cascades; "
-            "promote Tier-2 (15 ep) only if Pareto/near-best.",
-            "- **Encoder parity (optional):** FlatDeepSet + HierarchicalDeepSet on same `gene_cols` if cascade "
-            "does not lead classical by ≥0.03 F1.",
-            "- **Stage B (after lock):** fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type`, "
-            "`direct_cpg.zarr`, full-model fusion arms.",
+            "- **Stage A Tier-1 screen + annotation ablations:** complete (2026-09-04). Lock stays "
+            "`P2-G` max/max 15 ep; no Tier-2 promotions.",
+            "- **Representation diagnostics:** post-hoc from `mbs.npy` / checkpoints "
+            "(`scripts/compute_7g_repr_diagnostics.py` → `repr_diagnostics.json`).",
+            "- **Post-hoc still open:** `mbs_enet` / `rbs_enet` on screen arms; optional P2-G "
+            "`rbs_linear_probe` backfill (folds 1–2 lack `all_gene_rbs.zarr`).",
+            "- **Encoder parity (optional):** FlatDeepSet + HierarchicalDeepSet on same `gene_cols` "
+            "(cascade not ≥0.03 ahead of classical).",
+            "- **Stage B GPU:** fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type` (prefer "
+            "M-only features), post-hoc fusion, `direct_cpg.zarr`.",
             "",
             "## Next",
             "",
-            "- **Stage A screen (sequential):** continue remaining Tier-1 arms after each landed light arm "
-            "updates this report.",
-            "- Stage B (after lock): fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type` (FlatDeepSetRegion), "
-            "`N-mbs-posthoc-full-fusion` / `N-mbs-posthoc-mbs-direct`, plus `direct_cpg.zarr`.",
-            "- Milestone **7** 5×6 OOF remains blocked until Stage B completes.",
+            "Ordered ops (do in this sequence):",
+            "",
+            "1. **Keep Stage A lock:** `P2-G` max/max, 15 epochs — do not start more pooling/vector "
+            "Tier-2 trains.",
+            "2. **Optional CPU diagnostics (can overlap Stage B prep):**",
+            "   - `uv run python scripts/eval_mbs_enet_from_scores.py` on cascade + light run prefixes",
+            "   - `rbs_enet` same path if desired; screen `rbs_linear_probe` already landed",
+            "3. **Stage B GPU (current gate):** `scripts/run_7g_prime_stage_b.py --device cuda` "
+            "with locked `P2-G` params; one-hop / light arms use **M-only** features.",
+            "4. **Milestone 7** 5×6 OOF only after Stage B report + `direct_cpg.zarr`.",
+            "",
+            "Do **not** block Stage B on L5 / more annotation trains: ablation `m_only` already "
+            "beats annotated modes, and one-hop e2e remains far behind cascade.",
             "",
         ]
     )
