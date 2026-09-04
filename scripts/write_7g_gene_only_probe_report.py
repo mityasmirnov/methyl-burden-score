@@ -1513,22 +1513,23 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
             "- **Matched 16-epoch promotion screen (current GPU gate):** "
             "**`N-light-gene-max`** tissue e2e **0.336** (below P2 — do not rerun); "
             "**`N-light-gene-mean`** tissue e2e **0.378** (**within ~0.03 of P2** — "
-            "viable smaller topology candidate). Remaining cascade 16-ep queue: "
-            "scalar mean→max (fold 0 done / 1–2 training), then scalar max→mean ×3, "
-            "vector mean→max ×3 — [`milestone-7g-prime-16ep-promotion.md`]"
+            "`one_hop_mean_near_p2` fired); **`N-cascade-scalar-mean-max` 16-ep** "
+            "done 3/3 (mean e2e ≈0.346). **Now:** scalar **max→mean** 16-ep "
+            "(fold 0 done; fold 1+ training), then vector mean→max ×3 — "
+            "[`milestone-7g-prime-16ep-promotion.md`]"
             "(../../../docs/plans/milestone-7g-prime-16ep-promotion.md).",
-            "- **Post-hoc CPU enet:** Tier-1 cascade fixed `mbs_enet` ~0.36–0.37 "
-            "tissue / age MAE ~15–16. 16-ep light fixed `mbs_enet` tissue ~0.38, "
-            "age MAE ~15–16 (usable). Nested light tissue ~0.39–0.40 but **nested "
-            "age MAE exploded** — do not cite nested age; prefer fixed enet / "
-            "linear for age. Fixed `rbs_enet` already landed (diagnostic).",
+            "- **Post-hoc CPU enet:** light max/mean 16-ep already have nested "
+            "`mbs_enet`. Launching / filling fixed+nested **mbs/rbs** enet on "
+            "`scalar-mean-max-16ep` and available `scalar-max-mean-16ep` folds "
+            "(`scratch/logs/16ep_posthoc_enet.log`; unit `mbs-16ep-enet`). "
+            "Fixed `rbs_enet` remains diagnostic-only.",
             "- **CPU typed-RBS ablation (R0–R5):** done; shuffle did not collapse → "
             "neural typed aggregator **not** promoted.",
-            "- **Age-primary seed-mask screen:** blocked until 16-ep decision + "
-            "seed-panel provenance/sparsity audit — "
+            "- **Age-primary seed-mask screen:** fold-0 panel audit **green** "
+            "(`ok_for_seed_mask_gpu`); CUDA blocked only on 16-ep unlock — "
             "[`milestone-7g-prime-age-seed-mask.md`]"
             "(../../../docs/plans/milestone-7g-prime-age-seed-mask.md).",
-            "- **Atlas association catalog:** parallel, non-blocking.",
+            "- **Atlas association catalog:** done (SQL 013); non-blocking.",
             "- **Stage B CpG-panel GPU:** blocked until seed-mask screen + typed-RBS "
             "diagnostics.",
             "",
@@ -1536,17 +1537,15 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
             "",
             "Ordered ops:",
             "",
-            "1. **Finish remaining 16-ep cascade queue** (scalar mean→max f1–f2 → "
-            "scalar max→mean → vector mean→max); keep nested enet post-hoc; refresh "
-            "`promotion_decision.json` after the queue.",
-            "2. **Repair seed-panel manifests** (graph_content_hash, stability vs "
-            "4096 prefilter audit, autosome-only sex control, overlap report) "
-            "before any seed-mask GPU.",
-            "3. **Age-primary seed-mask GPU** (`scripts/run_7g_prime_seed_mask.py`) — "
-            "only after (1)+(2); fold 0, two seeds, K=256; do **not** launch Stage B.",
-            "4. **Atlas catalog** (CPU) for `external_clean` / `hybrid_fold` constructors.",
-            "5. **Stage B** fold-selected CpG panel only after (1)–(3).",
-            "6. **Milestone 7** 5×6 OOF after Stage B + `direct_cpg.zarr`.",
+            "1. **Finish remaining 16-ep cascade queue** (scalar max→mean folds "
+            "1–2 → vector mean→max ×3); do not kill GPU 0 jobs.",
+            "2. **Let post-hoc enet finish** then re-sync `per_arm/` + "
+            "`write_7g_gene_only_probe_report.py` / `apply_7g_16ep_decision.py`.",
+            "3. **Age-primary seed-mask GPU** (`scripts/run_7g_prime_seed_mask.py "
+            "--device cuda --reuse-panels`) — only after `promotion_decision.json` "
+            "unlocks; fold 0, two seeds, K=256; do **not** launch Stage B.",
+            "4. **Stage B** fold-selected CpG panel only after seed-mask screen.",
+            "5. **Milestone 7** 5×6 OOF after Stage B + `direct_cpg.zarr`.",
             "",
         ]
     )

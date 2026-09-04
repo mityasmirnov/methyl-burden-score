@@ -26,18 +26,18 @@
     },
     "N-cascade-scalar-mean-max": {
       "n_folds": 3,
-      "ceiling": 5,
-      "tissue_f1_mean": 0.33146776680053985,
-      "age_mae_mean": 20.71265888766947,
-      "sex_auroc_mean": 0.6670903960838466,
-      "matched_16ep": false
+      "ceiling": 16,
+      "tissue_f1_mean": 0.3461944596198232,
+      "age_mae_mean": 20.411444626739033,
+      "sex_auroc_mean": 0.6833609825264101,
+      "matched_16ep": true
     },
     "N-cascade-scalar-max-mean": {
-      "n_folds": 3,
-      "ceiling": 5,
-      "tissue_f1_mean": 0.35926336587402613,
-      "age_mae_mean": 21.356236621801802,
-      "sex_auroc_mean": 0.7011320903395286,
+      "n_folds": 1,
+      "ceiling": 16,
+      "tissue_f1_mean": 0.29448701584171255,
+      "age_mae_mean": 22.231325994118325,
+      "sex_auroc_mean": 0.6790582403965304,
       "matched_16ep": false
     },
     "N-cascade-vector-mean-max": {
@@ -71,13 +71,13 @@
     "scalar_mixed_closes_gap": {
       "fired": false,
       "detail": "Retain full 2\u00d72 pooling; max/max is not locked.",
-      "mean_max_f1": 0.33146776680053985,
-      "max_mean_f1": 0.35926336587402613
+      "mean_max_f1": 0.3461944596198232,
+      "max_mean_f1": 0.29448701584171255
     },
     "nothing_beats_p2_or_classical": {
       "fired": false,
       "detail": "Stop architecture sweeps; start age-primary seed-gene experiment.",
-      "best_promoted_f1": 0.35926336587402613
+      "best_promoted_f1": 0.3461944596198232
     }
   },
   "next_gate": "matched_16ep_promotion_screen",
