@@ -9,16 +9,16 @@
       "matched_16ep": true
     },
     "N-light-gene-max": {
-      "n_folds": 2,
-      "ceiling": null,
-      "tissue_f1_mean": 0.3095337288612154,
-      "age_mae_mean": 22.101165491497188,
-      "sex_auroc_mean": 0.6351453630320926,
-      "matched_16ep": false
+      "n_folds": 3,
+      "ceiling": 21,
+      "tissue_f1_mean": 0.33645482665941434,
+      "age_mae_mean": 21.593242204862786,
+      "sex_auroc_mean": 0.6244532821811447,
+      "matched_16ep": true
     },
     "N-light-gene-mean": {
       "n_folds": 3,
-      "ceiling": null,
+      "ceiling": 5,
       "tissue_f1_mean": 0.12641568513659526,
       "age_mae_mean": 23.0818874023589,
       "sex_auroc_mean": 0.5911437277982253,
@@ -53,7 +53,7 @@
     "one_hop_max_near_p2": {
       "fired": false,
       "detail": "Prefer smaller DeepRVAT-like one-hop max if within 0.03 tissue F1 of P2-G.",
-      "light_f1": 0.3095337288612154,
+      "light_f1": 0.33645482665941434,
       "p2_f1": 0.3731132977135239
     },
     "vector_age_improves_but_gene_pool_loses": {

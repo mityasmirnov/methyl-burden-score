@@ -58,7 +58,47 @@ def _ceiling(folds: list[dict[str, Any]]) -> int | None:
             vals.append(int(ckpt["max_epochs"]))
         elif f.get("max_epochs") is not None:
             vals.append(int(f["max_epochs"]))
+        else:
+            # Infer from val history / training history when configs omit max_epochs.
+            hist = []
+            if isinstance(ckpt, dict):
+                hist = ckpt.get("val_history") or []
+            if not hist:
+                hist = f.get("history") or []
+            epochs = [
+                int(h.get("epoch"))
+                for h in hist
+                if isinstance(h, dict) and h.get("epoch") is not None
+            ]
+            if epochs:
+                vals.append(max(epochs))
+            elif f.get("best_epoch") is not None:
+                vals.append(int(f["best_epoch"]))
     return max(vals) if vals else None
+
+
+def _matched_16ep(folds: list[dict[str, Any]], tissue: list[float]) -> bool:
+    """True when ≥3 e2e folds ran under a ≥15-epoch ceiling (or reached epoch ≥15)."""
+    if len(tissue) < 3:
+        return False
+    ceiling = _ceiling(folds)
+    if ceiling is not None and ceiling >= 15:
+        return True
+    # Fallback: at least one fold reached epoch 15+.
+    reached = []
+    for f in folds:
+        ckpt = f.get("checkpoint_selection") or {}
+        hist = (ckpt.get("val_history") if isinstance(ckpt, dict) else None) or f.get("history") or []
+        epochs = [
+            int(h.get("epoch"))
+            for h in hist
+            if isinstance(h, dict) and h.get("epoch") is not None
+        ]
+        if epochs:
+            reached.append(max(epochs))
+        elif f.get("best_epoch") is not None:
+            reached.append(int(f["best_epoch"]))
+    return bool(reached) and max(reached) >= 15 and len(tissue) >= 3
 
 
 def _load_arm(report_dir: Path, arm_id: str) -> dict[str, Any]:
@@ -89,7 +129,7 @@ def decide(report_dir: Path) -> dict[str, Any]:
             "tissue_f1_mean": float(np.mean(tissue)) if tissue else None,
             "age_mae_mean": float(np.mean(age)) if age else None,
             "sex_auroc_mean": float(np.mean(sex)) if sex else None,
-            "matched_16ep": (_ceiling(folds) or 0) >= 15 and len(tissue) >= 3,
+            "matched_16ep": _matched_16ep(folds, tissue),
         }
 
     light = summary["arms"]["N-light-gene-max"]

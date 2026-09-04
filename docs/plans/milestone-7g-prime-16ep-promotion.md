@@ -26,15 +26,21 @@ vector representation is weak.
 | Vector max→max | Do **not** promote yet |
 | Nested enet | Post-hoc CPU; train-fold StandardScaler + inner-val α/l1 |
 
-## Queue (14 GPU-fold jobs on GPU 0)
+## Queue (12 remaining GPU-fold jobs on GPU 0)
 
-1. `N-light-gene-max` folds 1–2 (fold 0 already selected epoch 16)
-2. `N-light-gene-mean` all 3 folds (new `…-16ep` prefix)
-3. Scalar `mean→max` and `max→mean` all 3 folds (new `…-16ep` run IDs)
-4. Vector `mean→max` all 3 folds (new `…-16ep` run ID)
+**Done — do not rerun:** `N-light-gene-max` folds 0–2 (16-ep; best epochs
+16/9/16). E2E tissue F1 ≈ 0.336 (±0.047), age MAE ≈ 21.6 — rescued from
+near-chance but still below P2-G (tissue 0.373 / age 15.64).
 
-Driver: `scripts/run_7g_16ep_promotion.sh` (resume: `…_resume.sh`).
-**Nested / fixed elastic-net is post-hoc only** — do not run
+**Remaining (sequential):**
+
+1. `N-light-gene-mean` all 3 folds (`…-light-mean-16ep`)
+2. Scalar `mean→max` all 3 folds (`…-scalar-mean-max-16ep`)
+3. Scalar `max→mean` all 3 folds (`…-scalar-max-mean-16ep`)
+4. Vector `mean→max` all 3 folds (`…-vector-mean-max-16ep`)
+
+Driver: `scripts/run_7g_16ep_promotion_resume.sh` (full queue script kept for
+repro). **Nested / fixed elastic-net is post-hoc only** — do not run
 `eval_mbs_enet_from_scores.py` inside the GPU queue; refresh the report
 from e2e + linear/Ridge probes first, then enet offline.
 

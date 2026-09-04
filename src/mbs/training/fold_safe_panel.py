@@ -94,6 +94,21 @@ def _coef_abs(model: Pipeline, n_cols: int) -> np.ndarray:
     return np.abs(raw_coef.ravel())
 
 
+def _finite_nonconstant_cols(x: np.ndarray) -> np.ndarray:
+    """Columns with ≥2 finite values and positive finite variance (train-fold only)."""
+    x64 = np.asarray(x, dtype=np.float64)
+    keep: list[int] = []
+    for j in range(x64.shape[1]):
+        col = x64[:, j]
+        finite = col[np.isfinite(col)]
+        if finite.size < 2:
+            continue
+        if float(np.nanstd(finite)) <= 0.0:
+            continue
+        keep.append(j)
+    return np.asarray(keep, dtype=np.int64)
+
+
 def stability_select_columns(
     x_train: np.ndarray,
     y_train: np.ndarray,
@@ -107,13 +122,44 @@ def stability_select_columns(
     seed: int = 42,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """Repeated study-grouped inner-CV elastic-net; rank columns by selection frequency."""
+    empty_meta: dict[str, Any] = {
+        "n_runs": 0,
+        "frequency": {},
+        "mean_abs_coef": {},
+        "standardization": (
+            "X: StandardScaler(with_mean=True); "
+            "age y: z-score inside each inner-train fold"
+        ),
+        "n_cols_input": int(x_train.shape[1]) if x_train.ndim == 2 else 0,
+        "n_cols_nonzero_variance": 0,
+        "n_zero_variance_dropped": 0,
+        "n_passing_min_frequency": 0,
+        "frequency_quantiles": {},
+        "n_fits_attempted": 0,
+        "n_fits_converged": 0,
+        "n_fits_nonconverged": 0,
+        "coef_abs_quantiles_selected": {},
+    }
     if x_train.shape[0] < 4:
         picked = np.arange(min(max_seeds, x_train.shape[1]), dtype=np.int64)
-        return picked, {"n_runs": 0, "frequency": {}, "mean_abs_coef": {}}
-    n_cols = x_train.shape[1]
+        return picked, empty_meta
+    n_cols_in = int(x_train.shape[1])
+    var_keep = _finite_nonconstant_cols(x_train)
+    n_zv_dropped = n_cols_in - int(var_keep.size)
+    if var_keep.size == 0:
+        return np.zeros(0, dtype=np.int64), {
+            **empty_meta,
+            "n_cols_input": n_cols_in,
+            "n_zero_variance_dropped": n_zv_dropped,
+        }
+    x_use = np.asarray(x_train[:, var_keep], dtype=np.float64)
+    n_cols = int(x_use.shape[1])
     counts = np.zeros(n_cols, dtype=np.int64)
     coef_sum = np.zeros(n_cols, dtype=np.float64)
     n_runs = 0
+    n_converged = 0
+    n_nonconverged = 0
+    n_attempted = 0
     if study_ids is None:
         study_ids = np.array(["NA"] * x_train.shape[0], dtype=object)
     for repeat in range(n_repeats):
@@ -123,7 +169,7 @@ def stability_select_columns(
             seed=seed + repeat,
         )
         for train_idx, _val_idx in inner_splits:
-            x_tr = x_train[train_idx]
+            x_tr = x_use[train_idx]
             y_tr = y_train[train_idx]
             if x_tr.shape[0] < 2:
                 continue
@@ -133,9 +179,25 @@ def stability_select_columns(
                 for l1_ratio in ENET_L1_GRID:
                     if task == "age":
                         model = _enet_regressor_pipeline(alpha=alpha, l1_ratio=l1_ratio)
+                        # Scale y inside the train fold only; raw years → ~1e10 SGD coefs.
+                        y_fit = np.asarray(y_tr, dtype=np.float64)
+                        y_std = float(np.nanstd(y_fit))
+                        if y_std > 0.0 and np.isfinite(y_std):
+                            y_fit = (y_fit - float(np.nanmean(y_fit))) / y_std
+                        else:
+                            y_fit = y_fit - float(np.nanmean(y_fit))
                     else:
                         model = _enet_classifier_pipeline(alpha=alpha, l1_ratio=l1_ratio)
-                    model.fit(x_tr, y_tr)
+                        y_fit = y_tr
+                    n_attempted += 1
+                    model.fit(x_tr, y_fit)
+                    sgd = model.named_steps["sgd"]
+                    n_iter = getattr(sgd, "n_iter_", None)
+                    max_iter = int(getattr(sgd, "max_iter", 0) or 0)
+                    if n_iter is not None and max_iter > 0 and int(n_iter) >= max_iter:
+                        n_nonconverged += 1
+                    else:
+                        n_converged += 1
                     coef = _coef_abs(model, n_cols)
                     if coef.size != n_cols:
                         raise ValueError(f"coef size {coef.size} != n_cols {n_cols}")
@@ -144,19 +206,53 @@ def stability_select_columns(
                     coef_sum += coef
                     n_runs += 1
     if n_runs == 0:
-        picked = np.arange(min(max_seeds, n_cols), dtype=np.int64)
-        return picked, {"n_runs": 0, "frequency": {}, "mean_abs_coef": {}}
+        return np.zeros(0, dtype=np.int64), {
+            **empty_meta,
+            "n_cols_input": n_cols_in,
+            "n_cols_nonzero_variance": n_cols,
+            "n_zero_variance_dropped": n_zv_dropped,
+            "n_fits_attempted": n_attempted,
+        }
     freq = counts.astype(np.float64) / float(n_runs)
     order = np.argsort(-freq, kind="stable")
-    picked = order[freq[order] >= min_frequency]
-    if picked.size == 0:
-        picked = order[: min(max_seeds, n_cols)]
+    passing = order[freq[order] >= min_frequency]
+    n_passing = int(passing.size)
+    if passing.size == 0:
+        picked_local = order[: min(max_seeds, n_cols)]
     else:
-        picked = picked[: min(max_seeds, picked.size)]
+        picked_local = passing[: min(max_seeds, passing.size)]
+    # Remap local variance-filtered indices back to the caller's columns.
+    picked = var_keep[picked_local]
+    mean_abs = coef_sum / float(n_runs)
+    q = [0.0, 0.25, 0.5, 0.75, 0.9, 0.99, 1.0]
+    freq_q = {f"q{int(100 * qq)}": float(np.quantile(freq, qq)) for qq in q}
+    sel_coef = mean_abs[picked_local] if picked_local.size else np.zeros(0)
+    coef_q = (
+        {f"q{int(100 * qq)}": float(np.quantile(sel_coef, qq)) for qq in q}
+        if sel_coef.size
+        else {}
+    )
     meta = {
         "n_runs": n_runs,
-        "frequency": {int(i): float(freq[i]) for i in picked.tolist()},
-        "mean_abs_coef": {int(i): float(coef_sum[i] / n_runs) for i in picked.tolist()},
+        "frequency": {int(var_keep[int(i)]): float(freq[int(i)]) for i in picked_local.tolist()},
+        "mean_abs_coef": {
+            int(var_keep[int(i)]): float(mean_abs[int(i)]) for i in picked_local.tolist()
+        },
+        "standardization": (
+            "X: StandardScaler(with_mean=True); "
+            "age y: z-score inside each inner-train fold"
+        ),
+        "n_cols_input": n_cols_in,
+        "n_cols_nonzero_variance": n_cols,
+        "n_zero_variance_dropped": n_zv_dropped,
+        "n_passing_min_frequency": n_passing,
+        "frequency_quantiles": freq_q,
+        "n_fits_attempted": n_attempted,
+        "n_fits_converged": n_converged,
+        "n_fits_nonconverged": n_nonconverged,
+        "coef_abs_quantiles_selected": coef_q,
+        "min_frequency": float(min_frequency),
+        "sparsity_ok": bool(n_passing < n_cols and n_passing > 0),
     }
     return picked.astype(np.int64), meta
 

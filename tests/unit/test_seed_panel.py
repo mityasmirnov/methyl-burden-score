@@ -13,6 +13,7 @@ from mbs.training.seed_panel import (
     build_internal_fold_seed_panel,
     gene_mask_tensor,
     matched_random_gene_panel,
+    matched_random_gene_panel_with_quality,
     write_seed_panel,
 )
 
@@ -58,6 +59,7 @@ def _build_age_only(min_genes: int, n_genes: int = 10, seed: int = 0) -> SeedPan
     n = data["x"].shape[0]
     zeros = np.zeros(n, dtype=np.int64)
     false_mask = np.zeros(n, dtype=bool)
+    chrom = np.asarray(["chr1", "chr2", "chr3", "chr4", "chr5", "chr6"], dtype=object)
     return build_internal_fold_seed_panel(
         x_train=data["x"],
         age=data["age"],
@@ -68,8 +70,10 @@ def _build_age_only(min_genes: int, n_genes: int = 10, seed: int = 0) -> SeedPan
         tissue_mask=false_mask,
         study_ids=data["study_ids"],
         assignment=_fake_assignment(),
+        locus_chrom=chrom,
         n_genes=n_genes,
         min_genes=min_genes,
+        graph_content_hash="test-graph-hash",
     )
 
 
@@ -96,7 +100,7 @@ def test_matched_random_excludes_seed_genes() -> None:
     seed_genes = ["G0", "G1"]
     candidates = ["G0", "G1", "G2", "G3", "G4"]
     cpg_counts = {"G0": 10, "G1": 3, "G2": 9, "G3": 4, "G4": 20}
-    matched = matched_random_gene_panel(
+    matched, quality = matched_random_gene_panel_with_quality(
         seed_genes,
         candidate_gene_ids=candidates,
         gene_cpg_counts=cpg_counts,
@@ -107,6 +111,14 @@ def test_matched_random_excludes_seed_genes() -> None:
     assert len(set(matched)) == len(matched)  # no replacement
     # Nearest CpG count: G0(10)->G2(9), G1(3)->G3(4).
     assert matched == ["G2", "G3"]
+    assert quality["seed_genes_disjoint_from_matched"]
+    assert quality["cpg_count_abs_err_mean"] == 1.0
+    assert matched_random_gene_panel(
+        seed_genes,
+        candidate_gene_ids=candidates,
+        gene_cpg_counts=cpg_counts,
+        rng=np.random.default_rng(0),
+    ) == matched
 
 
 def test_matched_random_insufficient_candidates_raises() -> None:
@@ -137,3 +149,59 @@ def test_write_seed_panel_round_trip(tmp_path: Path) -> None:
     assert (tmp_path / "seed_panel.json").is_file()
     assert (tmp_path / "seed_panel_gene.parquet").is_file()
     assert (tmp_path / "seed_panel_locus.parquet").is_file()
+
+
+def test_graph_content_hash_required() -> None:
+    data = _age_signal_data(0)
+    n = data["x"].shape[0]
+    zeros = np.zeros(n, dtype=np.int64)
+    false_mask = np.zeros(n, dtype=bool)
+    with pytest.raises(ValueError, match="graph_content_hash"):
+        build_internal_fold_seed_panel(
+            x_train=data["x"],
+            age=data["age"],
+            age_mask=np.ones(n, dtype=bool),
+            sex=zeros,
+            sex_mask=false_mask,
+            tissue=zeros,
+            tissue_mask=false_mask,
+            study_ids=data["study_ids"],
+            assignment=_fake_assignment(),
+            n_genes=10,
+            min_genes=1,
+            graph_content_hash=None,
+        )
+
+
+def test_sex_autosome_excludes_xy(tmp_path: Path) -> None:
+    """Sex control panel must not admit X/Y seed loci."""
+    rng = np.random.default_rng(1)
+    n, n_cols = 24, 6
+    x = rng.uniform(0.05, 0.95, size=(n, n_cols)).astype(np.float32)
+    # Col 0 = chrX signal for sex; col 2 = autosomal sex signal.
+    sex = (x[:, 0] > 0.5).astype(np.int64)
+    x[:, 2] = x[:, 0] * 0.8 + rng.normal(0, 0.02, size=n).astype(np.float32)
+    study_ids = np.asarray([f"ST{i // 8}" for i in range(n)], dtype=object)
+    chrom = np.asarray(["chrX", "chr1", "chr2", "chr3", "chr4", "chr5"], dtype=object)
+    art = build_internal_fold_seed_panel(
+        x_train=x,
+        age=np.zeros(n),
+        age_mask=np.zeros(n, dtype=bool),
+        sex=sex,
+        sex_mask=np.ones(n, dtype=bool),
+        tissue=np.zeros(n, dtype=np.int64),
+        tissue_mask=np.zeros(n, dtype=bool),
+        study_ids=study_ids,
+        assignment=_fake_assignment(),
+        locus_chrom=chrom,
+        n_genes=3,
+        min_genes=1,
+        graph_content_hash="test-graph-hash",
+    )
+    assert "sex_autosome" in art.panel_json["traits"]
+    assert art.panel_json["traits"]["sex_autosome"]["n_sex_chrom_seed_cpgs"] == 0
+    auto_loci = art.loci[art.loci["trait"] == "sex_autosome"]
+    for col in auto_loci["locus_col"].astype(int).tolist():
+        assert str(chrom[col]).lower() not in {"chrx", "chry", "x", "y"}
+    assert art.panel_json.get("graph_content_hash") == "test-graph-hash"
+    assert "overlap" in art.panel_json

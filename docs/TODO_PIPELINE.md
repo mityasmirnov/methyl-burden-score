@@ -45,7 +45,7 @@ Report:
 | Screen policy: `mbs_enet`/`rbs_enet` post-hoc | **done** (`stage_a_include_mbs_enet: false`; `eval_mbs_enet_from_scores.py`) |
 | Scalar mixed-pooling arms (`mean-max`, `max-mean`) | **done** 3/3 at 5 ep — unmatched vs P2; **16-ep promote pending** |
 | Vector cascade arms (`vector-mean-max`, `vector-max-max`) | **done** 3/3 at 5 ep — vector-max-max not promoted; **mean-max 16-ep pending** |
-| `N-light-gene-max` / `N-light-gene-mean` one-hop | **done** 5-ep / fold-0 30-ep; **16-ep promote pending** |
+| `N-light-gene-max` / `N-light-gene-mean` one-hop | **max 16-ep done** (3/3; below P2) / **mean 16-ep in queue** |
 | Annotation ablation grid (A0–A7, N0–N3) | **done** fold 0 — **`m_only` best** under raw concat; not proof annotations uninformative |
 | Post-hoc `mbs_enet` / `rbs_enet` on screen arms | **pending** (fixed enet diagnostic; nested enet required) |
 | Stage A DeepRVAT screen (Tier-1) | **done** — no architecture lock |
@@ -69,7 +69,8 @@ Report:
 | P5 longer max train | `P5-G-max` | 0.356 (±0.042) | Did not help |
 | Screen — vector cascade | `N-cascade-vector-*` | 0.337–0.343 | **reject vs scalar P2** |
 | Screen — scalar-mean-max | `N-cascade-scalar-mean-max` | ~0.331 (3 folds) | mean CpG pool worse |
-| Screen — one-hop | `N-light-gene-*` | ~0.12 e2e / 0.30–0.35 linear | weak e2e; representation not empty |
+| Screen — one-hop max 16-ep | `N-light-gene-max` | **0.336** e2e / **0.375** linear | 3/3 folds; still < P2; do **not** rerun |
+| Screen — one-hop mean | `N-light-gene-mean` | (5-ep weak; 16-ep pending) | in 12-fold queue |
 | Ablation best | A0 `m_only` (fold 0) | 0.276 e2e / 0.350 linear | raw concat hurts short run; not “annotations uninformative” |
 | Invalid (do not cite) | pre-fix `mbs_e2e` on P*-G | ~0.67–0.70 | train+val+test leak |
 | Invalid (do not cite) | pre-fix `N-light-gene-*` **`mbs_e2e`** | ~0.000–0.001 | orientation anchor + head/score mismatch; **linear/enet probes valid** |

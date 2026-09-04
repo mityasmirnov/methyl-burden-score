@@ -23,6 +23,7 @@ from typing import Any, Literal
 import numpy as np
 import pandas as pd
 
+from mbs.annotation.manifest import sha256_file
 from mbs.training.cascade_assign import CascadeAssignment
 from mbs.training.fold_safe_panel import stability_select_columns
 
@@ -30,6 +31,12 @@ TRAITS: tuple[str, ...] = ("age", "tissue", "sex")
 _PROMOTER_ROLES = frozenset({"promoter_core", "promoter_proximal", "five_prime"})
 _BODY_ROLES = frozenset({"gene_body", "three_prime"})
 _SEX_CHROMS = frozenset({"chrx", "chry", "x", "y"})
+_GRAPH_HASH_FILES = (
+    "genes.parquet",
+    "regions.parquet",
+    "locus_region_edges.parquet",
+    "region_gene_edges.parquet",
+)
 DEFAULT_STRENGTH_CAP_QUANTILE = 0.99
 DEFAULT_MIN_FREQUENCY = 0.34
 # ponytail: full 51k-col × 5×3×9 enet grid is multi-hour; univariate prefilter
@@ -38,6 +45,46 @@ DEFAULT_PREFILTER_MAX_COLS = 4096
 DEFAULT_N_INNER_FOLDS = 2
 DEFAULT_N_REPEATS = 2
 SELECTION_METHOD = "study_grouped_enet_stability_gene_first"
+
+
+def hash_graph_tables(graph_root: Path) -> str:
+    """Combined SHA-256 of the graph tables used for seed-panel construction."""
+    root = Path(graph_root)
+    digest = hashlib.sha256()
+    for name in _GRAPH_HASH_FILES:
+        path = root / name
+        if not path.is_file():
+            raise FileNotFoundError(f"graph table missing for content hash: {path}")
+        digest.update(name.encode("utf-8"))
+        digest.update(b"\x00")
+        digest.update(sha256_file(path).encode("utf-8"))
+        digest.update(b"\x00")
+    return digest.hexdigest()
+
+
+def _is_sex_chrom(chrom: str) -> bool:
+    c = str(chrom).strip().lower()
+    if c.startswith("chr"):
+        c = c[3:]
+    return c in {"x", "y"}
+
+
+def _autosomal_col_mask(
+    locus_chrom: np.ndarray | list[str] | None, n_cols: int
+) -> np.ndarray:
+    """Boolean mask over local columns; True = autosomal.
+
+    Raises if ``locus_chrom`` is missing — sex_autosome control must not silently
+    treat unknown chroms as autosomal.
+    """
+    if locus_chrom is None:
+        raise ValueError(
+            "locus_chrom is required for autosomal filtering / sex_autosome control"
+        )
+    chroms = np.asarray(locus_chrom, dtype=object)
+    if chroms.shape[0] != n_cols:
+        raise ValueError(f"locus_chrom length {chroms.shape[0]} != n_cols {n_cols}")
+    return np.asarray([not _is_sex_chrom(str(c)) for c in chroms.tolist()], dtype=bool)
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,22 +223,41 @@ def _select_trait_genes(
     prefilter_max_cols: int = DEFAULT_PREFILTER_MAX_COLS,
     n_inner_folds: int = DEFAULT_N_INNER_FOLDS,
     n_repeats: int = DEFAULT_N_REPEATS,
+    allowed_cols: np.ndarray | None = None,
 ) -> dict[str, Any] | None:
-    """Run stability selection for one trait; score + rank supported genes."""
+    """Run stability selection for one trait; score + rank supported genes.
+
+    ``allowed_cols`` is an optional int index array into ``x_train`` columns
+    (e.g. autosomal-only). Selection runs only on those columns; returned
+    ``seed_cols`` are indices into the full ``x_train``.
+    """
     trait_mask = np.asarray(mask, dtype=bool)
     if trait == "tissue":
         trait_mask = trait_mask & _tissue_multi_study_mask(y, trait_mask, study_ids)
     if not trait_mask.any():
         return None
     task: Literal["age", "sex", "tissue"] = (
-        "age" if trait == "age" else "sex" if trait == "sex" else "tissue"
+        "age" if trait in {"age"} else "sex" if trait in {"sex", "sex_autosome"} else "tissue"
     )
-    x_labeled = x_train[trait_mask]
+    x_full = x_train[trait_mask]
     y_labeled = np.asarray(y)[trait_mask]
     studies_labeled = np.asarray(study_ids, dtype=object)[trait_mask]
+    if allowed_cols is not None:
+        allow = np.asarray(allowed_cols, dtype=np.int64)
+        if allow.size == 0:
+            return None
+        x_labeled = x_full[:, allow]
+        # Map local (allowed) indices → full matrix columns after selection.
+        local_to_full = allow
+    else:
+        x_labeled = x_full
+        local_to_full = None
+    n_cols_input = int(x_labeled.shape[1])
     keep = _univariate_prefilter(
         x_labeled, y_labeled, task=task, max_cols=prefilter_max_cols
     )
+    # Cap so a failed frequency gate cannot dump the whole prefilter set as "seeds".
+    max_stability_seeds = max(512, min(int(prefilter_max_cols) // 4, 1024))
     cols_local, meta = stability_select_columns(
         x_labeled[:, keep],
         y_labeled,
@@ -201,25 +267,45 @@ def _select_trait_genes(
         seed=seed,
         n_inner_folds=n_inner_folds,
         n_repeats=n_repeats,
+        max_seeds=max_stability_seeds,
     )
-    # Remap local prefilter indices back to matrix columns.
-    seed_cols = [int(keep[int(c)]) for c in np.asarray(cols_local, dtype=np.int64).tolist()]
-    coef_meta: dict[int, float] = {
-        int(keep[int(k)]): float(v) for k, v in meta.get("mean_abs_coef", {}).items()
-    }
+    # Remap: prefilter-local → allowed-local → full matrix columns.
+    seed_in_allowed = [
+        int(keep[int(c)]) for c in np.asarray(cols_local, dtype=np.int64).tolist()
+    ]
+    if local_to_full is not None:
+        seed_cols = [int(local_to_full[i]) for i in seed_in_allowed]
+        coef_meta = {
+            int(local_to_full[int(keep[int(k)])]): float(v)
+            for k, v in meta.get("mean_abs_coef", {}).items()
+        }
+        freq_meta = {
+            int(local_to_full[int(keep[int(k)])]): float(v)
+            for k, v in meta.get("frequency", {}).items()
+        }
+    else:
+        seed_cols = seed_in_allowed
+        coef_meta = {
+            int(keep[int(k)]): float(v) for k, v in meta.get("mean_abs_coef", {}).items()
+        }
+        freq_meta = {
+            int(keep[int(k)]): float(v) for k, v in meta.get("frequency", {}).items()
+        }
     coefs = np.asarray([coef_meta.get(c, 0.0) for c in seed_cols], dtype=np.float64)
-    # ponytail: data-adaptive burden cap (upper quantile) so one runaway CpG
-    # cannot dominate a gene's rank; a fixed global cap is the upgrade path.
-    cap = float(np.quantile(coefs, strength_cap_quantile)) if coefs.size else 0.0
+    # Reject insane SGD scales (age-years × near-singular cols → ~1e10 caps).
+    coefs_usable = bool(coefs.size) and float(np.nanmax(np.abs(coefs))) < 1e3
+    cap = (
+        float(np.quantile(coefs, strength_cap_quantile)) if coefs_usable else float("nan")
+    )
 
-    gene_score: dict[int, float] = defaultdict(float)
+    gene_freq: dict[int, float] = defaultdict(float)
     gene_coefs: dict[int, list[float]] = defaultdict(list)
     gene_seed_cols: dict[int, set[int]] = defaultdict(set)
     for col in seed_cols:
+        f = freq_meta.get(col, 0.0)
         raw = coef_meta.get(col, 0.0)
-        capped = min(raw, cap) if cap > 0 else raw
         for gene in col_to_genes.get(col, ()):  # explicit edges only
-            gene_score[gene] += capped
+            gene_freq[gene] += f
             gene_coefs[gene].append(raw)
             gene_seed_cols[gene].add(col)
 
@@ -227,33 +313,56 @@ def _select_trait_genes(
     for gene, cols_g in gene_seed_cols.items():
         support = sorted(cols_g)
         if support:
-            observed = np.isfinite(x_labeled[:, support]).any(axis=1)
+            observed = np.isfinite(x_full[:, support]).any(axis=1)
             n_studies = len({str(s) for s in studies_labeled[observed].tolist()})
         else:
             n_studies = 0
         coefs_g = gene_coefs[gene]
+        score = float(gene_freq[gene])
+        if coefs_usable:
+            score = score + 1e-6 * sum(min(c, cap) for c in coefs_g)
         genes.append(
             {
                 "gene_index": gene,
-                "score": float(gene_score[gene]),
+                "score": score,
+                "freq_score": float(gene_freq[gene]),
                 "n_cpgs": len(support),
                 "n_studies": int(n_studies),
                 "mean_abs_coef": float(np.mean(coefs_g)) if coefs_g else 0.0,
             }
         )
-    # Rank by burden strength, then supporting-CpG count, then index (stable).
     genes.sort(key=lambda g: (-g["score"], -g["n_cpgs"], g["gene_index"]))
+    n_passing = int(meta.get("n_passing_min_frequency", 0))
     return {
         "genes": genes,
         "seed_cols": seed_cols,
         "selection_meta": {
             "n_runs": int(meta.get("n_runs", 0)),
+            "n_seed_cpgs_after_stability": len(seed_cols),
             "n_selected_cols": len(seed_cols),
-            "strength_cap": cap,
+            "n_passing_min_frequency": n_passing,
+            "fallback_to_top_freq": bool(n_passing == 0 and len(seed_cols) > 0),
+            "max_stability_seeds": int(max_stability_seeds),
+            "strength_cap": None if not coefs_usable else cap,
+            "strength_cap_warning": bool(not coefs_usable),
+            "coefs_numerically_usable": coefs_usable,
             "prefilter_max_cols": int(prefilter_max_cols),
+            "n_cols_input": n_cols_input,
             "n_cols_prefiltered": int(keep.size),
             "n_inner_folds": int(n_inner_folds),
             "n_repeats": int(n_repeats),
+            "standardization": meta.get("standardization"),
+            "n_zero_variance_dropped": int(meta.get("n_zero_variance_dropped", 0)),
+            "n_cols_nonzero_variance": int(meta.get("n_cols_nonzero_variance", 0)),
+            "frequency_quantiles": meta.get("frequency_quantiles") or {},
+            "coef_abs_quantiles_selected": meta.get("coef_abs_quantiles_selected") or {},
+            "n_fits_attempted": int(meta.get("n_fits_attempted", 0)),
+            "n_fits_converged": int(meta.get("n_fits_converged", 0)),
+            "n_fits_nonconverged": int(meta.get("n_fits_nonconverged", 0)),
+            "sparsity_ok": bool(meta.get("sparsity_ok", False)),
+            "selection_frequency_by_seed_col": {
+                str(k): freq_meta[k] for k in seed_cols if k in freq_meta
+            },
         },
     }
 
@@ -289,21 +398,30 @@ def build_internal_fold_seed_panel(
         raise ValueError(f"seed_panel only builds internal_fold; got {selection_source!r}")
     if n_genes < 1:
         raise ValueError("n_genes must be >= 1")
+    if not graph_content_hash:
+        raise ValueError(
+            "graph_content_hash is required (hash_graph_tables(graph_root)); "
+            "refusing to write an unauditable seed panel"
+        )
     col_to_genes, gene_to_cols, edge_role = _gene_edge_maps(assignment)
     gene_ids = list(assignment.gene_ids)
+    n_cols = int(np.asarray(x_train).shape[1])
+    auto_mask = _autosomal_col_mask(locus_chrom, n_cols)
+    autosomal_cols = np.flatnonzero(auto_mask).astype(np.int64)
 
-    trait_inputs = {
-        "age": (np.asarray(age), np.asarray(age_mask, dtype=bool)),
-        "tissue": (np.asarray(tissue), np.asarray(tissue_mask, dtype=bool)),
-        "sex": (np.asarray(sex), np.asarray(sex_mask, dtype=bool)),
-    }
+    trait_jobs: list[tuple[str, np.ndarray, np.ndarray, np.ndarray | None]] = [
+        ("age", np.asarray(age), np.asarray(age_mask, dtype=bool), None),
+        ("tissue", np.asarray(tissue), np.asarray(tissue_mask, dtype=bool), None),
+        ("sex", np.asarray(sex), np.asarray(sex_mask, dtype=bool), None),
+        # Explicit autosomal sensitivity control for sex (no X/Y loci enter selection).
+        ("sex_autosome", np.asarray(sex), np.asarray(sex_mask, dtype=bool), autosomal_cols),
+    ]
 
     gene_records: list[dict[str, Any]] = []
     locus_records: list[dict[str, Any]] = []
     trait_summaries: dict[str, Any] = {}
 
-    for trait in TRAITS:
-        y, mask = trait_inputs[trait]
+    for trait, y, mask, allowed in trait_jobs:
         print(f"[seed_panel] selecting trait={trait} …", flush=True)
         result = _select_trait_genes(
             trait=trait,
@@ -315,6 +433,7 @@ def build_internal_fold_seed_panel(
             seed=seed,
             strength_cap_quantile=DEFAULT_STRENGTH_CAP_QUANTILE,
             min_frequency=DEFAULT_MIN_FREQUENCY,
+            allowed_cols=allowed,
         )
         if result is None:
             continue
@@ -327,11 +446,20 @@ def build_internal_fold_seed_panel(
         for rank, gene in enumerate(ranked):
             gene_idx = int(gene["gene_index"])
             gene_id = gene_ids[gene_idx] if 0 <= gene_idx < len(gene_ids) else str(gene_idx)
-            all_cols = sorted(gene_to_cols.get(gene_idx, set()))  # enrichment: siblings too
+            all_cols = sorted(gene_to_cols.get(gene_idx, set()))
+            if trait == "sex_autosome":
+                all_cols = [c for c in all_cols if bool(auto_mask[int(c)])]
+                gene_seed = seed_cols_set & set(gene_to_cols.get(gene_idx, set()))
+                if any(not bool(auto_mask[int(c)]) for c in gene_seed):
+                    raise AssertionError(
+                        f"sex_autosome seed CpG on sex chrom for {gene_id}"
+                    )
             roles = {edge_role.get((c, gene_idx), "unknown") for c in all_cols}
-            autosomal = (
-                _gene_chrom_is_autosomal(set(all_cols), locus_chrom) if trait == "sex" else None
-            )
+            autosomal = _gene_chrom_is_autosomal(set(all_cols), locus_chrom)
+            if trait == "sex_autosome" and autosomal is not True:
+                raise AssertionError(
+                    f"sex_autosome gene {gene_id} is not autosomal-only (autosome_only={autosomal})"
+                )
             gene_records.append(
                 {
                     "gene_id": gene_id,
@@ -357,18 +485,38 @@ def build_internal_fold_seed_panel(
                 }
                 for col in all_cols
             )
-        n_autosome_genes = (
-            sum(1 for r in gene_records if r["trait"] == "sex" and r["autosome_only"] is True)
-            if trait == "sex"
-            else None
+        sex_chrom_seed = 0
+        if locus_chrom is not None:
+            sex_chrom_seed = sum(
+                1 for c in seed_cols_set if _is_sex_chrom(str(np.asarray(locus_chrom)[int(c)]))
+            )
+        n_autosome_genes = sum(
+            1
+            for r in gene_records
+            if r["trait"] == trait and r["autosome_only"] is True
         )
         trait_summaries[trait] = {
             "n_genes_requested": n_genes,
             "n_genes_actual": len(ranked),
-            "n_seed_cpgs": len(seed_cols_set),
+            # Prefer explicit stability count; keep n_seed_cpgs as alias for back-compat.
+            "n_seed_cpgs": int(
+                result["selection_meta"].get(
+                    "n_seed_cpgs_after_stability", len(seed_cols_set)
+                )
+            ),
+            "n_enriched_locus_rows": int(
+                sum(1 for rec in locus_records if rec["trait"] == trait)
+            ),
+            "n_sex_chrom_seed_cpgs": int(sex_chrom_seed),
+            "n_autosome_only_genes": int(n_autosome_genes),
             **result["selection_meta"],
-            **({"n_autosome_only_genes": n_autosome_genes} if n_autosome_genes is not None else {}),
         }
+        if trait == "sex_autosome":
+            if sex_chrom_seed != 0:
+                raise AssertionError(
+                    f"sex_autosome control has {sex_chrom_seed} sex-chrom seed CpGs"
+                )
+            trait_summaries[trait]["autosome_only_control"] = True
 
     if not trait_summaries:
         raise ValueError("no labeled samples for any trait; cannot build seed panel")
@@ -394,6 +542,7 @@ def build_internal_fold_seed_panel(
     )
 
     panel_hash = _panel_hash(genes_df, loci_df)
+    overlap = summarize_seed_panel_overlap(genes_df, loci_df)
     panel_json: dict[str, Any] = {
         "selection_source": selection_source,
         "method": SELECTION_METHOD,
@@ -413,6 +562,7 @@ def build_internal_fold_seed_panel(
         "n_train_samples": int(np.asarray(x_train).shape[0]),
         "gene_length_bp_provided": gene_length_bp is not None,
         "traits": trait_summaries,
+        "overlap": overlap,
         "panel_hash": panel_hash,
     }
     return SeedPanelArtifacts(
@@ -421,6 +571,70 @@ def build_internal_fold_seed_panel(
         loci=loci_df,
         panel_hash=panel_hash,
     )
+
+
+def summarize_seed_panel_overlap(
+    genes: pd.DataFrame,
+    loci: pd.DataFrame,
+) -> dict[str, Any]:
+    """Gene / CpG overlap and coverage stats across age/tissue/sex (not sex_autosome)."""
+    primary = ("age", "tissue", "sex")
+    gene_sets = {
+        t: set(genes.loc[genes["trait"] == t, "gene_id"].astype(str)) for t in primary
+    }
+    cpg_sets = {
+        t: set(
+            loci.loc[loci["trait"] == t, "locus_col"].astype(int).tolist()
+        )
+        for t in primary
+    }
+    seed_cpg_sets = {
+        t: set(
+            loci.loc[
+                (loci["trait"] == t) & (loci["is_seed_cpg"].astype(bool)),
+                "locus_col",
+            ]
+            .astype(int)
+            .tolist()
+        )
+        for t in primary
+    }
+    role_cov: dict[str, dict[str, int]] = {}
+    for t in primary:
+        sub = loci.loc[loci["trait"] == t]
+        role_cov[t] = {
+            str(k): int(v) for k, v in sub["gene_role"].value_counts().to_dict().items()
+        }
+    genes_one_cpg = {
+        t: int((genes.loc[genes["trait"] == t, "n_cpgs"] == 1).sum()) for t in primary
+    }
+    # Multi-gene CpGs: same locus_col linked to >1 gene_id within a trait.
+    multi_gene_cpg: dict[str, int] = {}
+    for t in primary:
+        sub = loci.loc[loci["trait"] == t, ["locus_col", "gene_id"]]
+        if sub.empty:
+            multi_gene_cpg[t] = 0
+            continue
+        counts = sub.groupby("locus_col")["gene_id"].nunique()
+        multi_gene_cpg[t] = int((counts > 1).sum())
+    return {
+        "gene_set_sizes": {t: len(gene_sets[t]) for t in primary},
+        "gene_union_size": len(set.union(*(gene_sets[t] for t in primary if gene_sets[t]))),
+        "gene_pairwise_overlap": {
+            f"{a}_∩_{b}": len(gene_sets[a] & gene_sets[b])
+            for a, b in (("age", "tissue"), ("age", "sex"), ("tissue", "sex"))
+        },
+        "cpg_set_sizes": {t: len(cpg_sets[t]) for t in primary},
+        "cpg_union_size": len(set.union(*(cpg_sets[t] for t in primary if cpg_sets[t]))),
+        "cpg_pairwise_overlap": {
+            f"{a}_∩_{b}": len(cpg_sets[a] & cpg_sets[b])
+            for a, b in (("age", "tissue"), ("age", "sex"), ("tissue", "sex"))
+        },
+        "stability_seed_cpg_set_sizes": {t: len(seed_cpg_sets[t]) for t in primary},
+        "gene_role_coverage": role_cov,
+        "genes_with_only_one_seed_cpg": genes_one_cpg,
+        "multi_gene_cpg_count": multi_gene_cpg,
+    }
 
 
 def _panel_hash(genes: pd.DataFrame, loci: pd.DataFrame) -> str:
@@ -451,6 +665,27 @@ def matched_random_gene_panel(
     available. Greedy nearest-neighbour without replacement; ties broken with
     ``rng``. Never returns a seed gene.
     """
+    matched, _quality = matched_random_gene_panel_with_quality(
+        seed_gene_ids,
+        candidate_gene_ids=candidate_gene_ids,
+        gene_cpg_counts=gene_cpg_counts,
+        gene_length_bp=gene_length_bp,
+        gene_role_coverage=gene_role_coverage,
+        rng=rng,
+    )
+    return matched
+
+
+def matched_random_gene_panel_with_quality(
+    seed_gene_ids: list[str] | list[int],
+    *,
+    candidate_gene_ids: Sequence[str] | Sequence[int],
+    gene_cpg_counts: dict[Any, int],
+    gene_length_bp: dict[Any, int] | None = None,
+    gene_role_coverage: dict[Any, Sequence[float]] | None = None,
+    rng: np.random.Generator,
+) -> tuple[list[Any], dict[str, Any]]:
+    """Like :func:`matched_random_gene_panel` plus CpG-count matching diagnostics."""
     seed_set = set(seed_gene_ids)
     available = [g for g in candidate_gene_ids if g not in seed_set]
     if len(available) < len(seed_gene_ids):
@@ -473,12 +708,33 @@ def matched_random_gene_panel(
 
     used: set[Any] = set()
     matched: dict[Any, Any] = {}
+    cpg_abs_err: list[float] = []
     for seed in seed_gene_ids:
         pool = [c for c in available if c not in used]
         best = min(pool, key=lambda c: (*_distance(seed, c), rng.random()))
         used.add(best)
         matched[seed] = best
-    return [matched[s] for s in seed_gene_ids]
+        cpg_abs_err.append(
+            abs(float(gene_cpg_counts.get(seed, 0) - gene_cpg_counts.get(best, 0)))
+        )
+    err = np.asarray(cpg_abs_err, dtype=np.float64)
+    quality = {
+        "n_seed_genes": len(seed_gene_ids),
+        "n_matched": len(matched),
+        "seed_genes_disjoint_from_matched": bool(
+            set(seed_gene_ids).isdisjoint(matched.values())
+        ),
+        "cpg_count_abs_err_mean": float(err.mean()) if err.size else 0.0,
+        "cpg_count_abs_err_median": float(np.median(err)) if err.size else 0.0,
+        "cpg_count_abs_err_p90": float(np.quantile(err, 0.9)) if err.size else 0.0,
+        "cpg_count_abs_err_max": float(err.max()) if err.size else 0.0,
+        "fraction_exact_cpg_match": (
+            float(np.mean(err == 0.0)) if err.size else 0.0
+        ),
+        "gene_length_bp_used": gene_length_bp is not None,
+        "gene_role_coverage_used": gene_role_coverage is not None,
+    }
+    return [matched[s] for s in seed_gene_ids], quality
 
 
 def gene_mask_tensor(

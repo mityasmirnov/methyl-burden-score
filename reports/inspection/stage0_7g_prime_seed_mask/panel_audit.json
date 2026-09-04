@@ -1,0 +1,53 @@
+{
+  "graph_content_hash": null,
+  "panel_hash": "7aefc81aeb60c9dabd13bf0adf817dab",
+  "fold_id": 0,
+  "overlap": null,
+  "traits": [
+    {
+      "trait": "age",
+      "n_cols_prefiltered": 4096,
+      "n_seed_cpgs_after_stability": 4096,
+      "n_passing_min_frequency": 4096,
+      "sparsity_ok": false,
+      "strength_cap": 10876183559.88889,
+      "n_fits_nonconverged": null,
+      "frequency_quantiles": null,
+      "n_autosome_only_genes": null,
+      "n_sex_chrom_seed_cpgs": null
+    },
+    {
+      "trait": "sex",
+      "n_cols_prefiltered": 4096,
+      "n_seed_cpgs_after_stability": 4096,
+      "n_passing_min_frequency": 4096,
+      "sparsity_ok": false,
+      "strength_cap": 49.667053651458204,
+      "n_fits_nonconverged": null,
+      "frequency_quantiles": null,
+      "n_autosome_only_genes": 0,
+      "n_sex_chrom_seed_cpgs": null
+    },
+    {
+      "trait": "tissue",
+      "n_cols_prefiltered": 4096,
+      "n_seed_cpgs_after_stability": 4096,
+      "n_passing_min_frequency": 4096,
+      "sparsity_ok": false,
+      "strength_cap": 74.83204129007127,
+      "n_fits_nonconverged": null,
+      "frequency_quantiles": null,
+      "n_autosome_only_genes": null,
+      "n_sex_chrom_seed_cpgs": null
+    }
+  ],
+  "issues": [
+    "graph_content_hash is null/missing (provenance blocker)",
+    "age: stability selected 4096 CpGs == prefilter width 4096 \u2014 not demonstrably sparse",
+    "age: strength_cap=10876183559.88889 looks unscaled / nonconverged",
+    "sex: stability selected 4096 CpGs == prefilter width 4096 \u2014 not demonstrably sparse",
+    "tissue: stability selected 4096 CpGs == prefilter width 4096 \u2014 not demonstrably sparse",
+    "sex_autosome control trait missing"
+  ],
+  "ok_for_seed_mask_gpu": false
+}

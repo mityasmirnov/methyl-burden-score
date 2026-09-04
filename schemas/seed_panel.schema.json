@@ -7,6 +7,7 @@
     "selection_source",
     "fold_id",
     "panel_hash",
+    "graph_content_hash",
     "traits"
   ],
   "properties": {
@@ -24,7 +25,7 @@
       "items": { "type": "string" }
     },
     "graph_id": { "type": ["string", "null"] },
-    "graph_content_hash": { "type": ["string", "null"] },
+    "graph_content_hash": { "type": "string", "minLength": 16 },
     "matrix_id": { "type": ["string", "null"] },
     "n_train_samples": { "type": "integer" },
     "panel_hash": { "type": "string", "minLength": 8 },

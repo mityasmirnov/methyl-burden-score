@@ -8,6 +8,7 @@ land. First seed source: ``internal_fold`` only (ADR 0011).
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 from typing import Any
 
@@ -38,8 +39,9 @@ from mbs.training.phenotypes import load_multitask_phenotypes
 from mbs.training.seed_panel import (
     build_internal_fold_seed_panel,
     gene_mask_tensor,
+    hash_graph_tables,
     load_seed_panel,
-    matched_random_gene_panel,
+    matched_random_gene_panel_with_quality,
     write_seed_panel,
 )
 
@@ -214,11 +216,22 @@ def main() -> None:
         beta_to_m_value(np.clip(betas_all, 0, 1), epsilon=EPSILON),
         dtype=np.float32,
     )
-    locus_chrom = (
-        locus_index["chrom"].astype(str).to_numpy()
-        if "chrom" in locus_index.columns
-        else None
-    )
+    # Matrix locus_index has no chrom; join annotations/loci.parquet on locus_id.
+    ann_loci = paths.data_root / "canonical" / "annotations" / "loci.parquet"
+    if not ann_loci.is_file():
+        raise SystemExit(f"missing loci annotations for chromosome map: {ann_loci}")
+    chrom_map = pd.read_parquet(ann_loci, columns=["locus_id", "chromosome"])
+    chrom_map["locus_id"] = chrom_map["locus_id"].astype(str)
+    li = locus_index.copy()
+    li["locus_id"] = li["locus_id"].astype(str)
+    merged = li.merge(chrom_map, on="locus_id", how="left", validate="many_to_one")
+    if int(merged["chromosome"].isna().sum()) > 0:
+        raise SystemExit(
+            f"chromosome missing for {int(merged['chromosome'].isna().sum())} "
+            "matrix loci after loci.parquet join"
+        )
+    locus_chrom = merged["chromosome"].astype(str).to_numpy()
+
 
     summary: dict[str, Any] = {
         "milestone": "7G-prime-seed-mask",
@@ -259,8 +272,14 @@ def main() -> None:
         print(f"[seed-mask] fold={fold_idx} building internal_fold panel K={n_seed_genes}", flush=True)
         panel_dir = panel_root / f"fold_{fold_idx}"
         if args.reuse_panels and (panel_dir / "seed_panel.json").is_file():
-            print(f"[seed-mask] reusing panels under {panel_dir}", flush=True)
             artifacts = load_seed_panel(panel_dir)
+            gch = artifacts.panel_json.get("graph_content_hash")
+            if not gch:
+                raise SystemExit(
+                    f"refusing --reuse-panels: {panel_dir}/seed_panel.json has "
+                    "null/missing graph_content_hash; regenerate panels first"
+                )
+            print(f"[seed-mask] reusing panels under {panel_dir} hash={gch}", flush=True)
         else:
             artifacts = build_internal_fold_seed_panel(
                 x_train=m_vals[train_idx][:, gene_cols],
@@ -277,6 +296,7 @@ def main() -> None:
                 fold_id=fold_idx,
                 excluded_study_ids=excluded,
                 graph_id=graph_id,
+                graph_content_hash=hash_graph_tables(graph_root),
                 matrix_id=matrix_id,
                 seed=42 + fold_idx,
                 min_genes=min_genes,
@@ -304,7 +324,7 @@ def main() -> None:
             if 0 <= g < n_genes:
                 gene_cpg_counts[gene_ids[g]] += 1
         rng = np.random.default_rng(123 + fold_idx)
-        random_genes = matched_random_gene_panel(
+        random_genes, g3_quality = matched_random_gene_panel_with_quality(
             seed_gene_set,
             candidate_gene_ids=gene_ids,
             gene_cpg_counts=gene_cpg_counts,
@@ -312,6 +332,10 @@ def main() -> None:
             gene_role_coverage=None,
             rng=rng,
         )
+        artifacts.panel_json["g3_matched_random_quality"] = g3_quality
+        # Re-write so dry-run panels carry G3 diagnostics (hash stays gene/locus based).
+        if not args.reuse_panels:
+            write_seed_panel(panel_dir, artifacts)
         random_idx = [gene_ids.index(g) for g in random_genes if g in gene_ids]
         random_masks = _masks_from_indices(
             random_idx, random_idx, random_idx, n_genes=n_genes, n_tissue=n_tissue
@@ -420,6 +444,11 @@ def main() -> None:
                 )
 
     write_json(report_dir / "summary.json", summary)
+    # Prefer fold-0 panel audit fields for the human report.
+    panel0 = panel_root / "fold_0" / "seed_panel.json"
+    panel0_obj: dict[str, Any] = {}
+    if panel0.is_file():
+        panel0_obj = json.loads(panel0.read_text(encoding="utf-8"))
     analysis = [
         "# 7G′ age-primary seed-mask screen",
         "",
@@ -431,9 +460,45 @@ def main() -> None:
         "Arms: G0 all-gene control; G1 head masks; G2 seed CpGs+masks; G3 matched random;",
         "C0 classical all-gene; C2 classical on G2 CpGs.",
         "",
-        f"See `{report_dir / 'summary.json'}`.",
+        f"graph_content_hash: `{panel0_obj.get('graph_content_hash')}`",
+        f"panel_hash: `{panel0_obj.get('panel_hash')}`",
         "",
+        "## Per-trait stability (fold 0)",
+        "",
+        "| trait | prefilter | stability seeds | n_pass@0.34 | sparsity_ok | strength_cap | nonconverged |",
+        "|---|---:|---:|---:|:---:|---:|---:|",
     ]
+    for trait, tmeta in sorted((panel0_obj.get("traits") or {}).items()):
+        analysis.append(
+            f"| {trait} | {tmeta.get('n_cols_prefiltered')} | "
+            f"{tmeta.get('n_seed_cpgs_after_stability', tmeta.get('n_seed_cpgs'))} | "
+            f"{tmeta.get('n_passing_min_frequency')} | {tmeta.get('sparsity_ok')} | "
+            f"{tmeta.get('strength_cap')} | {tmeta.get('n_fits_nonconverged')} |"
+        )
+    ov = panel0_obj.get("overlap") or {}
+    analysis.extend(
+        [
+            "",
+            "## Overlap (age/tissue/sex)",
+            "",
+            f"- gene set sizes: `{ov.get('gene_set_sizes')}`",
+            f"- gene union: {ov.get('gene_union_size')}",
+            f"- gene pairwise: `{ov.get('gene_pairwise_overlap')}`",
+            f"- CpG set sizes: `{ov.get('cpg_set_sizes')}`",
+            f"- CpG union: {ov.get('cpg_union_size')}",
+            f"- CpG pairwise: `{ov.get('cpg_pairwise_overlap')}`",
+            f"- gene-role coverage: `{ov.get('gene_role_coverage')}`",
+            f"- genes with only one CpG: `{ov.get('genes_with_only_one_seed_cpg')}`",
+            f"- multi-gene CpG count: `{ov.get('multi_gene_cpg_count')}`",
+            "",
+            "## G3 matched-random quality",
+            "",
+            f"`{panel0_obj.get('g3_matched_random_quality')}`",
+            "",
+            f"See `{report_dir / 'summary.json'}` and `panel_audit.md`.",
+            "",
+        ]
+    )
     (report_dir / "analysis.md").write_text("\n".join(analysis), encoding="utf-8")
     print(f"[seed-mask] wrote {report_dir / 'summary.json'}", flush=True)
 

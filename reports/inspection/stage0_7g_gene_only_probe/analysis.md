@@ -307,10 +307,10 @@ Cascade already adds a region-type embedding before RBS; the scalar path then po
 ## Parallel / follow-on work
 
 - **ATS Stage A Tier-1 screen + annotation ablations:** complete. Freeze **`P2-G` as current reference, not a pooling lock.**
-- **Matched 16-epoch promotion screen (current GPU gate):** one-hop max (folds 1–2) + mean (3 folds), scalar mixed pools, vector mean→max — [`milestone-7g-prime-16ep-promotion.md`](../../../docs/plans/milestone-7g-prime-16ep-promotion.md).
+- **Matched 16-epoch promotion screen (current GPU gate):** **`N-light-gene-max` 16-ep complete** (3/3; tissue e2e 0.336 < P2 0.373 — do **not** rerun). Remaining **12** folds: light-mean ×3, scalar mean→max ×3, scalar max→mean ×3, vector mean→max ×3 — [`milestone-7g-prime-16ep-promotion.md`](../../../docs/plans/milestone-7g-prime-16ep-promotion.md).
 - **Post-hoc fixed `rbs_enet`:** done for screen cascade arms (diagnostic only); prefer `rbs_linear_probe` / nested enet for vector RBS.
 - **CPU typed-RBS ablation (R0–R5):** done; shuffle did not collapse → neural typed aggregator **not** promoted.
-- **Age-primary seed-mask screen:** blocked until 16-ep decision rules fire — [`milestone-7g-prime-age-seed-mask.md`](../../../docs/plans/milestone-7g-prime-age-seed-mask.md).
+- **Age-primary seed-mask screen:** blocked until 16-ep decision + seed-panel provenance/sparsity audit — [`milestone-7g-prime-age-seed-mask.md`](../../../docs/plans/milestone-7g-prime-age-seed-mask.md).
 - **Atlas association catalog:** parallel, non-blocking.
 - **Stage B CpG-panel GPU:** blocked until seed-mask screen + typed-RBS diagnostics.
 
@@ -318,8 +318,9 @@ Cascade already adds a region-type embedding before RBS; the scalar path then po
 
 Ordered ops:
 
-1. **Matched 16-epoch promotion screen** — complete the 14 GPU-fold queue; apply decision rules before any further architecture sweep.
-2. **Age-primary seed-mask GPU** (`scripts/run_7g_prime_seed_mask.py`) — only after (1); fold 0, two seeds, K=256; do **not** launch Stage B.
-3. **Atlas catalog** (CPU) for `external_clean` / `hybrid_fold` constructors.
-4. **Stage B** fold-selected CpG panel only after (1)+(2).
-5. **Milestone 7** 5×6 OOF after Stage B + `direct_cpg.zarr`.
+1. **Finish 12-fold 16-ep queue** (light-mean → scalar ×2 → vector mean→max); nested enet post-hoc; write `promotion_decision.json` from rules.
+2. **Repair seed-panel manifests** (graph_content_hash, stability vs 4096 prefilter audit, autosome-only sex control, overlap report) before any seed-mask GPU.
+3. **Age-primary seed-mask GPU** (`scripts/run_7g_prime_seed_mask.py`) — only after (1)+(2); fold 0, two seeds, K=256; do **not** launch Stage B.
+4. **Atlas catalog** (CPU) for `external_clean` / `hybrid_fold` constructors.
+5. **Stage B** fold-selected CpG panel only after (1)–(3).
+6. **Milestone 7** 5×6 OOF after Stage B + `direct_cpg.zarr`.

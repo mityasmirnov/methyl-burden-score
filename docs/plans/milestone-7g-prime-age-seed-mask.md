@@ -1,10 +1,14 @@
 # Plan: Age-first seed-mask screen (7G′ Stage B blocker)
 
-Status: **blocked** — wait for matched 16-epoch promotion decision rules
-([`milestone-7g-prime-16ep-promotion.md`](milestone-7g-prime-16ep-promotion.md)).
-Do **not** launch `scripts/run_7g_prime_seed_mask.py --device cuda` while the
-16-ep queue owns GPU 0. Stage B CpG-panel GPU stays blocked until this screen
-and typed-RBS diagnostics land.
+Status: **blocked** — wait for (1) matched 16-epoch promotion decision rules
+([`milestone-7g-prime-16ep-promotion.md`](milestone-7g-prime-16ep-promotion.md))
+and (2) seed-panel provenance/sparsity audit (non-null `graph_content_hash`,
+stability-selection diagnostics distinct from the 4096 univariate prefilter,
+autosome-only sex control, trait overlap report). Do **not** launch
+`scripts/run_7g_prime_seed_mask.py --device cuda` while the 16-ep queue owns
+GPU 0, and do **not** `--reuse-panels` until the fold-0 panel is regenerated
+with those fixes. Stage B CpG-panel GPU stays blocked until this screen and
+typed-RBS diagnostics land.
 
 Normative: [ADR 0011](../adr/0011-seed-gene-sources.md),
 [ADR 0010](../adr/0010-gene-allocation-policy.md).
