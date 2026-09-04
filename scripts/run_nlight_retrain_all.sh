@@ -50,18 +50,26 @@ refresh_report() {
 }
 
 # ── 1. N-light-gene-max folds 1 & 2 ──────────────────────────────────────────
+# NOTE: --fold takes a single int (not action="append" like --arm), so each
+# fold MUST be its own invocation. Passing --fold 1 --fold 2 in one call
+# silently trains only the last fold (argparse overwrite) — that bug cost a
+# full run earlier; do not reintroduce it.
 log "=== 1/6  N-light-gene-max folds 1 + 2 ==="
-uv run python "$RUN_SCRIPT" \
-    --config "$MAIN_CFG" --device "$DEVICE" \
-    --arm N-light-gene-max --fold 1 --fold 2
+for FOLD in 1 2; do
+    uv run python "$RUN_SCRIPT" \
+        --config "$MAIN_CFG" --device "$DEVICE" \
+        --arm N-light-gene-max --fold "$FOLD"
+done
 log "N-light-gene-max f1+f2 done"
 refresh_report
 
 # ── 2. N-light-gene-mean folds 0, 1, 2 ───────────────────────────────────────
 log "=== 2/6  N-light-gene-mean all 3 folds ==="
-uv run python "$RUN_SCRIPT" \
-    --config "$MAIN_CFG" --device "$DEVICE" \
-    --arm N-light-gene-mean --fold 0 --fold 1 --fold 2
+for FOLD in 0 1 2; do
+    uv run python "$RUN_SCRIPT" \
+        --config "$MAIN_CFG" --device "$DEVICE" \
+        --arm N-light-gene-mean --fold "$FOLD"
+done
 log "N-light-gene-mean all folds done"
 refresh_report
 

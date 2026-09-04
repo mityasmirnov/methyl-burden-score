@@ -15,17 +15,20 @@ True next milestone after bootstrap:
 > **done**, fixture + Hub DeepRVAT A/B) → development CV (7E — **done**) →
 > Hub multitask + hygiene (**7E′** — **done**) → **RBS→gene + direct topology
 > (7F — done)** → **methylation-only full eval (7G — done)** →
-> **Phase-2 gene-only cascade grid (7G′ Stage A — DeepRVAT screen
-> in progress)** → **fold-selected panel + full model (7G′ Stage B — plumbing
-> done, GPU pending)** → **final OOF cross-fitting (7)** → one score matrix.
+> **Phase-2 gene-only cascade grid (7G′ Stage A — DeepRVAT Tier-1 screen
+> done; lock `P2-G`)** → **fold-selected panel + full model (7G′ Stage B —
+> plumbing done, GPU pending ← current)** → **final OOF cross-fitting (7)** →
+> one score matrix.
 
-**Current gate:** **7G′ Stage A DeepRVAT screen** (mixed pooling, RBS
-diagnostic, vector cascade, one-hop). Required P2/P4/P5-max/`C-mvalue-*-G`
-GPU arms already landed with test-only **`mbs_e2e`**; cascade does **not** beat
-`C-mvalue-enet-G` by ≥0.03 F1. **P5 inactive.** Stage B GPU follows after the
-screen selects (or rejects) gene aggregation. Plans:
+**Current gate:** **7G′ Stage B GPU** (after Stage A DeepRVAT Tier-1 screen).
+Screen kept provisional lock **`P2-G` max/max 15 ep**; no mixed/vector/one-hop
+arm beat P2 or classical (`C-mvalue-enet-G` 0.388 still leads tissue). Cascade
+is **not** ≥0.03 F1 ahead. **P5 inactive.** Post-hoc `mbs_enet` / RBS probes
+remain optional diagnostics. Plans:
 [`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md),
 [`plans/milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md).
+Report interpretation:
+[`reports/inspection/stage0_7g_gene_only_probe/analysis.md`](../reports/inspection/stage0_7g_gene_only_probe/analysis.md).
 
 | Layer | Status |
 |-------|--------|
@@ -35,14 +38,13 @@ screen selects (or rejects) gene aggregation. Plans:
 | 7G″ expression plan | **done** (deferred; no training code) |
 | Stage A required GPU arms (P2/P4/P5-max/`C-*-G`) | **done** (P5 inactive thereafter) |
 | Screen policy: `mbs_enet`/`rbs_enet` post-hoc | **done** (`stage_a_include_mbs_enet: false`; `eval_mbs_enet_from_scores.py`) |
-| Scalar mixed-pooling arms (`mean-max`, `max-mean`) | **done** 3/3 folds each |
-| Vector cascade arms (`vector-mean-max`, `vector-max-max`) | **in_progress** (f2 running) |
-| `N-light-gene-max` one-hop | **in_progress** (f0 ✓; f1/f2 need retrain post orientation-v2 fix) |
-| `N-light-gene-mean` one-hop | **pending** (all 3 folds need retrain) |
-| Post-hoc `mbs_enet` on screen arms | **pending** (after GPU queue) |
-| Annotation ablation grid (A0–A7, N0–N3) | **pending** (after light-mean numbers in) |
-| Stage A DeepRVAT screen | **in_progress** ← **current ops gate** |
-| Stage B GPU run | **pending** (after screen) |
+| Scalar mixed-pooling arms (`mean-max`, `max-mean`) | **done** 3/3 — max-mean best new Tier-1 (0.359); no promote |
+| Vector cascade arms (`vector-mean-max`, `vector-max-max`) | **done** 3/3 — both ≤ scalar P2; no promote |
+| `N-light-gene-max` / `N-light-gene-mean` one-hop | **done** 3/3 — weak e2e (~0.12); linear ~0.30–0.35 |
+| Annotation ablation grid (A0–A7, N0–N3) | **done** fold 0 — **`m_only` best**; role/context hurt |
+| Post-hoc `mbs_enet` / RBS probes on screen arms | **pending** |
+| Stage A DeepRVAT screen (Tier-1) | **done** ← lock stays **`P2-G`**; Stage B unblocked on topology |
+| Stage B GPU run | **pending** (next ops gate) |
 | Milestone **7** 5×6 OOF | **blocked** |
 
 **Trustworthy numbers (`explicit_only` panel, 51 375 gene-linked CpGs, test split):**
@@ -53,10 +55,12 @@ screen selects (or rejects) gene aggregation. Plans:
 | Best MBS readout | `P2-G` **`mbs_enet`** | 0.385 (±0.053) | Same encoder as e2e; elastic-net heads |
 | Best cascade product path | `P2-G` **`mbs_e2e`** | 0.373 (±0.038) | max/max, 15 epochs; P4 mean 0.370 |
 | P4 mean/mean e2e | `P4-G` | 0.370 (±0.059) | Tied with P2 within noise |
-| Screen leader (Tier-1, 5ep) | `N-cascade-scalar-max-mean` **`mbs_e2e`** | ~0.359 (3 folds) | max CpG→region, mean region→gene |
+| Screen leader (Tier-1, 5ep) | `N-cascade-scalar-max-mean` **`mbs_e2e`** | ~0.359 (3 folds) | best *new* arm; still < P2; worse age — **no promote** |
 | P5 longer max train | `P5-G-max` | 0.356 (±0.042) | Did not help |
-| Screen — vector cascade | `N-cascade-vector-mean-max/max-max` | ~0.333–0.362 | Tier-1; vector-max-max fold 2 pending |
-| Screen — scalar-mean-max | `N-cascade-scalar-mean-max` | ~0.332 (3 folds) | Tier-1 5 ep |
+| Screen — vector cascade | `N-cascade-vector-*` | 0.337–0.343 | **reject vs scalar P2** |
+| Screen — scalar-mean-max | `N-cascade-scalar-mean-max` | ~0.331 (3 folds) | mean CpG pool worse |
+| Screen — one-hop | `N-light-gene-*` | ~0.12 e2e / 0.30–0.35 linear | weak e2e; representation not empty |
+| Ablation best | A0 `m_only` (fold 0) | 0.276 e2e / 0.350 linear | annotations hurt or neutral |
 | Invalid (do not cite) | pre-fix `mbs_e2e` on P*-G | ~0.67–0.70 | train+val+test leak |
 | Invalid (do not cite) | pre-fix `N-light-gene-*` **`mbs_e2e`** | ~0.000–0.001 | orientation anchor + head/score mismatch; **linear/enet probes valid** |
 
@@ -880,7 +884,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 ## 7G′. Gene-only architecture selection + matched-panel benchmark
 
 - **Status:** scaffolding **`done`** · required Stage A GPU arms **`done`** ·
-  DeepRVAT screen **`in_progress`** · Stage B code **`done`** / GPU **`pending`**
+  DeepRVAT Tier-1 screen **`done`** (lock stays `P2-G`) · Stage B code **`done`** /
+  GPU **`pending`** ← **current ops gate**
 - **Plan:** [`plans/milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md)
 - **Screen:** [`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md)
 - **Runner (Stage A):** `scripts/run_7g_gene_only_probe.py` · background:
@@ -914,9 +919,11 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
     still leads tissue F1; cascade not ≥0.03 ahead.
   - **`P2-orphan-ablation`:** orphan RBS negligible (Δ F1 ≈ 0)
   - **Provisional lock:** `P2-G` max/max, 15 epochs (`lock_recommendation.json`)
-- **DeepRVAT screen (current):** mixed scalar pooling, RBS-only diagnostic,
-  vector-region cascade, one-hop annotated DeepSet; always report tissue/age/sex;
-  Tier 1 (5 ep) then Tier 2 (15 ep) for promoted arms. See screen plan.
+- **DeepRVAT screen (done 2026-09-04):** mixed scalar / vector / one-hop Tier-1 +
+  fold-0 annotation ablations. **No arm beat `P2-G`**; vector ≤ scalar; one-hop
+  weak on e2e; **`m_only` best among annotations**. Keep lock `P2-G` max/max 15 ep.
+  Post-hoc `mbs_enet` / RBS probes still open. See screen plan + report
+  § Interpretation.
 
 ### Stage B — fold-selected panel + full model
 

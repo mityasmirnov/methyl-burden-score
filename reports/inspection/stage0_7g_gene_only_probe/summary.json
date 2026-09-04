@@ -1,6 +1,6 @@
 {
   "arms_run": [
-    "N-light-gene-ablation-n3-reg-zero-s2"
+    "N-light-gene-mean"
   ],
   "gene_panel": {
     "graph_content_hash": null,

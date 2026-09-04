@@ -1,16 +1,13 @@
 # Plan: 7G′ Stage A DeepRVAT-style architecture screen
 
-Status: **in progress** — Stage A reopened for compute-efficient screening
-(mixed pooling, RBS diagnostic, vector cascade, one-hop). Required P2/P4/P5-max
-/`C-mvalue-*-G` GPU runs already landed; cascade is **not** ≥0.03 ahead of
-classical. **P5 inactive.** Stage B GPU and Milestone **7** remain blocked.
+Status: **screen Tier-1 + ablations complete** — keep provisional lock **`P2-G`
+max/max 15 ep**. No mixed/vector/one-hop arm beats P2 or classical. Cascade is
+**not** ≥0.03 ahead of `C-mvalue-enet-G`. **P5 inactive.** Remaining: post-hoc
+`mbs_enet` / RBS probes, then Stage B GPU. Milestone **7** blocked.
 
-Last updated: **2026-09-03** (scalar mixed-pooling + vector cascade arms
-nearly complete; `mbs_enet` / `rbs_enet` moved to post-hoc for screen speed;
-`N-light-gene-max` f0 complete with v2 contract; light-max f1/f2 and all
-light-mean folds need retrain after orientation v2 + checkpoint-selection bug;
-`N-cascade-scalar-max-mean` tentative screen leader at ~0.36 mean e2e F1;
-`N-cascade-vector-max-max` fold 2 running).
+Last updated: **2026-09-04** (Tier-1 scalar+vector+one-hop 3/3 folds; fold-0
+annotation ablation grid 18 runs; interpretation in
+`reports/inspection/stage0_7g_gene_only_probe/analysis.md`).
 
 Parent: [`milestone-7g-prime-matched-probe-lightweight.md`](milestone-7g-prime-matched-probe-lightweight.md).
 Normative: [ADR 0010](../adr/0010-gene-allocation-policy.md),
@@ -318,115 +315,67 @@ arms it needs (all cascade + classical) are ready now; the one-hop numbers
 above are exactly the piece the clean redo produces. Write it after the redo
 lands, not before, or the one-hop conclusions will be wrong a third time.
 
-## Current screen status (2026-09-03 evening)
+## Current screen status (2026-09-04)
 
-> **Update (post-handoff):** `N-cascade-vector-max-max` finished all 3/3 folds
-> and its own process wrote `per_arm/N-cascade-vector-max-max.json` +
-> regenerated `analysis.md` at 17:42 — mean `e2e` tissue F1 **0.343 (±0.063)**.
-> The runner PID below (885721) has since exited normally; the "fold 2
-> training now" row is stale. See the "Handoff" section above for the fuller
-> post-completion picture (all four screen arms landed, none decisive vs
-> classical or each other).
+### Conclusion
 
-### Arms complete / near-complete (Tier-1 scalar + vector)
+Tier-1 architecture screen is **done**. **Keep `P2-G` (max/max, 15 ep)** as the
+provisional Stage B gene encoder. No Tier-2 (15 ep) promotions from the screen
+grid. Full write-up:
+[`reports/inspection/stage0_7g_gene_only_probe/analysis.md`](../../reports/inspection/stage0_7g_gene_only_probe/analysis.md)
+§ *Interpretation*.
 
-| Arm | Folds done | Mean e2e tissue F1 | Mean linear F1 | Notes |
-|-----|-----------|-------------------|---------------|-------|
-| `N-cascade-scalar-mean-max` | 3/3 ✓ | 0.332 | 0.375 | per_arm JSON ready |
-| `N-cascade-scalar-max-mean` | 3/3 ✓ | 0.359 | 0.370 | tentative screen leader; per_arm JSON ready |
-| `N-cascade-vector-mean-max` | 3/3 ✓ | 0.337 | 0.360 | per_arm JSON ready |
-| `N-cascade-vector-max-max` | 3/3 ✓ | 0.343 | 0.367 | **done** (see update note above) |
-| `N-light-gene-max` | 1/3 🔄 | — | — | f0 rerun post-fix (e2e 0.116); f1/f2 need retrain |
-| `N-light-gene-mean` | 0/3 ✗ | — | — | all folds stale (pre-orientation fix + checkpoint-bug) |
+| Arm | Folds | Mean e2e F1 | Mean linear F1 | Decision |
+|-----|------:|------------:|---------------:|----------|
+| `P2-G` (baseline) | 3/3 | **0.373** | 0.373 | **keep lock** |
+| `P4-G` | 3/3 | 0.370 | 0.379 | tied within noise |
+| `N-cascade-scalar-max-mean` | 3/3 | 0.359 | 0.367 | no promote (worse age) |
+| `P5-G-max` | 3/3 | 0.356 | 0.371 | inactive |
+| `N-cascade-vector-max-max` | 3/3 | 0.343 | 0.367 | reject vs scalar |
+| `N-cascade-vector-mean-max` | 3/3 | 0.337 | 0.360 | reject vs scalar |
+| `N-cascade-scalar-mean-max` | 3/3 | 0.331 | 0.375 | reject (mean CpG pool) |
+| `N-light-gene-mean` | 3/3 | 0.126 | 0.345 | weak e2e; linear OK |
+| `N-light-gene-max` | 3/3 | 0.122 | 0.295 | weak e2e; linear OK |
+| `C-mvalue-enet-G` | 3/3 | **0.388** classical | — | tissue leader |
 
-> **Reference baselines:** `P2-G` (max/max 15ep): 0.373 e2e / 0.385 enet;
-> `C-mvalue-enet-G`: 0.388 classical. Screen arms are ~0.03–0.04 behind P2-G e2e.
+### Annotation ablation (fold 0, 2 seeds) — done
 
-### What is done (code + policy)
+| Arm | e2e | linear | Takeaway |
+|-----|----:|-------:|----------|
+| A0 `m_only` | **0.276** | **0.350** | **best** |
+| A2/A3/A4 | ~0.17 | ~0.319 | context/full ≤ M-only |
+| A1 `m_role` | 0.107 | 0.316 | role hurts |
+| N2/N3 | ~0.17 | ~0.319 | = full (reg zeros) |
+| N0/N1 | ~0.01 | ~0.01–0.02 | chance controls OK |
 
-- `mbs_enet` / `rbs_enet` deferred to post-hoc for all screen arms
-  (`stage_a_include_mbs_enet: false` in all arm YAML configs).
-- Post-hoc script: `scripts/eval_mbs_enet_from_scores.py` supports
-  `--run-prefix` for flat `-f{i}` runs **and** `--run-id` for cascade folds.
-- Orientation contract v2 (`fc8cd6f`): `evaluate_flat_mbs_e2e` passes raw MBS
-  to heads; `orient_mbs_array` only affects exported association artifact.
-- Checkpoint-selection bug fixed: `stage_a_per_epoch_eval` now implied by
-  `use_tissue_rank` in `loop.py`; configs updated explicitly.
-- `ThreadPoolExecutor` for deferred CPU probes (avoids stale-import issues with
-  `ProcessPoolExecutor` after mid-queue hotfixes).
-- `mbs_linear_probe` uses default `lbfgs LogisticRegression` (`fusion=None`)
-  matching P2/P4 baseline.
-- `SGDClassifier` alpha scaled by `n_samples` for wide tissue classification
-  (speeds up `mbs_enet` when eventually run post-hoc).
+### Resolved vs open
 
-### What remains to be done / redone
+| Question | Status |
+|----------|--------|
+| Mean vs max at each cascade level | **Resolved: max/max** |
+| Scalar RBS discards info? | **Not supported** (vector ≤ scalar) |
+| One-hop vs cascade | **Cascade preferred** (e2e); one-hop has linear signal |
+| One scalar MBS/gene enough? | **No** for age/sex |
+| `cpg_context` / gene-role help? | **No** under fold-0 budget; prefer M-only |
+| Gene pool vs RBS loss locus | **Open** — run post-hoc `rbs_*` probes |
+| Post-hoc `mbs_enet` on screen arms | **Open** |
 
-#### Immediate (in-flight GPU queue)
+### Remaining work
 
-1. ~~**`N-cascade-vector-max-max` fold 2**~~ — **done**, no longer in the
-   queue. All 3 folds finished, `per_arm/N-cascade-vector-max-max.json`
-   written and `analysis.md` already regenerated (17:42). See the "Handoff"
-   section above.
+1. **Post-hoc `mbs_enet`** via `scripts/eval_mbs_enet_from_scores.py` on cascade +
+   light run prefixes.
+2. **RBS diagnostics** (`rbs_linear_probe` / `rbs_enet`) on
+   `all_gene_rbs.zarr` for cascade folds.
+3. **Stage B GPU** (`scripts/run_7g_prime_stage_b.py`) with locked `P2-G`
+   params; one-hop Stage B features should default to **M-only**.
+4. Optional encoder parity (FlatDeepSet / HierarchicalDeepSet) — not required
+   to start Stage B.
 
-#### Short-term (next GPU slots)
+## Open questions (this screen)
 
-2. **`N-light-gene-max` folds 1 and 2 retrain** — the existing f1/f2 checkpoints
-   were saved at 17:18/17:28 UTC+2, before the orientation-v2 fix commit
-   at 17:30. Per-arm JSON uses their stale numbers (e2e ~0.12). Retrain from
-   fresh process after both fixes are confirmed on disk. Runner:
-   ```bash
-   uv run python scripts/run_7g_gene_only_probe.py \
-     --config configs/experiment/stage0_7g_gene_only_probe.yaml \
-     --device cuda --arm N-light-gene-max --fold 1 --fold 2
-   ```
-3. **`N-light-gene-mean` all 3 folds retrain** — all existing checkpoints are
-   stale (pre-fix or pre-checkpoint-bug-fix). The mean-pooling variant is needed
-   to answer whether mean vs max matters for the one-hop architecture. Runner:
-   ```bash
-   uv run python scripts/run_7g_gene_only_probe.py \
-     --config configs/experiment/stage0_7g_gene_only_probe.yaml \
-     --device cuda --arm N-light-gene-mean --fold 0 --fold 1 --fold 2
-   ```
-4. **Post-hoc `mbs_enet`** on all screen arms that have saved `mbs.npy` scores:
-   ```bash
-   # For flat (light) arms:
-   uv run python scripts/eval_mbs_enet_from_scores.py \
-     --run-prefix stage0-7g-gene-probe-light-max --n-folds 3
-   uv run python scripts/eval_mbs_enet_from_scores.py \
-     --run-prefix stage0-7g-gene-probe-light-mean --n-folds 3
-   # For cascade arms (after per-arm JSONs ready):
-   uv run python scripts/eval_mbs_enet_from_scores.py \
-     --run-id stage0-7g-gene-probe-scalar-max-mean
-   uv run python scripts/eval_mbs_enet_from_scores.py \
-     --run-id stage0-7g-gene-probe-scalar-mean-max
-   uv run python scripts/eval_mbs_enet_from_scores.py \
-     --run-id stage0-7g-gene-probe-vector-mean-max
-   uv run python scripts/eval_mbs_enet_from_scores.py \
-     --run-id stage0-7g-gene-probe-vector-max-max
-   ```
-5. **Regenerate `analysis.md`** once vector-max-max and light retrains land:
-   ```bash
-   uv run python scripts/write_7g_gene_only_probe_report.py
-   ```
-
-#### Deferred (after screen arms stabilize)
-
-6. **Annotation ablation grid** (fold 0 only; A0–A7, N0–N3, two seeds each) —
-   runs the one-hop `FlatDeepSetRegion` with different feature modes to test
-   whether `cpg_context` / gene-role annotations add measurable signal over
-   M-only. Use `run_7g_gene_only_probe.py --fold 0 --device cuda` with the
-   `ablation_*` config suffixes. Start **after** L1 baseline (item 3 above)
-   numbers are in and representation diagnostics reviewed.
-7. **Post-hoc direct/orphan fusion** — deferred until ablation grid scored.
-8. **Stage B GPU run** — after screen selects (or rejects) a gene-aggregation
-   architecture. Requires `direct_cpg.zarr` and fold panel artifacts. Runner:
-   `scripts/run_7g_prime_stage_b.py`.
-
-## Open questions (resolved by this screen)
-
-1. Mean vs max at each cascade level.
-2. Whether scalar RBS discards information.
-3. Whether gene pooling discards information relative to RBS.
-4. Whether one-hop matches or beats the cascade.
-5. Whether one scalar MBS per gene is enough for age/sex/tissue.
-6. Whether `cpg_context` annotation adds measurable signal over M-only baseline (A0 vs A2/A3). ← *new, added 2026-09-03*
+1. ~~Mean vs max at each cascade level.~~ → **max/max**
+2. ~~Whether scalar RBS discards information.~~ → **not under Tier-1 budget**
+3. Whether gene pooling discards information relative to RBS. ← *post-hoc*
+4. ~~Whether one-hop matches or beats the cascade.~~ → **no (e2e)**
+5. ~~Whether one scalar MBS per gene is enough for age/sex/tissue.~~ → **no for age/sex**
+6. ~~Whether `cpg_context` annotation adds measurable signal over M-only.~~ → **no**

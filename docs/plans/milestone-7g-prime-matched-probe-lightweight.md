@@ -3,11 +3,12 @@
 Status: **in progress** — required Stage A GPU arms (`P2-G` / `P4-G` /
 `P5-G-max` / `C-mvalue-*-G`) **landed** with test-only `mbs_e2e` on
 `explicit_only`; provisional lock `P2-G` max/max 15 epochs with
-`cascade_clearly_ahead: false`. Stage A is **reopened** for the DeepRVAT-style
-screening grid (mixed pooling, RBS diagnostic, vector cascade, one-hop) —
-see [`milestone-7g-prime-stage-a-deeprvat-screen.md`](milestone-7g-prime-stage-a-deeprvat-screen.md).
-**P5 inactive.** Stage B GPU and Milestone **7** remain blocked until the
-screen selects (or rejects) a gene-aggregation architecture.
+`cascade_clearly_ahead: false`. Stage A DeepRVAT Tier-1 screen **complete**
+(2026-09-04) — no mixed/vector/one-hop arm displaces `P2-G`; annotation
+ablation prefers **M-only**. See
+[`milestone-7g-prime-stage-a-deeprvat-screen.md`](milestone-7g-prime-stage-a-deeprvat-screen.md)
+and report § Interpretation.
+**P5 inactive.** **Stage B GPU** is the next ops gate; Milestone **7** blocked.
 
 Normative encoder family: [`ARCHITECTURE.md`](../ARCHITECTURE.md) § Neural encoder family,
 [`SCORING_PIPELINE.md`](../SCORING_PIPELINE.md).
@@ -64,24 +65,15 @@ extra readout of encoder quality, not a lock substitute. **P5 is inactive**
 
 ### Next (ordered)
 
-1. **Stage A DeepRVAT screen** ([plan](milestone-7g-prime-stage-a-deeprvat-screen.md)) —
-   **in progress** as of 2026-09-03:
-   - Scalar mixed-pooling (`N-cascade-scalar-mean-max`, `N-cascade-scalar-max-mean`) and
-     vector cascade (`N-cascade-vector-mean-max`, `N-cascade-vector-max-max`) Tier-1 arms
-     are complete or finishing fold 2. Tentative screen leader: `N-cascade-scalar-max-mean`
-     (~0.36 mean e2e F1 vs 0.373 for P2-G/max/max baseline).
-   - `N-light-gene-max` f0 done post-fix; **f1/f2 need retrain** (checkpoints
-     pre-date orientation v2 fix commit `fc8cd6f` at 17:30 UTC+2).
-   - `N-light-gene-mean` **all 3 folds need retrain** (stale pre-fix + checkpoint-selection
-     bug).
-   - `mbs_enet` / `rbs_enet` moved to **post-hoc** for all screen arms
-     (`stage_a_include_mbs_enet: false`); run via
-     `scripts/eval_mbs_enet_from_scores.py` after GPU queue clears.
-   - Annotation ablation grid (A0–A7, N0–N3, fold 0) **deferred** until clean
-     one-hop (light) numbers are in.
-   - Detailed remaining tasks: see screen plan §*Current screen status*.
-2. **Stage B GPU run** after screen selects (or rejects) gene aggregation
-   (`stage0_7g_prime_stage_b.yaml`); seed-gene transfer is a **separate** design.
+1. ~~**Stage A DeepRVAT screen**~~ (**done** 2026-09-04;
+   [plan](milestone-7g-prime-stage-a-deeprvat-screen.md) + report Interpretation):
+   - Scalar/vector/one-hop Tier-1 complete; **lock stays `P2-G` max/max 15 ep**.
+   - Vector ≤ scalar; one-hop weak on e2e (linear signal present); **`m_only`**
+     wins annotation ablation; no Tier-2 promotions.
+   - Optional remaining diagnostics: post-hoc `mbs_enet` + RBS probes.
+2. **Stage B GPU run** ← **current gate**
+   (`stage0_7g_prime_stage_b.yaml`); seed-gene transfer remains a **separate**
+   design. Prefer M-only features for any `N-light-type` Stage B arm.
 3. Optional **7G″** expression pilot (not a gate).
 4. Milestone **7** 5×6 OOF with locked topology + `direct_cpg.zarr` export.
 
