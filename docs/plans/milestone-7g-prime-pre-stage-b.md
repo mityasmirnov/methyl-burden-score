@@ -1,9 +1,14 @@
 # Plan: 7G′ pre–Stage-B reporting + typed RBS + seed-gene Stage A gate
 
-Status: **reporting + R0–R5 done** — **no P2-G architecture lock**; next real
-gate is a **trait/seed-gene Stage A repeat**. Fold-selected-panel Stage B is
-later and separate. R0–R5 does **not** decide Stage B. Neural typed pool **not**
-promoted (R1–R3 age MAE ↑ vs R0, but within-gene role shuffle did not collapse).
+Status: **reporting + R0–R5 done** — **no P2-G architecture lock**. Current
+GPU gate is the **matched 16-epoch promotion screen**
+([`milestone-7g-prime-16ep-promotion.md`](milestone-7g-prime-16ep-promotion.md)).
+Age-primary seed-mask scaffolding + fold-0 audit are **done**; CUDA waits on
+16-ep unlock
+([`milestone-7g-prime-age-seed-mask.md`](milestone-7g-prime-age-seed-mask.md)).
+Fold-selected-panel Stage B is later and separate. R0–R5 does **not** decide
+Stage B. Neural typed pool **not** promoted (R1–R3 age MAE ↑ vs R0, but
+within-gene role shuffle did not collapse).
 
 Parent: [`milestone-7g-prime-stage-a-deeprvat-screen.md`](milestone-7g-prime-stage-a-deeprvat-screen.md).
 Report: [`reports/inspection/stage0_7g_gene_only_probe/analysis.md`](../../reports/inspection/stage0_7g_gene_only_probe/analysis.md).

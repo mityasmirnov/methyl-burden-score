@@ -10,6 +10,34 @@ GPU 0. `--reuse-panels` is allowed only for panels with non-null
 `graph_content_hash` (runner enforces). Stage B CpG-panel GPU stays blocked
 until this screen and typed-RBS diagnostics land.
 
+## Done already (2026-09-04)
+
+| Item | Evidence |
+|------|----------|
+| ADR 0011 / 0012 + runner/YAML scaffolding | `configs/experiment/stage0_7g_prime_seed_mask.yaml`, `scripts/run_7g_prime_seed_mask.py` |
+| Fold-0 `internal_fold` panel regenerated | `seed_panels/fold_0/seed_panel.json` — `panel_hash` `ef6cd307…`, `graph_content_hash` `7ee70c55…` |
+| Provenance / sparsity audit green | `panel_audit.md` → `ok_for_seed_mask_gpu: true` |
+| Tissue/sex discovery sparse | 45 / 44 discovery CpGs (`sparsity_ok`); age fallback documented |
+| `sex_autosome` control | Present; `n_sex_chrom_seed_cpgs=0` |
+| Overlap + G3 matching quality | In `analysis.md` / panel JSON (gene union 331; G3 exact CpG-count match ≈90.6%) |
+| Atlas catalog (non-blocking) | `sql/013_*`, `association_catalog.py` |
+
+## Next steps
+
+1. Wait for matched 16-ep promotion to finish and refresh
+   `promotion_decision.json` (see [`milestone-7g-prime-16ep-promotion.md`](milestone-7g-prime-16ep-promotion.md)).
+2. Clear `scratch/SEED_MASK_GPU_BLOCKED.txt` only when `next_gate` unlocks
+   age-primary seed-mask (or equivalent).
+3. Launch CUDA screen:  
+   `uv run python -u scripts/run_7g_prime_seed_mask.py --device cuda --reuse-panels`  
+   (fold 0, seeds {42,43}, arms G0/G1/G2/G3/C0/C2).
+4. Write seed-mask `summary.json` / analysis; only then consider Stage B
+   fold-panel GPU (`run_7g_prime_stage_b.py` still blocked).
+
+Do **not** regenerate fold-0 panels unless the graph hash or selection code
+changes; do **not** `--reuse-panels` on the stale null-hash copy under
+`fold_0.stale-null-graph-hash/` / `fold_0.pre-topk-fallback/`.
+
 Normative: [ADR 0011](../adr/0011-seed-gene-sources.md) (seed sources),
 [ADR 0012](../adr/0012-seed-gene-discovery-vs-deployment-input.md)
 (discovery CpGs vs deployment input),

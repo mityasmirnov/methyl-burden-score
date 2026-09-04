@@ -1,7 +1,10 @@
 # Plan: Matched 16-epoch promotion screen (7G′ Stage A)
 
-Status: **in progress** — current GPU gate. Age-primary seed-mask stays
-**blocked** until the decision rules below fire.
+Status: **in progress** — current GPU gate (GPU 0). Age-primary seed-mask CUDA
+stays **blocked** until the decision rules below fire
+(`promotion_decision.json` / `scratch/SEED_MASK_GPU_BLOCKED.txt`). Seed-mask
+**scaffolding + fold-0 audit are already done** — see
+[`milestone-7g-prime-age-seed-mask.md`](milestone-7g-prime-age-seed-mask.md).
 
 Parent: [`milestone-7g-prime-stage-a-deeprvat-screen.md`](milestone-7g-prime-stage-a-deeprvat-screen.md).
 Report: `reports/inspection/stage0_7g_gene_only_probe/analysis.md`.
@@ -26,30 +29,39 @@ vector representation is weak.
 | Vector max→max | Do **not** promote yet |
 | Nested enet | Post-hoc CPU; train-fold StandardScaler + inner-val α/l1 |
 
-## Queue (12 remaining GPU-fold jobs on GPU 0)
+## Queue progress (2026-09-04)
 
-**Done — do not rerun:** `N-light-gene-max` folds 0–2 (16-ep; best epochs
-16/9/16). E2E tissue F1 ≈ 0.336 (±0.047), age MAE ≈ 21.6 — rescued from
-near-chance but still below P2-G (tissue 0.373 / age 15.64).
+| Arm | Status | Notes |
+|-----|--------|-------|
+| `N-light-gene-max` | **done** 3/3 | Tissue ≈0.336; age MAE ≈21.6 — below P2; do not rerun |
+| `N-light-gene-mean` | **done** 3/3 | Tissue ≈0.378 e2e; age MAE ≈17.1 — **within ~0.03 of P2**; include in decision refresh |
+| `N-cascade-scalar-mean-max` | **in progress** | Fold 0 early-stopped (best val tissue F1≈0.24); fold 1 training on GPU 0 |
+| `N-cascade-scalar-max-mean` | **queued** | 3 folds |
+| `N-cascade-vector-mean-max` | **queued** | 3 folds |
 
-**Remaining (sequential):**
-
-1. `N-light-gene-mean` all 3 folds (`…-light-mean-16ep`)
-2. Scalar `mean→max` all 3 folds (`…-scalar-mean-max-16ep`)
-3. Scalar `max→mean` all 3 folds (`…-scalar-max-mean-16ep`)
-4. Vector `mean→max` all 3 folds (`…-vector-mean-max-16ep`)
-
-Driver: `scripts/run_7g_16ep_promotion_resume.sh` (full queue script kept for
-repro). **Nested / fixed elastic-net is post-hoc only** — do not run
-`eval_mbs_enet_from_scores.py` inside the GPU queue; refresh the report
-from e2e + linear/Ridge probes first, then enet offline.
+Driver: `scripts/run_7g_16ep_promotion_resume.sh`. **Nested / fixed elastic-net
+is post-hoc only** — do not run `eval_mbs_enet_from_scores.py` inside the GPU
+queue; refresh the report from e2e + linear/Ridge probes first, then enet
+offline.
 
 ## Decision rules
 
 - If one-hop max ≈ P2-G across three folds → preferred smaller DeepRVAT-like architecture.
+- If one-hop **mean** ≈ P2-G (as in the finished 16-ep mean run) → document as a
+  viable smaller topology candidate; do not skip the remaining cascade jobs.
 - If vector mean→max improves age/sex e2e but still loses after gene pooling → typed-RBS aggregation, not scalar MBS.
 - If scalar mixed pooling closes the gap to P2 → retain the full 2×2 pooling result.
 - If nothing beats P2-G or raw-CpG baselines → stop architecture sweeps; start age-primary seed-gene.
+
+After the queue finishes: `write_7g_gene_only_probe_report.py` →
+`apply_7g_16ep_decision.py` → inspect `promotion_decision.json`.
+
+## Next steps
+
+1. Let the resume script finish scalar mean→max (folds 1–2), then max→mean, then vector mean→max.
+2. Refresh report + `promotion_decision.json` (include light-mean 16-ep near-P2).
+3. Optional parallel CPU nested enet on finished runs.
+4. On unlock: seed-mask CUDA with `--reuse-panels` (audited fold-0 panel).
 
 ## Non-goals
 
@@ -57,3 +69,4 @@ from e2e + linear/Ridge probes first, then enet offline.
 - Stage B CpG-panel GPU / Milestone 7
 - Rerunning P2/P4 for exact 16-ep equality
 - Promoting vector max→max
+- Killing the 16-ep PIDs to free GPU 0 early
