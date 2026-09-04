@@ -628,24 +628,41 @@ def _fit_nested_enet_model(
     alpha: float,
     l1_ratio: float,
 ) -> Any:
-    """Fit elastic-net for nested readout; SGD on wide panels (RBS ~13k cols)."""
+    """Fit elastic-net for nested readout.
+
+    Age/regression always uses coordinate-descent ``ElasticNet`` (same as fixed
+    ``mbs_enet``). Raw ``SGDRegressor(squared_error)`` on year-scale targets
+    previously exploded MAE to 1e11+ even after X-only StandardScaler.
+    """
+    from sklearn.compose import TransformedTargetRegressor
+
     x = np.asarray(x_train, dtype=np.float64)
     y = np.asarray(y_train)
     wide = int(x.shape[1]) > _WIDE_FEATURE_THRESHOLD
     if task == "regression":
-        if wide:
-            model = SGDRegressor(
-                loss="squared_error",
+        # Prefer ElasticNet for gene-MBS (~2–3k). Only for ultra-wide RBS (~13k)
+        # fall back to Huber SGD with y-scaling (classical-mvalue recipe).
+        if int(x.shape[1]) > 8192:
+            sgd = SGDRegressor(
+                loss="huber",
                 penalty="elasticnet",
                 alpha=float(alpha),
                 l1_ratio=float(l1_ratio),
                 max_iter=200,
                 tol=1e-3,
                 random_state=0,
+                eta0=1e-4,
+                learning_rate="invscaling",
+                average=True,
+            )
+            model = TransformedTargetRegressor(
+                regressor=sgd,
+                transformer=StandardScaler(),
             )
             model.fit(x, y.astype(np.float64))
             return model
-        model = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, max_iter=2000)
+        iters = 400 if wide else 2000
+        model = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, max_iter=iters)
         model.fit(x, y.astype(np.float64))
         return model
     # multiclass

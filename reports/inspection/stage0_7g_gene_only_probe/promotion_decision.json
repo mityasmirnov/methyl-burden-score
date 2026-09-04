@@ -33,11 +33,11 @@
       "matched_16ep": true
     },
     "N-cascade-scalar-max-mean": {
-      "n_folds": 1,
-      "ceiling": 16,
-      "tissue_f1_mean": 0.29448701584171255,
-      "age_mae_mean": 22.231325994118325,
-      "sex_auroc_mean": 0.6790582403965304,
+      "n_folds": 3,
+      "ceiling": 5,
+      "tissue_f1_mean": 0.35926336587402613,
+      "age_mae_mean": 21.356236621801802,
+      "sex_auroc_mean": 0.7011320903395286,
       "matched_16ep": false
     },
     "N-cascade-vector-mean-max": {
@@ -72,12 +72,14 @@
       "fired": false,
       "detail": "Retain full 2\u00d72 pooling; max/max is not locked.",
       "mean_max_f1": 0.3461944596198232,
-      "max_mean_f1": 0.29448701584171255
+      "max_mean_f1": 0.35926336587402613,
+      "mean_max_matched_16ep": true,
+      "max_mean_matched_16ep": false
     },
     "nothing_beats_p2_or_classical": {
       "fired": false,
       "detail": "Stop architecture sweeps; start age-primary seed-gene experiment.",
-      "best_promoted_f1": 0.3461944596198232
+      "best_promoted_f1": 0.35926336587402613
     }
   },
   "next_gate": "matched_16ep_promotion_screen",

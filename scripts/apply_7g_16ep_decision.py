@@ -179,11 +179,10 @@ def decide(report_dir: Path) -> dict[str, Any]:
 
     # Rule 3: scalar mixed closes gap to P2 → retain full 2×2
     r3 = False
-    mixed_f1s = [
-        x
-        for x in (mean_max.get("tissue_f1_mean"), max_mean.get("tissue_f1_mean"))
-        if x is not None and (mean_max.get("matched_16ep") or max_mean.get("matched_16ep"))
-    ]
+    mixed_f1s = []
+    for arm_blob in (mean_max, max_mean):
+        if arm_blob.get("matched_16ep") and arm_blob.get("tissue_f1_mean") is not None:
+            mixed_f1s.append(float(arm_blob["tissue_f1_mean"]))
     if mixed_f1s:
         r3 = any(abs(float(f) - float(p2_f1)) <= 0.02 for f in mixed_f1s)
     summary["rules"]["scalar_mixed_closes_gap"] = {
@@ -191,6 +190,8 @@ def decide(report_dir: Path) -> dict[str, Any]:
         "detail": "Retain full 2×2 pooling; max/max is not locked.",
         "mean_max_f1": mean_max.get("tissue_f1_mean"),
         "max_mean_f1": max_mean.get("tissue_f1_mean"),
+        "mean_max_matched_16ep": bool(mean_max.get("matched_16ep")),
+        "max_mean_matched_16ep": bool(max_mean.get("matched_16ep")),
     }
 
     # Rule 4: nothing beats P2 or classical → stop sweeps, start seed-mask

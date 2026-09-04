@@ -39,8 +39,10 @@ def _metric_from_fold(blob: dict[str, Any], metric_path: str) -> float | None:
         "mbs_e2e",
         "mbs_linear_probe",
         "mbs_enet",
+        "mbs_enet_nested",
         "rbs_linear_probe",
         "rbs_enet",
+        "rbs_enet_nested",
         "fusion_full",
         "fusion_mbs_direct",
     )

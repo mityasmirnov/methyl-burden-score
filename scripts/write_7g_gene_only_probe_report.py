@@ -1518,11 +1518,12 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
             "(fold 0 done; fold 1+ training), then vector mean→max ×3 — "
             "[`milestone-7g-prime-16ep-promotion.md`]"
             "(../../../docs/plans/milestone-7g-prime-16ep-promotion.md).",
-            "- **Post-hoc CPU enet:** light max/mean 16-ep already have nested "
-            "`mbs_enet`. Launching / filling fixed+nested **mbs/rbs** enet on "
-            "`scalar-mean-max-16ep` and available `scalar-max-mean-16ep` folds "
-            "(`scratch/logs/16ep_posthoc_enet.log`; unit `mbs-16ep-enet`). "
-            "Fixed `rbs_enet` remains diagnostic-only.",
+            "- **Post-hoc CPU enet:** nested age **fixed** (was raw "
+            "`SGDRegressor(squared_error)` → MAE 1e11; now ElasticNet like fixed "
+            "`mbs_enet`). Light nested: tissue ~0.39–0.40, **age MAE ~10–11**. "
+            "Fixed light/`mbs_enet` age ~15–16 still valid. Filling fixed+nested "
+            "mbs/rbs on `scalar-mean-max-16ep` / available `scalar-max-mean-16ep` "
+            "folds in background. Fixed `rbs_enet` remains diagnostic-only.",
             "- **CPU typed-RBS ablation (R0–R5):** done; shuffle did not collapse → "
             "neural typed aggregator **not** promoted.",
             "- **Age-primary seed-mask screen:** fold-0 panel audit **green** "

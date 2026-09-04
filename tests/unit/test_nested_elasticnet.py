@@ -92,3 +92,41 @@ def test_nested_enet_selected_alpha_from_grid() -> None:
     assert out["selected"]["age"]["alpha"] in NESTED_ENET_ALPHA_GRID
     assert out["selected"]["age"]["l1_ratio"] in (0.25, 0.5, 0.75)
     assert "age" in (out.get("metrics") or {})
+    age_mae = (out.get("metrics") or {}).get("age", {}).get("mae")
+    assert age_mae is not None
+    # Year-scale synthetic ages; exploded SGD would be 1e6+.
+    assert float(age_mae) < 50.0
+
+
+def test_nested_enet_age_sane_on_wide_panel() -> None:
+    """Gene-MBS-width (~2k) must not use exploding SGD squared_error age."""
+    rng = np.random.default_rng(2)
+    n_train, n_test, n_feat = 80, 25, 600
+    x_train = rng.normal(size=(n_train, n_feat))
+    x_test = rng.normal(size=(n_test, n_feat))
+    age_train = 45.0 + 3.0 * x_train[:, 0] + rng.normal(0, 1.0, size=n_train)
+    age_test = 45.0 + 3.0 * x_test[:, 0] + rng.normal(0, 1.0, size=n_test)
+    studies = np.asarray([f"s{i % 5}" for i in range(n_train)], dtype=object)
+    out = run_nested_elasticnet_multitask(
+        x_train=x_train,
+        x_test=x_test,
+        age_train=age_train,
+        age_mask_train=np.ones(n_train, dtype=bool),
+        tissue_train=None,
+        tissue_mask_train=None,
+        sex_train=None,
+        sex_mask_train=None,
+        age_test=age_test,
+        age_mask_test=np.ones(n_test, dtype=bool),
+        tissue_test=None,
+        tissue_mask_test=None,
+        sex_test=None,
+        sex_mask_test=None,
+        study_ids_train=studies,
+        study_ids_test=np.asarray([f"t{i}" for i in range(n_test)], dtype=object),
+        alpha_grid=(0.01, 0.1),
+        l1_grid=(0.5,),
+        seed=11,
+    )
+    mae = float((out.get("metrics") or {}).get("age", {}).get("mae"))
+    assert mae < 20.0

@@ -1,6 +1,7 @@
 {
-  "alias": null,
   "arm_id": "N-cascade-vector-max-max",
+  "kind": "cascade_train",
+  "run_id": "stage0-7g-gene-probe-vector-max-max",
   "folds": [
     {
       "checkpoint": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-vector-max-max/fold_0/best.pt",
@@ -24,13 +25,12 @@
           "stopped_early": false
         },
         "epochs_completed": 5,
-        "epochs_trained": 5,
         "has_validation": true,
         "max_epochs": 5,
         "n_val": 1443,
-        "selection": "validation_tissue_macro_f1_then_age_mae"
+        "selection": "validation_tissue_macro_f1_then_age_mae",
+        "epochs_trained": 5
       },
-      "epochs_trained": 5,
       "evaluations": {
         "fusion_full": {
           "evaluation": "fusion_full",
@@ -166458,7 +166458,8 @@
       "primary_evaluation": "mbs_e2e",
       "score_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-vector-max-max/fold_0/scores",
       "skipped": false,
-      "tbs_arm": false
+      "tbs_arm": false,
+      "epochs_trained": 5
     },
     {
       "checkpoint": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-vector-max-max/fold_1/best.pt",
@@ -166482,13 +166483,12 @@
           "stopped_early": false
         },
         "epochs_completed": 5,
-        "epochs_trained": 5,
         "has_validation": true,
         "max_epochs": 5,
         "n_val": 1294,
-        "selection": "validation_tissue_macro_f1_then_age_mae"
+        "selection": "validation_tissue_macro_f1_then_age_mae",
+        "epochs_trained": 5
       },
-      "epochs_trained": 5,
       "evaluations": {
         "fusion_full": {
           "evaluation": "fusion_full",
@@ -324064,7 +324064,8 @@
       "primary_evaluation": "mbs_e2e",
       "score_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-vector-max-max/fold_1/scores",
       "skipped": false,
-      "tbs_arm": false
+      "tbs_arm": false,
+      "epochs_trained": 5
     },
     {
       "checkpoint": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-vector-max-max/fold_2/best.pt",
@@ -324088,13 +324089,12 @@
           "stopped_early": false
         },
         "epochs_completed": 5,
-        "epochs_trained": 5,
         "has_validation": true,
         "max_epochs": 5,
         "n_val": 1358,
-        "selection": "validation_tissue_macro_f1_then_age_mae"
+        "selection": "validation_tissue_macro_f1_then_age_mae",
+        "epochs_trained": 5
       },
-      "epochs_trained": 5,
       "evaluations": {
         "fusion_full": {
           "evaluation": "fusion_full",
@@ -465577,16 +465577,14 @@
       "primary_evaluation": "mbs_e2e",
       "score_dir": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7g-gene-probe-vector-max-max/fold_2/scores",
       "skipped": false,
-      "tbs_arm": false
+      "tbs_arm": false,
+      "epochs_trained": 5
     }
   ],
-  "kind": "cascade_train",
-  "mean_fusion_full_tissue_f1": 0.3668356336421859,
-  "mean_fusion_mbs_direct_tissue_f1": null,
   "mean_mbs_e2e_tissue_f1": 0.34343086983592475,
-  "mean_mbs_enet_tissue_f1": 0.365740153072191,
   "mean_mbs_linear_probe_tissue_f1": 0.3668356336421859,
-  "mean_rbs_enet_tissue_f1": 0.22842138497096287,
+  "mean_mbs_enet_tissue_f1": 0.36574015307219093,
+  "mean_mbs_enet_nested_tissue_f1": null,
   "mean_rbs_linear_probe_tissue_f1": 0.32942227012390735,
-  "run_id": "stage0-7g-gene-probe-vector-max-max"
+  "mean_rbs_enet_tissue_f1": 0.22842138497096287
 }
