@@ -1,0 +1,65 @@
+# 7G′ age-primary seed-mask screen (Stage B blocker).
+# Encoder: locked P2-G topology; selection is age-first; first source: internal_fold.
+split_id: hub-ats-7e-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+milestone: 7G-prime-seed-mask
+report_dir: reports/inspection/stage0_7g_prime_seed_mask
+cv_budget:
+  max_loci: 65536
+  max_epochs: 15
+  folds: [0]
+  seeds: [42, 43]
+  n_seed_genes: 256
+experiment:
+  name: stage0_7g_prime_seed_mask
+  seed: 42
+  stage: 0
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-age-tissue-sex-full-v1
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+model:
+  topology: rbs_gene_direct
+  tbs_arm: false
+  pooling: max
+  gene_allocation: explicit_only
+  cpg_hidden_dim: 64
+  region_hidden_dim: 32
+  dropout: 0.1
+  cpg_pool: max
+  region_pool: max
+seed_panel:
+  selection_source: internal_fold
+  n_genes: 256
+  min_genes: 32
+training:
+  max_epochs: 15
+  batch_size: auto
+  learning_rate: 0.001
+  age_loss_weight: 1.0
+  tissue_loss_weight: 0.3
+  sex_loss_weight: 0.1
+  gene_linked_only: true
+  primary_evaluation: mbs_e2e
+  stage_a_include_mbs_enet: false
+  checkpoint_selection: validation_age_mae_then_tissue_f1_then_sex_auroc
+arms:
+  - id: G0
+    kind: cascade_all_genes
+    mask: none
+  - id: G1
+    kind: cascade_all_cpgs_seed_heads
+    mask: internal_fold
+  - id: G2
+    kind: cascade_seed_cpgs_seed_heads
+    mask: internal_fold
+  - id: G3
+    kind: cascade_matched_random
+    mask: matched_random
+  - id: C0
+    kind: classical_enet_all
+  - id: C2
+    kind: classical_enet_seed_cpgs
+device:
+  torch_device: cuda

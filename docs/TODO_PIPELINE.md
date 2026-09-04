@@ -16,17 +16,17 @@ True next milestone after bootstrap:
 > Hub multitask + hygiene (**7E′** — **done**) → **RBS→gene + direct topology
 > (7F — done)** → **methylation-only full eval (7G — done)** →
 > **Phase-2 gene-only cascade grid (7G′ Stage A — DeepRVAT Tier-1 screen
-> done; no architecture lock)** → **trait/seed-gene Stage A repeat
-> (← current)** → **fold-selected panel Stage B (later, separate)** →
+> done; no architecture lock)** → **age-primary seed-mask screen
+> (← current)** → **fold-selected panel Stage B (blocked)** →
 > **final OOF cross-fitting (7)** → one score matrix.
 
-**Current gate:** **trait/seed-gene Stage A repeat** (Atlas×Hub coverage
-inspect → one trait → seeds → re-screen). **No P2-G lock** from the ATS
-screen. CPU typed-RBS R0–R5 is **done** (does **not** decide Stage B).
-Neural typed pool **not** promoted (shuffle control did not collapse).
-Fold-selected-panel Stage B stays later/separate. Plans:
-[`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md),
-[`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md).
+**Current gate:** **age-primary seed-mask screen** (`internal_fold` G0–G3/C0/C2;
+ADR 0011). Freeze **P2-G as the current reference, not a final lock**. CPU
+typed-RBS R0–R5 is **done** (shuffle did not clearly collapse → neural typed
+aggregator **not** promoted; not a Stage B unlock). Stage B CpG-panel GPU
+stays **blocked** until this screen lands. Plans:
+[`plans/milestone-7g-prime-age-seed-mask.md`](plans/milestone-7g-prime-age-seed-mask.md),
+[`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md).
 Report:
 [`reports/inspection/stage0_7g_gene_only_probe/analysis.md`](../reports/inspection/stage0_7g_gene_only_probe/analysis.md).
 
@@ -44,11 +44,11 @@ Report:
 | Annotation ablation grid (A0–A7, N0–N3) | **done** fold 0 — **`m_only` best** under raw concat; not proof annotations uninformative |
 | Post-hoc `mbs_enet` / `rbs_enet` on screen arms | **pending** (`rbs_linear_probe` already in screen cascade metrics) |
 | Stage A DeepRVAT screen (Tier-1) | **done** — no architecture lock |
-| CPU typed-RBS R0–R5 | **done** (R1–R3 age↑; shuffle did not collapse; not a Stage B gate) |
-| Neural typed aggregator | **deferred** (needs shuffle collapse; not Stage B go/no-go) |
-| Trait/seed-gene Stage A repeat | **in_progress** ← **current gate** (inspect → one trait → re-screen) |
-| Atlas association catalog | **in_progress** (feeds seed-gene gate; non-blocking for R0–R5) |
-| Stage B GPU run (fold-panel) | **blocked** (later; after seed-gene Stage A; not unblocked by R0–R5) |
+| CPU typed-RBS R0–R5 | **done** (R1–R3 age↑; shuffle Δ≪1 y; neural typed **not** promoted) |
+| Neural typed aggregator | **deferred** (needs clear shuffle collapse; not Stage B go/no-go) |
+| Age-primary seed-mask screen (G0–G3/C0/C2) | **in_progress** ← **current gate** |
+| Atlas association catalog | **done** (SQL 013 + constructors; non-blocking for GPU) |
+| Stage B GPU run (fold-panel) | **blocked** (after seed-mask screen + typed-RBS diagnostics) |
 | Milestone **7** 5×6 OOF | **blocked** |
 
 **Trustworthy numbers (`explicit_only` panel, 51 375 gene-linked CpGs, test split):**
@@ -100,11 +100,14 @@ Run after L1 baseline: `run_7g_gene_only_probe.py --fold 0 --device cuda`.
 **Best landed ATS cascade (not a lock):** `P2-G` max/max, 15 epochs
 (`lock_recommendation.json` has `architecture_locked: false`);
 cascade is **not** clearly ahead of classical. Next gate:
-**trait/seed-gene Stage A repeat**. **7G″** expression pilot is **deferred**. Final
-Milestone **7** OOF remains blocked.
+**age-primary seed-mask screen**
+([`plans/milestone-7g-prime-age-seed-mask.md`](plans/milestone-7g-prime-age-seed-mask.md)).
+**7G″** expression pilot is **deferred**. Final Milestone **7** OOF remains
+blocked. Stage B CpG-panel runner stays in tree; do **not** launch it yet.
 
-Runners: Stage A `scripts/run_7g_gene_only_probe.py` · Stage B
-`scripts/run_7g_prime_stage_b.py` (both `--device cuda` on GPU hosts).
+Runners: Stage A `scripts/run_7g_gene_only_probe.py` · seed-mask
+`scripts/run_7g_prime_seed_mask.py` · Stage B
+`scripts/run_7g_prime_stage_b.py` (blocked; `--device cuda` on GPU hosts).
 
 **7G** methylation eval and **tissue probe P0–P3** are done (historical evidence
 only — P2 ~0.38 used late fusion, not MBS-only). Plan:

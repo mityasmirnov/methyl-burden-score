@@ -12,6 +12,38 @@ from mbs.models import SeedMaskedLinearHead, center_mask_scores
 from mbs.training.dataset import FlatBatch
 from mbs.training.hier_dataset import HierBatch
 
+# ADR 0011: a provided seed mask that selects too few genes is a config error,
+# not a valid tiny panel. Fail closed below this many genes per trait row.
+MIN_SEED_GENES = 32
+
+
+def _prepare_seed_mask(mask: Tensor, *, n_outputs: int, n_genes: int, trait: str) -> Tensor:
+    """Validate a provided seed mask (ADR 0011) and coerce to (n_outputs, n_genes)."""
+    m = mask.detach().to(torch.float32)
+    if m.ndim == 1:
+        m = m.unsqueeze(0).expand(n_outputs, n_genes).contiguous()
+    if tuple(m.shape) != (n_outputs, n_genes):
+        raise ValueError(
+            f"{trait} seed mask must have shape {(n_outputs, n_genes)}, found {tuple(m.shape)}"
+        )
+    row_sums = m.sum(dim=1)
+    min_selected = int(row_sums.min().item()) if row_sums.numel() else 0
+    if min_selected < MIN_SEED_GENES:
+        raise ValueError(
+            f"{trait} seed mask selects {min_selected} genes (< {MIN_SEED_GENES}); "
+            "fail closed per ADR 0011"
+        )
+    return m
+
+
+def _init_trait_head(head: SeedMaskedLinearHead | nn.Linear) -> None:
+    """Symmetry-breaking init for either a masked or dense trait head."""
+    if isinstance(head, SeedMaskedLinearHead):
+        head.gene_weight.normal_(0.0, 0.05)
+    else:
+        head.weight.normal_(0.0, 0.05)
+        head.bias.zero_()
+
 
 class MultitaskHeads(nn.Module):
     """DeepRVAT-style phenotype modules on shared gene MBS.
@@ -19,6 +51,11 @@ class MultitaskHeads(nn.Module):
     Always instantiates parallel linear trait modules; missing phenotypes are
     handled only in the masked loss (not by switching heads per sample).
     ``PhenotypeModules`` is the preferred alias.
+
+    Age, tissue, and sex each accept an optional gene **seed mask** (ADR 0011).
+    When a mask is provided the head becomes a :class:`SeedMaskedLinearHead` so
+    only selected genes contribute gradients; when it is ``None`` age/sex keep a
+    dense ``nn.Linear`` (backward compatible) and tissue keeps its all-ones mask.
     """
 
     def __init__(
@@ -28,6 +65,9 @@ class MultitaskHeads(nn.Module):
         *,
         n_sex_classes: int = 2,
         seed_mask: Tensor | None = None,
+        tissue_seed_mask: Tensor | None = None,
+        age_seed_mask: Tensor | None = None,
+        sex_seed_mask: Tensor | None = None,
         sex_enabled: bool = False,
         n_disease_labels: int = 0,
         n_cancer_labels: int = 0,
@@ -41,16 +81,44 @@ class MultitaskHeads(nn.Module):
         self.n_disease_labels = int(n_disease_labels)
         self.n_cancer_labels = int(n_cancer_labels)
         self.neutral_score = float(neutral_score)
-        self.age_head = nn.Linear(n_genes, 1)
-        mask = (
-            seed_mask
-            if seed_mask is not None
-            else torch.ones(n_tissue_classes, n_genes, dtype=torch.float32)
-        )
+
+        # Age: masked head only when a mask is supplied; else dense (compat).
+        self.age_head: SeedMaskedLinearHead | nn.Linear
+        if age_seed_mask is not None:
+            age_mask = _prepare_seed_mask(age_seed_mask, n_outputs=1, n_genes=n_genes, trait="age")
+            self.age_head = SeedMaskedLinearHead(
+                n_genes, 1, age_mask, neutral_score=self.neutral_score
+            )
+        else:
+            self.age_head = nn.Linear(n_genes, 1)
+
+        # Tissue: always a masked head; ``tissue_seed_mask`` wins over the
+        # ``seed_mask`` alias, and an all-ones mask is the dense default.
+        tissue_mask_arg = tissue_seed_mask if tissue_seed_mask is not None else seed_mask
+        if tissue_mask_arg is not None:
+            mask = _prepare_seed_mask(
+                tissue_mask_arg, n_outputs=n_tissue_classes, n_genes=n_genes, trait="tissue"
+            )
+        else:
+            mask = torch.ones(n_tissue_classes, n_genes, dtype=torch.float32)
         self.tissue_head = SeedMaskedLinearHead(
             n_genes, n_tissue_classes, mask, neutral_score=self.neutral_score
         )
-        self.sex_head = nn.Linear(n_genes, self.n_sex_classes) if self.sex_enabled else None
+
+        # Sex: masked head only when a mask is supplied; else dense (compat).
+        self.sex_head: SeedMaskedLinearHead | nn.Linear | None
+        if not self.sex_enabled:
+            self.sex_head = None
+        elif sex_seed_mask is not None:
+            sex_mask = _prepare_seed_mask(
+                sex_seed_mask, n_outputs=self.n_sex_classes, n_genes=n_genes, trait="sex"
+            )
+            self.sex_head = SeedMaskedLinearHead(
+                n_genes, self.n_sex_classes, sex_mask, neutral_score=self.neutral_score
+            )
+        else:
+            self.sex_head = nn.Linear(n_genes, self.n_sex_classes)
+
         self.disease_head = (
             nn.Linear(n_genes, self.n_disease_labels) if self.n_disease_labels > 0 else None
         )
@@ -58,12 +126,10 @@ class MultitaskHeads(nn.Module):
             nn.Linear(n_genes, self.n_cancer_labels) if self.n_cancer_labels > 0 else None
         )
         with torch.no_grad():
-            self.age_head.weight.normal_(0.0, 0.05)
-            self.age_head.bias.zero_()
+            _init_trait_head(self.age_head)
             self.tissue_head.gene_weight.normal_(0.0, 0.05)
             if self.sex_head is not None:
-                self.sex_head.weight.normal_(0.0, 0.05)
-                self.sex_head.bias.zero_()
+                _init_trait_head(self.sex_head)
             if self.disease_head is not None:
                 self.disease_head.weight.normal_(0.0, 0.05)
                 self.disease_head.bias.zero_()
@@ -75,6 +141,8 @@ class MultitaskHeads(nn.Module):
         return center_mask_scores(mbs, present, neutral_score=self.neutral_score)
 
     def forward_age(self, mbs: Tensor, present: Tensor) -> Tensor:
+        if isinstance(self.age_head, SeedMaskedLinearHead):
+            return self.age_head(mbs, present).squeeze(-1)
         return self.age_head(self._centered(mbs, present)).squeeze(-1)
 
     def forward_tissue(self, mbs: Tensor, present: Tensor) -> Tensor:
@@ -83,6 +151,8 @@ class MultitaskHeads(nn.Module):
     def forward_sex(self, mbs: Tensor, present: Tensor) -> Tensor:
         if self.sex_head is None:
             raise RuntimeError("sex head is disabled")
+        if isinstance(self.sex_head, SeedMaskedLinearHead):
+            return self.sex_head(mbs, present)
         return self.sex_head(self._centered(mbs, present))
 
     def forward_disease(self, mbs: Tensor, present: Tensor) -> Tensor:

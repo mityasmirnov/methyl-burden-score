@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://methyl-burden-score.local/schemas/seed_panel.schema.json",
+  "title": "SeedPanel",
+  "type": "object",
+  "required": [
+    "selection_source",
+    "fold_id",
+    "panel_hash",
+    "traits"
+  ],
+  "properties": {
+    "selection_source": {
+      "type": "string",
+      "enum": ["external_clean", "internal_fold", "hybrid_fold"]
+    },
+    "fold_id": {
+      "type": ["integer", "string"]
+    },
+    "selection_method": { "type": "string" },
+    "thresholds": { "type": "object" },
+    "excluded_study_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "graph_id": { "type": ["string", "null"] },
+    "graph_content_hash": { "type": ["string", "null"] },
+    "matrix_id": { "type": ["string", "null"] },
+    "n_train_samples": { "type": "integer" },
+    "panel_hash": { "type": "string", "minLength": 8 },
+    "traits": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "n_genes": { "type": "integer" },
+          "n_loci": { "type": "integer" },
+          "autosome_only_n_genes": { "type": ["integer", "null"] }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

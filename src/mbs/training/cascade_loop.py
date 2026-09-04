@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from dataclasses import dataclass
@@ -35,7 +36,10 @@ from mbs.training.cascade_scores import (
     write_cascade_score_dir,
     _write_array,
 )
-from mbs.training.checkpoint_selection import validation_rank as _validation_rank
+from mbs.training.checkpoint_selection import (
+    validation_rank as _validation_rank,
+    validation_rank_age_primary as _validation_rank_age_primary,
+)
 from mbs.training.dev_cv import DEFAULT_SPLIT_ID, load_frozen_folds
 from mbs.training.direct_cpg import direct_cpg_design_matrix, fit_direct_elasticnet
 from mbs.training.features import beta_to_m_value
@@ -51,6 +55,41 @@ from mbs.training.transparent_baselines import (
 from mbs.training.run_artifacts import run_dir
 
 PrimaryEvaluation = Literal["late_fusion", "mbs_e2e"]
+
+AGE_PRIMARY_SELECTION = "validation_age_mae_then_tissue_f1_then_sex_auroc"
+TISSUE_PRIMARY_SELECTION = "validation_tissue_macro_f1_then_age_mae"
+
+
+def _seed_mask_tensor(mask: np.ndarray | torch.Tensor | None) -> torch.Tensor | None:
+    """Coerce a numpy/tensor seed mask to a CPU float32 tensor (validation in heads)."""
+    if mask is None:
+        return None
+    if isinstance(mask, torch.Tensor):
+        return mask.detach().to(torch.float32).cpu()
+    return torch.as_tensor(np.asarray(mask), dtype=torch.float32)
+
+
+def _seed_mask_meta(mask: torch.Tensor | None) -> dict[str, Any] | None:
+    """Hash + per-row gene counts for a seed mask (auditability, ADR 0011)."""
+    if mask is None:
+        return None
+    arr = np.ascontiguousarray(mask.detach().cpu().numpy().astype(np.float32))
+    rows = arr if arr.ndim > 1 else arr.reshape(1, -1)
+    return {
+        "sha256": hashlib.sha256(arr.tobytes()).hexdigest(),
+        "shape": list(arr.shape),
+        "n_genes_selected": [int(x) for x in rows.sum(axis=1).tolist()],
+    }
+
+
+def _encoder_grad_norm(model: torch.nn.Module) -> float:
+    """L2 norm of encoder parameter gradients (0 if none)."""
+    total = 0.0
+    for p in model.parameters():
+        if p.grad is None:
+            continue
+        total += float(p.grad.detach().pow(2).sum().item())
+    return float(total**0.5)
 
 
 @dataclass(frozen=True, slots=True)
@@ -532,9 +571,13 @@ def _evaluate_cascade_validation(
     batch_size: int = 1,
 ) -> dict[str, Any]:
     """Cheap proxy metrics from the model's own heads on a held-out validation slice."""
-    from mbs.evaluation.metrics import multiclass_metrics, regression_metrics  # noqa: PLC0415
+    from mbs.evaluation.metrics import (  # noqa: PLC0415
+        binary_auroc_auprc,
+        multiclass_metrics,
+        regression_metrics,
+    )
 
-    out: dict[str, Any] = {"tissue_macro_f1": None, "age_mae": None}
+    out: dict[str, Any] = {"tissue_macro_f1": None, "age_mae": None, "sex_auroc": None}
     if betas_val.shape[0] == 0:
         return out
     mbs_v, present_v, _, _, _ = score_samples(
@@ -555,6 +598,21 @@ def _evaluate_cascade_validation(
             out["tissue_macro_f1"] = multiclass_metrics(
                 tissue_val[tissue_mask_val], tissue_pred[tissue_mask_val]
             )["macro_f1"]
+        if heads.sex_head is not None and bool(sex_mask_val.any()):
+            sex_proba = (
+                torch.softmax(heads.forward_sex(mbs_t, present_t), dim=-1)
+                .detach()
+                .cpu()
+                .numpy()
+            )
+            yt = np.asarray(sex_val)[sex_mask_val]
+            if np.unique(yt).size == 2 and sex_proba.shape[1] >= 2:
+                try:
+                    out["sex_auroc"] = binary_auroc_auprc(yt, sex_proba[sex_mask_val][:, 1])[
+                        "auroc"
+                    ]
+                except ValueError:
+                    out["sex_auroc"] = None
     return out
 
 
@@ -756,6 +814,10 @@ def train_cascade_on_arrays(
     age_mask: np.ndarray | None = None,
     tissue_mask: np.ndarray | None = None,
     sex_mask: np.ndarray | None = None,
+    age_seed_mask: np.ndarray | torch.Tensor | None = None,
+    tissue_seed_mask: np.ndarray | torch.Tensor | None = None,
+    sex_seed_mask: np.ndarray | torch.Tensor | None = None,
+    checkpoint_selection_mode: str = TISSUE_PRIMARY_SELECTION,
     cpg_hidden_dim: int = 64,
     region_hidden_dim: int = 32,
     dropout: float = 0.1,
@@ -809,6 +871,8 @@ def train_cascade_on_arrays(
         raise ValueError("early_stopping_min_delta must be non-negative")
     if primary_evaluation not in ("late_fusion", "mbs_e2e"):
         raise ValueError(f"unsupported primary_evaluation: {primary_evaluation!r}")
+    if checkpoint_selection_mode not in (AGE_PRIMARY_SELECTION, TISSUE_PRIMARY_SELECTION):
+        raise ValueError(f"unsupported checkpoint_selection_mode: {checkpoint_selection_mode!r}")
 
     if gene_linked_only:
         assignment = assignment_gene_linked_only(assignment)
@@ -830,7 +894,27 @@ def train_cascade_on_arrays(
         activation="gelu",
         layer_norm=True,
     )
-    heads = MultitaskHeads(n_genes, max(len(class_names), 2), sex_enabled=True)
+    age_seed_t = _seed_mask_tensor(age_seed_mask)
+    tissue_seed_t = _seed_mask_tensor(tissue_seed_mask)
+    sex_seed_t = _seed_mask_tensor(sex_seed_mask)
+    # Fails closed (ValueError) before training if any provided mask is undersized.
+    heads = MultitaskHeads(
+        n_genes,
+        max(len(class_names), 2),
+        sex_enabled=True,
+        age_seed_mask=age_seed_t,
+        tissue_seed_mask=tissue_seed_t,
+        sex_seed_mask=sex_seed_t,
+    )
+    seed_mask_meta = {
+        trait: meta
+        for trait, meta in (
+            ("age", _seed_mask_meta(age_seed_t)),
+            ("tissue", _seed_mask_meta(tissue_seed_t)),
+            ("sex", _seed_mask_meta(sex_seed_t)),
+        )
+        if meta is not None
+    }
     model.to(device)
     heads.to(device)
     opt = torch.optim.Adam(list(model.parameters()) + list(heads.parameters()), lr=lr)
@@ -912,7 +996,11 @@ def train_cascade_on_arrays(
             ckpt_path,
         )
 
-    best_rank: tuple[float, float] | None = None
+    age_primary = checkpoint_selection_mode == AGE_PRIMARY_SELECTION
+    rank_fn = _validation_rank_age_primary if age_primary else _validation_rank
+    early_stop_monitor = "validation_age_mae" if age_primary else "validation_tissue_macro_f1"
+
+    best_rank: tuple[float, ...] | None = None
     best_epoch = -1
     val_history: list[dict[str, Any]] = []
     best_early_stop_f1 = -float("inf")
@@ -937,6 +1025,8 @@ def train_cascade_on_arrays(
             order = train_idx.copy()
             np.random.shuffle(order)
             batch_starts = range(0, int(order.size), batch_size)
+            log_this_epoch = (_epoch + 1) % max(1, max_epochs // 5) == 0 or _epoch == 0
+            logged_grad_norms = False
             for start in batch_starts:
                 batch_idx = order[start : start + batch_size]
                 active = [
@@ -960,30 +1050,61 @@ def train_cascade_on_arrays(
                     mbs = torch.full((len(active), 1), 0.5, device=device)
                     present = torch.zeros(len(active), 1, dtype=torch.bool, device=device)
                 loss = torch.zeros((), device=device)
+                age_term: torch.Tensor | None = None
+                tissue_term: torch.Tensor | None = None
+                sex_term: torch.Tensor | None = None
                 age_m = age_mask_a[active_a]
                 if bool(age_m.any()):
                     age_t = torch.tensor(ages[active_a][age_m], device=device, dtype=torch.float32)
                     age_pred = heads.forward_age(mbs[age_m], present[age_m])
-                    loss = loss + age_loss_weight * F.huber_loss(age_pred, age_t)
+                    age_term = F.huber_loss(age_pred, age_t)
+                    loss = loss + age_loss_weight * age_term
                 tissue_m = tissue_mask_a[active_a]
                 if bool(tissue_m.any()):
                     tissue_t = torch.tensor(
                         tissue[active_a][tissue_m], device=device, dtype=torch.long
                     )
                     tissue_pred = heads.forward_tissue(mbs[tissue_m], present[tissue_m])
-                    loss = loss + tissue_loss_weight * F.cross_entropy(
+                    tissue_term = F.cross_entropy(
                         tissue_pred, tissue_t, weight=tissue_class_weights
                     )
+                    loss = loss + tissue_loss_weight * tissue_term
                 sex_m = sex_mask_a[active_a]
                 if bool(sex_m.any()):
                     sex_t = torch.tensor(sex[active_a][sex_m], device=device, dtype=torch.long)
                     sex_pred = heads.forward_sex(mbs[sex_m], present[sex_m])
                     if sex_pred is not None:
-                        loss = loss + sex_loss_weight * F.cross_entropy(sex_pred, sex_t)
+                        sex_term = F.cross_entropy(sex_pred, sex_t)
+                        loss = loss + sex_loss_weight * sex_term
+                # Age-primary screen: log unweighted trait losses + encoder ||grad||
+                # per trait once per logged epoch (first labelled batch).
+                if log_this_epoch and not logged_grad_norms:
+                    enc_norms: dict[str, float] = {}
+                    for trait_name, term in (
+                        ("age", age_term),
+                        ("tissue", tissue_term),
+                        ("sex", sex_term),
+                    ):
+                        if term is None:
+                            continue
+                        opt.zero_grad(set_to_none=True)
+                        term.backward(retain_graph=True)
+                        enc_norms[trait_name] = _encoder_grad_norm(model)
+                    uw = {
+                        "age_loss": None if age_term is None else float(age_term.detach()),
+                        "tissue_loss": None if tissue_term is None else float(tissue_term.detach()),
+                        "sex_loss": None if sex_term is None else float(sex_term.detach()),
+                    }
+                    print(
+                        f"[cascade] {out_dir.name} epoch {_epoch + 1}/{max_epochs} "
+                        f"unweighted={uw} encoder_grad_norm={enc_norms}",
+                        flush=True,
+                    )
+                    logged_grad_norms = True
                 opt.zero_grad(set_to_none=True)
                 loss.backward()
                 opt.step()
-            if (_epoch + 1) % max(1, max_epochs // 5) == 0 or _epoch == 0:
+            if log_this_epoch and not logged_grad_norms:
                 print(
                     f"[cascade] {out_dir.name} epoch {_epoch + 1}/{max_epochs}",
                     flush=True,
@@ -1003,18 +1124,24 @@ def train_cascade_on_arrays(
                     device=device,
                     batch_size=batch_size,
                 )
-                rank = _validation_rank(val_metrics)
+                rank = rank_fn(val_metrics)
                 val_history.append({"epoch": _epoch + 1, "rank": list(rank), **val_metrics})
                 if best_rank is None or rank > best_rank:
                     best_rank = rank
                     best_epoch = _epoch + 1
                     _save_checkpoint()
 
-                tissue_f1 = val_metrics.get("tissue_macro_f1")
-                if early_stopping_patience is not None and tissue_f1 is not None:
-                    tissue_f1_f = float(tissue_f1)
-                    if tissue_f1_f > best_early_stop_f1 + early_stopping_min_delta:
-                        best_early_stop_f1 = tissue_f1_f
+                # Monitor the primary metric as "higher is better": tissue macro-F1
+                # directly, or negated age MAE under age-primary selection.
+                if age_primary:
+                    monitor_raw = val_metrics.get("age_mae")
+                    monitor_val = None if monitor_raw is None else -float(monitor_raw)
+                else:
+                    monitor_raw = val_metrics.get("tissue_macro_f1")
+                    monitor_val = None if monitor_raw is None else float(monitor_raw)
+                if early_stopping_patience is not None and monitor_val is not None:
+                    if monitor_val > best_early_stop_f1 + early_stopping_min_delta:
+                        best_early_stop_f1 = monitor_val
                         epochs_without_tissue_improvement = 0
                     else:
                         epochs_without_tissue_improvement += 1
@@ -1024,7 +1151,7 @@ def train_cascade_on_arrays(
             if stopped_early:
                 print(
                     f"[cascade] {out_dir.name} early stop at epoch {stop_epoch}; "
-                    f"best validation tissue macro-F1={best_early_stop_f1:.4f}",
+                    f"best validation {early_stop_monitor}={best_early_stop_f1:.4f}",
                     flush=True,
                 )
                 break
@@ -1037,7 +1164,7 @@ def train_cascade_on_arrays(
             "val_history": val_history,
             "early_stopping": {
                 "enabled": early_stopping_patience is not None,
-                "monitor": "validation_tissue_macro_f1",
+                "monitor": early_stop_monitor,
                 "patience": early_stopping_patience,
                 "min_delta": early_stopping_min_delta,
                 "stopped_early": stopped_early,
@@ -1046,7 +1173,7 @@ def train_cascade_on_arrays(
         }
         if has_val and best_epoch > 0:
             checkpoint_selection["best_epoch"] = best_epoch
-            checkpoint_selection["selection"] = "validation_tissue_macro_f1_then_age_mae"
+            checkpoint_selection["selection"] = checkpoint_selection_mode
             checkpoint_selection["best_validation_metrics"] = next(
                 row for row in val_history if int(row["epoch"]) == best_epoch
             )
@@ -1189,6 +1316,8 @@ def train_cascade_on_arrays(
                 "cpg_pool": cpg_pool,
                 "region_pool": region_pool,
                 "gene_aggregation": gene_aggregation,
+                "checkpoint_selection_mode": checkpoint_selection_mode,
+                **({"seed_masks": seed_mask_meta} if seed_mask_meta else {}),
             },
         )
 
@@ -1325,7 +1454,10 @@ def train_cascade_on_arrays(
         "pooling": {"cpg_to_region": cpg_pool, "region_to_gene": region_pool},
         "gene_aggregation": gene_aggregation,
         "gene_allocation": gene_allocation_policy,
+        "checkpoint_selection_mode": checkpoint_selection_mode,
     }
+    if seed_mask_meta:
+        fused["seed_masks"] = seed_mask_meta
     write_json(metrics_path, fused)
     return fused
 
@@ -1517,6 +1649,13 @@ def run_cascade_hub(
     primary_evaluation = str(training_cfg.get("primary_evaluation", "late_fusion"))
     if primary_evaluation not in ("late_fusion", "mbs_e2e"):
         raise ValueError(f"unsupported training.primary_evaluation: {primary_evaluation!r}")
+    checkpoint_selection_mode = str(
+        training_cfg.get("checkpoint_selection", TISSUE_PRIMARY_SELECTION)
+    )
+    if checkpoint_selection_mode not in (AGE_PRIMARY_SELECTION, TISSUE_PRIMARY_SELECTION):
+        raise ValueError(
+            f"unsupported training.checkpoint_selection: {checkpoint_selection_mode!r}"
+        )
     extra_fusion_raw = training_cfg.get("extra_fusion_modes") or []
     extra_fusion_modes = tuple(str(m) for m in extra_fusion_raw)
     milestone = str(config.get("milestone", config.get("experiment", {}).get("name", "7F")))
@@ -1703,6 +1842,7 @@ def run_cascade_hub(
             region_pool=region_pool,
             gene_aggregation=gene_aggregation,
             gene_allocation_policy=gene_allocation,
+            checkpoint_selection_mode=checkpoint_selection_mode,
             skip_if_done=skip_if_done,
             val_idx=val_idx,
             age_loss_weight=age_loss_weight,
