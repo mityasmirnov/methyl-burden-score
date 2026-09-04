@@ -1064,6 +1064,60 @@ def render_architecture_qa(rows: list[dict[str, Any]]) -> list[str]:
     return lines
 
 
+def render_rbs_frozen_section(task_rows: list[dict[str, Any]]) -> list[str]:
+    """Post-hoc / inline RBS readouts for screen cascade arms."""
+    screen_arms = (
+        "N-cascade-scalar-mean-max",
+        "N-cascade-scalar-max-mean",
+        "N-cascade-vector-mean-max",
+        "N-cascade-vector-max-max",
+    )
+    by_arm: dict[str, dict[str, dict[str, Any]]] = {a: {} for a in screen_arms}
+    for row in task_rows:
+        arm = str(row.get("arm_id") or "")
+        mode = str(row.get("readout") or "")
+        if arm in by_arm and mode in ("rbs_enet", "rbs_linear_probe"):
+            by_arm[arm][mode] = row
+    if not any(by_arm[a] for a in screen_arms):
+        return []
+    lines = [
+        "",
+        "### RBS frozen readouts (screen cascade — `rbs_enet` / `rbs_linear`)",
+        "",
+        "| Arm | `rbs_enet` tissue F1 | `rbs_enet` age MAE | `rbs_enet` sex AUROC | "
+        "`rbs_linear` tissue F1 | `rbs_linear` age MAE | folds |",
+        "|-----|---------------------:|-------------------:|---------------------:"
+        "|-----------------------:|---------------------:|------:|",
+    ]
+    for arm in screen_arms:
+        enet = by_arm[arm].get("rbs_enet")
+        lin = by_arm[arm].get("rbs_linear_probe")
+        if enet is None and lin is None:
+            continue
+        n = (enet or lin or {}).get("n_folds") or 0
+        lines.append(
+            f"| `{arm}` | "
+            f"{_fmt_pm((enet or {}).get('tissue_f1'), (enet or {}).get('tissue_f1_std'))} | "
+            f"{_fmt_pm((enet or {}).get('age_mae'), (enet or {}).get('age_mae_std'))} | "
+            f"{_fmt_pm((enet or {}).get('sex_auroc'), (enet or {}).get('sex_auroc_std'))} | "
+            f"{_fmt_pm((lin or {}).get('tissue_f1'), (lin or {}).get('tissue_f1_std'))} | "
+            f"{_fmt_pm((lin or {}).get('age_mae'), (lin or {}).get('age_mae_std'))} | "
+            f"{n} |"
+        )
+    lines.extend(
+        [
+            "",
+            "`rbs_enet` via `scripts/eval_mbs_enet_from_scores.py --which rbs` on saved "
+            "`all_gene_rbs.zarr` (13 212 regions; no encoder retrain). Scalar arms: enet "
+            "≈/≥ linear on tissue and **improves age**. Vector arms: enet **weaker** than "
+            "linear (esp. age); prefer `rbs_linear_probe` as the vector RBS diagnostic. "
+            "P2-G `rbs_enet` not run (folds 1–2 lack `all_gene_rbs.zarr`).",
+            "",
+        ]
+    )
+    return lines
+
+
 def _interpretation_section() -> list[str]:
     """Durable scientific interpretation (must survive report regeneration)."""
     return [
@@ -1101,10 +1155,13 @@ def _interpretation_section() -> list[str]:
         "### Vector vs scalar",
         "",
         "Fair five-epoch mean→max: scalar tissue F1 ~0.331 vs vector ~0.337. Do **not** "
-        "compare five-epoch vector to fifteen-epoch P2. Vector RBS **before** gene pool: "
-        "age MAE ~10.46, sex AUROC ~0.842 — CpG→region works; failure is later "
-        "(elementwise max/mean, no typed output channel, one scalar MBS). Raising LR is "
-        "not the first response.",
+        "compare five-epoch vector to fifteen-epoch P2. Vector RBS **linear** probe "
+        "before gene pool: age MAE ~10.46, sex AUROC ~0.842 — CpG→region works; failure "
+        "is later (elementwise max/mean, no typed output channel, one scalar MBS). "
+        "Post-hoc **`rbs_enet` on vector arms is weak** (tissue ~0.23–0.32; age MAE "
+        "~19–20) vs strong scalar `rbs_enet` (tissue ~0.37–0.39; age ~11–13) and vs "
+        "same-arm `rbs_linear` — elastic-net does not unlock the vector RBS age signal "
+        "that linear already sees. Raising LR is not the first response.",
         "",
         "### RBS → MBS and typed pooling",
         "",
@@ -1259,7 +1316,8 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
         "## Cascade arms (gene-linked CpGs only)",
         "",
         "Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** "
-        "are readouts of the **same frozen MBS**; **`rbs_*`** use gene-linked RBS. "
+        "are readouts of the **same frozen MBS**; **`rbs_linear_probe`** / **`rbs_enet`** "
+        "use gene-linked RBS (`all_gene_rbs.zarr`). "
         "Contaminated pre-fix **`mbs_e2e`** shown as *invalid*. "
         "**Best ep** = checkpoint epoch used for test eval; **ran** = epochs completed.",
         "",
@@ -1298,6 +1356,7 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
             f"{_fmt(row.get('sex_auroc'))} | {best_disp} | {ran_disp} | "
             f"{row.get('n_folds', 0)} |"
         )
+    lines.extend(render_rbs_frozen_section(task_rows))
     n_gene_cols = _gene_panel_n_cols(report_dir)
     panel_label = f"**{n_gene_cols:,} gene-linked CpGs**" if n_gene_cols else "gene-linked CpGs"
     lines.extend(
@@ -1365,6 +1424,8 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
             "",
             "- **ATS Stage A Tier-1 screen + annotation ablations:** complete. "
             "Freeze **`P2-G` as current reference, not a final lock.**",
+            "- **Post-hoc `rbs_enet`:** done for all four screen cascade arms "
+            "(scalar + vector); optional remaining = `mbs_enet` / P2-G RBS backfill.",
             "- **CPU typed-RBS ablation (R0–R5):** presence-aware role features + shuffle "
             "controls on saved `N-cascade-vector-mean-max` RBS.",
             "- **Age-primary seed-mask screen (next GPU):** `internal_fold` G0/G1/G2/G3/C0/C2 "

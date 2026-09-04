@@ -117,8 +117,10 @@ Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare row
 | `N-cascade-scalar-mean-max` | `mbs_e2e` | 0.331 (±0.020) | 20.713 (±1.893) | -0.083 (±0.141) | 0.667 (±0.032) | 0.597 (±0.024) | 3 |
 | `N-cascade-vector-max-max` | `rbs_linear_probe` | 0.329 (±0.074) | 12.102 (±2.226) | 0.592 (±0.095) | 0.803 (±0.111) | 0.734 (±0.097) | 3 |
 | `N-light-gene-max` | `mbs_linear_probe` | 0.327 (±0.000) | 12.943 (±0.000) | 0.558 (±0.000) | 0.776 (±0.000) | 0.705 (±0.000) | 1 |
+| `N-cascade-vector-mean-max` | `rbs_enet` | 0.316 (±0.050) | 19.667 (±2.204) | 0.078 (±0.075) | 0.837 (±0.047) | 0.720 (±0.030) | 3 |
 | `N-light-gene-max` | `mbs_e2e` | 0.305 (±0.000) | 18.058 (±0.000) | 0.230 (±0.000) | 0.669 (±0.000) | 0.574 (±0.000) | 1 |
 | `N-light-gene-mean` | `mbs_enet` | 0.278 (±0.000) | 20.882 (±0.000) | -0.008 (±0.000) | 0.760 (±0.000) | 0.553 (±0.000) | 1 |
+| `N-cascade-vector-max-max` | `rbs_enet` | 0.228 (±0.123) | 20.158 (±2.365) | 0.024 (±0.086) | 0.800 (±0.106) | 0.666 (±0.129) | 3 |
 | `N-light-gene-mean` | `mbs_e2e` | 0.126 (±0.064) | 23.082 (±2.533) | -0.406 (±0.533) | 0.591 (±0.014) | 0.462 (±0.091) | 3 |
 | `C-mvalue-hgb-G` | `classical` | 0.114 (±0.081) | 9.066 (±1.022) | 0.753 (±0.052) | 0.938 (±0.059) | — | 3 |
 
@@ -140,7 +142,7 @@ Non-dominated on tissue macro-F1 (↑), age MAE (↓), sex AUROC (↑). Do **not
 1. **CpG → region pool (mean vs max):** `mean-max` tissue F1=0.331 vs `max-max` 0.373; age MAE 20.713 vs 15.637. Prefer **`P2-G`** on this slice (check Pareto).
 2. **Region → gene pool (mean vs max):** `max-mean` tissue F1=0.359 vs `max-max` 0.373; age MAE 21.356 vs 15.637. Prefer **`P2-G`** on this slice (check Pareto).
 3. **Does scalar RBS discard information?** Vector arm `0.337` tissue vs P2 `0.373`; if vector does not beat scalar on age/sex, bottleneck is elsewhere.
-4. **Gene pooling vs RBS:** `N-cascade-vector-mean-max` `rbs_*` tissue F1=0.368, age MAE=10.459, sex AUROC=0.842; same-arm MBS probe tissue=0.360, age=15.051, sex=0.697. Gene pooling is near-neutral on tissue; **age/sex often better on RBS** (pre–gene-pool), so some phenotype signal is lost at region→gene. Classical enet age MAE=8.150 remains the age ceiling.
+4. **Gene pooling vs RBS:** `N-cascade-scalar-mean-max` `rbs_*` tissue F1=0.390, age MAE=12.578, sex AUROC=0.762; same-arm MBS probe tissue=0.375, age=14.382, sex=0.711. Gene pooling is near-neutral on tissue; **age/sex often better on RBS** (pre–gene-pool), so some phenotype signal is lost at region→gene. Classical enet age MAE=8.150 remains the age ceiling.
 5. **One-hop vs cascade:** One-hop `N-light-gene-max` tissue=0.305 / age=18.058 vs P2-G 0.373 / 15.637.
 6. **One-scalar-per-gene bottleneck:** Gene aggregation still trails classical on age/sex; one scalar MBS/gene is **not yet adequate** unless a screen arm closes the gap.
 7. **Best performance/compute:** Prefer landed P2/P4 (15 ep) over P5 as ATS evidence; do **not** promote Tier-1 (5 ep) arms by comparing them to 15-ep P2. Next gate is a trait/seed-gene Stage A repeat, not a lock.
@@ -156,14 +158,14 @@ Ceiling is the configured `max_epochs` (Tier-1 screen note for N-light / mixed/v
 | `P5-G-max` | 30 | — | 13,9,13 (μ=11.7) | 3 |
 | `N-cascade-scalar-mean-max` | 5 | 5,5,5 (μ=5.0) | 5,5,4 (μ=4.7) | 3 |
 | `N-cascade-scalar-max-mean` | 5 | 5,5,5 (μ=5.0) | 5,5,5 (μ=5.0) | 3 |
-| `N-cascade-vector-mean-max` | 5 | — | 5,5,4 (μ=4.7) | 3 |
-| `N-cascade-vector-max-max` | 5 | — | 5,4,5 (μ=4.7) | 3 |
+| `N-cascade-vector-mean-max` | 5 | 5,5,5 (μ=5.0) | 5,5,4 (μ=4.7) | 3 |
+| `N-cascade-vector-max-max` | 5 | 5,5,5 (μ=5.0) | 5,4,5 (μ=4.7) | 3 |
 | `N-light-gene-max` | 30 | 21 | 16 | 1 |
 | `N-light-gene-mean` | 30 | 5,5,5 (μ=5.0) | 5,4,5 (μ=4.7) | 3 |
 
 ## Cascade arms (gene-linked CpGs only)
 
-Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** are readouts of the **same frozen MBS**; **`rbs_*`** use gene-linked RBS. Contaminated pre-fix **`mbs_e2e`** shown as *invalid*. **Best ep** = checkpoint epoch used for test eval; **ran** = epochs completed.
+Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** are readouts of the **same frozen MBS**; **`rbs_linear_probe`** / **`rbs_enet`** use gene-linked RBS (`all_gene_rbs.zarr`). Contaminated pre-fix **`mbs_e2e`** shown as *invalid*. **Best ep** = checkpoint epoch used for test eval; **ran** = epochs completed.
 
 | Arm | mbs_e2e F1 | linear probe F1 | mbs_enet F1 | age MAE (e2e) | sex AUROC (probe) | best ep | ran | folds |
 |-----|-----------:|----------------:|------------:|--------------:|------------------:|--------:|----:|------:|
@@ -171,11 +173,23 @@ Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`
 | P4-G | 0.370 (±0.059) | 0.379 | 0.379 (±0.059) | 20.380 | 0.800 | 12,6,15 (μ=11.0) | — | 3 |
 | N-cascade-scalar-max-mean | 0.359 (±0.075) | 0.367 | — | 21.356 | 0.800 | 5,5,5 (μ=5.0) | 5,5,5 (μ=5.0) | 3 |
 | P5-G-max | 0.356 (±0.042) | 0.371 | — | 21.402 | 0.714 | 13,9,13 (μ=11.7) | — | 3 |
-| N-cascade-vector-max-max | 0.343 (±0.063) | 0.367 | — | 21.458 | 0.687 | 5,4,5 (μ=4.7) | — | 3 |
-| N-cascade-vector-mean-max | 0.337 (±0.036) | 0.360 | — | 22.753 | 0.697 | 5,5,4 (μ=4.7) | — | 3 |
+| N-cascade-vector-max-max | 0.343 (±0.063) | 0.367 | — | 21.458 | 0.687 | 5,4,5 (μ=4.7) | 5,5,5 (μ=5.0) | 3 |
+| N-cascade-vector-mean-max | 0.337 (±0.036) | 0.360 | — | 22.753 | 0.697 | 5,5,4 (μ=4.7) | 5,5,5 (μ=5.0) | 3 |
 | N-cascade-scalar-mean-max | 0.331 (±0.020) | 0.375 | — | 20.713 | 0.711 | 5,5,4 (μ=4.7) | 5,5,5 (μ=5.0) | 3 |
 | N-light-gene-max | 0.305 (±0.000) | 0.327 | — | 18.058 | 0.776 | 16 | 21 | 1 |
 | N-light-gene-mean | 0.126 (±0.064) | 0.345 | 0.278 (±0.000) [1/3] | 23.082 | 0.770 | 5,4,5 (μ=4.7) | 5,5,5 (μ=5.0) | 3 |
+
+### RBS frozen readouts (screen cascade — `rbs_enet` / `rbs_linear`)
+
+| Arm | `rbs_enet` tissue F1 | `rbs_enet` age MAE | `rbs_enet` sex AUROC | `rbs_linear` tissue F1 | `rbs_linear` age MAE | folds |
+|-----|---------------------:|-------------------:|---------------------:|-----------------------:|---------------------:|------:|
+| `N-cascade-scalar-mean-max` | 0.390 (±0.045) | 12.578 (±1.476) | 0.762 (±0.024) | 0.385 (±0.042) | 14.668 (±1.041) | 3 |
+| `N-cascade-scalar-max-mean` | 0.372 (±0.061) | 11.254 (±2.129) | 0.789 (±0.057) | 0.383 (±0.066) | 13.507 (±2.237) | 3 |
+| `N-cascade-vector-mean-max` | 0.316 (±0.050) | 19.667 (±2.204) | 0.837 (±0.047) | 0.368 (±0.044) | 10.459 (±0.402) | 3 |
+| `N-cascade-vector-max-max` | 0.228 (±0.123) | 20.158 (±2.365) | 0.800 (±0.106) | 0.329 (±0.074) | 12.102 (±2.226) | 3 |
+
+`rbs_enet` via `scripts/eval_mbs_enet_from_scores.py --which rbs` on saved `all_gene_rbs.zarr` (13 212 regions; no encoder retrain). Scalar arms: enet ≈/≥ linear on tissue and **improves age**. Vector arms: enet **weaker** than linear (esp. age); prefer `rbs_linear_probe` as the vector RBS diagnostic. P2-G `rbs_enet` not run (folds 1–2 lack `all_gene_rbs.zarr`).
+
 
 ## Classical arms (-G panel)
 
@@ -280,7 +294,7 @@ Preferred one-hop (document only; do not train in this gate): gated embeddings `
 
 ### Vector vs scalar
 
-Fair five-epoch mean→max: scalar tissue F1 ~0.331 vs vector ~0.337. Do **not** compare five-epoch vector to fifteen-epoch P2. Vector RBS **before** gene pool: age MAE ~10.46, sex AUROC ~0.842 — CpG→region works; failure is later (elementwise max/mean, no typed output channel, one scalar MBS). Raising LR is not the first response.
+Fair five-epoch mean→max: scalar tissue F1 ~0.331 vs vector ~0.337. Do **not** compare five-epoch vector to fifteen-epoch P2. Vector RBS **linear** probe before gene pool: age MAE ~10.46, sex AUROC ~0.842 — CpG→region works; failure is later (elementwise max/mean, no typed output channel, one scalar MBS). Post-hoc **`rbs_enet` on vector arms is weak** (tissue ~0.23–0.32; age MAE ~19–20) vs strong scalar `rbs_enet` (tissue ~0.37–0.39; age ~11–13) and vs same-arm `rbs_linear` — elastic-net does not unlock the vector RBS age signal that linear already sees. Raising LR is not the first response.
 
 ### RBS → MBS and typed pooling
 
@@ -293,6 +307,7 @@ Cascade already adds a region-type embedding before RBS; the scalar path then po
 ## Parallel / follow-on work
 
 - **ATS Stage A Tier-1 screen + annotation ablations:** complete. Freeze **`P2-G` as current reference, not a final lock.**
+- **Post-hoc `rbs_enet`:** done for all four screen cascade arms (scalar + vector); optional remaining = `mbs_enet` / P2-G RBS backfill.
 - **CPU typed-RBS ablation (R0–R5):** presence-aware role features + shuffle controls on saved `N-cascade-vector-mean-max` RBS.
 - **Age-primary seed-mask screen (next GPU):** `internal_fold` G0/G1/G2/G3/C0/C2 — [`milestone-7g-prime-age-seed-mask.md`](../../../docs/plans/milestone-7g-prime-age-seed-mask.md).
 - **Atlas association catalog:** parallel, non-blocking (`external_clean` / `hybrid_fold` later).
