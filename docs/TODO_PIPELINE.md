@@ -16,15 +16,20 @@ True next milestone after bootstrap:
 > Hub multitask + hygiene (**7E′** — **done**) → **RBS→gene + direct topology
 > (7F — done)** → **methylation-only full eval (7G — done)** →
 > **Phase-2 gene-only cascade grid (7G′ Stage A — DeepRVAT Tier-1 screen
-> done; no architecture lock)** → **age-primary seed-mask screen
-> (← current)** → **fold-selected panel Stage B (blocked)** →
+> done; no architecture lock)** → **matched 16-epoch promotion screen
+> (← current)** → **age-primary seed-mask screen (blocked)** →
+> **fold-selected panel Stage B (blocked)** →
 > **final OOF cross-fitting (7)** → one score matrix.
 
-**Current gate:** **age-primary seed-mask screen** (`internal_fold` G0–G3/C0/C2;
-ADR 0011). Freeze **P2-G as the current reference, not a final lock**. CPU
-typed-RBS R0–R5 is **done** (shuffle did not clearly collapse → neural typed
-aggregator **not** promoted; not a Stage B unlock). Stage B CpG-panel GPU
-stays **blocked** until this screen lands. Plans:
+**Current gate:** **matched 16-epoch promotion screen** (one-hop max/mean,
+scalar mixed pools, vector mean→max; tissue-primary; patience 5). Freeze
+**P2-G as the current reference, not a pooling lock.** Fixed `rbs_enet` is
+diagnostic only (vector age collapse ≠ weak RBS). Age-primary seed-mask
+(`internal_fold` G0–G3/C0/C2; ADR 0011) stays **blocked** until 16-ep decision
+rules fire. CPU typed-RBS R0–R5 is **done** (shuffle did not clearly collapse →
+neural typed aggregator **not** promoted). Stage B CpG-panel GPU stays
+**blocked**. Plans:
+[`plans/milestone-7g-prime-16ep-promotion.md`](plans/milestone-7g-prime-16ep-promotion.md),
 [`plans/milestone-7g-prime-age-seed-mask.md`](plans/milestone-7g-prime-age-seed-mask.md),
 [`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md).
 Report:
@@ -38,15 +43,16 @@ Report:
 | 7G″ expression plan | **done** (deferred; no training code) |
 | Stage A required GPU arms (P2/P4/P5-max/`C-*-G`) | **done** (P5 inactive thereafter) |
 | Screen policy: `mbs_enet`/`rbs_enet` post-hoc | **done** (`stage_a_include_mbs_enet: false`; `eval_mbs_enet_from_scores.py`) |
-| Scalar mixed-pooling arms (`mean-max`, `max-mean`) | **done** 3/3 — max-mean best new Tier-1 (0.359); no promote |
-| Vector cascade arms (`vector-mean-max`, `vector-max-max`) | **done** 3/3 — both ≤ scalar P2; no promote |
-| `N-light-gene-max` / `N-light-gene-mean` one-hop | **done** 3/3 — weak e2e (~0.12); linear ~0.30–0.35 |
+| Scalar mixed-pooling arms (`mean-max`, `max-mean`) | **done** 3/3 at 5 ep — unmatched vs P2; **16-ep promote pending** |
+| Vector cascade arms (`vector-mean-max`, `vector-max-max`) | **done** 3/3 at 5 ep — vector-max-max not promoted; **mean-max 16-ep pending** |
+| `N-light-gene-max` / `N-light-gene-mean` one-hop | **done** 5-ep / fold-0 30-ep; **16-ep promote pending** |
 | Annotation ablation grid (A0–A7, N0–N3) | **done** fold 0 — **`m_only` best** under raw concat; not proof annotations uninformative |
-| Post-hoc `mbs_enet` / `rbs_enet` on screen arms | **pending** (`rbs_linear_probe` already in screen cascade metrics) |
+| Post-hoc `mbs_enet` / `rbs_enet` on screen arms | **pending** (fixed enet diagnostic; nested enet required) |
 | Stage A DeepRVAT screen (Tier-1) | **done** — no architecture lock |
+| Matched 16-epoch promotion screen | **in_progress** ← **current gate** |
 | CPU typed-RBS R0–R5 | **done** (R1–R3 age↑; shuffle Δ≪1 y; neural typed **not** promoted) |
 | Neural typed aggregator | **deferred** (needs clear shuffle collapse; not Stage B go/no-go) |
-| Age-primary seed-mask screen (G0–G3/C0/C2) | **in_progress** ← **current gate** |
+| Age-primary seed-mask screen (G0–G3/C0/C2) | **blocked** (after 16-ep decision rules) |
 | Atlas association catalog | **done** (SQL 013 + constructors; non-blocking for GPU) |
 | Stage B GPU run (fold-panel) | **blocked** (after seed-mask screen + typed-RBS diagnostics) |
 | Milestone **7** 5×6 OOF | **blocked** |
@@ -100,13 +106,15 @@ Run after L1 baseline: `run_7g_gene_only_probe.py --fold 0 --device cuda`.
 **Best landed ATS cascade (not a lock):** `P2-G` max/max, 15 epochs
 (`lock_recommendation.json` has `architecture_locked: false`);
 cascade is **not** clearly ahead of classical. Next gate:
-**age-primary seed-mask screen**
-([`plans/milestone-7g-prime-age-seed-mask.md`](plans/milestone-7g-prime-age-seed-mask.md)).
+**matched 16-epoch promotion screen**
+([`plans/milestone-7g-prime-16ep-promotion.md`](plans/milestone-7g-prime-16ep-promotion.md)).
+Age-primary seed-mask stays blocked until those decision rules fire.
 **7G″** expression pilot is **deferred**. Final Milestone **7** OOF remains
 blocked. Stage B CpG-panel runner stays in tree; do **not** launch it yet.
 
-Runners: Stage A `scripts/run_7g_gene_only_probe.py` · seed-mask
-`scripts/run_7g_prime_seed_mask.py` · Stage B
+Runners: Stage A `scripts/run_7g_gene_only_probe.py` · 16-ep queue
+`scripts/run_7g_16ep_promotion.sh` · seed-mask
+`scripts/run_7g_prime_seed_mask.py` (blocked) · Stage B
 `scripts/run_7g_prime_stage_b.py` (blocked; `--device cuda` on GPU hosts).
 
 **7G** methylation eval and **tissue probe P0–P3** are done (historical evidence

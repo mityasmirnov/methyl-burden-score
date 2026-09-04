@@ -1008,6 +1008,9 @@ def train_cascade_on_arrays(
     epochs_completed = 0
     stopped_early = False
     stop_epoch: int | None = None
+    n_optimizer_steps = 0
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
 
     if eval_only:
         ckpt = torch.load(ckpt_path, map_location=device)
@@ -1104,6 +1107,7 @@ def train_cascade_on_arrays(
                 opt.zero_grad(set_to_none=True)
                 loss.backward()
                 opt.step()
+                n_optimizer_steps += 1
             if log_this_epoch and not logged_grad_norms:
                 print(
                     f"[cascade] {out_dir.name} epoch {_epoch + 1}/{max_epochs}",
@@ -1433,6 +1437,9 @@ def train_cascade_on_arrays(
 
     primary_key = "mbs_e2e" if primary_evaluation == "mbs_e2e" else "fusion_full"
     primary_blob = evaluations[primary_key]
+    peak_gpu_memory_bytes: int | None = None
+    if device.type == "cuda":
+        peak_gpu_memory_bytes = int(torch.cuda.max_memory_allocated(device))
     fused: dict[str, Any] = {
         "metrics": primary_blob["metrics"],
         "primary_evaluation": primary_evaluation,
@@ -1455,6 +1462,19 @@ def train_cascade_on_arrays(
         "gene_aggregation": gene_aggregation,
         "gene_allocation": gene_allocation_policy,
         "checkpoint_selection_mode": checkpoint_selection_mode,
+        "n_optimizer_steps": int(n_optimizer_steps),
+        "peak_gpu_memory_bytes": peak_gpu_memory_bytes,
+        "max_epochs": int(max_epochs),
+        "epochs_completed": int(
+            checkpoint_selection.get("epochs_completed", epochs_completed)
+            if isinstance(checkpoint_selection, dict)
+            else epochs_completed
+        ),
+        "best_epoch": (
+            checkpoint_selection.get("best_epoch")
+            if isinstance(checkpoint_selection, dict)
+            else None
+        ),
     }
     if seed_mask_meta:
         fused["seed_masks"] = seed_mask_meta

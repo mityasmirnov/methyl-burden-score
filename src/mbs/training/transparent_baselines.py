@@ -7,12 +7,20 @@ from typing import Any, Literal
 
 import numpy as np
 from sklearn.decomposition import PCA
-from sklearn.linear_model import ElasticNet, LogisticRegression, Ridge, SGDClassifier
+from sklearn.linear_model import ElasticNet, LogisticRegression, Ridge, SGDClassifier, SGDRegressor
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.preprocessing import StandardScaler
 
 from mbs.evaluation.metrics import metrics_by_group, multiclass_metrics, regression_metrics
+from mbs.training.fold_safe_panel import _study_inner_folds
 
 MeanKind = Literal["gene", "region"]
 TissueSolver = Literal["logistic", "balanced_logistic", "sgd_ovr"]
+
+# Nested elastic-net grid (includes the fixed diagnostic α=0.1 as one candidate).
+NESTED_ENET_ALPHA_GRID: tuple[float, ...] = (1e-5, 1e-4, 1e-3, 1e-2, 0.1)
+NESTED_ENET_L1_GRID: tuple[float, ...] = (0.25, 0.5, 0.75)
+_WIDE_FEATURE_THRESHOLD = 512
 
 
 def presence_aware_means(
@@ -609,4 +617,337 @@ def run_elasticnet_multitask(
         "n_features": int(np.asarray(x_train).shape[1]),
         "alpha": float(alpha),
         "l1_ratio": float(l1_ratio),
+    }
+
+
+def _fit_nested_enet_model(
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    *,
+    task: Literal["regression", "multiclass"],
+    alpha: float,
+    l1_ratio: float,
+) -> Any:
+    """Fit elastic-net for nested readout; SGD on wide panels (RBS ~13k cols)."""
+    x = np.asarray(x_train, dtype=np.float64)
+    y = np.asarray(y_train)
+    wide = int(x.shape[1]) > _WIDE_FEATURE_THRESHOLD
+    if task == "regression":
+        if wide:
+            model = SGDRegressor(
+                loss="squared_error",
+                penalty="elasticnet",
+                alpha=float(alpha),
+                l1_ratio=float(l1_ratio),
+                max_iter=200,
+                tol=1e-3,
+                random_state=0,
+            )
+            model.fit(x, y.astype(np.float64))
+            return model
+        model = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, max_iter=2000)
+        model.fit(x, y.astype(np.float64))
+        return model
+    # multiclass
+    if wide:
+        sgd_alpha = float(alpha) / max(int(x.shape[0]), 1)
+        model = SGDClassifier(
+            loss="log_loss",
+            penalty="elasticnet",
+            alpha=max(sgd_alpha, 1e-8),
+            l1_ratio=float(l1_ratio),
+            max_iter=200,
+            tol=1e-3,
+            random_state=0,
+            n_jobs=-1,
+        )
+        model.fit(x, y.astype(np.int64))
+        return model
+    model = LogisticRegression(
+        penalty="elasticnet",
+        solver="saga",
+        l1_ratio=l1_ratio,
+        C=1.0 / max(alpha, 1e-6),
+        max_iter=2000,
+        n_jobs=-1,
+    )
+    model.fit(x, y.astype(np.int64))
+    return model
+
+
+def _nested_grids_for_width(
+    n_features: int,
+    *,
+    alpha_grid: tuple[float, ...] = NESTED_ENET_ALPHA_GRID,
+    l1_grid: tuple[float, ...] = NESTED_ENET_L1_GRID,
+) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    """Shrink hyperparam grid for very wide RBS (~13k) so nested stays practical."""
+    if n_features > 2048:
+        # Keep fixed diagnostic α=0.1 in the set; drop the finest alphas.
+        alphas = tuple(a for a in alpha_grid if a >= 1e-3)
+        return alphas or alpha_grid, l1_grid
+    return alpha_grid, l1_grid
+
+
+def _scale_train_test(
+    x_train: np.ndarray,
+    x_test: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, StandardScaler]:
+    """Fit StandardScaler on train only; transform train and test."""
+    scaler = StandardScaler(with_mean=True, with_std=True)
+    x_tr = scaler.fit_transform(np.asarray(x_train, dtype=np.float64))
+    x_te = scaler.transform(np.asarray(x_test, dtype=np.float64))
+    return x_tr, x_te, scaler
+
+
+def _inner_val_score(
+    *,
+    task: Literal["age", "tissue", "sex"],
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    y_proba: np.ndarray | None = None,
+) -> float:
+    """Higher is better inner-validation score for hyperparameter selection."""
+    if task == "age":
+        yt = np.asarray(y_true, dtype=np.float64)
+        yp = np.asarray(y_pred, dtype=np.float64)
+        mae = float(np.mean(np.abs(yt - yp)))
+        return -mae
+    if task == "tissue":
+        return float(
+            f1_score(
+                np.asarray(y_true, dtype=np.int64),
+                np.asarray(y_pred, dtype=np.int64),
+                average="macro",
+                zero_division=0,
+            )
+        )
+    # sex
+    if y_proba is not None and y_proba.ndim == 2 and y_proba.shape[1] >= 2:
+        try:
+            return float(roc_auc_score(np.asarray(y_true, dtype=np.int64), y_proba[:, 1]))
+        except ValueError:
+            pass
+    return float(
+        accuracy_score(np.asarray(y_true, dtype=np.int64), np.asarray(y_pred, dtype=np.int64))
+    )
+
+
+def _select_enet_hyperparams(
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    *,
+    task: Literal["age", "tissue", "sex"],
+    study_ids: np.ndarray | None,
+    alpha_grid: tuple[float, ...] = NESTED_ENET_ALPHA_GRID,
+    l1_grid: tuple[float, ...] = NESTED_ENET_L1_GRID,
+    seed: int = 42,
+) -> tuple[float, float, dict[str, Any]]:
+    """Pick α / l1_ratio on one study-grouped inner validation split."""
+    n = int(x_train.shape[0])
+    if study_ids is None:
+        study_ids = np.asarray(["NA"] * n, dtype=object)
+    splits = _study_inner_folds(study_ids, n_inner_folds=3, seed=seed)
+    # Use the first non-degenerate split (plan: one inner validation split).
+    inner_tr, inner_va = splits[0]
+    if inner_tr.size < 2 or inner_va.size < 1:
+        return float(alpha_grid[0]), float(l1_grid[0]), {"fallback": "tiny_inner_split"}
+
+    best_score = -float("inf")
+    best_alpha = float(alpha_grid[0])
+    best_l1 = float(l1_grid[0])
+    trials: list[dict[str, Any]] = []
+    x_inner_tr, x_inner_va, _ = _scale_train_test(x_train[inner_tr], x_train[inner_va])
+    y_tr = np.asarray(y_train)[inner_tr]
+    y_va = np.asarray(y_train)[inner_va]
+    sk_task: Literal["regression", "multiclass"] = "regression" if task == "age" else "multiclass"
+    for alpha in alpha_grid:
+        for l1_ratio in l1_grid:
+            if sk_task == "multiclass" and len(np.unique(y_tr)) < 2:
+                continue
+            model = _fit_nested_enet_model(
+                x_inner_tr,
+                y_tr,
+                task=sk_task,
+                alpha=float(alpha),
+                l1_ratio=float(l1_ratio),
+            )
+            if task == "age":
+                pred = np.asarray(model.predict(x_inner_va), dtype=np.float64)
+                score = _inner_val_score(task=task, y_true=y_va, y_pred=pred)
+                proba = None
+            else:
+                pred = np.asarray(model.predict(x_inner_va), dtype=np.int64)
+                proba = None
+                if hasattr(model, "predict_proba"):
+                    try:
+                        proba = np.asarray(model.predict_proba(x_inner_va), dtype=np.float64)
+                    except Exception:
+                        proba = None
+                score = _inner_val_score(task=task, y_true=y_va, y_pred=pred, y_proba=proba)
+            trials.append(
+                {"alpha": float(alpha), "l1_ratio": float(l1_ratio), "score": float(score)}
+            )
+            if score > best_score:
+                best_score = score
+                best_alpha = float(alpha)
+                best_l1 = float(l1_ratio)
+    meta = {
+        "n_inner_train": int(inner_tr.size),
+        "n_inner_val": int(inner_va.size),
+        "best_score": float(best_score) if best_score > -float("inf") else None,
+        "n_trials": len(trials),
+    }
+    return best_alpha, best_l1, meta
+
+
+def run_nested_elasticnet_multitask(
+    *,
+    x_train: np.ndarray,
+    x_test: np.ndarray,
+    age_train: np.ndarray | None,
+    age_mask_train: np.ndarray | None,
+    tissue_train: np.ndarray | None,
+    tissue_mask_train: np.ndarray | None,
+    sex_train: np.ndarray | None,
+    sex_mask_train: np.ndarray | None,
+    age_test: np.ndarray | None,
+    age_mask_test: np.ndarray | None,
+    tissue_test: np.ndarray | None,
+    tissue_mask_test: np.ndarray | None,
+    sex_test: np.ndarray | None,
+    sex_mask_test: np.ndarray | None,
+    study_ids_train: np.ndarray | None = None,
+    study_ids_test: np.ndarray | None = None,
+    platforms_test: np.ndarray | None = None,
+    tissue_class_names: list[str] | None = None,
+    alpha_grid: tuple[float, ...] = NESTED_ENET_ALPHA_GRID,
+    l1_grid: tuple[float, ...] = NESTED_ENET_L1_GRID,
+    seed: int = 42,
+) -> dict[str, Any]:
+    """Nested elastic-net: train-fold StandardScaler + inner-val α/l1 selection.
+
+    Unlike ``run_elasticnet_multitask`` (fixed α=0.1 / l1=0.5, no scaling), this
+    selects hyperparameters on a study-grouped inner split of the outer train fold,
+    then refits on the full outer train. Scaler is never fit on test rows.
+    """
+    x_tr_raw = np.asarray(x_train, dtype=np.float64)
+    x_te_raw = np.asarray(x_test, dtype=np.float64)
+    alpha_grid, l1_grid = _nested_grids_for_width(
+        int(x_tr_raw.shape[1]), alpha_grid=alpha_grid, l1_grid=l1_grid
+    )
+    x_tr, x_te, scaler = _scale_train_test(x_tr_raw, x_te_raw)
+    # Record train-only scaler stats for leak tests / diagnostics.
+    scaler_mean = np.asarray(scaler.mean_, dtype=np.float64)
+    models: dict[str, Any] = {}
+    selected: dict[str, Any] = {}
+
+    if (
+        age_train is not None
+        and age_mask_train is not None
+        and bool(np.asarray(age_mask_train).any())
+    ):
+        m = np.asarray(age_mask_train, dtype=bool)
+        studies = None if study_ids_train is None else np.asarray(study_ids_train)[m]
+        alpha, l1_ratio, meta = _select_enet_hyperparams(
+            x_tr_raw[m],
+            np.asarray(age_train)[m],
+            task="age",
+            study_ids=studies,
+            alpha_grid=alpha_grid,
+            l1_grid=l1_grid,
+            seed=seed,
+        )
+        models["age"] = _fit_nested_enet_model(
+            x_tr[m],
+            np.asarray(age_train)[m],
+            task="regression",
+            alpha=alpha,
+            l1_ratio=l1_ratio,
+        )
+        selected["age"] = {"alpha": alpha, "l1_ratio": l1_ratio, **meta}
+
+    if (
+        tissue_train is not None
+        and tissue_mask_train is not None
+        and bool(np.asarray(tissue_mask_train).any())
+    ):
+        m = np.asarray(tissue_mask_train, dtype=bool)
+        studies = None if study_ids_train is None else np.asarray(study_ids_train)[m]
+        alpha, l1_ratio, meta = _select_enet_hyperparams(
+            x_tr_raw[m],
+            np.asarray(tissue_train)[m],
+            task="tissue",
+            study_ids=studies,
+            alpha_grid=alpha_grid,
+            l1_grid=l1_grid,
+            seed=seed + 1,
+        )
+        models["tissue"] = _fit_nested_enet_model(
+            x_tr[m],
+            np.asarray(tissue_train)[m],
+            task="multiclass",
+            alpha=alpha,
+            l1_ratio=l1_ratio,
+        )
+        selected["tissue"] = {"alpha": alpha, "l1_ratio": l1_ratio, **meta}
+
+    if (
+        sex_train is not None
+        and sex_mask_train is not None
+        and bool(np.asarray(sex_mask_train).any())
+    ):
+        m = np.asarray(sex_mask_train, dtype=bool)
+        studies = None if study_ids_train is None else np.asarray(study_ids_train)[m]
+        alpha, l1_ratio, meta = _select_enet_hyperparams(
+            x_tr_raw[m],
+            np.asarray(sex_train)[m],
+            task="sex",
+            study_ids=studies,
+            alpha_grid=alpha_grid,
+            l1_grid=l1_grid,
+            seed=seed + 2,
+        )
+        models["sex"] = _fit_nested_enet_model(
+            x_tr[m],
+            np.asarray(sex_train)[m],
+            task="multiclass",
+            alpha=alpha,
+            l1_ratio=l1_ratio,
+        )
+        selected["sex"] = {"alpha": alpha, "l1_ratio": l1_ratio, **meta}
+
+    preds = predict_linear_multitask(models, x_te)
+    tissue_valid_classes = None
+    if tissue_train is not None and tissue_mask_train is not None:
+        tm = np.asarray(tissue_mask_train, dtype=bool)
+        if tm.any():
+            tissue_valid_classes = set(np.asarray(tissue_train, dtype=np.int64)[tm].tolist())
+    metrics = evaluate_multitask_predictions(
+        preds=preds,
+        age=age_test,
+        age_mask=age_mask_test,
+        tissue=tissue_test,
+        tissue_mask=tissue_mask_test,
+        sex=sex_test,
+        sex_mask=sex_mask_test,
+        study_ids=study_ids_test,
+        platforms=platforms_test,
+        tissue_class_names=tissue_class_names,
+        tissue_valid_classes=tissue_valid_classes,
+    )
+    return {
+        "kind": "elasticnet_nested",
+        "metrics": metrics,
+        "n_features": int(x_tr_raw.shape[1]),
+        "selected": selected,
+        "scaler": {
+            "with_mean": True,
+            "fit_on": "outer_train_only",
+            "n_train": int(x_tr_raw.shape[0]),
+            "mean_l2": float(np.linalg.norm(scaler_mean)),
+            "train_feature_mean": scaler_mean.tolist(),
+        },
+        "alpha_grid": list(alpha_grid),
+        "l1_ratio_grid": list(l1_grid),
     }

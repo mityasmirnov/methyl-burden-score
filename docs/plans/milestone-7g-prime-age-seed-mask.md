@@ -1,8 +1,10 @@
 # Plan: Age-first seed-mask screen (7G′ Stage B blocker)
 
-Status: **in progress** — next scientifically useful GPU run after Stage A
-evidence. Stage B CpG-panel GPU (`C-mvalue-enetS` / `N-cascade-S`) stays
-blocked until this screen and typed-RBS diagnostics land.
+Status: **blocked** — wait for matched 16-epoch promotion decision rules
+([`milestone-7g-prime-16ep-promotion.md`](milestone-7g-prime-16ep-promotion.md)).
+Do **not** launch `scripts/run_7g_prime_seed_mask.py --device cuda` while the
+16-ep queue owns GPU 0. Stage B CpG-panel GPU stays blocked until this screen
+and typed-RBS diagnostics land.
 
 Normative: [ADR 0011](../adr/0011-seed-gene-sources.md),
 [ADR 0010](../adr/0010-gene-allocation-policy.md).

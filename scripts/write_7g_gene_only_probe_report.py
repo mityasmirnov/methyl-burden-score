@@ -38,19 +38,24 @@ ARM_POOLING = {
     "P2-G": ("max", "max", 15),
     "P4-G": ("mean", "mean", 15),
     "P5-G-max": ("max", "max", 30),
-    "N-cascade-scalar-mean-max": ("mean", "max", 5),
-    "N-cascade-scalar-max-mean": ("max", "mean", 5),
-    "N-cascade-vector-mean-max": ("mean", "max", 5),
+    # Tier-1 unmatched 5-ep cells stay labeled until 16-ep promotion overwrites per_arm.
+    "N-cascade-scalar-mean-max": ("mean", "max", 16),
+    "N-cascade-scalar-max-mean": ("max", "mean", 16),
+    "N-cascade-vector-mean-max": ("mean", "max", 16),
     "N-cascade-vector-max-max": ("max", "max", 5),
-    "N-light-gene-max": ("n/a", "max", 30),
-    "N-light-gene-mean": ("n/a", "mean", 30),
+    "N-light-gene-max": ("n/a", "max", 16),
+    "N-light-gene-mean": ("n/a", "mean", 16),
 }
+# Ceilings used only for "matched budget?" language when per_arm still has 5-ep folds.
+TIER1_UNMATCHED_CEILING = 5
 CASCADE_READOUTS = (
     "mbs_e2e",
     "mbs_linear_probe",
     "mbs_enet",
+    "mbs_enet_nested",
     "rbs_linear_probe",
     "rbs_enet",
+    "rbs_enet_nested",
 )
 LOCK_TRAINING_DEFAULTS = {
     "age_loss_weight": 0.3,
@@ -246,10 +251,11 @@ def build_lock_recommendation(
         "best_classical_arm": None,
         "lock_blocked_reason": (
             "ATS gene-only screen is evidence only; no cascade architecture lock. "
-            "Next gate: trait/seed-gene Stage A repeat."
+            "P2-G is the current reference, not a pooling lock. "
+            "Next gate: matched 16-epoch promotion screen."
         ),
         "mbs_e2e_valid": False,
-        "next_gate": "trait_seed_gene_stage_a_repeat",
+        "next_gate": "matched_16ep_promotion_screen",
     }
     folds_by_arm = cascade_folds_by_arm or {}
     valid_cascade_rows = [
@@ -269,7 +275,7 @@ def build_lock_recommendation(
     if not valid_classical_rows:
         rec["lock_blocked_reason"] = (
             "ATS screen incomplete (no classical -G folds); still no architecture lock. "
-            "Next gate: trait/seed-gene Stage A repeat."
+            "Next gate: matched 16-epoch promotion screen."
         )
         return rec
 
@@ -925,8 +931,13 @@ def render_pareto_section(rows: list[dict[str, Any]]) -> list[str]:
     return lines
 
 
-def render_architecture_qa(rows: list[dict[str, Any]]) -> list[str]:
+def render_architecture_qa(
+    rows: list[dict[str, Any]],
+    *,
+    cascade_folds_by_arm: dict[str, list[dict[str, Any]]] | None = None,
+) -> list[str]:
     """Answer the seven Stage A architecture questions from available rows."""
+    folds_by_arm = cascade_folds_by_arm or {}
 
     def _e2e(arm: str) -> dict[str, Any] | None:
         for r in rows:
@@ -960,7 +971,11 @@ def render_architecture_qa(rows: list[dict[str, Any]]) -> list[str]:
         "N-cascade-vector-max-max",
         "P4-G",
     ):
-        cand = _mode(arm, "rbs_enet") or _mode(arm, "rbs_linear_probe")
+        # Prefer linear for vector RBS (fixed enet is an unsuitable sparse readout).
+        if "vector" in arm:
+            cand = _mode(arm, "rbs_linear_probe") or _mode(arm, "rbs_enet")
+        else:
+            cand = _mode(arm, "rbs_enet") or _mode(arm, "rbs_linear_probe")
         if cand is None:
             continue
         probe = _mode(arm, "mbs_enet") or _mode(arm, "mbs_linear_probe")
@@ -977,27 +992,80 @@ def render_architecture_qa(rows: list[dict[str, Any]]) -> list[str]:
         rbs_arm, rbs, mbs_probe, _ = chosen
     classical = next((r for r in rows if r.get("arm_id") == "C-mvalue-enet-G"), None)
 
+    def _arm_ceiling(arm_id: str | None) -> int | None:
+        if arm_id is None:
+            return None
+        pool = ARM_POOLING.get(arm_id)
+        return int(pool[2]) if pool else None
+
+    def _fold_ceilings(arm_id: str) -> list[int]:
+        """Actual configured ceilings from fold checkpoint_selection when present."""
+        out: list[int] = []
+        for fold in folds_by_arm.get(arm_id) or []:
+            ckpt = fold.get("checkpoint_selection") or {}
+            if isinstance(ckpt, dict) and ckpt.get("max_epochs") is not None:
+                try:
+                    out.append(int(ckpt["max_epochs"]))
+                    continue
+                except (TypeError, ValueError):
+                    pass
+            trained = _fold_epochs_trained(fold)
+            if trained is not None:
+                out.append(int(trained))
+        return out
+
+    def _budgets_matched(arm_a: str | None, arm_b: str | None) -> bool:
+        """True when both arms ran near the same epoch ceiling (15≈16 OK)."""
+        if arm_a is None or arm_b is None:
+            return False
+        ca = _fold_ceilings(arm_a)
+        cb = _fold_ceilings(arm_b)
+        if not ca:
+            ca_fallback = _arm_ceiling(arm_a)
+            ca = [ca_fallback] if ca_fallback is not None else []
+        if not cb:
+            cb_fallback = _arm_ceiling(arm_b)
+            cb = [cb_fallback] if cb_fallback is not None else []
+        if not ca or not cb:
+            return False
+        # Any fold still at the Tier-1 5-ep ceiling is unmatched vs P2/P4.
+        if any(c <= TIER1_UNMATCHED_CEILING for c in ca + cb):
+            return False
+        return abs(max(ca) - max(cb)) <= 1
+
     def _cmp_pool(level: str) -> str:
         if level == "cpg":
             a, b = mean_max, p2  # mean vs max at cpg (region fixed max)
             label_a, label_b = "mean-max", "max-max"
+            arm_a, arm_b = "N-cascade-scalar-mean-max", "P2-G"
             if mean_max is None or p2 is None:
                 a, b = p4, max_mean
                 label_a, label_b = "mean-mean", "max-mean"
+                arm_a, arm_b = "P4-G", "N-cascade-scalar-max-mean"
         else:
             a, b = max_mean, p2  # mean vs max at gene (cpg fixed max)
             label_a, label_b = "max-mean", "max-max"
+            arm_a, arm_b = "N-cascade-scalar-max-mean", "P2-G"
             if max_mean is None or p2 is None:
                 a, b = p4, mean_max
                 label_a, label_b = "mean-mean", "mean-max"
+                arm_a, arm_b = "P4-G", "N-cascade-scalar-mean-max"
         if a is None or b is None:
             return f"Insufficient arms for {level}-level comparison yet."
-        better = a if (a.get("tissue_f1") or 0) >= (b.get("tissue_f1") or 0) else b
-        return (
+        nums = (
             f"`{label_a}` tissue F1={_fmt(a.get('tissue_f1'))} vs "
             f"`{label_b}` {_fmt(b.get('tissue_f1'))}; "
-            f"age MAE {_fmt(a.get('age_mae'))} vs {_fmt(b.get('age_mae'))}. "
-            f"Prefer **`{better['arm_id']}`** on this slice (check Pareto)."
+            f"age MAE {_fmt(a.get('age_mae'))} vs {_fmt(b.get('age_mae'))}."
+        )
+        if not _budgets_matched(arm_a, arm_b):
+            return (
+                f"{nums} **Unmatched epoch budgets — no pooling lock.** "
+                f"`P2-G` is the current reference (best 15-ep scalar result), not a "
+                f"resolved pooling winner; promote mixed cells to a matched ceiling first."
+            )
+        better = a if (a.get("tissue_f1") or 0) >= (b.get("tissue_f1") or 0) else b
+        return (
+            f"{nums} Prefer **`{better['arm_id']}`** on this matched slice (check Pareto)."
         )
 
     q3 = "Pending RBS diagnostic."
@@ -1056,9 +1124,10 @@ def render_architecture_qa(rows: list[dict[str, Any]]) -> list[str]:
         f"4. **Gene pooling vs RBS:** {q3}",
         f"5. **One-hop vs cascade:** {q5}",
         f"6. **One-scalar-per-gene bottleneck:** {q6}",
-        "7. **Best performance/compute:** Prefer landed P2/P4 (15 ep) over P5 as "
-        "ATS evidence; do **not** promote Tier-1 (5 ep) arms by comparing them to "
-        "15-ep P2. Next gate is a trait/seed-gene Stage A repeat, not a lock.",
+        "7. **Best performance/compute:** Prefer landed P2/P4 (15 ep) as the current "
+        "ATS **reference**, not a pooling lock. Do **not** promote unmatched Tier-1 "
+        "(5 ep) arms against 15-ep P2. Next gate is the **matched 16-epoch promotion "
+        "screen**; age-primary seed-mask waits on those decision rules.",
         "",
     ]
     return lines
@@ -1108,10 +1177,14 @@ def render_rbs_frozen_section(task_rows: list[dict[str, Any]]) -> list[str]:
         [
             "",
             "`rbs_enet` via `scripts/eval_mbs_enet_from_scores.py --which rbs` on saved "
-            "`all_gene_rbs.zarr` (13 212 regions; no encoder retrain). Scalar arms: enet "
-            "≈/≥ linear on tissue and **improves age**. Vector arms: enet **weaker** than "
-            "linear (esp. age); prefer `rbs_linear_probe` as the vector RBS diagnostic. "
-            "P2-G `rbs_enet` not run (folds 1–2 lack `all_gene_rbs.zarr`).",
+            "`all_gene_rbs.zarr` (13 212 regions; no encoder retrain). Fixed "
+            "`alpha=0.1` / `l1_ratio=0.5` **without** train-fold standardization is "
+            "**diagnostic only**. Scalar arms: enet ≈/≥ linear on tissue and improves "
+            "age. Vector arms: age collapses under that fixed enet while sex stays "
+            "nearly unchanged — that is an over-strong / unscaled sparse penalty, "
+            "**not** evidence the vector RBS representation is weak. Prefer "
+            "`rbs_linear_probe` (and nested `rbs_enet_nested` once available) for "
+            "vector RBS. P2-G `rbs_enet` not run (folds 1–2 lack `all_gene_rbs.zarr`).",
             "",
         ]
     )
@@ -1158,10 +1231,12 @@ def _interpretation_section() -> list[str]:
         "compare five-epoch vector to fifteen-epoch P2. Vector RBS **linear** probe "
         "before gene pool: age MAE ~10.46, sex AUROC ~0.842 — CpG→region works; failure "
         "is later (elementwise max/mean, no typed output channel, one scalar MBS). "
-        "Post-hoc **`rbs_enet` on vector arms is weak** (tissue ~0.23–0.32; age MAE "
-        "~19–20) vs strong scalar `rbs_enet` (tissue ~0.37–0.39; age ~11–13) and vs "
-        "same-arm `rbs_linear` — elastic-net does not unlock the vector RBS age signal "
-        "that linear already sees. Raising LR is not the first response.",
+        "Fixed **`rbs_enet` on vector mean→max collapses age** (MAE ~19.67) while sex "
+        "holds (~0.837 vs linear 0.842). That pattern is characteristic of an overly "
+        "strong or poorly calibrated sparse penalty on a distributed age signal — "
+        "**not** evidence that the vector RBS representation is weak. Prefer "
+        "`rbs_linear_probe` / nested enet for vector diagnostics. Raising LR is not "
+        "the first response.",
         "",
         "### RBS → MBS and typed pooling",
         "",
@@ -1178,8 +1253,10 @@ def _interpretation_section() -> list[str]:
         "",
         "### Next real gate",
         "",
-        "**Trait/seed-gene Stage A repeat** — not a P2-G lock from this ATS screen, and "
-        "not fold-selected-panel Stage B.",
+        "**Matched 16-epoch promotion screen** (one-hop max/mean, scalar mixed pools, "
+        "vector mean→max) before declaring pooling winners or starting age-primary "
+        "seed-mask. `P2-G` is the current reference, **not** a pooling lock. "
+        "Fold-selected-panel Stage B stays blocked.",
         "",
     ]
 
@@ -1309,7 +1386,7 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
     write_json(report_dir / "task_comparison.json", {"rows": task_rows})
     lines.extend(render_task_comparison_section(task_rows))
     lines.extend(render_pareto_section(task_rows))
-    lines.extend(render_architecture_qa(task_rows))
+    lines.extend(render_architecture_qa(task_rows, cascade_folds_by_arm=cascade_folds_by_arm))
     lines.extend(render_training_epochs_section(cascade_folds_by_arm))
     lines.extend(
         [
@@ -1400,9 +1477,10 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
                 f"- **Cascade clearly ahead (≥{CLEAR_AHEAD_DELTA} tissue F1):** {lock.get('cascade_clearly_ahead')}",
                 f"- **Architecture locked:** `{lock.get('architecture_locked', False)}`",
                 "",
-                "Caveats: not ≥0.03 ahead of classical; tissue-primary loss; Tier-1 "
-                "screen arms used shorter epoch budgets than P2/P4 — do not compare "
-                "unmatched budgets as if they were.",
+                "Caveats: not ≥0.03 ahead of classical; tissue-primary loss; "
+                "`P2-G` is the **current reference**, not a pooling lock. Unmatched "
+                "Tier-1 (5 ep) cells must not be compared to 15-ep P2 as if budgets "
+                "matched — run the 16-epoch promotion screen first.",
                 "",
             ]
         )
@@ -1423,26 +1501,30 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
             "## Parallel / follow-on work",
             "",
             "- **ATS Stage A Tier-1 screen + annotation ablations:** complete. "
-            "Freeze **`P2-G` as current reference, not a final lock.**",
-            "- **Post-hoc `rbs_enet`:** done for all four screen cascade arms "
-            "(scalar + vector); optional remaining = `mbs_enet` / P2-G RBS backfill.",
-            "- **CPU typed-RBS ablation (R0–R5):** presence-aware role features + shuffle "
-            "controls on saved `N-cascade-vector-mean-max` RBS.",
-            "- **Age-primary seed-mask screen (next GPU):** `internal_fold` G0/G1/G2/G3/C0/C2 "
-            "— [`milestone-7g-prime-age-seed-mask.md`](../../../docs/plans/milestone-7g-prime-age-seed-mask.md).",
-            "- **Atlas association catalog:** parallel, non-blocking (`external_clean` / "
-            "`hybrid_fold` later).",
-            "- **Stage B CpG-panel GPU:** blocked until seed-mask screen + typed-RBS diagnostics.",
+            "Freeze **`P2-G` as current reference, not a pooling lock.**",
+            "- **Matched 16-epoch promotion screen (current GPU gate):** one-hop max "
+            "(folds 1–2) + mean (3 folds), scalar mixed pools, vector mean→max — "
+            "[`milestone-7g-prime-16ep-promotion.md`]"
+            "(../../../docs/plans/milestone-7g-prime-16ep-promotion.md).",
+            "- **Post-hoc fixed `rbs_enet`:** done for screen cascade arms (diagnostic "
+            "only); prefer `rbs_linear_probe` / nested enet for vector RBS.",
+            "- **CPU typed-RBS ablation (R0–R5):** done; shuffle did not collapse → "
+            "neural typed aggregator **not** promoted.",
+            "- **Age-primary seed-mask screen:** blocked until 16-ep decision rules fire "
+            "— [`milestone-7g-prime-age-seed-mask.md`]"
+            "(../../../docs/plans/milestone-7g-prime-age-seed-mask.md).",
+            "- **Atlas association catalog:** parallel, non-blocking.",
+            "- **Stage B CpG-panel GPU:** blocked until seed-mask screen + typed-RBS "
+            "diagnostics.",
             "",
             "## Next",
             "",
             "Ordered ops:",
             "",
-            "1. **CPU typed-RBS (R0–R5)** — promote a typed pool only under the amended gate "
-            "(age MAE ≈≥1 y or R² ≈≥0.05; fold-stable; tissue F1 loss ≤0.03; sex AUROC loss "
-            "≤0.03; shuffle deteriorates).",
-            "2. **Age-primary seed-mask GPU** (`scripts/run_7g_prime_seed_mask.py`) — fold 0, "
-            "two seeds, K=256; do **not** launch Stage B CpG-panel GPU.",
+            "1. **Matched 16-epoch promotion screen** — complete the 14 GPU-fold queue; "
+            "apply decision rules before any further architecture sweep.",
+            "2. **Age-primary seed-mask GPU** (`scripts/run_7g_prime_seed_mask.py`) — "
+            "only after (1); fold 0, two seeds, K=256; do **not** launch Stage B.",
             "3. **Atlas catalog** (CPU) for `external_clean` / `hybrid_fold` constructors.",
             "4. **Stage B** fold-selected CpG panel only after (1)+(2).",
             "5. **Milestone 7** 5×6 OOF after Stage B + `direct_cpg.zarr`.",

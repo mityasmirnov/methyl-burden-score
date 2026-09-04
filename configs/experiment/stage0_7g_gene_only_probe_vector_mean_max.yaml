@@ -1,13 +1,13 @@
-# 7G′ Stage A: N-cascade-vector-mean-max (region embeddings → gene max).
+# 7G′ Stage A: N-cascade-vector-mean-max — matched 16-epoch promotion.
 split_id: hub-ats-7e-3fold-v1
 sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
-milestone: 7G-gene-only-vector-mean-max
-report_dir: reports/inspection/stage0_7g_gene_only_probe/_staging_vector_mean_max_train
+milestone: 7G-gene-only-vector-mean-max-16ep
+report_dir: reports/inspection/stage0_7g_gene_only_probe/_staging_vector_mean_max_16ep_train
 cv_budget:
   max_loci: 65536
-  max_epochs: 5
+  max_epochs: 16
 experiment:
-  name: stage0_7g_gene_only_probe_vector_mean_max
+  name: stage0_7g_gene_only_probe_vector_mean_max_16ep
   seed: 42
   stage: 0
 pilot:
@@ -26,15 +26,16 @@ model:
   region_hidden_dim: 32
   dropout: 0.1
 training:
-  max_epochs: 5
-  batch_size: auto
+  max_epochs: 16
+  batch_size: 128
+  early_stopping_patience: 5
   learning_rate: 0.001
   tissue_loss_weight: 3.0
   age_loss_weight: 0.3
   sex_loss_weight: 1.0
   gene_linked_only: true
   primary_evaluation: mbs_e2e
-  # Screen: leave mbs_enet/rbs_enet for post-hoc (scripts/eval_mbs_enet_from_scores.py).
+  checkpoint_selection: validation_tissue_macro_f1_then_age_mae
   stage_a_include_mbs_enet: false
 device:
   torch_device: cuda

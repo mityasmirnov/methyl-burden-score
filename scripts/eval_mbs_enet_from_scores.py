@@ -22,11 +22,12 @@ import pandas as pd
 from mbs.annotation.manifest import write_json
 from mbs.paths import DataPaths
 from mbs.training.cascade_loop import _evaluate_mbs_enet
-from mbs.training.cascade_scores import load_cascade_score_blocks
+from mbs.training.cascade_scores import fusion_feature_matrix, load_cascade_score_blocks
 from mbs.training.dev_cv import load_frozen_folds
 from mbs.training.flat_stage_a_eval import evaluate_flat_mbs_enet
 from mbs.training.loop import load_experiment_config
 from mbs.training.phenotypes import load_multitask_phenotypes
+from mbs.training.transparent_baselines import run_nested_elasticnet_multitask
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "configs/experiment/stage0_7g_gene_only_probe.yaml"
@@ -73,6 +74,43 @@ def _phenotype_arrays(sample_ids: list[str], ph_by_id: dict) -> dict[str, np.nda
     }
 
 
+def _evaluate_nested(
+    blocks: dict,
+    *,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
+    arrays: dict[str, np.ndarray],
+    class_names: list[str],
+    evaluation: str,
+) -> dict:
+    """Nested elastic-net on frozen score columns (train-fold scaler + inner-val α/l1)."""
+    x = fusion_feature_matrix(blocks, mode="mbs_only")
+    out = run_nested_elasticnet_multitask(
+        x_train=x[train_idx],
+        x_test=x[test_idx],
+        age_train=arrays["age"][train_idx],
+        age_mask_train=arrays["age_mask"][train_idx],
+        tissue_train=arrays["tissue"][train_idx],
+        tissue_mask_train=arrays["tissue_mask"][train_idx],
+        sex_train=arrays["sex"][train_idx],
+        sex_mask_train=arrays["sex_mask"][train_idx],
+        age_test=arrays["age"][test_idx],
+        age_mask_test=arrays["age_mask"][test_idx],
+        tissue_test=arrays["tissue"][test_idx],
+        tissue_mask_test=arrays["tissue_mask"][test_idx],
+        sex_test=arrays["sex"][test_idx],
+        sex_mask_test=arrays["sex_mask"][test_idx],
+        study_ids_train=arrays["study_ids"][train_idx],
+        study_ids_test=arrays["study_ids"][test_idx],
+        tissue_class_names=list(class_names) if class_names else None,
+    )
+    out["evaluation"] = evaluation
+    out["eval_split"] = "test"
+    out["n_eval_samples"] = int(np.asarray(test_idx).size)
+    out["n_score_features"] = int(out.get("n_features", x.shape[1]))
+    return out
+
+
 def patch_cascade_fold(
     *,
     fold_dir: Path,
@@ -81,6 +119,7 @@ def patch_cascade_fold(
     class_names: list[str],
     which: str = "mbs",
     force: bool = False,
+    nested: bool = False,
 ) -> dict:
     metrics_path = fold_dir / "metrics.json"
     score_dir = fold_dir / "scores"
@@ -95,38 +134,52 @@ def patch_cascade_fold(
 
     modes: list[tuple[str, dict]] = []
     if which in ("mbs", "both"):
-        modes.append(("mbs_enet", blocks))
+        key = "mbs_enet_nested" if nested else "mbs_enet"
+        modes.append((key, blocks))
     if which in ("rbs", "both"):
         if "all_gene_rbs" not in blocks or int(blocks["all_gene_rbs"].shape[1]) == 0:
             raise FileNotFoundError(f"missing all_gene_rbs under {score_dir}")
-        modes.append(("rbs_enet", {"mbs": blocks["all_gene_rbs"]}))
+        key = "rbs_enet_nested" if nested else "rbs_enet"
+        modes.append((key, {"mbs": blocks["all_gene_rbs"]}))
 
     for eval_key, score_blocks in modes:
         if not force and isinstance(evaluations.get(eval_key), dict):
             print(f"[{eval_key}] skip {fold_dir.name}: already present", flush=True)
             continue
-        blob = _evaluate_mbs_enet(
-            score_blocks,
-            train_idx=train_idx,
-            test_idx=test_idx,
-            ages=arrays["age"],
-            age_mask=arrays["age_mask"],
-            tissue=arrays["tissue"],
-            tissue_mask=arrays["tissue_mask"],
-            sex=arrays["sex"],
-            sex_mask=arrays["sex_mask"],
-            study_ids=arrays["study_ids"],
-            class_names=class_names,
-        )
-        blob["evaluation"] = eval_key
+        if nested:
+            blob = _evaluate_nested(
+                score_blocks,
+                train_idx=train_idx,
+                test_idx=test_idx,
+                arrays=arrays,
+                class_names=class_names,
+                evaluation=eval_key,
+            )
+        else:
+            blob = _evaluate_mbs_enet(
+                score_blocks,
+                train_idx=train_idx,
+                test_idx=test_idx,
+                ages=arrays["age"],
+                age_mask=arrays["age_mask"],
+                tissue=arrays["tissue"],
+                tissue_mask=arrays["tissue_mask"],
+                sex=arrays["sex"],
+                sex_mask=arrays["sex_mask"],
+                study_ids=arrays["study_ids"],
+                class_names=class_names,
+            )
+            blob["evaluation"] = eval_key
         evaluations[eval_key] = blob
         written[eval_key] = blob
         tissue_f1 = (blob.get("metrics") or {}).get("tissue", {}).get("macro_f1")
         age_mae = (blob.get("metrics") or {}).get("age", {}).get("mae")
         sex_auroc = (blob.get("metrics") or {}).get("sex", {}).get("auroc")
+        selected = blob.get("selected") or {}
         print(
             f"[{eval_key}] {fold_dir.name} tissue_f1={tissue_f1} age_mae={age_mae} "
-            f"sex_auroc={sex_auroc} n_features={blob.get('n_score_features')}",
+            f"sex_auroc={sex_auroc} n_features={blob.get('n_score_features')} "
+            f"selected={selected}",
             flush=True,
         )
 
@@ -141,6 +194,8 @@ def patch_flat_run(
     fold: dict,
     ph_by_id: dict,
     class_names: list[str],
+    nested: bool = False,
+    force: bool = False,
 ) -> dict:
     """Post-hoc enet for FlatDeepSetRegion runs (``…-f{i}``)."""
     metrics_path = run_dir / "metrics.json"
@@ -181,23 +236,54 @@ def patch_flat_run(
             train_idx = np.arange(0, n_tr, dtype=np.int64)
             test_idx = np.arange(n_tr + n_va, n_tr + n_va + n_te, dtype=np.int64)
         arrays = _phenotype_arrays([str(s) for s in sample_ids], ph_by_id)
-    out = evaluate_flat_mbs_enet(
-        mbs_all=mbs,
-        train_idx=train_idx,
-        test_idx=test_idx,
-        arrays=arrays,
-        class_names=list(class_names),
-    )
+
+    eval_key = "mbs_enet_nested" if nested else "mbs_enet"
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
     evaluations = dict(metrics.get("evaluations") or {})
-    evaluations["mbs_enet"] = out
+    if not force and isinstance(evaluations.get(eval_key), dict):
+        print(f"[{eval_key}] skip {run_dir.name}: already present", flush=True)
+        return evaluations[eval_key]
+
+    if nested:
+        out = run_nested_elasticnet_multitask(
+            x_train=mbs[train_idx],
+            x_test=mbs[test_idx],
+            age_train=arrays["age"][train_idx],
+            age_mask_train=arrays["age_mask"][train_idx],
+            tissue_train=arrays["tissue"][train_idx],
+            tissue_mask_train=arrays["tissue_mask"][train_idx],
+            sex_train=arrays["sex"][train_idx],
+            sex_mask_train=arrays["sex_mask"][train_idx],
+            age_test=arrays["age"][test_idx],
+            age_mask_test=arrays["age_mask"][test_idx],
+            tissue_test=arrays["tissue"][test_idx],
+            tissue_mask_test=arrays["tissue_mask"][test_idx],
+            sex_test=arrays["sex"][test_idx],
+            sex_mask_test=arrays["sex_mask"][test_idx],
+            study_ids_train=arrays["study_ids"][train_idx],
+            study_ids_test=arrays["study_ids"][test_idx],
+            tissue_class_names=list(class_names),
+        )
+        out["evaluation"] = eval_key
+        out["eval_split"] = "test"
+        out["n_eval_samples"] = int(test_idx.size)
+        out["n_score_features"] = int(out.get("n_features", mbs.shape[1]))
+    else:
+        out = evaluate_flat_mbs_enet(
+            mbs_all=mbs,
+            train_idx=train_idx,
+            test_idx=test_idx,
+            arrays=arrays,
+            class_names=list(class_names),
+        )
+    evaluations[eval_key] = out
     metrics["evaluations"] = evaluations
     write_json(metrics_path, metrics)
     tissue_f1 = (out.get("metrics") or {}).get("tissue", {}).get("macro_f1")
     age_mae = (out.get("metrics") or {}).get("age", {}).get("mae")
     sex_auroc = (out.get("metrics") or {}).get("sex", {}).get("auroc")
     print(
-        f"[mbs_enet] {run_dir.name} tissue_f1={tissue_f1} age_mae={age_mae} "
+        f"[{eval_key}] {run_dir.name} tissue_f1={tissue_f1} age_mae={age_mae} "
         f"sex_auroc={sex_auroc} n_features={out.get('n_score_features')}",
         flush=True,
     )
@@ -245,6 +331,11 @@ def main() -> None:
         default="mbs",
         help="Cascade only: evaluate mbs_enet, rbs_enet (all_gene_rbs), or both",
     )
+    parser.add_argument(
+        "--nested",
+        action="store_true",
+        help="Use nested elastic-net (train-fold StandardScaler + inner-val α/l1)",
+    )
     args = parser.parse_args()
     if not args.run_id and not args.run_prefix:
         args.run_id = DEFAULT_RUN
@@ -283,20 +374,24 @@ def main() -> None:
                 class_names=class_names,
                 which=args.which,
                 force=args.force,
+                nested=args.nested,
             )
         else:
             if args.which == "rbs":
                 print(f"[enet] skip {target.name}: --which rbs is cascade-only", flush=True)
                 continue
             prior = json.loads(metrics_path.read_text(encoding="utf-8"))
-            if not args.force and isinstance((prior.get("evaluations") or {}).get("mbs_enet"), dict):
-                print(f"[mbs_enet] skip {target.name}: already present", flush=True)
+            eval_key = "mbs_enet_nested" if args.nested else "mbs_enet"
+            if not args.force and isinstance((prior.get("evaluations") or {}).get(eval_key), dict):
+                print(f"[{eval_key}] skip {target.name}: already present", flush=True)
                 continue
             patch_flat_run(
                 run_dir=target,
                 fold=fold,
                 ph_by_id=ph_by_id,
                 class_names=class_names,
+                nested=args.nested,
+                force=args.force,
             )
 
 

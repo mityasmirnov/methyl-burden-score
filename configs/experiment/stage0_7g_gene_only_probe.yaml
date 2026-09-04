@@ -32,6 +32,8 @@ arms:
     kind: classical_gene
   # Tier-1 screen — run model-by-model; refresh analysis.md after each arm.
   # Order: one-hop DeepRVAT-like first, then mixed scalar / vector cascade.
+  # Matched 16-epoch promotion — new run IDs so 5-ep artifacts are not skipped.
+  # N-light-gene-max keeps the same prefix (fold 0 already at best_epoch=16).
   - id: N-light-gene-max
     kind: flat_region_train
     run_prefix: stage0-7g-gene-probe-light-max
@@ -39,25 +41,27 @@ arms:
     pool: max
   - id: N-light-gene-mean
     kind: flat_region_train
-    run_prefix: stage0-7g-gene-probe-light-mean
+    run_prefix: stage0-7g-gene-probe-light-mean-16ep
     config: configs/experiment/stage0_7g_gene_only_probe_light_mean.yaml
     pool: mean
   - id: N-cascade-scalar-mean-max
     kind: cascade_train
-    run_id: stage0-7g-gene-probe-scalar-mean-max
+    run_id: stage0-7g-gene-probe-scalar-mean-max-16ep
     config: configs/experiment/stage0_7g_gene_only_probe_scalar_mean_max.yaml
   - id: N-cascade-scalar-max-mean
     kind: cascade_train
-    run_id: stage0-7g-gene-probe-scalar-max-mean
+    run_id: stage0-7g-gene-probe-scalar-max-mean-16ep
     config: configs/experiment/stage0_7g_gene_only_probe_scalar_max_mean.yaml
   - id: N-cascade-vector-mean-max
     kind: cascade_train
-    run_id: stage0-7g-gene-probe-vector-mean-max
+    run_id: stage0-7g-gene-probe-vector-mean-max-16ep
     config: configs/experiment/stage0_7g_gene_only_probe_vector_mean_max.yaml
   - id: N-cascade-vector-max-max
     kind: cascade_train
     run_id: stage0-7g-gene-probe-vector-max-max
     config: configs/experiment/stage0_7g_gene_only_probe_vector_max_max.yaml
+    # Not promoted in the 16-ep screen (dominated by vector mean→max on RBS).
+    inactive: true
   # Annotation ablation grid — fold 0, two seeds each. Run after N-light-gene-mean lands.
   - id: N-light-gene-ablation-m-only
     kind: flat_region_train
