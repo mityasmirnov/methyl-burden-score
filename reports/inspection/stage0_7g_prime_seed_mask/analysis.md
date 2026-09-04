@@ -1,47 +1,43 @@
 # 7G′ age-primary seed-mask screen
 
-Selection: validation **age MAE** primary; tissue macro-F1 secondary; sex AUROC
-tertiary. Seed source: **`internal_fold`** ([ADR 0011](../../../docs/adr/0011-seed-gene-sources.md)).
-P2-G topology is the **current reference, not a final lock**. Stage B CpG-panel
-GPU stays blocked until this screen finishes.
+Selection: validation age MAE primary; tissue F1 secondary; sex AUROC tertiary.
+Seed source: **internal_fold** (ADR 0011). Discovery CpGs ≠ G2 input (ADR 0012).
+P2-G topology is a reference, not a lock.
 
-Config: `configs/experiment/stage0_7g_prime_seed_mask.yaml` · runner:
-`scripts/run_7g_prime_seed_mask.py`.
+Folds: [0]; seeds: [42, 43]; K=256.
 
-## Grid
+Arms: G0 all-gene control; G1 head masks; G2 expanded gene CpGs+masks;
+G3 matched random; C0 classical all-gene; C2 classical on G2 expanded CpGs.
 
-| Arm | Question |
-|-----|----------|
-| G0 | Age-primary all-gene control (not tissue-heavy P2-G) |
-| G1 | All gene-linked CpGs + trait seed head masks |
-| G2 | Seed-gene CpGs + same masks |
-| G3 | Matched-random genes/CpGs + matched masks |
-| C0 | Classical enet on G0 CpGs |
-| C2 | Classical enet on exact G2 CpGs |
+graph_content_hash: `7ee70c556584cf417dda09aa2ff77f50f7b0f7f4e46c2e23846670ac9eb8accc`
+panel_hash: `ef6cd307513f28e3c45021f85c3a4d0c`
+configured_traits: `[{'autosome_control': False, 'id': 'age', 'role': 'primary'}, {'autosome_control': False, 'id': 'tissue', 'role': 'secondary'}, {'autosome_control': True, 'id': 'sex', 'role': 'auxiliary'}]`
 
-Folds: `[0]`; seeds: `{42, 43}`; K=`256`; loss λ = age `1.0` / tissue `0.3` / sex `0.1`.
+## Per-trait discovery vs expanded (fold 0)
 
-## Fold-0 `internal_fold` panels (landed)
+| trait | prefilter | discovery CpGs | seed genes | unique expanded | edges | seed frac | sparsity_ok |
+|---|---:|---:|---:|---:|---:|---:|:---:|
+| age | 4096 | 1024 | 256 | 9595 | 9941 | 0.08858780614903596 | False |
+| sex | 4096 | 44 | 50 | 2356 | 2481 | 0.01867572156196944 | True |
+| sex_autosome | 4096 | 44 | 50 | 2356 | 2481 | 0.01867572156196944 | True |
+| tissue | 4096 | 45 | 41 | 2778 | 2778 | 0.016198704103671708 | True |
 
-Artifacts: `seed_panels/fold_0/seed_panel.{json,gene.parquet,locus.parquet}`.
+## Overlap (configured traits)
 
-| Trait | n genes | n seed CpGs (prefilter→enet) | n_runs |
-|-------|--------:|-----------------------------:|-------:|
-| age | 256 | 4096 | 36 |
-| tissue | 256 | 4096 | 36 |
-| sex | 256 | 4096 | 36 |
+- traits: `['age', 'tissue', 'sex']`
+- gene set sizes: `{'age': 256, 'sex': 50, 'tissue': 41}`
+- gene union: 331
+- gene pairwise: `{'age_∩_sex': 8, 'age_∩_tissue': 8, 'tissue_∩_sex': 3}`
+- expanded CpG set sizes: `{'age': 9595, 'sex': 2356, 'tissue': 2778}`
+- expanded CpG union: 11785
+- CpG pairwise: `{'age_∩_sex': 1398, 'age_∩_tissue': 1546, 'tissue_∩_sex': 1186}`
+- seed fraction of expanded: `{'age': 0.08858780614903596, 'sex': 0.01867572156196944, 'tissue': 0.016198704103671708}`
+- gene-role coverage: `{'age': {'five_prime': 389, 'gene_body': 5457, 'promoter_core': 1855, 'promoter_proximal': 1773, 'three_prime': 467}, 'sex': {'five_prime': 36, 'gene_body': 1647, 'promoter_core': 398, 'promoter_proximal': 301, 'three_prime': 99}, 'tissue': {'five_prime': 49, 'gene_body': 1990, 'promoter_core': 307, 'promoter_proximal': 319, 'three_prime': 113}}`
+- genes with only one discovery CpG: `{'age': 35, 'sex': 47, 'tissue': 39}`
+- multi-gene CpG count: `{'age': 346, 'sex': 125, 'tissue': 0}`
 
-Constructor: univariate prefilter (top 4096) → study-grouped enet stability
-(2×2 folds × α/l1 grid) → explicit-edge gene enrichment. Sex panel records
-autosome-only flag for reporting.
+## G3 matched-random quality
 
-## Metrics status
+`{'cpg_count_abs_err_max': 265.0, 'cpg_count_abs_err_mean': 2.13595166163142, 'cpg_count_abs_err_median': 0.0, 'cpg_count_abs_err_p90': 0.0, 'fraction_exact_cpg_match': 0.9063444108761329, 'gene_length_bp_used': False, 'gene_role_coverage_used': False, 'n_matched': 331, 'n_seed_genes': 331, 'seed_genes_disjoint_from_matched': True}`
 
-See `summary.json` (populated as arms finish).
-
-**GPU 0 blocked** until the 7G′ 16-epoch promotion screen unlocks
-(`scratch/SEED_MASK_GPU_BLOCKED.txt`; unlock =
-`reports/inspection/stage0_7g_gene_only_probe/promotion_decision.json`).
-Do **not** launch `scripts/run_7g_prime_seed_mask.py` on CUDA until then.
-Fold-0 `internal_fold` panels are already on disk; restart with
-`--reuse-panels --device cuda` after unlock.
+See `/data/projects/methyl-burden-score/reports/inspection/stage0_7g_prime_seed_mask/summary.json` and `panel_audit.md`.

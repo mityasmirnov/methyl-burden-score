@@ -16,6 +16,9 @@ from mbs.training.cascade_assign import CascadeAssignment
 TaskKind = Literal["age", "sex", "tissue"]
 ENET_ALPHA_GRID = (1e-5, 1e-4, 1e-3)
 ENET_L1_GRID = (0.25, 0.5, 0.75)
+# Per-fit hard sparsity: SGD elastic-net with tiny α leaves almost every col
+# nonzero; count only the top-|coef| columns toward selection frequency.
+STABILITY_TOP_K_PER_FIT = 64
 
 
 def _enet_classifier_pipeline(*, alpha: float, l1_ratio: float) -> Pipeline:
@@ -201,7 +204,13 @@ def stability_select_columns(
                     coef = _coef_abs(model, n_cols)
                     if coef.size != n_cols:
                         raise ValueError(f"coef size {coef.size} != n_cols {n_cols}")
-                    selected = coef > 1e-8
+                    k = min(STABILITY_TOP_K_PER_FIT, n_cols)
+                    if k < n_cols:
+                        top = np.argpartition(-coef, kth=k - 1)[:k]
+                        selected = np.zeros(n_cols, dtype=bool)
+                        selected[top] = True
+                    else:
+                        selected = coef > 1e-8
                     counts[selected] += 1
                     coef_sum += coef
                     n_runs += 1
@@ -253,6 +262,7 @@ def stability_select_columns(
         "coef_abs_quantiles_selected": coef_q,
         "min_frequency": float(min_frequency),
         "sparsity_ok": bool(n_passing < n_cols and n_passing > 0),
+        "top_k_per_fit": int(STABILITY_TOP_K_PER_FIT),
     }
     return picked.astype(np.int64), meta
 

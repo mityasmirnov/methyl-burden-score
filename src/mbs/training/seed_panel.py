@@ -390,6 +390,20 @@ def _select_trait_genes(
     coefs = np.asarray([coef_meta.get(c, 0.0) for c in seed_cols], dtype=np.float64)
     # Reject insane SGD scales (age-years × near-singular cols → ~1e10 caps).
     coefs_usable = bool(coefs.size) and float(np.nanmax(np.abs(coefs))) < 1e3
+    ranking_fallback = None
+    if not coefs_usable:
+        # Stability frequencies are uninformative when every col is selected every
+        # run with explosive coefs; fall back to univariate-ranked prefilter head.
+        ranking_fallback = "univariate_prefilter_top_k"
+        seed_in_allowed = [int(c) for c in keep[:max_stability_seeds].tolist()]
+        if local_to_full is not None:
+            seed_cols = [int(local_to_full[i]) for i in seed_in_allowed]
+        else:
+            seed_cols = seed_in_allowed
+        # Synthetic unit frequencies so gene scoring stays frequency-primary.
+        freq_meta = {int(c): 1.0 for c in seed_cols}
+        coef_meta = {int(c): 0.0 for c in seed_cols}
+        coefs = np.zeros(len(seed_cols), dtype=np.float64)
     cap = (
         float(np.quantile(coefs, strength_cap_quantile)) if coefs_usable else float("nan")
     )
@@ -444,6 +458,7 @@ def _select_trait_genes(
             "strength_cap": None if not coefs_usable else cap,
             "strength_cap_warning": bool(not coefs_usable),
             "coefs_numerically_usable": coefs_usable,
+            "ranking_fallback": ranking_fallback,
             "prefilter_max_cols": int(prefilter_max_cols),
             "n_cols_input": n_cols_input,
             "n_cols_prefiltered": int(keep.size),
@@ -458,6 +473,7 @@ def _select_trait_genes(
             "n_fits_converged": int(meta.get("n_fits_converged", 0)),
             "n_fits_nonconverged": int(meta.get("n_fits_nonconverged", 0)),
             "sparsity_ok": bool(meta.get("sparsity_ok", False)),
+            "top_k_per_fit": meta.get("top_k_per_fit"),
             "selection_frequency_by_seed_col": {
                 str(k): freq_meta[k] for k in seed_cols if k in freq_meta
             },

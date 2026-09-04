@@ -1,14 +1,14 @@
 # Plan: Age-first seed-mask screen (7G′ Stage B blocker)
 
-Status: **blocked** — wait for (1) matched 16-epoch promotion decision rules
-([`milestone-7g-prime-16ep-promotion.md`](milestone-7g-prime-16ep-promotion.md))
-and (2) seed-panel provenance/sparsity audit (non-null `graph_content_hash`,
-stability-selection diagnostics distinct from the 4096 univariate prefilter,
-autosome-only sex control, trait overlap report). Do **not** launch
+Status: **blocked on 16-ep GPU only** — fold-0 seed-panel auditability gate is
+met (`graph_content_hash` set, stability diagnostics ≠ prefilter width for
+tissue/sex, age uses documented `univariate_prefilter_top_k` when SGD coefs
+explode, `sex_autosome` control with zero X/Y seeds, overlap + G3 quality in
+`analysis.md` / `panel_audit.md`). Do **not** launch
 `scripts/run_7g_prime_seed_mask.py --device cuda` while the 16-ep queue owns
-GPU 0, and do **not** `--reuse-panels` until the fold-0 panel is regenerated
-with those fixes. Stage B CpG-panel GPU stays blocked until this screen and
-typed-RBS diagnostics land.
+GPU 0. `--reuse-panels` is allowed only for panels with non-null
+`graph_content_hash` (runner enforces). Stage B CpG-panel GPU stays blocked
+until this screen and typed-RBS diagnostics land.
 
 Normative: [ADR 0011](../adr/0011-seed-gene-sources.md) (seed sources),
 [ADR 0012](../adr/0012-seed-gene-discovery-vs-deployment-input.md)
@@ -113,4 +113,5 @@ M-value model as identical measurements). **No training code in this plan.**
 - 450K↔EPIC dropout, ONT transforms, coverage-confidence tensors
 - Per-tissue-class masks in the first grid
 - Blocking on full Atlas DuckDB ingest
-- Relieving the sparsity audit (`4096 == prefilter` still fails GPU go/no-go)
+- Treating age univariate fallback as sparse elastic-net seeds (age
+  `ranking_fallback=univariate_prefilter_top_k` when SGD coefs explode)

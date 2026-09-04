@@ -1,53 +1,238 @@
 {
-  "graph_content_hash": null,
-  "panel_hash": "7aefc81aeb60c9dabd13bf0adf817dab",
+  "graph_content_hash": "7ee70c556584cf417dda09aa2ff77f50f7b0f7f4e46c2e23846670ac9eb8accc",
+  "panel_hash": "ef6cd307513f28e3c45021f85c3a4d0c",
   "fold_id": 0,
-  "overlap": null,
+  "overlap": {
+    "cpg_pairwise_overlap": {
+      "age_\u2229_sex": 1398,
+      "age_\u2229_tissue": 1546,
+      "tissue_\u2229_sex": 1186
+    },
+    "cpg_set_sizes": {
+      "age": 9595,
+      "sex": 2356,
+      "tissue": 2778
+    },
+    "cpg_union_size": 11785,
+    "gene_pairwise_overlap": {
+      "age_\u2229_sex": 8,
+      "age_\u2229_tissue": 8,
+      "tissue_\u2229_sex": 3
+    },
+    "gene_role_coverage": {
+      "age": {
+        "five_prime": 389,
+        "gene_body": 5457,
+        "promoter_core": 1855,
+        "promoter_proximal": 1773,
+        "three_prime": 467
+      },
+      "sex": {
+        "five_prime": 36,
+        "gene_body": 1647,
+        "promoter_core": 398,
+        "promoter_proximal": 301,
+        "three_prime": 99
+      },
+      "tissue": {
+        "five_prime": 49,
+        "gene_body": 1990,
+        "promoter_core": 307,
+        "promoter_proximal": 319,
+        "three_prime": 113
+      }
+    },
+    "gene_set_sizes": {
+      "age": 256,
+      "sex": 50,
+      "tissue": 41
+    },
+    "gene_union_size": 331,
+    "genes_with_only_one_seed_cpg": {
+      "age": 35,
+      "sex": 47,
+      "tissue": 39
+    },
+    "multi_gene_cpg_count": {
+      "age": 346,
+      "sex": 125,
+      "tissue": 0
+    },
+    "n_unique_expanded_gene_cpgs": {
+      "age": 9595,
+      "sex": 2356,
+      "tissue": 2778
+    },
+    "seed_fraction_of_expanded": {
+      "age": 0.08858780614903596,
+      "sex": 0.01867572156196944,
+      "tissue": 0.016198704103671708
+    },
+    "stability_seed_cpg_set_sizes": {
+      "age": 850,
+      "sex": 44,
+      "tissue": 45
+    },
+    "traits": [
+      "age",
+      "tissue",
+      "sex"
+    ]
+  },
   "traits": [
     {
       "trait": "age",
+      "n_cols_input": 51375,
       "n_cols_prefiltered": 4096,
-      "n_seed_cpgs_after_stability": 4096,
-      "n_passing_min_frequency": 4096,
+      "n_zero_variance_dropped": 0,
+      "n_discovery_cpgs": 1024,
+      "n_seed_cpgs_after_stability": 1024,
+      "n_seed_genes": 256,
+      "n_expanded_gene_cpg_edges": 9941,
+      "n_unique_expanded_gene_cpgs": 9595,
+      "n_multigene_cpgs": 346,
+      "seed_fraction_of_expanded": 0.08858780614903596,
+      "n_passing_min_frequency": 1024,
+      "fallback_to_top_freq": true,
+      "max_stability_seeds": 1024,
       "sparsity_ok": false,
-      "strength_cap": 10876183559.88889,
-      "n_fits_nonconverged": null,
-      "frequency_quantiles": null,
-      "n_autosome_only_genes": null,
-      "n_sex_chrom_seed_cpgs": null
+      "strength_cap": null,
+      "strength_cap_warning": true,
+      "coefs_numerically_usable": false,
+      "standardization": "X: StandardScaler(with_mean=True); age y: z-score inside each inner-train fold",
+      "n_fits_attempted": 36,
+      "n_fits_converged": 10,
+      "n_fits_nonconverged": 26,
+      "frequency_quantiles": {
+        "q0": 0.0,
+        "q100": 0.16666666666666666,
+        "q25": 0.0,
+        "q50": 0.0,
+        "q75": 0.027777777777777776,
+        "q90": 0.05555555555555555,
+        "q99": 0.08333333333333333
+      },
+      "n_autosome_only_genes": 256,
+      "n_sex_chrom_seed_cpgs": 0
     },
     {
       "trait": "sex",
+      "n_cols_input": 51375,
       "n_cols_prefiltered": 4096,
-      "n_seed_cpgs_after_stability": 4096,
-      "n_passing_min_frequency": 4096,
-      "sparsity_ok": false,
-      "strength_cap": 49.667053651458204,
-      "n_fits_nonconverged": null,
-      "frequency_quantiles": null,
-      "n_autosome_only_genes": 0,
-      "n_sex_chrom_seed_cpgs": null
+      "n_zero_variance_dropped": 0,
+      "n_discovery_cpgs": 44,
+      "n_seed_cpgs_after_stability": 44,
+      "n_seed_genes": 50,
+      "n_expanded_gene_cpg_edges": 2481,
+      "n_unique_expanded_gene_cpgs": 2356,
+      "n_multigene_cpgs": 125,
+      "seed_fraction_of_expanded": 0.01867572156196944,
+      "n_passing_min_frequency": 44,
+      "fallback_to_top_freq": false,
+      "max_stability_seeds": 1024,
+      "sparsity_ok": true,
+      "strength_cap": 213.60444111153242,
+      "strength_cap_warning": false,
+      "coefs_numerically_usable": true,
+      "standardization": "X: StandardScaler(with_mean=True); age y: z-score inside each inner-train fold",
+      "n_fits_attempted": 36,
+      "n_fits_converged": 0,
+      "n_fits_nonconverged": 36,
+      "frequency_quantiles": {
+        "q0": 0.0,
+        "q100": 1.0,
+        "q25": 0.0,
+        "q50": 0.0,
+        "q75": 0.0,
+        "q90": 0.027777777777777776,
+        "q99": 0.3611111111111111
+      },
+      "n_autosome_only_genes": 50,
+      "n_sex_chrom_seed_cpgs": 0
+    },
+    {
+      "trait": "sex_autosome",
+      "n_cols_input": 51375,
+      "n_cols_prefiltered": 4096,
+      "n_zero_variance_dropped": 0,
+      "n_discovery_cpgs": 44,
+      "n_seed_cpgs_after_stability": 44,
+      "n_seed_genes": 50,
+      "n_expanded_gene_cpg_edges": 2481,
+      "n_unique_expanded_gene_cpgs": 2356,
+      "n_multigene_cpgs": 125,
+      "seed_fraction_of_expanded": 0.01867572156196944,
+      "n_passing_min_frequency": 44,
+      "fallback_to_top_freq": false,
+      "max_stability_seeds": 1024,
+      "sparsity_ok": true,
+      "strength_cap": 213.60444111153242,
+      "strength_cap_warning": false,
+      "coefs_numerically_usable": true,
+      "standardization": "X: StandardScaler(with_mean=True); age y: z-score inside each inner-train fold",
+      "n_fits_attempted": 36,
+      "n_fits_converged": 0,
+      "n_fits_nonconverged": 36,
+      "frequency_quantiles": {
+        "q0": 0.0,
+        "q100": 1.0,
+        "q25": 0.0,
+        "q50": 0.0,
+        "q75": 0.0,
+        "q90": 0.027777777777777776,
+        "q99": 0.3611111111111111
+      },
+      "n_autosome_only_genes": 50,
+      "n_sex_chrom_seed_cpgs": 0
     },
     {
       "trait": "tissue",
+      "n_cols_input": 51375,
       "n_cols_prefiltered": 4096,
-      "n_seed_cpgs_after_stability": 4096,
-      "n_passing_min_frequency": 4096,
-      "sparsity_ok": false,
-      "strength_cap": 74.83204129007127,
-      "n_fits_nonconverged": null,
-      "frequency_quantiles": null,
-      "n_autosome_only_genes": null,
-      "n_sex_chrom_seed_cpgs": null
+      "n_zero_variance_dropped": 0,
+      "n_discovery_cpgs": 45,
+      "n_seed_cpgs_after_stability": 45,
+      "n_seed_genes": 41,
+      "n_expanded_gene_cpg_edges": 2778,
+      "n_unique_expanded_gene_cpgs": 2778,
+      "n_multigene_cpgs": 0,
+      "seed_fraction_of_expanded": 0.016198704103671708,
+      "n_passing_min_frequency": 45,
+      "fallback_to_top_freq": false,
+      "max_stability_seeds": 1024,
+      "sparsity_ok": true,
+      "strength_cap": 126.76232504119935,
+      "strength_cap_warning": false,
+      "coefs_numerically_usable": true,
+      "standardization": "X: StandardScaler(with_mean=True); age y: z-score inside each inner-train fold",
+      "n_fits_attempted": 36,
+      "n_fits_converged": 0,
+      "n_fits_nonconverged": 36,
+      "frequency_quantiles": {
+        "q0": 0.0,
+        "q100": 0.8611111111111112,
+        "q25": 0.0,
+        "q50": 0.0,
+        "q75": 0.0,
+        "q90": 0.027777777777777776,
+        "q99": 0.3611111111111111
+      },
+      "n_autosome_only_genes": 41,
+      "n_sex_chrom_seed_cpgs": 0
     }
   ],
-  "issues": [
-    "graph_content_hash is null/missing (provenance blocker)",
-    "age: stability selected 4096 CpGs == prefilter width 4096 \u2014 not demonstrably sparse",
-    "age: strength_cap=10876183559.88889 looks unscaled / nonconverged",
-    "sex: stability selected 4096 CpGs == prefilter width 4096 \u2014 not demonstrably sparse",
-    "tissue: stability selected 4096 CpGs == prefilter width 4096 \u2014 not demonstrably sparse",
-    "sex_autosome control trait missing"
-  ],
-  "ok_for_seed_mask_gpu": false
+  "issues": [],
+  "g3_matched_random_quality": {
+    "cpg_count_abs_err_max": 265.0,
+    "cpg_count_abs_err_mean": 2.13595166163142,
+    "cpg_count_abs_err_median": 0.0,
+    "cpg_count_abs_err_p90": 0.0,
+    "fraction_exact_cpg_match": 0.9063444108761329,
+    "gene_length_bp_used": false,
+    "gene_role_coverage_used": false,
+    "n_matched": 331,
+    "n_seed_genes": 331,
+    "seed_genes_disjoint_from_matched": true
+  },
+  "ok_for_seed_mask_gpu": true
 }
