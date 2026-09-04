@@ -118,11 +118,11 @@ Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare row
 | `N-cascade-vector-max-max` | `rbs_linear_probe` | 0.329 (±0.074) | 12.102 (±2.226) | 0.592 (±0.095) | 0.803 (±0.111) | 0.734 (±0.097) | 3 |
 | `N-light-gene-max` | `mbs_linear_probe` | 0.327 (±0.000) | 12.943 (±0.000) | 0.558 (±0.000) | 0.776 (±0.000) | 0.705 (±0.000) | 1 |
 | `N-light-gene-max` | `mbs_e2e` | 0.305 (±0.000) | 18.058 (±0.000) | 0.230 (±0.000) | 0.669 (±0.000) | 0.574 (±0.000) | 1 |
-| `N-light-gene-mean` | `mbs_enet` | 0.278 (±0.000) | 20.882 (±0.000) | -0.008 (±0.000) | 0.760 (±0.000) | 0.553 (±0.000) | 3 |
+| `N-light-gene-mean` | `mbs_enet` | 0.278 (±0.000) | 20.882 (±0.000) | -0.008 (±0.000) | 0.760 (±0.000) | 0.553 (±0.000) | 1 |
 | `N-light-gene-mean` | `mbs_e2e` | 0.126 (±0.064) | 23.082 (±2.533) | -0.406 (±0.533) | 0.591 (±0.014) | 0.462 (±0.091) | 3 |
 | `C-mvalue-hgb-G` | `classical` | 0.114 (±0.081) | 9.066 (±1.022) | 0.753 (±0.052) | 0.938 (±0.059) | — | 3 |
 
-**Readouts:** `mbs_e2e` = jointly trained neural heads on MBS (Stage A lock metric); `mbs_linear_probe` / `mbs_enet` = new sklearn heads on the **same frozen MBS**; `rbs_linear_probe` / `rbs_enet` = frozen **gene-linked RBS** (pre–gene-pool); `classical` = sklearn on gene-linked CpG M-values (no encoder).
+**Readouts:** `mbs_e2e` = jointly trained neural heads on MBS (ATS screen primary); `mbs_linear_probe` / `mbs_enet` = new sklearn heads on the **same frozen MBS**; `rbs_linear_probe` / `rbs_enet` = frozen **gene-linked RBS** (pre–gene-pool); `classical` = sklearn on gene-linked CpG M-values (no encoder). **folds** = number of folds that actually contain that readout (±0.000 with folds=1 means a single fold, not three identical scores).
 
 ## Three-task Pareto (`mbs_e2e` + classical)
 
@@ -135,37 +135,6 @@ Non-dominated on tissue macro-F1 (↑), age MAE (↓), sex AUROC (↑). Do **not
 | `C-mvalue-hgb-G` | `classical` | 0.114 | 9.066 | 0.938 |
 
 
-## Interpretation (2026-09-04)
-
-Tier-1 DeepRVAT screen + fold-0 annotation ablations are in. **No new arm displaces
-`P2-G` (max/max, 15 ep)** or closes the classical gap. Cascade remains **not**
-≥0.03 tissue F1 ahead of `C-mvalue-enet-G`.
-
-### RBS diagnostics (linear + post-hoc enet)
-
-Screen cascade arms have inline **`rbs_linear_probe`**. Post-hoc **`rbs_enet`**
-on frozen `all_gene_rbs.zarr` (13 212 regions) for the scalar mixed arms:
-
-| Arm | `rbs_enet` tissue | age MAE | sex AUROC | `rbs_linear` tissue | `rbs_linear` age |
-|-----|------------------:|--------:|----------:|--------------------:|-----------------:|
-| `N-cascade-scalar-mean-max` | **0.390** | 12.58 | 0.762 | 0.385 | 14.67 |
-| `N-cascade-scalar-max-mean` | 0.372 | **11.25** | **0.789** | 0.383 | 13.51 |
-
-**Read:** elastic-net on RBS is close to (or slightly above) linear on tissue;
-age improves vs linear on both arms. Classical age (8.15) still leads. Gene
-pooling vs RBS: compare these to same-arm `mbs_linear_probe` / e2e in the task
-table — RBS remains the stronger age/sex readout on several arms.
-
-### Annotation + representation diagnostics
-
-- **`m_only` (A0)** leads ablation e2e/linear; gene-role hurts; N0 collapsed.
-- Repr post-hoc: A0 SD≈0.15; no saturation; corr(mean MBS, panel mean-M)≈0.
-
-### Lock (unchanged)
-
-Keep **`P2-G` max/max 15 ep**. Next: **Stage B GPU**; optional `mbs_enet` on
-screen arms.
-
 ## Architecture questions (Stage A screen)
 
 1. **CpG → region pool (mean vs max):** `mean-max` tissue F1=0.331 vs `max-max` 0.373; age MAE 20.713 vs 15.637. Prefer **`P2-G`** on this slice (check Pareto).
@@ -174,11 +143,11 @@ screen arms.
 4. **Gene pooling vs RBS:** `N-cascade-vector-mean-max` `rbs_*` tissue F1=0.368, age MAE=10.459, sex AUROC=0.842; same-arm MBS probe tissue=0.360, age=15.051, sex=0.697. Gene pooling is near-neutral on tissue; **age/sex often better on RBS** (pre–gene-pool), so some phenotype signal is lost at region→gene. Classical enet age MAE=8.150 remains the age ceiling.
 5. **One-hop vs cascade:** One-hop `N-light-gene-max` tissue=0.305 / age=18.058 vs P2-G 0.373 / 15.637.
 6. **One-scalar-per-gene bottleneck:** Gene aggregation still trails classical on age/sex; one scalar MBS/gene is **not yet adequate** unless a screen arm closes the gap.
-7. **Best performance/compute:** Prefer landed P2/P4 (15 ep) over P5; promote Tier-1 (5 ep) arms only when Pareto/near-best, then confirm at 15 ep.
+7. **Best performance/compute:** Prefer landed P2/P4 (15 ep) over P5 as ATS evidence; do **not** promote Tier-1 (5 ep) arms by comparing them to 15-ep P2. Next gate is a trait/seed-gene Stage A repeat, not a lock.
 
 ## Training epochs (ceiling / ran / best)
 
-Ceiling is the configured `max_epochs`. **Ran** is how many epochs the trainer completed (early stop may cut short). **Best** is the checkpoint selected by `validation_tissue_macro_f1_then_age_mae` (used for test `mbs_e2e`). Per-fold lists are fold 0,1,2 when present.
+Ceiling is the configured `max_epochs` (Tier-1 screen note for N-light / mixed/vector arms). **Ran** is how many epochs the trainer completed (early stop may cut short). **Best** is the checkpoint selected by `validation_tissue_macro_f1_then_age_mae` (used for test `mbs_e2e`). Prefer actual best/ran over the ceiling label — do not stamp a hard-coded 5-epoch N-light label onto longer runs.
 
 | Arm | Ceiling | Epochs ran (per fold) | Best epoch (per fold) | folds |
 |-----|--------:|----------------------:|----------------------:|------:|
@@ -194,7 +163,7 @@ Ceiling is the configured `max_epochs`. **Ran** is how many epochs the trainer c
 
 ## Cascade arms (gene-linked CpGs only)
 
-Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** are readouts of the **same frozen MBS**; **`rbs_linear_probe`** / **`rbs_enet`** use gene-linked RBS (`all_gene_rbs.zarr`, 13 212 regions). Contaminated pre-fix **`mbs_e2e`** shown as *invalid*. **Best ep** = checkpoint epoch used for test eval; **ran** = epochs completed.
+Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** are readouts of the **same frozen MBS**; **`rbs_*`** use gene-linked RBS. Contaminated pre-fix **`mbs_e2e`** shown as *invalid*. **Best ep** = checkpoint epoch used for test eval; **ran** = epochs completed.
 
 | Arm | mbs_e2e F1 | linear probe F1 | mbs_enet F1 | age MAE (e2e) | sex AUROC (probe) | best ep | ran | folds |
 |-----|-----------:|----------------:|------------:|--------------:|------------------:|--------:|----:|------:|
@@ -206,16 +175,7 @@ Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`
 | N-cascade-vector-mean-max | 0.337 (±0.036) | 0.360 | — | 22.753 | 0.697 | 5,5,4 (μ=4.7) | — | 3 |
 | N-cascade-scalar-mean-max | 0.331 (±0.020) | 0.375 | — | 20.713 | 0.711 | 5,5,4 (μ=4.7) | 5,5,5 (μ=5.0) | 3 |
 | N-light-gene-max | 0.305 (±0.000) | 0.327 | — | 18.058 | 0.776 | 16 | 21 | 1 |
-| N-light-gene-mean | 0.126 (±0.064) | 0.345 | 0.278 (±0.000) | 23.082 | 0.770 | 5,4,5 (μ=4.7) | 5,5,5 (μ=5.0) | 3 |
-
-### RBS frozen readouts (scalar mixed arms — post-hoc `rbs_enet` landed)
-
-| Arm | `rbs_enet` tissue F1 | `rbs_enet` age MAE | `rbs_enet` sex AUROC | `rbs_linear` tissue F1 | `rbs_linear` age MAE | folds |
-|-----|---------------------:|-------------------:|---------------------:|-----------------------:|---------------------:|------:|
-| `N-cascade-scalar-mean-max` | **0.390** (±0.045) | 12.578 (±1.476) | 0.762 (±0.024) | 0.385 (±0.042) | 14.668 (±1.041) | 3 |
-| `N-cascade-scalar-max-mean` | 0.372 (±0.061) | **11.254** (±2.129) | **0.789** (±0.057) | 0.383 (±0.066) | 13.507 (±2.237) | 3 |
-
-`rbs_enet` via `scripts/eval_mbs_enet_from_scores.py --which rbs` on saved `all_gene_rbs.zarr` (no encoder retrain). Vector-cascade / P2-G `rbs_enet` not run yet.
+| N-light-gene-mean | 0.126 (±0.064) | 0.345 | 0.278 (±0.000) [1/3] | 23.082 | 0.770 | 5,4,5 (μ=4.7) | 5,5,5 (μ=5.0) | 3 |
 
 ## Classical arms (-G panel)
 
@@ -228,15 +188,16 @@ Same **51,375 gene-linked CpGs** as neural arms (`explicit_only`): ridge, elasti
 | C-mvalue-ridge-G | 0.337 (±0.040) | 6.489 | 0.856 | 0.904 |
 | C-mvalue-hgb-G | 0.114 (±0.081) | 9.066 | 0.753 | 0.938 |
 
-## Locked architecture (Stage B input)
+## Screen status (no architecture lock)
 
-- **Cascade arm:** `P2-G`
-- **Pooling (CpG / region):** `max` / `max`
-- **Epoch ceiling:** 15
+The ATS gene-only screen is **evidence**, not an architecture decision. **No cascade topology is locked.** Fold-selected-panel Stage B is **not** the next gate.
+
+- **Best landed ATS cascade row:** `P2-G` (pooling `max` / `max`; configured ceiling 15 ep — see Training epochs for actual best/ran)
 - **Best classical (-G):** `C-mvalue-enet-G`
 - **Cascade clearly ahead (≥0.03 tissue F1):** False
+- **Architecture locked:** `False`
 
-**Encoder parity recommended:** re-run **FlatDeepSet** and **HierarchicalDeepSet** on the same `gene_cols` before committing to cascade for Stage B / Milestone 7.
+Caveats: not ≥0.03 ahead of classical; tissue-primary loss; Tier-1 screen arms used shorter epoch budgets than P2/P4 — do not compare unmatched budgets as if they were.
 
 ## Orphan RBS ablation (P2-orphan-ablation)
 
@@ -297,24 +258,52 @@ Computed post-hoc from saved `scores/mbs.npy` (+ `mbs_present.npy`), checkpoint 
 **Repr read:** A0 gene-score SD≈0.149 (non-collapsed encoder); N0 const-score≈1 (obs-only scores collapsed — control OK); corr(mean MBS, panel mean-M)≈0 across arms (gene MBS ≠ bulk methylation intensity); no score saturation (not stuck at 0/1).
 
 
+## Interpretation
+
+### N-light is not collapsed
+
+N-light mean improves from age MAE ~23.08 end-to-end to ~11.55 with a refitted linear head. The encoder contains information; the native optimisation / readout is poor.
+
+### Annotation graph is populated; network input is weak
+
+Audit: 51,375 unique CpGs; 57,430 locus–gene edges; 2,646 genes; 5,718 multi-gene CpGs; zero `other_gene` edges; all CpG-context categories populated. The short raw-concatenation ablation does **not** show annotations are uninformative — it shows **raw concatenation** hurts a short, tissue-primary, mean-pooling run. Implementation weaknesses (`gather_flat_region_features` / `FlatDeepSetRegion`):
+
+- M-value + six gene-role one-hots + seven context one-hots + six regulatory slots + flags → one 24-d input;
+- all six regulatory channels currently zero;
+- `observed` effectively always one (unobserved edges dropped before encode);
+- `gene_role_present` effectively constant on the Stage A graph;
+- raw unnormalized M mixed with 0/1 annotations;
+- global max/mean pool lets promoter and body cancel;
+- fold-fitted robust-z fitted in `loop.py` but unused by the flat-region path.
+
+Preferred one-hop (document only; do not train in this gate): gated embeddings `h_i = φ_M(z_i) + α_R E_R(role) + α_C E_C(context)` with `α` near 0, then **role-stratified** pools (promoter-core / proximal / 5′ / body / 3′) → gene embedding → scalar MBS.
+
+### Vector vs scalar
+
+Fair five-epoch mean→max: scalar tissue F1 ~0.331 vs vector ~0.337. Do **not** compare five-epoch vector to fifteen-epoch P2. Vector RBS **before** gene pool: age MAE ~10.46, sex AUROC ~0.842 — CpG→region works; failure is later (elementwise max/mean, no typed output channel, one scalar MBS). Raising LR is not the first response.
+
+### RBS → MBS and typed pooling
+
+Cascade already adds a region-type embedding before RBS; the scalar path then pools only scalars (type discarded) and the vector path can still mix roles. CPU ablation **R0–R5** (`reports/inspection/stage0_7g_gene_only_probe/typed_rbs_pooling/`) finds typed max/mean (R1–R3) improve age MAE by ~3–4 y vs untyped R0 on vector-mean-max RBS, but the within-gene **role shuffle control does not collapse** — so the gain is not yet proof of biological role identity (extra channels / capacity may explain it). This diagnostic does **not** decide Stage B. A neural typed aggregator remains a pooling follow-up only if typed arms beat R0 on age **and** the shuffle control collapses.
+
+### Next real gate
+
+**Trait/seed-gene Stage A repeat** — not a P2-G lock from this ATS screen, and not fold-selected-panel Stage B.
+
 ## Parallel / follow-on work
 
-- **Stage A Tier-1 screen + annotation ablations:** complete (2026-09-04). Lock stays `P2-G` max/max 15 ep; no Tier-2 promotions.
-- **Representation diagnostics:** post-hoc from `mbs.npy` / checkpoints (`scripts/compute_7g_repr_diagnostics.py` → `repr_diagnostics.json`).
-- **Post-hoc:** scalar mixed-arm **`rbs_enet` done** (see cascade § above). Still open: `mbs_enet` on screen arms; vector/P2 `rbs_enet`; optional P2-G `rbs_linear_probe` backfill (folds 1–2 lack `all_gene_rbs.zarr`).
-- **Encoder parity (optional):** FlatDeepSet + HierarchicalDeepSet on same `gene_cols` (cascade not ≥0.03 ahead of classical).
-- **Stage B GPU:** fold-safe `C-mvalue-enetS`, `N-cascade-S`, `N-light-type` (prefer M-only features), post-hoc fusion, `direct_cpg.zarr`.
+- **ATS Stage A Tier-1 screen + annotation ablations:** complete. Freeze **`P2-G` as current reference, not a final lock.**
+- **CPU typed-RBS ablation (R0–R5):** presence-aware role features + shuffle controls on saved `N-cascade-vector-mean-max` RBS.
+- **Age-primary seed-mask screen (next GPU):** `internal_fold` G0/G1/G2/G3/C0/C2 — [`milestone-7g-prime-age-seed-mask.md`](../../../docs/plans/milestone-7g-prime-age-seed-mask.md).
+- **Atlas association catalog:** parallel, non-blocking (`external_clean` / `hybrid_fold` later).
+- **Stage B CpG-panel GPU:** blocked until seed-mask screen + typed-RBS diagnostics.
 
 ## Next
 
-Ordered ops (do in this sequence):
+Ordered ops:
 
-1. **Keep Stage A lock:** `P2-G` max/max, 15 epochs — do not start more pooling/vector Tier-2 trains.
-2. **Optional CPU diagnostics (can overlap Stage B prep):**
-   - ~~scalar `rbs_enet`~~ (**done** for `N-cascade-scalar-mean-max` / `max-mean`)
-   - `uv run python scripts/eval_mbs_enet_from_scores.py --which mbs` on cascade + light prefixes
-   - optional: `--which rbs` for vector / P2-G if `all_gene_rbs.zarr` present
-3. **Stage B GPU (current gate):** `scripts/run_7g_prime_stage_b.py --device cuda` with locked `P2-G` params; one-hop / light arms use **M-only** features.
-4. **Milestone 7** 5×6 OOF only after Stage B report + `direct_cpg.zarr`.
-
-Do **not** block Stage B on L5 / more annotation trains: ablation `m_only` already beats annotated modes, and one-hop e2e remains far behind cascade.
+1. **CPU typed-RBS (R0–R5)** — promote a typed pool only under the amended gate (age MAE ≈≥1 y or R² ≈≥0.05; fold-stable; tissue F1 loss ≤0.03; sex AUROC loss ≤0.03; shuffle deteriorates).
+2. **Age-primary seed-mask GPU** (`scripts/run_7g_prime_seed_mask.py`) — fold 0, two seeds, K=256; do **not** launch Stage B CpG-panel GPU.
+3. **Atlas catalog** (CPU) for `external_clean` / `hybrid_fold` constructors.
+4. **Stage B** fold-selected CpG panel only after (1)+(2).
+5. **Milestone 7** 5×6 OOF after Stage B + `direct_cpg.zarr`.

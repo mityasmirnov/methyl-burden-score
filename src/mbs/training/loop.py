@@ -536,6 +536,7 @@ def _run_epoch(
     sex_n = 0.0
     sex_correct = 0.0
     n = 0
+    n_optimizer_steps = 0
     pred_tissue: list[int] = []
     true_tissue: list[int] = []
     score_tissue: list[float] = []
@@ -718,6 +719,7 @@ def _run_epoch(
                         grad_clip,
                     )
                 optimizer.step()
+                n_optimizer_steps += 1
             batch_n = float(len(chunk))
             total_loss += metrics["loss"] * batch_n
             step_age_n = float(metrics.get("age_n", 1.0 if task == "regression" else 0.0))
@@ -885,6 +887,7 @@ def _run_epoch(
         "sex_accuracy": sex_correct / max(sex_n, 1.0),
         "mae": total_mae_sum / max(age_n, 1.0),
         "n_samples": float(n),
+        "n_optimizer_steps": float(n_optimizer_steps),
         "age_n": age_n,
         "tissue_n": tissue_n,
         "sex_n": sex_n,
@@ -1721,12 +1724,8 @@ def train_flat_baseline(
             )
         )
     use_tissue_rank = ckpt_selection_mode == "validation_tissue_macro_f1_then_age_mae"
-    # Ranking checkpoints by validation tissue-F1 requires that metric to be
-    # computed every epoch; without this, `use_tissue_rank` silently falls
-    # back to comparing missing values, so epoch 1 always "wins" and no later
-    # (better-trained) checkpoint is ever selected. `flat_region` + multitask
-    # defaults to this ranking mode above, so the per-epoch eval must follow.
-    stage_a_per_epoch_eval = bool(train_cfg.get("stage_a_per_epoch_eval", False)) or use_tissue_rank
+    # Checkpoint ranking uses validation tissue-F1 from the normal val epoch
+    # pass (`val_metrics`). Do not score the outer test set every epoch.
 
     history: list[dict[str, Any]] = []
     val_history: list[dict[str, Any]] = []
@@ -1734,6 +1733,8 @@ def train_flat_baseline(
     best_rank: tuple[float, float] | None = None
     best_epoch = 0
     stale = 0
+    n_samples_seen = 0
+    n_optimizer_steps = 0
     cfg_hash = config_sha256(config)
     run_root = run_dir(artifact_root, run_id)
     ckpt_root = checkpoint_dir(artifact_root, run_id)
@@ -1997,53 +1998,8 @@ def train_flat_baseline(
             ):
                 if key in val_metrics:
                     row[f"val_{key}"] = val_metrics[key]
-            if (
-                stage_a_per_epoch_eval
-                and topology == "flat_region"
-                and task_kind == "multitask"
-                and isinstance(head, MultitaskHeads)
-                and test_phenotypes
-                and pilot_store is not None
-                and not overfit_fixture
-            ):
-                from mbs.training.flat_stage_a_eval import (  # noqa: PLC0415
-                    evaluate_flat_mbs_e2e,
-                    score_flat_mbs_matrix,
-                )
-
-                def _mat_epoch(ph: SamplePhenotype) -> FlatSampleRecord:
-                    return _materialize_record(
-                        ph,
-                        pilot_store,
-                        control_mode=control_mode,
-                        include_m_value=include_m_value,
-                        include_robust_z=include_robust_z,
-                        level1_params=level1_params,
-                    )
-
-                mbs_ep, present_ep = score_flat_mbs_matrix(
-                    phenotypes=list(test_phenotypes),
-                    materialize_fn=_mat_epoch,
-                    model=model,
-                    device=device,
-                    n_genes=n_genes,
-                    batch_size=batch_size,
-                )
-                e2e_ep = evaluate_flat_mbs_e2e(
-                    heads=head,
-                    mbs_test=mbs_ep,
-                    present_test=present_ep,
-                    phenotypes_test=list(test_phenotypes),
-                    phenotypes_train=list(train_phenotypes or []),
-                    class_names=list(class_names),
-                    device=device,
-                    age_mean=age_mean,
-                    age_std=age_std,
-                    score_polarity="hyper_aligned",
-                )
-                row["stage_a_e2e_tissue_f1"] = (
-                    (e2e_ep.get("metrics") or {}).get("tissue") or {}
-                ).get("macro_f1")
+            n_samples_seen += int(train_metrics.get("n_samples", 0))
+            n_optimizer_steps += int(train_metrics.get("n_optimizer_steps", 0))
             history.append(row)
             with jsonl_path.open("a", encoding="utf-8") as jsonl_handle:
                 jsonl_handle.write(json.dumps(row) + "\n")
@@ -2198,6 +2154,8 @@ def train_flat_baseline(
         "history": history,
         "best_epoch": best_epoch,
         "best_val_loss": best_val,
+        "n_samples_seen": int(n_samples_seen),
+        "n_optimizer_steps": int(n_optimizer_steps),
         "final": history[-1] if history else {},
         "n_genes": n_genes,
         "n_classes": n_classes,

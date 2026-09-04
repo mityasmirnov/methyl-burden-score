@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -13,7 +14,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from mbs.annotation.manifest import write_json
+from mbs.annotation.manifest import sha256_file, write_json
 from mbs.matrix.store import matrix_store_paths, read_locus_index
 from mbs.paths import DataPaths
 from mbs.training.cascade_assign import (
@@ -109,6 +110,27 @@ def train_cascade_arm(
     subprocess.run(cmd, cwd=paths.project_root, check=True)
 
 
+def _graph_tables_content_hash(graph_manifest_path: Path) -> str | None:
+    """SHA256 over genes/regions/locus_region_edges listed in the graph manifest.
+
+    ``graph_manifest.schema.json`` has no ``content_hash`` field; compose one from
+    the three primary table paths so panel manifests stay content-addressed.
+    """
+    if not graph_manifest_path.is_file():
+        return None
+    blob = json.loads(graph_manifest_path.read_text(encoding="utf-8"))
+    parts: list[str] = []
+    for key in ("genes_path", "regions_path", "locus_region_edges_path"):
+        raw = blob.get(key)
+        if not raw:
+            return None
+        path = Path(str(raw))
+        if not path.is_file():
+            return None
+        parts.append(f"{key}={sha256_file(path)}")
+    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()
+
+
 def build_gene_cols(
     paths: DataPaths,
     *,
@@ -147,8 +169,6 @@ def build_gene_cols(
     # Load cpg_context from canonical annotations (Milestone 3 artifact).
     # The locus_index.parquet from the matrix store has no cpg_context column;
     # the annotation is joined here so it flows into FlatRegionGeneIndex.
-    from mbs.annotation.manifest import sha256_file
-
     loci_ann_path = paths.data_root / "canonical" / "annotations" / "loci.parquet"
     cpg_context_by_locus: dict[str, str] | None = None
     loci_ann_sha256: str | None = None
@@ -177,9 +197,7 @@ def build_gene_cols(
     )
     graph_audit = assert_flat_region_index(region_index, gene_col_indices=gene_cols)
     graph_manifest_path = graph_root / "graph_manifest.json"
-    graph_hash = None
-    if graph_manifest_path.is_file():
-        graph_hash = json.loads(graph_manifest_path.read_text(encoding="utf-8")).get("content_hash")
+    graph_hash = _graph_tables_content_hash(graph_manifest_path)
     manifest = {
         "gene_allocation": gene_allocation,
         "max_nearest_gene_bp": max_nearest_gene_bp,
@@ -216,7 +234,20 @@ def _slim_cascade_fold(blob: dict[str, Any]) -> dict[str, Any]:
     out = dict(blob)
     ckpt = out.get("checkpoint_selection")
     if isinstance(ckpt, dict) and "val_history" in ckpt:
-        out["checkpoint_selection"] = {k: v for k, v in ckpt.items() if k != "val_history"}
+        vh = ckpt.get("val_history")
+        slim_ckpt = {k: v for k, v in ckpt.items() if k != "val_history"}
+        if isinstance(vh, list) and vh and "epochs_trained" not in slim_ckpt:
+            last = vh[-1]
+            if isinstance(last, dict) and last.get("epoch") is not None:
+                try:
+                    slim_ckpt["epochs_trained"] = int(last["epoch"])
+                except (TypeError, ValueError):
+                    slim_ckpt["epochs_trained"] = len(vh)
+            else:
+                slim_ckpt["epochs_trained"] = len(vh)
+        out["checkpoint_selection"] = slim_ckpt
+        if out.get("epochs_trained") is None and slim_ckpt.get("epochs_trained") is not None:
+            out["epochs_trained"] = slim_ckpt["epochs_trained"]
     evaluations = out.get("evaluations")
     if isinstance(evaluations, dict):
         slim_eval: dict[str, Any] = {}

@@ -16,18 +16,18 @@ True next milestone after bootstrap:
 > Hub multitask + hygiene (**7E′** — **done**) → **RBS→gene + direct topology
 > (7F — done)** → **methylation-only full eval (7G — done)** →
 > **Phase-2 gene-only cascade grid (7G′ Stage A — DeepRVAT Tier-1 screen
-> done; lock `P2-G`)** → **fold-selected panel + full model (7G′ Stage B —
-> plumbing done, GPU pending ← current)** → **final OOF cross-fitting (7)** →
-> one score matrix.
+> done; no architecture lock)** → **trait/seed-gene Stage A repeat
+> (← current)** → **fold-selected panel Stage B (later, separate)** →
+> **final OOF cross-fitting (7)** → one score matrix.
 
-**Current gate:** **7G′ Stage B GPU** (after Stage A DeepRVAT Tier-1 screen).
-Screen kept provisional lock **`P2-G` max/max 15 ep**; no mixed/vector/one-hop
-arm beat P2 or classical (`C-mvalue-enet-G` 0.388 still leads tissue). Cascade
-is **not** ≥0.03 F1 ahead. **P5 inactive.** Post-hoc `mbs_enet` / RBS probes
-remain optional diagnostics. Plans:
-[`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md),
-[`plans/milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md).
-Report interpretation:
+**Current gate:** **trait/seed-gene Stage A repeat** (Atlas×Hub coverage
+inspect → one trait → seeds → re-screen). **No P2-G lock** from the ATS
+screen. CPU typed-RBS R0–R5 is **done** (does **not** decide Stage B).
+Neural typed pool **not** promoted (shuffle control did not collapse).
+Fold-selected-panel Stage B stays later/separate. Plans:
+[`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md),
+[`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md).
+Report:
 [`reports/inspection/stage0_7g_gene_only_probe/analysis.md`](../reports/inspection/stage0_7g_gene_only_probe/analysis.md).
 
 | Layer | Status |
@@ -41,10 +41,14 @@ Report interpretation:
 | Scalar mixed-pooling arms (`mean-max`, `max-mean`) | **done** 3/3 — max-mean best new Tier-1 (0.359); no promote |
 | Vector cascade arms (`vector-mean-max`, `vector-max-max`) | **done** 3/3 — both ≤ scalar P2; no promote |
 | `N-light-gene-max` / `N-light-gene-mean` one-hop | **done** 3/3 — weak e2e (~0.12); linear ~0.30–0.35 |
-| Annotation ablation grid (A0–A7, N0–N3) | **done** fold 0 — **`m_only` best**; role/context hurt |
+| Annotation ablation grid (A0–A7, N0–N3) | **done** fold 0 — **`m_only` best** under raw concat; not proof annotations uninformative |
 | Post-hoc `mbs_enet` / `rbs_enet` on screen arms | **pending** (`rbs_linear_probe` already in screen cascade metrics) |
-| Stage A DeepRVAT screen (Tier-1) | **done** ← lock stays **`P2-G`**; Stage B unblocked on topology |
-| Stage B GPU run | **pending** (next ops gate) |
+| Stage A DeepRVAT screen (Tier-1) | **done** — no architecture lock |
+| CPU typed-RBS R0–R5 | **done** (R1–R3 age↑; shuffle did not collapse; not a Stage B gate) |
+| Neural typed aggregator | **deferred** (needs shuffle collapse; not Stage B go/no-go) |
+| Trait/seed-gene Stage A repeat | **in_progress** ← **current gate** (inspect → one trait → re-screen) |
+| Atlas association catalog | **in_progress** (feeds seed-gene gate; non-blocking for R0–R5) |
+| Stage B GPU run (fold-panel) | **blocked** (later; after seed-gene Stage A; not unblocked by R0–R5) |
 | Milestone **7** 5×6 OOF | **blocked** |
 
 **Trustworthy numbers (`explicit_only` panel, 51 375 gene-linked CpGs, test split):**
@@ -60,7 +64,7 @@ Report interpretation:
 | Screen — vector cascade | `N-cascade-vector-*` | 0.337–0.343 | **reject vs scalar P2** |
 | Screen — scalar-mean-max | `N-cascade-scalar-mean-max` | ~0.331 (3 folds) | mean CpG pool worse |
 | Screen — one-hop | `N-light-gene-*` | ~0.12 e2e / 0.30–0.35 linear | weak e2e; representation not empty |
-| Ablation best | A0 `m_only` (fold 0) | 0.276 e2e / 0.350 linear | annotations hurt or neutral |
+| Ablation best | A0 `m_only` (fold 0) | 0.276 e2e / 0.350 linear | raw concat hurts short run; not “annotations uninformative” |
 | Invalid (do not cite) | pre-fix `mbs_e2e` on P*-G | ~0.67–0.70 | train+val+test leak |
 | Invalid (do not cite) | pre-fix `N-light-gene-*` **`mbs_e2e`** | ~0.000–0.001 | orientation anchor + head/score mismatch; **linear/enet probes valid** |
 
@@ -93,9 +97,10 @@ A0 `m_only` | A1 `m_role` | A2 `m_context` | A3 `m_role_context` | A4/A7 `full` 
 N0 `obs_only` | N1 `anno_only` | N2 reg-permuted | N3 reg-zero.
 Run after L1 baseline: `run_7g_gene_only_probe.py --fold 0 --device cuda`.
 
-**Provisional lock:** `P2-G` max/max, 15 epochs (`lock_recommendation.json`);
-cascade is **not** clearly ahead of classical. Stage A screen may revise the
-topology before Stage B. **7G″** expression pilot is **deferred**. Final
+**Best landed ATS cascade (not a lock):** `P2-G` max/max, 15 epochs
+(`lock_recommendation.json` has `architecture_locked: false`);
+cascade is **not** clearly ahead of classical. Next gate:
+**trait/seed-gene Stage A repeat**. **7G″** expression pilot is **deferred**. Final
 Milestone **7** OOF remains blocked.
 
 Runners: Stage A `scripts/run_7g_gene_only_probe.py` · Stage B
@@ -884,10 +889,12 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 ## 7G′. Gene-only architecture selection + matched-panel benchmark
 
 - **Status:** scaffolding **`done`** · required Stage A GPU arms **`done`** ·
-  DeepRVAT Tier-1 screen **`done`** (lock stays `P2-G`) · Stage B code **`done`** /
-  GPU **`pending`** ← **current ops gate**
+  DeepRVAT Tier-1 screen **`done`** (**no architecture lock**) · Stage B code
+  **`done`** / GPU **later** · **current gate:** trait/seed-gene Stage A repeat
+  ([`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md))
 - **Plan:** [`plans/milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md)
 - **Screen:** [`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md)
+- **Pre–Stage-B:** [`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md)
 - **Runner (Stage A):** `scripts/run_7g_gene_only_probe.py` · background:
   `scripts/train_7g_gene_only_probe_background.sh`
 - **Runner (Stage B):** `scripts/run_7g_prime_stage_b.py` · background:
@@ -918,22 +925,42 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   - **`C-mvalue-classical-G`** on **`explicit_only`** (51 375 cols): enet-G **0.388**
     still leads tissue F1; cascade not ≥0.03 ahead.
   - **`P2-orphan-ablation`:** orphan RBS negligible (Δ F1 ≈ 0)
-  - **Provisional lock:** `P2-G` max/max, 15 epochs (`lock_recommendation.json`)
+  - **Best landed (not a lock):** `P2-G` max/max, 15 epochs
+    (`lock_recommendation.json` → `architecture_locked: false`)
 - **DeepRVAT screen (done 2026-09-04):** mixed scalar / vector / one-hop Tier-1 +
-  fold-0 annotation ablations. **No arm beat `P2-G`**; vector ≤ scalar; one-hop
-  weak on e2e; **`m_only` best among annotations**. Keep lock `P2-G` max/max 15 ep.
-  Post-hoc `mbs_enet` / RBS probes still open. See screen plan + report
-  § Interpretation.
+  fold-0 annotation ablations. **No arm beat `P2-G` on tissue**; vector ≤ scalar;
+  one-hop weak on e2e; **`m_only` best among raw-concat annotations**. **Do not
+  retain a P2-G lock.** Next gate: trait/seed-gene Stage A repeat.
+  CPU R0–R5 **done** (typed arms improve age vs R0; **shuffle control did not
+  collapse** → neural typed pool not promoted). See pre-stage-b plan + report
+  § Interpretation + `typed_rbs_pooling/`.
 
 ### Stage B — fold-selected panel + full model
 
+- **Status:** plumbing **done**; GPU **blocked** until after the
+  **trait/seed-gene Stage A repeat** (separate decision). R0–R5 does **not**
+  unblock Stage B.
 - **Done when:** Report under
   `reports/inspection/stage0_7g_prime_matched_probe/` with fold-safe
   `C-mvalue-enetS`, `N-cascade-S`, **`N-light-type`**, post-hoc
   **`N-mbs-posthoc-full-fusion`** / **`N-mbs-posthoc-mbs-direct`**, canonical
   `fold_panels/fold_*_panel.json`, and **`direct_cpg.zarr`** when direct loci exist.
-- **Evidence:** selector + runner plumbing landed; **GPU run pending** (after
-  Stage A screen). Seed-gene transfer is a **separate** design (screen plan §10).
+- **Evidence:** selector + runner plumbing landed; **do not launch** from a free
+  GPU or from R0–R5 completion.
+
+### Trait/seed-gene Stage A repeat (current gate)
+
+- **Plan:** [`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md)
+  § Seed-gene Stage A repeat; protocol in
+  [`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md)
+- **ADR:** [0011](adr/0011-seed-gene-sources.md) — `external_clean` /
+  `internal_fold` / `hybrid_fold`
+- **First steps:** Atlas×Hub coverage join (start
+  `reports/inspection/deepmat_data_v1/trait_eligibility.md`); pick **one**
+  trait that clears the bar or document stop; then seed-only Stage A re-screen.
+- **Optional parallel (not this gate):** age-primary seed-mask
+  ([`milestone-7g-prime-age-seed-mask.md`](plans/milestone-7g-prime-age-seed-mask.md))
+  remains a documented design, not the Stage B unlock from this change.
 
 ### 7G″ — expression auxiliary (deferred)
 

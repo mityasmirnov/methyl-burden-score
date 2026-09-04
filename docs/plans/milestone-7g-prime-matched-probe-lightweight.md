@@ -2,13 +2,14 @@
 
 Status: **in progress** — required Stage A GPU arms (`P2-G` / `P4-G` /
 `P5-G-max` / `C-mvalue-*-G`) **landed** with test-only `mbs_e2e` on
-`explicit_only`; provisional lock `P2-G` max/max 15 epochs with
-`cascade_clearly_ahead: false`. Stage A DeepRVAT Tier-1 screen **complete**
-(2026-09-04) — no mixed/vector/one-hop arm displaces `P2-G`; annotation
-ablation prefers **M-only**. See
-[`milestone-7g-prime-stage-a-deeprvat-screen.md`](milestone-7g-prime-stage-a-deeprvat-screen.md)
+`explicit_only`. ATS screen is evidence only — **no retained P2-G lock**
+(`architecture_locked: false`). Stage A DeepRVAT Tier-1 screen **complete**
+(2026-09-04). See
+[`milestone-7g-prime-stage-a-deeprvat-screen.md`](milestone-7g-prime-stage-a-deeprvat-screen.md),
+[`milestone-7g-prime-pre-stage-b.md`](milestone-7g-prime-pre-stage-b.md),
 and report § Interpretation.
-**P5 inactive.** **Stage B GPU** is the next ops gate; Milestone **7** blocked.
+**P5 inactive.** **Next gate: trait/seed-gene Stage A repeat.** Fold-panel
+Stage B is later; Milestone **7** blocked.
 
 Normative encoder family: [`ARCHITECTURE.md`](../ARCHITECTURE.md) § Neural encoder family,
 [`SCORING_PIPELINE.md`](../SCORING_PIPELINE.md).
@@ -67,15 +68,16 @@ extra readout of encoder quality, not a lock substitute. **P5 is inactive**
 
 1. ~~**Stage A DeepRVAT screen**~~ (**done** 2026-09-04;
    [plan](milestone-7g-prime-stage-a-deeprvat-screen.md) + report Interpretation):
-   - Scalar/vector/one-hop Tier-1 complete; **lock stays `P2-G` max/max 15 ep**.
+   - Scalar/vector/one-hop Tier-1 complete; **no retained P2-G lock**.
    - Vector ≤ scalar; one-hop weak on e2e (linear signal present); **`m_only`**
-     wins annotation ablation; no Tier-2 promotions.
-   - Optional remaining diagnostics: post-hoc `mbs_enet` + RBS probes.
-2. **Stage B GPU run** ← **current gate**
-   (`stage0_7g_prime_stage_b.yaml`); seed-gene transfer remains a **separate**
-   design. Prefer M-only features for any `N-light-type` Stage B arm.
-3. Optional **7G″** expression pilot (not a gate).
-4. Milestone **7** 5×6 OOF with locked topology + `direct_cpg.zarr` export.
+     wins raw-concat annotation ablation; no Tier-2 promotions.
+   - Optional concurrent: CPU typed-RBS R0–R5 (does not gate Stage B).
+2. **Trait/seed-gene Stage A repeat** ← **current gate**
+   ([pre-stage-b plan](milestone-7g-prime-pre-stage-b.md)).
+3. **Fold-panel Stage B GPU** later
+   (`stage0_7g_prime_stage_b.yaml`); not unblocked by R0–R5 alone.
+4. Optional **7G″** expression pilot (not a gate).
+5. Milestone **7** 5×6 OOF after Stage B + `direct_cpg.zarr` export.
 
 ## Executive decision
 
@@ -204,8 +206,8 @@ shared impairment function on trait-associated **seed genes**, apply to all
 genes, evaluate non-seed transfer / replication. Protocol, trait bar, study
 overlap controls, and robustness checks:
 [`milestone-7g-prime-stage-a-deeprvat-screen.md`](milestone-7g-prime-stage-a-deeprvat-screen.md)
-§ Stage B seed-gene transfer. **Do not implement training until Stage A screen
-selects (or rejects) gene aggregation and a real trait passes the coverage bar.**
+§ Stage A seed-gene repeat. **Do not start fold-panel Stage B until the
+seed-gene Stage A repeat lands (or documents that no trait clears the bar).**
 
 ### Comparison arms (identical panel per fold)
 

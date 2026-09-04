@@ -1,13 +1,16 @@
 # Plan: 7G′ Stage A DeepRVAT-style architecture screen
 
-Status: **screen Tier-1 + ablations complete** — keep provisional lock **`P2-G`
-max/max 15 ep**. No mixed/vector/one-hop arm beats P2 or classical. Cascade is
-**not** ≥0.03 ahead of `C-mvalue-enet-G`. **P5 inactive.** Remaining: post-hoc
-`mbs_enet` / RBS probes, then Stage B GPU. Milestone **7** blocked.
+Status: **screen Tier-1 + ablations complete** — **no architecture lock**.
+Best landed ATS cascade row is P2-G max/max 15 ep; cascade is **not** ≥0.03
+ahead of `C-mvalue-enet-G`. **P5 inactive.** Next real gate:
+**trait/seed-gene Stage A repeat** (see
+[`milestone-7g-prime-pre-stage-b.md`](milestone-7g-prime-pre-stage-b.md)).
+CPU R0–R5 typed-RBS is concurrent and does not decide Stage B. Fold-panel
+Stage B is later. Milestone **7** blocked.
 
 Last updated: **2026-09-04** (Tier-1 scalar+vector+one-hop 3/3 folds; fold-0
 annotation ablation grid 18 runs; interpretation in
-`reports/inspection/stage0_7g_gene_only_probe/analysis.md`).
+`reports/inspection/stage0_7g_gene_only_probe/analysis.md`; P2-G lock dropped).
 
 Parent: [`milestone-7g-prime-matched-probe-lightweight.md`](milestone-7g-prime-matched-probe-lightweight.md).
 Normative: [ADR 0010](../adr/0010-gene-allocation-policy.md),
@@ -37,7 +40,7 @@ is selected **or** the report concludes no neural aggregation is yet adequate.
 | Screening | Tier 1: 5 ep; Tier 2: 15 ep if Pareto/near-best | Compute-efficient |
 | Execution | **Model-by-model**; refresh `analysis.md` after each arm | Start with one-hop (`N-light-gene-*`), then cascade screen |
 | Regulatory cCRE | Slots reserved; zeros until graph release | SCREEN deferred (7C non-goal) |
-| Stage B seed-gene | Design only; separate from fold-panel Stage B | Do not delay Stage A |
+| Stage B fold-panel | Later; separate from seed-gene Stage A | Do not delay seed-gene gate |
 | Orientation contract | **v2** (2026-09-03): `evaluate_flat_mbs_e2e` passes **raw** encoder MBS to heads; `orient_mbs_array` affects only the exported association artifact. Legacy checkpoints with negated head weights use the repair path (`legacy_negated_heads=True`). | Passing `1-MBS` through unchanged head weights gives wrong logits (ADR 0008). |
 | Training LR baseline | **L1**: single `1e-3` LR for all parameters (no `head_lr_multiplier`) — DeepRVAT-like. **L5**: head LR 5× diagnostic, only if L1 representation diagnostics justify it. | Avoids premature optimisation decisions before representation quality is understood. |
 | Early stopping | `early_stopping_start_epoch: 5`; patience 3–5 | Short warmup prevents premature convergence signal on first epochs. |
@@ -78,9 +81,9 @@ flowchart LR
 - Additional P5 / 30-epoch arms.
 - SCREEN/cCRE graph rebuild.
 - Joint end-to-end orphan/direct fusion in Stage A.
-- Implementing Stage B seed-gene transfer training (design only).
+- Implementing seed-gene Stage A training before Atlas×Hub coverage names a trait.
 
-## Stage B seed-gene transfer (design only — do not implement training now)
+## Stage A seed-gene repeat (next gate — design; inspect before training)
 
 DeepRVAT discovers trait-associated **seed genes**, trains a **shared** impairment
 function through phenotype heads on those genes, cross-fits **across samples**,
@@ -88,8 +91,9 @@ then applies the shared function to seed **and** non-seed genes, and evaluates
 association discovery/replication. It is **not** ordinary train-gene / test-gene CV.
 
 Keep the existing fold-selected-panel Stage B (`stage0_7g_prime_stage_b.yaml`,
-`C-mvalue-enetS` / `N-cascade-S`) as a **separate** question. Probe selection and
-gene-transfer validation must not be conflated.
+`C-mvalue-enetS` / `N-cascade-S`) as a **later, separate** question. Probe selection and
+gene-transfer validation must not be conflated. This seed-gene protocol is the
+**next Stage A gate**, not Stage B.
 
 ### Protocol sketch
 
@@ -319,15 +323,16 @@ lands, not before, or the one-hop conclusions will be wrong a third time.
 
 ### Conclusion
 
-Tier-1 architecture screen is **done**. **Keep `P2-G` (max/max, 15 ep)** as the
-provisional Stage B gene encoder. No Tier-2 (15 ep) promotions from the screen
-grid. Full write-up:
+Tier-1 architecture screen is **done**. **No cascade architecture lock.** Best
+landed ATS row remains `P2-G` (max/max, 15 ep) as evidence only. No Tier-2
+(15 ep) promotions from the screen grid. Next gate: trait/seed-gene Stage A
+repeat. Full write-up:
 [`reports/inspection/stage0_7g_gene_only_probe/analysis.md`](../../reports/inspection/stage0_7g_gene_only_probe/analysis.md)
 § *Interpretation*.
 
 | Arm | Folds | Mean e2e F1 | Mean linear F1 | Decision |
 |-----|------:|------------:|---------------:|----------|
-| `P2-G` (baseline) | 3/3 | **0.373** | 0.373 | **keep lock** |
+| `P2-G` (baseline) | 3/3 | **0.373** | 0.373 | best landed (not a lock) |
 | `P4-G` | 3/3 | 0.370 | 0.379 | tied within noise |
 | `N-cascade-scalar-max-mean` | 3/3 | 0.359 | 0.367 | no promote (worse age) |
 | `P5-G-max` | 3/3 | 0.356 | 0.371 | inactive |
@@ -366,10 +371,10 @@ grid. Full write-up:
    light run prefixes.
 2. **RBS diagnostics** (`rbs_linear_probe` / `rbs_enet`) on
    `all_gene_rbs.zarr` for cascade folds.
-3. **Stage B GPU** (`scripts/run_7g_prime_stage_b.py`) with locked `P2-G`
-   params; one-hop Stage B features should default to **M-only**.
+3. **Trait/seed-gene Stage A repeat** (coverage inspect → one trait → seed
+   genes → re-screen). Fold-panel Stage B later.
 4. Optional encoder parity (FlatDeepSet / HierarchicalDeepSet) — not required
-   to start Stage B.
+   for the seed-gene gate.
 
 ## Open questions (this screen)
 

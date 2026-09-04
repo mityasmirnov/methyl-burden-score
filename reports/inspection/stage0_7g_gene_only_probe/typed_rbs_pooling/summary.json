@@ -1,0 +1,645 @@
+{
+  "run_id": "stage0-7g-gene-probe-vector-mean-max",
+  "note": "CPU typed-RBS diagnostic with amended promotion gate. Stage B remains blocked until age-primary seed-mask screen also lands.",
+  "rows": [
+    {
+      "age_mae": 14.65989156251491,
+      "age_mae_std": 1.5383834219584283,
+      "arm": "R0_max",
+      "n_folds": 3,
+      "sex_auroc": 0.7189296676499257,
+      "sex_auroc_std": 0.0465878950853451,
+      "tissue_f1": 0.32581282028921743,
+      "tissue_f1_std": 0.0408479632730627
+    },
+    {
+      "age_mae": 14.599453463152637,
+      "age_mae_std": 1.4589499522245104,
+      "arm": "R0_mean",
+      "n_folds": 3,
+      "sex_auroc": 0.731198652296031,
+      "sex_auroc_std": 0.06253113924488295,
+      "tissue_f1": 0.2894617041408532,
+      "tissue_f1_std": 0.041984486686186484
+    },
+    {
+      "age_mae": 11.050156882144881,
+      "age_mae_std": 0.44731561784754964,
+      "arm": "R1",
+      "n_folds": 3,
+      "sex_auroc": 0.8282136192881443,
+      "sex_auroc_std": 0.05879846096767323,
+      "tissue_f1": 0.36243350090387877,
+      "tissue_f1_std": 0.04370011384388061
+    },
+    {
+      "age_mae": 11.020002577028384,
+      "age_mae_std": 0.4186609949720365,
+      "arm": "R2",
+      "n_folds": 3,
+      "sex_auroc": 0.8292502048602123,
+      "sex_auroc_std": 0.06034387873360095,
+      "tissue_f1": 0.36611515678282336,
+      "tissue_f1_std": 0.042578719280351326
+    },
+    {
+      "age_mae": 10.798153059508705,
+      "age_mae_std": 0.39310369586220895,
+      "arm": "R3",
+      "n_folds": 3,
+      "sex_auroc": 0.8349232675418635,
+      "sex_auroc_std": 0.05088064314534437,
+      "tissue_f1": 0.3702018886075055,
+      "tissue_f1_std": 0.04201914950524893
+    },
+    {
+      "age_mae": 12.605531626917065,
+      "age_mae_std": 0.8638125955040342,
+      "arm": "R4",
+      "n_folds": 3,
+      "sex_auroc": 0.808259222948668,
+      "sex_auroc_std": 0.07404433525727906,
+      "tissue_f1": 0.3474951972955707,
+      "tissue_f1_std": 0.0468756507297375
+    },
+    {
+      "age_mae": 10.45918717534834,
+      "age_mae_std": 0.4020195010055756,
+      "arm": "R5",
+      "n_folds": 3,
+      "sex_auroc": 0.8422866709045774,
+      "sex_auroc_std": 0.05352906301416428,
+      "tissue_f1": 0.36816924854866967,
+      "tissue_f1_std": 0.04422085607280425
+    },
+    {
+      "age_mae": 11.137672337936886,
+      "age_mae_std": 0.6332969755393859,
+      "arm": "R1_shuffle",
+      "n_folds": 3,
+      "sex_auroc": 0.8300821114934832,
+      "sex_auroc_std": 0.058305956739514296,
+      "tissue_f1": 0.3646608227813924,
+      "tissue_f1_std": 0.038428468222090215
+    }
+  ],
+  "per_arm": {
+    "R0_max": [
+      {
+        "fold": 0,
+        "eval_split": "test",
+        "n_features": 2646,
+        "metrics": {
+          "age": {
+            "mae": 16.181200343390458,
+            "r2": 0.4063839719746625,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.29392820686572313,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.7549503204661563,
+            "macro_f1": 0.685998019281061,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 1,
+        "eval_split": "test",
+        "n_features": 2646,
+        "metrics": {
+          "age": {
+            "mae": 13.104983907759173,
+            "r2": 0.471246379635908,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.37185636740203815,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.7355216012330675,
+            "macro_f1": 0.6482870166152037,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "eval_split": "test",
+        "n_features": 2646,
+        "metrics": {
+          "age": {
+            "mae": 14.693490436395098,
+            "r2": 0.44544271025144266,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.31165388659989096,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.6663170812505532,
+            "macro_f1": 0.6199785363476173,
+            "n": null
+          }
+        }
+      }
+    ],
+    "R0_mean": [
+      {
+        "fold": 0,
+        "eval_split": "test",
+        "n_features": 2646,
+        "metrics": {
+          "age": {
+            "mae": 15.866870522806135,
+            "r2": 0.41593927161306843,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.27540088921466815,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.7061508148349461,
+            "macro_f1": 0.6326990745514539,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 1,
+        "eval_split": "test",
+        "n_features": 2646,
+        "metrics": {
+          "age": {
+            "mae": 13.00461254870327,
+            "r2": 0.49239123661904527,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.3366719228903523,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.80237065500342,
+            "macro_f1": 0.6924232716775516,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "eval_split": "test",
+        "n_features": 2646,
+        "metrics": {
+          "age": {
+            "mae": 14.926877317948511,
+            "r2": 0.41397665495336133,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.25631230031753904,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.6850744870497268,
+            "macro_f1": 0.6293854959254424,
+            "n": null
+          }
+        }
+      }
+    ],
+    "R1": [
+      {
+        "fold": 0,
+        "eval_split": "test",
+        "n_features": 13230,
+        "metrics": {
+          "age": {
+            "mae": 11.123616410165798,
+            "r2": 0.6772360552153147,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.31566791966688035,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.7950093988307272,
+            "macro_f1": 0.7456929172992295,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 1,
+        "eval_split": "test",
+        "n_features": 13230,
+        "metrics": {
+          "age": {
+            "mae": 10.570658515727315,
+            "r2": 0.6368268313401934,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.4022307747199204,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.8961028509025226,
+            "macro_f1": 0.8124016508311223,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "eval_split": "test",
+        "n_features": 13230,
+        "metrics": {
+          "age": {
+            "mae": 11.45619572054153,
+            "r2": 0.6403757060167056,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.3694018083248354,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.7935286081311831,
+            "macro_f1": 0.7285275335862003,
+            "n": null
+          }
+        }
+      }
+    ],
+    "R1_shuffle": [
+      {
+        "fold": 0,
+        "eval_split": "test",
+        "n_features": 13230,
+        "metrics": {
+          "age": {
+            "mae": 11.231217097130475,
+            "r2": 0.6770073666098784,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.32364407082779784,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.7987239590916295,
+            "macro_f1": 0.7414366627418172,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 1,
+        "eval_split": "test",
+        "n_features": 13230,
+        "metrics": {
+          "age": {
+            "mae": 10.462805942489046,
+            "r2": 0.6400258832642874,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.3998309419792112,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.8973565779901206,
+            "macro_f1": 0.8099432570141847,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "eval_split": "test",
+        "n_features": 13230,
+        "metrics": {
+          "age": {
+            "mae": 11.718993974191138,
+            "r2": 0.6288414203951337,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.370507455537168,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.7941657973986995,
+            "macro_f1": 0.7259329348178271,
+            "n": null
+          }
+        }
+      }
+    ],
+    "R2": [
+      {
+        "fold": 0,
+        "eval_split": "test",
+        "n_features": 13230,
+        "metrics": {
+          "age": {
+            "mae": 11.117994280886139,
+            "r2": 0.6773645469069591,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.3213126395422852,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.7976841022256301,
+            "macro_f1": 0.7443644770552211,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 1,
+        "eval_split": "test",
+        "n_features": 13230,
+        "metrics": {
+          "age": {
+            "mae": 10.561036911342118,
+            "r2": 0.6347683382996525,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.40605204120425575,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.8988298134461874,
+            "macro_f1": 0.8154916342930871,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "eval_split": "test",
+        "n_features": 13230,
+        "metrics": {
+          "age": {
+            "mae": 11.38097653885689,
+            "r2": 0.642276413697891,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.37098078960192893,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.7912366989088192,
+            "macro_f1": 0.7246493554945744,
+            "n": null
+          }
+        }
+      }
+    ],
+    "R3": [
+      {
+        "fold": 0,
+        "eval_split": "test",
+        "n_features": 26460,
+        "metrics": {
+          "age": {
+            "mae": 10.609715928364283,
+            "r2": 0.7050719360533383,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.32499662357920794,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.8051154875259237,
+            "macro_f1": 0.7537619062694023,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 1,
+        "eval_split": "test",
+        "n_features": 26460,
+        "metrics": {
+          "age": {
+            "mae": 10.534741786553601,
+            "r2": 0.6348920479775925,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.40806793933106905,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.8936730471493716,
+            "macro_f1": 0.8148275317288958,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "eval_split": "test",
+        "n_features": 26460,
+        "metrics": {
+          "age": {
+            "mae": 11.25000146360823,
+            "r2": 0.648366666715346,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.3775411029122396,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.8059812679502955,
+            "macro_f1": 0.740518233878082,
+            "n": null
+          }
+        }
+      }
+    ],
+    "R4": [
+      {
+        "fold": 0,
+        "eval_split": "test",
+        "n_features": 5292,
+        "metrics": {
+          "age": {
+            "mae": 13.318069981007639,
+            "r2": 0.5580762711401976,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.3079361658267472,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.7715029393589383,
+            "macro_f1": 0.6971696223758931,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 1,
+        "eval_split": "test",
+        "n_features": 5292,
+        "metrics": {
+          "age": {
+            "mae": 11.644788281181471,
+            "r2": 0.5740669815634258,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.39926907039613085,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.8934901529890193,
+            "macro_f1": 0.805711180936076,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "eval_split": "test",
+        "n_features": 5292,
+        "metrics": {
+          "age": {
+            "mae": 12.853736618562086,
+            "r2": 0.5528326099620646,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.3352803556638341,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.7597845764980462,
+            "macro_f1": 0.6998480634890283,
+            "n": null
+          }
+        }
+      }
+    ],
+    "R5": [
+      {
+        "fold": 0,
+        "eval_split": "test",
+        "n_features": 13212,
+        "metrics": {
+          "age": {
+            "mae": 10.463368766380011,
+            "r2": 0.7148461422346883,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.32189480474984167,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.8017655566016675,
+            "macro_f1": 0.7516075789647695,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 1,
+        "eval_split": "test",
+        "n_features": 13212,
+        "metrics": {
+          "age": {
+            "mae": 10.05509318965722,
+            "r2": 0.6643589870264162,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.4100011488390991,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.9029686340052601,
+            "macro_f1": 0.821773412401001,
+            "n": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "eval_split": "test",
+        "n_features": 13212,
+        "metrics": {
+          "age": {
+            "mae": 10.859099570007787,
+            "r2": 0.6776367070275734,
+            "n": null
+          },
+          "tissue": {
+            "macro_f1": 0.3726117920570683,
+            "accuracy": null,
+            "n": null
+          },
+          "sex": {
+            "auroc": 0.8221258221068051,
+            "macro_f1": 0.7487538501990835,
+            "n": null
+          }
+        }
+      }
+    ]
+  },
+  "promotion_gate": {
+    "promote": false,
+    "age_mae_gain": 3.8617385030062046,
+    "age_r2_gain": 0.2217525296280879,
+    "tissue_f1_loss": -0.044389068318288094,
+    "sex_auroc_loss": -0.1159935998919378,
+    "age_improves": true,
+    "tissue_ok": true,
+    "sex_ok": true,
+    "shuffle_worse_than_typed": false,
+    "shuffle_age_mae_delta": 0.3395192784281811
+  },
+  "best_typed_arm": "R3"
+}
