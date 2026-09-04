@@ -1,13 +1,17 @@
 # GEO metadata backfill for EWAS_db-only studies
 
 **Status:** pilot implemented and audited (2026-09-03)  
+**Next:** [`geo-metadata-backfill-pre-scale.md`](geo-metadata-backfill-pre-scale.md)
+(age units, tissue ontology, GSM conflicts, clean audit, per-GSE status —
+**before** any crawl larger than the pilot; after 7G′ 16-epoch promotion arms)  
 **Parent:** [`data-infrastructure-improvements.md`](data-infrastructure-improvements.md) §2  
 **Related:** [`EWAS_METADATA.md`](../EWAS_METADATA.md), [`DATA_CONTRACT.md`](../DATA_CONTRACT.md),
 study-level Atlas enrichment (`seed_atlas_gse_es_map.py` — **done**, automatic on
 `make catalog-refresh-release`).
 
-This is the operator + audit brief. Atlas GSE↔ES enrichment is a **different**
-lane (study-level only). Do not copy Atlas cohort tissue/disease onto GSM.
+This is the operator + audit brief for the **pilot**. Atlas GSE↔ES enrichment is a
+**different** lane (study-level only). Do not copy Atlas cohort tissue/disease onto
+GSM. Do **not** scale beyond 15 GSE until the pre-scale plan’s fixes 1–4 are done.
 
 ## Scope and acceptance
 

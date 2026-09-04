@@ -9,10 +9,11 @@ import re
 import time
 import urllib.request
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Protocol, cast
 
 import duckdb
 import pandas as pd
+import yaml
 
 from mbs.annotation.manifest import sha256_file, utc_now_iso, write_json
 
@@ -22,6 +23,8 @@ GEO_MANIFEST_NAME = "geo_sample_metadata.manifest.json"
 NCBI_AGENT = "methyl-burden-score/1.0 (research pipeline)"
 NCBI_DELAY_S = 0.34
 CATALOG_PLATFORMS = frozenset({"HM450", "EPIC", "EPICv2"})
+DEFAULT_TISSUE_ONTOLOGY_REL = Path("canonical/phenotypes/tissue_ontology_hub_nine_pack_v1.yaml")
+DEFAULT_TISSUE_ALIASES_REL = Path("configs/data/geo_tissue_aliases.yaml")
 
 # NCBI GEO methylation BeadChip accessions → catalog platform_id.
 # Do not map expression / unknown GPLs (they stay in sample.metadata_json.geo.platform_id).
@@ -42,6 +45,47 @@ _BATCH_KEY_RE = re.compile(r"^batch|batch id|batch_id|lot|plate", re.I)
 _TREATMENT_KEY_RE = re.compile(r"^treatment|therapy|drug|medication", re.I)
 _SOFT_TABLE_BEGIN = re.compile(r"^!(?:Sample_|Series_)?(?:platform|sample)_table_begin", re.I)
 _SOFT_TABLE_END = re.compile(r"^!(?:Sample_|Series_)?(?:platform|sample)_table_end", re.I)
+_AGE_UNIT_RE = re.compile(
+    r"(\d+(?:\.\d+)?)\s*(years?|yrs?|y|months?|mos?|mo|weeks?|wks?|w|days?|d)\b",
+    re.I,
+)
+_AGE_BARE_RE = re.compile(r"^(\d+(?:\.\d+)?)\s*$")
+_UNIT_TO_YEARS: dict[str, float] = {
+    "y": 1.0,
+    "yr": 1.0,
+    "yrs": 1.0,
+    "year": 1.0,
+    "years": 1.0,
+    "mo": 1.0 / 12.0,
+    "mos": 1.0 / 12.0,
+    "month": 1.0 / 12.0,
+    "months": 1.0 / 12.0,
+    "w": 1.0 / 52.0,
+    "wk": 1.0 / 52.0,
+    "wks": 1.0 / 52.0,
+    "week": 1.0 / 52.0,
+    "weeks": 1.0 / 52.0,
+    "d": 1.0 / 365.25,
+    "day": 1.0 / 365.25,
+    "days": 1.0 / 365.25,
+}
+_CONFLICT_FIELDS = (
+    "age",
+    "sex",
+    "tissue",
+    "tissue_ontology_id",
+    "disease",
+    "cancer",
+    "platform_id",
+    "catalog_platform_id",
+)
+
+
+class TissueOntologyLike(Protocol):
+    """Minimal tissue ontology surface (avoids importing training → release)."""
+
+    labels: tuple[str, ...]
+    label_to_id: dict[str, int]
 
 
 def family_soft_url(gse_id: str) -> str:
@@ -161,17 +205,58 @@ def _parse_characteristics(sample: dict[str, list[str]]) -> dict[str, str]:
     return chars
 
 
-def _parse_age(raw: str) -> tuple[float | None, str, bool]:
+def _parse_age(raw: str) -> tuple[float | None, str, bool, str, str | None]:
+    """Parse age to years; return (years, status, observed, age_raw, unit_tag).
+
+    Unit tag is ``years`` / ``months`` / ``weeks`` / ``days`` / ``mixed`` / None.
+    Bare numbers are treated as years. Original string is always returned as age_raw.
+    """
     text = raw.strip()
     if not text:
-        return None, "unknown", False
-    match = re.search(r"(\d+(?:\.\d+)?)", text)
-    if not match:
-        return None, "unknown", False
-    age = float(match.group(1))
-    if age < 0 or age > 120 or int(age) in _AGE_SENTINELS:
-        return None, "unknown", False
-    return age, "observed", True
+        return None, "unknown", False, text, None
+    unit_hits = _AGE_UNIT_RE.findall(text)
+    years = 0.0
+    units_seen: list[str] = []
+    if unit_hits:
+        for value_s, unit_s in unit_hits:
+            factor = _UNIT_TO_YEARS.get(unit_s.lower())
+            if factor is None:
+                return None, "unknown", False, text, None
+            years += float(value_s) * factor
+            units_seen.append(unit_s.lower())
+        unit_tag = units_seen[0] if len(set(units_seen)) == 1 else "mixed"
+        # Canonical unit family for reporting.
+        if unit_tag != "mixed":
+            unit_tag = next(
+                (
+                    name
+                    for name, keys in (
+                        ("years", {"y", "yr", "yrs", "year", "years"}),
+                        ("months", {"mo", "mos", "month", "months"}),
+                        ("weeks", {"w", "wk", "wks", "week", "weeks"}),
+                        ("days", {"d", "day", "days"}),
+                    )
+                    if unit_tag in keys
+                ),
+                unit_tag,
+            )
+    else:
+        bare = _AGE_BARE_RE.match(text)
+        if bare is None:
+            # Legacy-ish: first number only when no unit token — reject unit-like junk.
+            if re.search(r"[A-Za-z]", text):
+                return None, "unknown", False, text, None
+            match = re.search(r"(\d+(?:\.\d+)?)", text)
+            if not match:
+                return None, "unknown", False, text, None
+            years = float(match.group(1))
+            unit_tag = "years"
+        else:
+            years = float(bare.group(1))
+            unit_tag = "years"
+    if years < 0 or years > 120 or int(years) in _AGE_SENTINELS:
+        return None, "unknown", False, text, unit_tag
+    return years, "observed", True, text, unit_tag
 
 
 def _parse_sex(raw: str) -> tuple[str | None, str, bool]:
@@ -185,6 +270,87 @@ def _parse_sex(raw: str) -> tuple[str | None, str, bool]:
         return "Female", "observed", True
     return None, "unknown", False
 
+
+def load_geo_tissue_aliases(path: Path | None = None) -> dict[str, str]:
+    """Load raw→canonical tissue aliases (keys lowercased)."""
+    alias_path = path
+    if alias_path is None:
+        root = Path(os.environ.get("MBS_ROOT", ".")).resolve()
+        alias_path = root / DEFAULT_TISSUE_ALIASES_REL
+    if not alias_path.is_file():
+        return {}
+    data = yaml.safe_load(alias_path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise TypeError(f"geo tissue aliases must be a mapping: {alias_path}")
+    raw_aliases = data.get("aliases") or {}
+    if not isinstance(raw_aliases, dict):
+        raise TypeError(f"geo tissue aliases.aliases must be a mapping: {alias_path}")
+    return {
+        str(k).strip().lower(): str(v).strip()
+        for k, v in raw_aliases.items()
+        if str(k).strip()
+    }
+
+
+def resolve_tissue_ontology_path(data_root: Path | None = None) -> Path | None:
+    """Prefer Hub nine-pack ontology, then ATS, then pilot yaml."""
+    roots: list[Path] = []
+    if data_root is not None:
+        roots.append(data_root)
+    env_root = os.environ.get("MBS_DATA_ROOT")
+    if env_root:
+        roots.append(Path(env_root))
+    candidates = (
+        "tissue_ontology_hub_nine_pack_v1.yaml",
+        "tissue_ontology_age_tissue_sex_full_v1.yaml",
+        "tissue_ontology.yaml",
+    )
+    for root in roots:
+        for name in candidates:
+            path = root / "canonical" / "phenotypes" / name
+            if path.is_file():
+                return path
+    return None
+
+
+def map_geo_tissue(
+    raw: str,
+    *,
+    ontology: TissueOntologyLike | None,
+    aliases: dict[str, str] | None = None,
+) -> tuple[str | None, str | None, str]:
+    """Map a GEO tissue string.
+
+    Returns ``(canonical_label, ontology_id, status)`` where status is
+    ``mapped`` / ``unmapped`` / ``ambiguous`` / ``empty``.
+    """
+    text = raw.strip()
+    if not text:
+        return None, None, "empty"
+    if ontology is None:
+        return text, None, "unmapped"
+    alias_map = aliases if aliases is not None else {}
+    key = text.lower()
+    candidates: list[str] = []
+    if key in alias_map:
+        candidates.append(alias_map[key])
+    label_by_fold = {lab.casefold(): lab for lab in ontology.labels}
+    if key.casefold() in label_by_fold:
+        candidates.append(label_by_fold[key.casefold()])
+    # Deduplicate while preserving order.
+    uniq = list(dict.fromkeys(candidates))
+    if len(uniq) > 1:
+        return None, None, "ambiguous"
+    if not uniq:
+        return None, None, "unmapped"
+    label = uniq[0]
+    if label not in ontology.label_to_id:
+        # Alias pointed at a label absent from this ontology.
+        fold_hit = label_by_fold.get(label.casefold())
+        if fold_hit is None:
+            return None, None, "unmapped"
+        label = fold_hit
+    return label, str(ontology.label_to_id[label]), "mapped"
 
 def _disease_case_control(raw: str, *, key: str) -> tuple[str | None, str | None, bool]:
     """Return (categorical_value, label_status, write_row) for disease/cancer."""
@@ -209,8 +375,8 @@ def characteristics_to_phenotypes(chars: dict[str, str]) -> list[dict[str, Any]]
         if _BATCH_KEY_RE.search(key) or _TREATMENT_KEY_RE.search(key):
             continue
         norm = key.strip().lower()
-        if norm in {"age", "age (years)", "age years"}:
-            numeric, status, observed = _parse_age(value)
+        if norm in {"age", "age (years)", "age years", "age (months)", "age months"}:
+            numeric, status, observed, age_raw, age_unit = _parse_age(value)
             if observed and numeric is not None:
                 rows.append(
                     {
@@ -219,6 +385,8 @@ def characteristics_to_phenotypes(chars: dict[str, str]) -> list[dict[str, Any]]
                         "categorical_value": None,
                         "label_status": status,
                         "is_observed": True,
+                        "age_raw": age_raw,
+                        "age_unit": age_unit,
                     }
                 )
             continue
@@ -243,6 +411,7 @@ def characteristics_to_phenotypes(chars: dict[str, str]) -> list[dict[str, Any]]
                         "categorical_value": value.strip(),
                         "label_status": "observed",
                         "is_observed": True,
+                        "tissue_raw": value.strip(),
                     }
                 )
             continue
@@ -315,10 +484,13 @@ def parse_family_soft(text: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
             pid = pheno["phenotype_id"]
             if pid == "age" and pheno.get("is_observed"):
                 row["age"] = pheno["numeric_value"]
+                row["age_raw"] = pheno.get("age_raw")
+                row["age_unit"] = pheno.get("age_unit")
             elif pid == "sex":
                 row["sex"] = pheno.get("categorical_value")
                 row["sex_label_status"] = pheno["label_status"]
             elif pid == "tissue" and pheno.get("is_observed"):
+                row["tissue_raw"] = pheno.get("tissue_raw") or pheno.get("categorical_value")
                 row["tissue"] = pheno.get("categorical_value")
             elif pid in {"disease", "cancer"}:
                 row[pid] = pheno.get("categorical_value")
@@ -356,25 +528,54 @@ def read_cached_soft(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-def build_geo_frame_from_soft(text: str, *, fetched_at: str, soft_sha256: str) -> pd.DataFrame:
+def build_geo_frame_from_soft(
+    text: str,
+    *,
+    fetched_at: str,
+    soft_sha256: str,
+    ontology: TissueOntologyLike | None = None,
+    aliases: dict[str, str] | None = None,
+) -> pd.DataFrame:
     """Build one-row-per-GSM frame ready for Parquet export."""
     _, samples = parse_family_soft(text)
+    alias_map = aliases if aliases is not None else load_geo_tissue_aliases()
+    tissue_stats = {"mapped": 0, "unmapped": 0, "ambiguous": 0, "empty": 0}
     rows: list[dict[str, Any]] = []
     for sample in samples:
         chars = sample.get("characteristics_raw") or {}
+        tissue_raw = sample.get("tissue_raw") or sample.get("tissue")
+        tissue_label = None
+        tissue_ont = None
+        tissue_status = "empty"
+        if not _is_blank(tissue_raw):
+            tissue_label, tissue_ont, tissue_status = map_geo_tissue(
+                str(tissue_raw),
+                ontology=ontology,
+                aliases=alias_map,
+            )
+            tissue_stats[tissue_status] = tissue_stats.get(tissue_status, 0) + 1
+            if tissue_status != "mapped":
+                tissue_label = None
+                tissue_ont = None
         rows.append(
             {
                 "sample_id": sample["sample_id"],
                 "study_id": sample["study_id"],
+                "study_ids": json.dumps([sample["study_id"]] if sample.get("study_id") else []),
                 "source_name": sample.get("source_name"),
                 "platform_id": sample.get("platform_id"),
                 "catalog_platform_id": sample.get("catalog_platform_id"),
                 "pubmed_ids": json.dumps(sample.get("pubmed_ids") or []),
                 "characteristics_raw": json.dumps(chars, sort_keys=True),
                 "age": sample.get("age"),
+                "age_raw": sample.get("age_raw"),
+                "age_unit": sample.get("age_unit"),
                 "sex": sample.get("sex"),
                 "sex_label_status": sample.get("sex_label_status"),
-                "tissue": sample.get("tissue"),
+                "tissue_raw": tissue_raw,
+                "tissue": tissue_label if tissue_status == "mapped" else tissue_raw,
+                "tissue_ontology_id": tissue_ont,
+                "tissue_map_status": tissue_status,
                 "disease": sample.get("disease"),
                 "disease_label_status": sample.get("disease_label_status"),
                 "cancer": sample.get("cancer"),
@@ -383,7 +584,122 @@ def build_geo_frame_from_soft(text: str, *, fetched_at: str, soft_sha256: str) -
                 "soft_sha256": soft_sha256,
             }
         )
-    return pd.DataFrame(rows)
+    frame = pd.DataFrame(rows)
+    frame.attrs["tissue_map_stats"] = tissue_stats
+    return frame
+
+
+def _conflict_norm(field: str, value: object) -> str:
+    if field == "age":
+        return f"{float(value):.6g}"
+    text = str(value).strip()
+    if field in {"sex", "tissue", "disease", "cancer"}:
+        return text.casefold()
+    return text
+
+
+def consolidate_geo_sample_rows(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """One row per GSM; persist multi-GSE membership; null conflicting phenotypes.
+
+    Does **not** silently ``keep=\"first\"`` when metadata disagrees.
+    """
+    stats: dict[str, Any] = {
+        "n_input_rows": len(frame),
+        "n_unique_gsm": 0,
+        "n_multi_study_gsm": 0,
+        "n_conflict_samples": 0,
+        "n_conflict_fields": 0,
+        "conflicts": [],
+    }
+    if frame.empty:
+        return frame.copy(), stats
+
+    out_rows: list[dict[str, Any]] = []
+    conflict_examples: list[dict[str, Any]] = []
+    for sample_id, grp in frame.groupby(frame["sample_id"].astype(str), sort=False):
+        study_ids: list[str] = []
+        for raw in grp["study_id"].tolist():
+            if _is_blank(raw):
+                continue
+            sid = str(raw).strip().upper()
+            if sid and sid not in study_ids:
+                study_ids.append(sid)
+        # Also fold any pre-existing study_ids JSON columns.
+        if "study_ids" in grp.columns:
+            for raw in grp["study_ids"].tolist():
+                if _is_blank(raw):
+                    continue
+                try:
+                    parsed = json.loads(str(raw)) if isinstance(raw, str) else raw
+                except json.JSONDecodeError:
+                    parsed = []
+                if isinstance(parsed, list):
+                    for item in parsed:
+                        text = str(item).strip().upper()
+                        if text and text not in study_ids:
+                            study_ids.append(text)
+        study_ids = sorted(study_ids)
+        if len(study_ids) > 1:
+            stats["n_multi_study_gsm"] += 1
+        base = grp.iloc[0].to_dict()
+        base["sample_id"] = str(sample_id).strip().upper()
+        base["study_id"] = study_ids[0] if study_ids else base.get("study_id")
+        base["study_ids"] = json.dumps(study_ids)
+        field_conflicts: list[dict[str, Any]] = []
+        for field in _CONFLICT_FIELDS:
+            if field not in grp.columns:
+                continue
+            non_blank = [
+                v for v in grp[field].tolist() if not _is_blank(v)
+            ]
+            if not non_blank:
+                base[field] = None
+                continue
+            norms = [_conflict_norm(field, v) for v in non_blank]
+            uniq_norms = list(dict.fromkeys(norms))
+            if len(uniq_norms) > 1:
+                field_conflicts.append(
+                    {
+                        "field": field,
+                        "values": [str(v) for v in dict.fromkeys(str(x) for x in non_blank)],
+                    }
+                )
+                base[field] = None
+                if field == "sex":
+                    base["sex_label_status"] = None
+                if field == "disease":
+                    base["disease_label_status"] = None
+                if field == "cancer":
+                    base["cancer_label_status"] = None
+                if field == "tissue":
+                    base["tissue_map_status"] = "ambiguous"
+                    base["tissue_ontology_id"] = None
+            else:
+                # Prefer first non-blank original value.
+                base[field] = non_blank[0]
+        # Prefer first non-blank age_raw / tissue_raw for provenance.
+        for prov in ("age_raw", "age_unit", "tissue_raw", "sex_label_status"):
+            if prov not in grp.columns:
+                continue
+            vals = [v for v in grp[prov].tolist() if not _is_blank(v)]
+            if vals:
+                base[prov] = vals[0]
+        if field_conflicts:
+            stats["n_conflict_samples"] += 1
+            stats["n_conflict_fields"] += len(field_conflicts)
+            if len(conflict_examples) < 50:
+                conflict_examples.append(
+                    {
+                        "sample_id": base["sample_id"],
+                        "study_ids": study_ids,
+                        "fields": field_conflicts,
+                    }
+                )
+        out_rows.append(base)
+
+    stats["n_unique_gsm"] = len(out_rows)
+    stats["conflicts"] = conflict_examples
+    return pd.DataFrame(out_rows), stats
 
 
 def _hub_sample_ids(samples: pd.DataFrame) -> set[str]:
@@ -447,13 +763,36 @@ def _geo_rows_to_phenotypes(row: dict[str, Any]) -> list[dict[str, Any]]:
                 "ontology_id": None,
             }
         )
-    if not _is_blank(row.get("tissue")):
+    tissue_status = str(row.get("tissue_map_status") or "")
+    tissue_value = row.get("tissue")
+    if tissue_status == "mapped" and not _is_blank(tissue_value):
         pheno_rows.append(
             {
                 "sample_id": row["sample_id"],
                 "phenotype_id": "tissue",
                 "numeric_value": None,
-                "categorical_value": str(row["tissue"]),
+                "categorical_value": str(tissue_value),
+                "label_status": "observed",
+                "is_observed": True,
+                "source_family": GEO_SOURCE_FAMILY,
+                "source_record_id": f"geo:{row['sample_id']}:tissue",
+                "ontology_id": (
+                    str(row["tissue_ontology_id"])
+                    if not _is_blank(row.get("tissue_ontology_id"))
+                    else None
+                ),
+            }
+        )
+    elif tissue_status in {"", "unmapped"} and not _is_blank(
+        row.get("tissue_raw") or tissue_value
+    ):
+        # Persist raw for audit/census; ontology_id stays null.
+        pheno_rows.append(
+            {
+                "sample_id": row["sample_id"],
+                "phenotype_id": "tissue",
+                "numeric_value": None,
+                "categorical_value": str(row.get("tissue_raw") or tissue_value),
                 "label_status": "observed",
                 "is_observed": True,
                 "source_family": GEO_SOURCE_FAMILY,
@@ -487,11 +826,18 @@ def merge_geo_sample_metadata(
     studies: pd.DataFrame,
     geo_frame: pd.DataFrame,
     skip: bool = False,
+    ontology: TissueOntologyLike | None = None,
+    aliases: dict[str, str] | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     """Merge GEO backfill rows for EWAS_db-only GSM; Hub GSM omitted entirely."""
     stats: dict[str, Any] = {
         "enabled": not skip,
         "n_geo_rows_input": len(geo_frame),
+        "n_geo_phenotype_rows_before_merge": (
+            int((phenotypes["source_family"] == GEO_SOURCE_FAMILY).sum())
+            if not phenotypes.empty and "source_family" in phenotypes.columns
+            else 0
+        ),
         "n_samples_touched": 0,
         "n_samples_skipped_hub": 0,
         "n_samples_skipped_missing": 0,
@@ -499,6 +845,9 @@ def merge_geo_sample_metadata(
         "phenotypes_by_id": {},
         "studies_touched": [],
         "per_study": {},
+        "tissue_map": {"mapped": 0, "unmapped": 0, "ambiguous": 0, "empty": 0},
+        "unmapped_tissue_examples": [],
+        "n_multi_study_gsm": 0,
     }
     if skip or geo_frame.empty:
         return samples, phenotypes, studies, stats
@@ -514,6 +863,38 @@ def merge_geo_sample_metadata(
     else:
         geo_frame["catalog_platform_id"] = None
 
+    alias_map = aliases if aliases is not None else load_geo_tissue_aliases()
+    if ontology is not None and (
+        "tissue_map_status" not in geo_frame.columns
+        or geo_frame["tissue_map_status"].isna().all()
+    ):
+        mapped_tissue: list[object] = []
+        mapped_ont: list[object] = []
+        mapped_status: list[str] = []
+        mapped_raw: list[object] = []
+        for rec in geo_frame.to_dict(orient="records"):
+            raw = rec.get("tissue_raw") or rec.get("tissue")
+            mapped_raw.append(raw)
+            if _is_blank(raw):
+                mapped_tissue.append(None)
+                mapped_ont.append(None)
+                mapped_status.append("empty")
+                continue
+            label, ont_id, status = map_geo_tissue(
+                str(raw), ontology=ontology, aliases=alias_map
+            )
+            mapped_status.append(status)
+            if status == "mapped":
+                mapped_tissue.append(label)
+                mapped_ont.append(ont_id)
+            else:
+                mapped_tissue.append(None if status == "ambiguous" else raw)
+                mapped_ont.append(None)
+        geo_frame["tissue_raw"] = mapped_raw
+        geo_frame["tissue"] = mapped_tissue
+        geo_frame["tissue_ontology_id"] = mapped_ont
+        geo_frame["tissue_map_status"] = mapped_status
+
     new_pheno_rows: list[dict[str, Any]] = []
     sample_index = (
         samples.set_index("sample_id", drop=False) if not samples.empty else pd.DataFrame()
@@ -523,6 +904,7 @@ def merge_geo_sample_metadata(
 
     touched: set[str] = set()
     per_study: dict[str, dict[str, int]] = {}
+    unmapped_examples: list[str] = []
 
     for rec in geo_frame.to_dict(orient="records"):
         sid = str(rec["sample_id"])
@@ -532,13 +914,35 @@ def merge_geo_sample_metadata(
         if sid not in catalog_ids:
             stats["n_samples_skipped_missing"] += 1
             continue
+        t_status = str(rec.get("tissue_map_status") or "empty")
+        if t_status in stats["tissue_map"]:
+            stats["tissue_map"][t_status] += 1
+        if t_status == "unmapped" and not _is_blank(rec.get("tissue_raw") or rec.get("tissue")):
+            example = str(rec.get("tissue_raw") or rec.get("tissue"))
+            if example not in unmapped_examples and len(unmapped_examples) < 40:
+                unmapped_examples.append(example)
+        study_ids_raw = rec.get("study_ids")
+        study_id_list: list[str] = []
+        if not _is_blank(study_ids_raw):
+            try:
+                parsed_ids = (
+                    json.loads(str(study_ids_raw))
+                    if isinstance(study_ids_raw, str)
+                    else study_ids_raw
+                )
+            except json.JSONDecodeError:
+                parsed_ids = []
+            if isinstance(parsed_ids, list):
+                study_id_list = [str(x).upper() for x in parsed_ids if not _is_blank(x)]
+        if len(study_id_list) > 1:
+            stats["n_multi_study_gsm"] += 1
         pheno_rows = _geo_rows_to_phenotypes(rec)
         if not pheno_rows and _is_blank(rec.get("source_name")) and _is_blank(
             rec.get("characteristics_raw")
         ):
             continue
         touched.add(sid)
-        study_id = str(rec.get("study_id") or "")
+        study_id = str(rec.get("study_id") or (study_id_list[0] if study_id_list else ""))
         per_study.setdefault(study_id, {"samples": 0, "phenotypes": 0})
         per_study[study_id]["samples"] += 1
         per_study[study_id]["phenotypes"] += len(pheno_rows)
@@ -556,8 +960,23 @@ def merge_geo_sample_metadata(
                 samples.loc[samples["sample_id"] == sid, "age"] = rec["age"]
             if _is_blank(row.get("sex")) and not _is_blank(rec.get("sex")):
                 samples.loc[samples["sample_id"] == sid, "sex"] = rec["sex"]
-            if _is_blank(row.get("tissue_raw")) and not _is_blank(rec.get("tissue")):
-                samples.loc[samples["sample_id"] == sid, "tissue_raw"] = rec["tissue"]
+            tissue_for_sample = (
+                rec.get("tissue")
+                if str(rec.get("tissue_map_status") or "") == "mapped"
+                else rec.get("tissue_raw") or rec.get("tissue")
+            )
+            if _is_blank(row.get("tissue_raw")) and not _is_blank(
+                rec.get("tissue_raw") or tissue_for_sample
+            ):
+                samples.loc[samples["sample_id"] == sid, "tissue_raw"] = (
+                    rec.get("tissue_raw") or tissue_for_sample
+                )
+            if _is_blank(row.get("tissue_ontology_id")) and not _is_blank(
+                rec.get("tissue_ontology_id")
+            ):
+                samples.loc[samples["sample_id"] == sid, "tissue_ontology_id"] = rec[
+                    "tissue_ontology_id"
+                ]
             for pid in ("disease", "cancer"):
                 status_col = f"{pid}_label_status"
                 if _is_blank(row.get("case_control")) and not _is_blank(rec.get(pid)):
@@ -576,6 +995,16 @@ def merge_geo_sample_metadata(
                     geo_meta["characteristics_raw"] = json.loads(str(rec["characteristics_raw"]))
                 except json.JSONDecodeError:
                     geo_meta["characteristics_raw"] = rec["characteristics_raw"]
+            if not _is_blank(rec.get("age_raw")):
+                geo_meta["age_raw"] = rec["age_raw"]
+            if not _is_blank(rec.get("age_unit")):
+                geo_meta["age_unit"] = rec["age_unit"]
+            if not _is_blank(rec.get("tissue_raw")):
+                geo_meta["tissue_raw"] = rec["tissue_raw"]
+            if not _is_blank(rec.get("tissue_map_status")):
+                geo_meta["tissue_map_status"] = rec["tissue_map_status"]
+            if study_id_list:
+                geo_meta["study_ids"] = study_id_list
             geo_meta["fetched_at"] = rec.get("fetched_at")
             geo_meta["soft_sha256"] = rec.get("soft_sha256")
             meta["geo"] = geo_meta
@@ -622,6 +1051,7 @@ def merge_geo_sample_metadata(
     stats["n_phenotype_rows_added"] = len(new_pheno_rows)
     stats["per_study"] = per_study
     stats["studies_touched"] = sorted(per_study.keys())
+    stats["unmapped_tissue_examples"] = unmapped_examples
 
     if new_pheno_rows:
         new_phenotypes = pd.DataFrame(new_pheno_rows)
@@ -785,7 +1215,9 @@ def write_geo_backfill_pilot_report(
     unique_before = (census_before or {}).get("unique_gsm")
     unique_after = (census_after or {}).get("unique_gsm")
     geo_prev_before = (census_before or {}).get("geo_prevalence") or []
-    n_geo_obs_before = int(sum(int(r.get("n_observed") or 0) for r in geo_prev_before))
+    n_geo_obs_before_disk = int(sum(int(r.get("n_observed") or 0) for r in geo_prev_before))
+    n_geo_before_merge = int(stats.get("n_geo_phenotype_rows_before_merge") or 0)
+    dirty_disk_baseline = n_geo_obs_before_disk > 0 and n_geo_before_merge == 0
 
     summary: dict[str, Any] = {
         "generated_at": utc_now_iso(),
@@ -809,12 +1241,15 @@ def write_geo_backfill_pilot_report(
         "census_delta": {
             "unique_gsm_before": unique_before,
             "unique_gsm_after": unique_after,
-            "geo_observed_rows_before": n_geo_obs_before,
+            "geo_phenotype_rows_before_merge": n_geo_before_merge,
+            "geo_observed_rows_before_disk_census": n_geo_obs_before_disk,
             "geo_observed_rows_after": int(prevalence["n_observed"].sum())
             if not prevalence.empty
             else 0,
             "n_geo_observed_samples": n_geo_observed,
             "phenotypes_by_id": stats.get("phenotypes_by_id", {}),
+            "dirty_disk_census_baseline": dirty_disk_baseline,
+            "authoritative_delta_rows": int(stats.get("n_phenotype_rows_added") or 0),
         },
         "notes": [
             "GEO rows are omitted for Hub GSM (Hub wins).",
@@ -822,6 +1257,10 @@ def write_geo_backfill_pilot_report(
             "Disease/cancer rows need explicit case/control tokens.",
             "Diagnosis-only text stays in metadata_json.",
             "Training heads read Hub pack Parquet, not geo_metadata_backfill.",
+            "Authoritative GEO Δ is merge_stats.n_phenotype_rows_added "
+            "(in-memory phenotypes before merge are usually 0 on a full refresh).",
+            "For a clean incremental test: MBS_SKIP_GEO_BACKFILL=1 refresh → assert "
+            "zero geo_metadata_backfill rows → fetch/merge → compare exact Δ.",
         ],
     }
     json_path = pilot_dir / "summary.json"
@@ -838,6 +1277,7 @@ def write_geo_backfill_pilot_report(
         f"- Phenotype rows added: **{stats.get('n_phenotype_rows_added', 0)}**",
         f"- Samples with ≥1 observed GEO phenotype: **{n_geo_observed}**",
         f"- Samples with `metadata_json.geo`: **{n_samples_with_geo_json}**",
+        f"- Multi-study GSM (membership): **{stats.get('n_multi_study_gsm', 0)}**",
         "",
         "## Invariants",
         "",
@@ -846,11 +1286,27 @@ def write_geo_backfill_pilot_report(
         f"- `sample_source_membership` includes `geo_metadata_backfill`: "
         f"**{summary['invariants']['sample_source_membership_includes_geo']}** (must be false)",
         "",
-        "## Phenotypes by id",
+        "## Tissue ontology",
         "",
-        "| phenotype_id | rows | observed | unique GSM |",
-        "| --- | ---: | ---: | ---: |",
     ]
+    tissue_map = stats.get("tissue_map") or {}
+    lines.append(
+        f"- mapped / unmapped / ambiguous / empty: "
+        f"**{tissue_map.get('mapped', 0)}** / **{tissue_map.get('unmapped', 0)}** / "
+        f"**{tissue_map.get('ambiguous', 0)}** / **{tissue_map.get('empty', 0)}**"
+    )
+    unmapped = stats.get("unmapped_tissue_examples") or []
+    if unmapped:
+        lines.append(f"- Unmapped examples: {', '.join(f'`{t}`' for t in unmapped[:20])}")
+    lines.extend(
+        [
+            "",
+            "## Phenotypes by id",
+            "",
+            "| phenotype_id | rows | observed | unique GSM |",
+            "| --- | ---: | ---: | ---: |",
+        ]
+    )
     if prevalence.empty:
         lines.append("| _(none)_ | 0 | 0 | 0 |")
     else:
@@ -900,11 +1356,27 @@ def write_geo_backfill_pilot_report(
             "",
             "## Census delta",
             "",
-            f"- Unique GSM before: **{unique_before}**",
+            f"- Unique GSM before (disk census): **{unique_before}**",
             f"- Unique GSM after: **{unique_after}**",
-            f"- GEO observed phenotype rows before: **{n_geo_obs_before}**",
+            f"- GEO phenotype rows before merge (in-memory): **{n_geo_before_merge}**",
+            f"- GEO observed rows in previous disk census: **{n_geo_obs_before_disk}**",
             f"- GEO observed phenotype rows after: **{geo_after}**",
+            f"- Authoritative phenotype rows added this merge: "
+            f"**{stats.get('n_phenotype_rows_added', 0)}**",
             "",
+        ]
+    )
+    if dirty_disk_baseline:
+        lines.extend(
+            [
+                "> **Dirty disk baseline:** previous `census.json` already had GEO rows. "
+                "That does **not** mean this merge added zero — use "
+                "`n_phenotype_rows_added` / in-memory before_merge (0 on a full rebuild).",
+                "",
+            ]
+        )
+    lines.extend(
+        [
             "GEO backfill does not add `sample` rows (EWAS_db scan does). Unique-GSM "
             "movement is EWAS_db mirror growth, not GEO. Phenotype-row movement is the GEO delta.",
             "",

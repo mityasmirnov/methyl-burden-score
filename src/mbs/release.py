@@ -28,7 +28,9 @@ from mbs.geo_metadata import (
     geo_backfill_enabled,
     load_census_snapshot,
     load_geo_frame,
+    load_geo_tissue_aliases,
     merge_geo_sample_metadata,
+    resolve_tissue_ontology_path,
     write_geo_backfill_pilot_report,
 )
 from mbs.paths import DataPaths
@@ -1151,15 +1153,26 @@ def refresh_release(
     geo_merge_stats: dict[str, Any] = {"enabled": False}
     geo_path = paths.data_root / "canonical" / "phenotypes" / GEO_PARQUET_NAME
     if geo_backfill_enabled() and geo_path.is_file():
+        # Lazy import: mbs.training.__init__ pulls loop → release.
+        from mbs.training.phenotype_table import load_tissue_ontology
+
         geo_frame = load_geo_frame(paths.data_root)
+        ont_path = resolve_tissue_ontology_path(paths.data_root)
+        ontology = (
+            load_tissue_ontology(ont_path) if ont_path is not None and ont_path.is_file() else None
+        )
         samples, phenotypes, studies, geo_merge_stats = merge_geo_sample_metadata(
             samples=samples,
             phenotypes=phenotypes,
             studies=studies,
             geo_frame=geo_frame,
+            ontology=ontology,
+            aliases=load_geo_tissue_aliases(),
         )
         geo_merge_stats["enabled"] = True
         geo_merge_stats["parquet_path"] = str(geo_path)
+        if ont_path is not None:
+            geo_merge_stats["tissue_ontology"] = str(ont_path)
 
     if not samples.empty and study_rows:
         samples_for_elig = samples.copy()

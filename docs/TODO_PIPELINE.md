@@ -250,8 +250,12 @@ historical CpGCorpus inspection and is not re-opened.
   running (`download_ewas_datahub.sh EWAS_db`; ~1 582/1 989 studies visited).
   Post-download hook + failure audit:
   [`plans/data-infrastructure-improvements.md`](plans/data-infrastructure-improvements.md).
-  **GEO sample backfill (pilot):** `make fetch-geo-sample-metadata` then
-  `make catalog-refresh-release` (see [`plans/geo-metadata-backfill-ewas-db.md`](plans/geo-metadata-backfill-ewas-db.md)).
+  **GEO sample backfill (pilot done):** `make fetch-geo-sample-metadata` then
+  `make catalog-refresh-release` ([`plans/geo-metadata-backfill-ewas-db.md`](plans/geo-metadata-backfill-ewas-db.md)).
+  **Do not scale GEO** until pre-scale fixes
+  ([`plans/geo-metadata-backfill-pre-scale.md`](plans/geo-metadata-backfill-pre-scale.md):
+  age units, tissue ontology, GSM conflicts, clean Δ audit) — after current
+  7G′ 16-epoch promotion screen.
   Inventory: [`EWAS_DATA.md`](EWAS_DATA.md), [`DATA_CATALOG.md`](DATA_CATALOG.md),
   `reports/inspection/raw_inventory/`.
 

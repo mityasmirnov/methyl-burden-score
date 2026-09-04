@@ -1,0 +1,28 @@
+# GEO raw tissue strings → Hub coarse ontology labels.
+# Keys are matched case-insensitively after strip; values must exist in the
+# tissue ontology used at fetch/merge (default: tissue_ontology_hub_nine_pack_v1).
+# Unlisted strings fall through to casefold exact match on ontology labels.
+
+version: geo-tissue-aliases-v1
+aliases:
+  blood: whole blood
+  whole blood: whole blood
+  peripheral blood: whole blood
+  whole peripheral blood: whole blood
+  venous blood: whole blood
+  wb: whole blood
+  pb: whole blood
+  pbmc: peripheral blood mononuclear cell
+  pbmcs: peripheral blood mononuclear cell
+  peripheral blood mononuclear cell: peripheral blood mononuclear cell
+  peripheral blood mononuclear cells: peripheral blood mononuclear cell
+  mononuclear cell: peripheral blood mononuclear cell
+  mononuclear cells: peripheral blood mononuclear cell
+  cord blood: cord blood
+  umbilical cord blood: cord blood
+  buccal: buccal epithelium
+  buccal swab: buccal epithelium
+  buccal cells: buccal epithelium
+  adipose tissue: adipose
+  fat: adipose
+  skeletal muscle tissue: skeletal muscle

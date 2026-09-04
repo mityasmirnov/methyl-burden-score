@@ -39,6 +39,7 @@ columns empty; EWAS_db-only samples lack Hub phenotype rows.
 | Extend post hook to `validate-release` + `phenotype-census` + `trait-eligibility` | Single command = full 7A reports | **Done** (via `make catalog-refresh-release`) |
 | Ingest EWAS_db sample metadata where available (Atlas study/cohort joins) | Labels for ~113k EWAS_db-only GSM | Medium — plan: [`geo-metadata-backfill-ewas-db.md`](geo-metadata-backfill-ewas-db.md) |
 | **GEO sample metadata backfill (pilot)** | Sample-level SOFT → `geo_metadata_backfill` for EWAS_db-only GSM | **Done** (audit 2026-09-03; GPL13534=HM450; report `geo_backfill_pilot/`) |
+| **GEO pre-scale fixes** (age units, tissue ontology, GSM conflicts, clean Δ audit, per-GSE status) | Required before larger crawl / training cohort | **In progress** — fixes 1–4 coded ([`geo-metadata-backfill-pre-scale.md`](geo-metadata-backfill-pre-scale.md)); rebuild parquet + refresh to verify; disease/training-release still pending |
 | **Study-level Atlas enrichment** (`study_atlas_enrichment` + `study.metadata_json.atlas_enrichment`) | External stratification (tissue, cohort size, disease area); not sample labels | **Done** (auto `seed-atlas-gse-map` on `catalog-refresh-release`; **175**/1587 matched) |
 | Registry `sample_count` from matrix sample indexes | Honest N in `phenotype_registry.yaml` | Small |
 | Normalize `450K` → `HM450` on catalog refresh | Fewer platform string splits | Small |
