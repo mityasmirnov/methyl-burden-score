@@ -112,15 +112,15 @@ Training release design (not built; do not mutate ATS):
 
 ```bash
 source scripts/activate_data_environment.sh
-make fetch-geo-sample-metadata          # pilot 15 (re-validate with current code)
-# Batch expand only after repaired-pilot audit is accepted:
-# make fetch-geo-sample-metadata-batch
+make fetch-geo-sample-metadata          # pilot 15
+make fetch-geo-sample-metadata-batch    # audited 50 (done 2026-09-04)
 MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
 # Clean Δ recipe: MBS_SKIP_GEO_BACKFILL=1 refresh → assert 0 GEO rows → merge
 ```
 
-Reports: `reports/inspection/deepmat_data_v1/geo_backfill_pilot/`
-(`summary.*`, `validation.*`, `fetch_status.json`).
+Reports: `geo_backfill_pilot/` (repaired 15-GSE validation) and
+`geo_backfill_batch/` (batch-50 `fetch_status.json`, `batch_summary.*`).
+Training still Hub pack Parquet only until `deepmat-data-geo-dev-v1`.
 
 Age is unit-aware (years/months/weeks/days); tissue maps through Hub ontology
 aliases; diagnosis-only disease text is **not** a case/control label.

@@ -1,11 +1,12 @@
 # GEO metadata backfill — fixes before scaling
 
-**Status:** repaired **15-GSE pilot re-validated** (clean zero→merge Δ, 2026-09-04).
-Batch expansion **blocked** until this audit is accepted. Training release
-**designed only** ([`geo-enriched-training-release.md`](geo-enriched-training-release.md)).  
+**Status:** repaired 15-GSE pilot re-validated; **batch-50 fetch+merge done**
+(2026-09-04). Next: eligibility-by-study deep audit → immutable geo-dev
+training release (**not** ATS).  
 **Parent:** [`geo-metadata-backfill-ewas-db.md`](geo-metadata-backfill-ewas-db.md)
 · [`data-infrastructure-improvements.md`](data-infrastructure-improvements.md) §2  
 **Related:** [`DATA_CONTRACT.md`](../DATA_CONTRACT.md), [`EWAS_METADATA.md`](../EWAS_METADATA.md),
+[`geo-enriched-training-release.md`](geo-enriched-training-release.md),
 [`TODO_PIPELINE.md`](../TODO_PIPELINE.md)
 
 ## Why this exists
@@ -28,8 +29,14 @@ eligibility). **Do not** silently enlarge frozen ATS.
    - Age distributions after unit conversion (`age_unit` all `years` in this slice).
    - Multi-GSE conflicts: **0** in pilot.
    - Per-GSE `fetch_status.json` + `validation.{json,md}`.
-4. **Only then** expand to a larger audited GSE batch (e.g. batch-50) — **pending acceptance**.
-5. Eligibility report by trait and study.
+4. **Expand to audited batch-50** ← **done** (2026-09-04)
+   - `configs/data/geo_backfill_batch50_gse.txt` (15 + 35)
+   - Parquet **45 762** GSM / 50 GSE; conflicts **0**
+   - Catalog GEO phenotype rows **74 971**; Hub overlap **0**
+   - Report: `reports/inspection/deepmat_data_v1/geo_backfill_batch/`
+5. Eligibility report by trait and study (deep audit — catalog cutoffs may pass
+   for disease/cancer counts, but **do not** wire training until matrix+label
+   QC and geo-dev release).
 6. **Separate immutable** GEO-enriched training release
    (`deepmat-data-geo-dev-v1`) — samples with methylation **and** acceptable
    labels; Hub-only / GEO-only / Hub+GEO / metadata-only arms. Not ATS.
@@ -186,8 +193,10 @@ After QC on an expanded audited batch:
   **neither** trait is core-eligible — **do not train disease/cancer on GEO yet**
 - [x] Training release **design only**
   → [`geo-enriched-training-release.md`](geo-enriched-training-release.md)
-- [ ] Expand beyond 15 GSE — **blocked until this repaired-pilot audit is accepted**
-  (batch-50 list/cache may exist; do **not** merge until then)
+- [x] Expand beyond 15 GSE — **batch-50 done** (fetch+merge 2026-09-04;
+  `geo_backfill_batch/batch_summary.{json,md}`)
+- [ ] Eligibility-by-study deep audit (before training release)
+- [ ] Build immutable `deepmat-data-geo-dev-v1` (design only so far)
 
 ## Code touchpoints (when implementing)
 

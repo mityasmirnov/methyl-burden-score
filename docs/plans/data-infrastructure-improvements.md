@@ -40,9 +40,9 @@ columns empty; EWAS_db-only samples lack Hub phenotype rows.
 | Ingest EWAS_db sample metadata where available (Atlas study/cohort joins) | Labels for ~113k EWAS_db-only GSM | Medium — plan: [`geo-metadata-backfill-ewas-db.md`](geo-metadata-backfill-ewas-db.md) |
 | **GEO sample metadata backfill (pilot)** | Sample-level SOFT → `geo_metadata_backfill` for EWAS_db-only GSM | **Done** (audit 2026-09-03; GPL13534=HM450; report `geo_backfill_pilot/`) |
 | **GEO pre-scale fixes** (age/tissue/GSM/Δ) | Code before larger crawl | **Done** |
-| **GEO repaired-pilot re-validation** | Clean zero→merge Δ + validation.md | **Done** (2026-09-04; report `geo_backfill_pilot/`) |
-| **GEO batch-50 expansion** | Audited crawl beyond pilot 15 | **Blocked** until pilot audit accepted |
-| **GEO disease/cancer for training** | Need cases+controls+eligibility | **No** — disease controls-only; cancer cases w/o GEO controls |
+| **GEO repaired-pilot re-validation** | Clean zero→merge Δ + validation.md | **Done** |
+| **GEO batch-50 expansion** | Audited crawl beyond pilot 15 | **Done** (45 762 GSM; catalog +74 971 GEO pheno rows; `geo_backfill_batch/`) |
+| **GEO disease/cancer for training** | Need matrix+label QC + geo-dev release | **Not yet** — catalog eligibility may pass counts; do not wire heads |
 | **GEO-enriched training release** | Separate immutable release; not ATS | **Designed** — [`geo-enriched-training-release.md`](geo-enriched-training-release.md); **not built** |
 | **Study-level Atlas enrichment** (`study_atlas_enrichment` + `study.metadata_json.atlas_enrichment`) | External stratification (tissue, cohort size, disease area); not sample labels | **Done** (auto `seed-atlas-gse-map` on `catalog-refresh-release`; **175**/1587 matched) |
 | Registry `sample_count` from matrix sample indexes | Honest N in `phenotype_registry.yaml` | Small |

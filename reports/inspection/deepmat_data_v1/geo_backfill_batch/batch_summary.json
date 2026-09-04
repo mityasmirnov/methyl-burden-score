@@ -1,0 +1,666 @@
+{
+  "batch": "geo_backfill_batch50",
+  "catalog": {
+    "eligibility": [
+      {
+        "eligible_core_task": true,
+        "exclusion_reason": NaN,
+        "n_cases": null,
+        "n_controls": null,
+        "n_samples": 19233,
+        "phenotype_id": "age"
+      },
+      {
+        "eligible_core_task": true,
+        "exclusion_reason": NaN,
+        "n_cases": 1239,
+        "n_controls": 231,
+        "n_samples": 1470,
+        "phenotype_id": "cancer"
+      },
+      {
+        "eligible_core_task": true,
+        "exclusion_reason": NaN,
+        "n_cases": 1456,
+        "n_controls": 3760,
+        "n_samples": 5216,
+        "phenotype_id": "disease"
+      },
+      {
+        "eligible_core_task": false,
+        "exclusion_reason": "sex is auxiliary biological / QC, not a core burden target",
+        "n_cases": null,
+        "n_controls": null,
+        "n_samples": 27931,
+        "phenotype_id": "sex"
+      },
+      {
+        "eligible_core_task": true,
+        "exclusion_reason": NaN,
+        "n_cases": null,
+        "n_controls": null,
+        "n_samples": 21121,
+        "phenotype_id": "tissue"
+      }
+    ],
+    "hub_overlap_geo_rows": 0,
+    "label_status": [
+      {
+        "label_status": "observed",
+        "n": 19233,
+        "phenotype_id": "age"
+      },
+      {
+        "label_status": "case",
+        "n": 1239,
+        "phenotype_id": "cancer"
+      },
+      {
+        "label_status": "control",
+        "n": 231,
+        "phenotype_id": "cancer"
+      },
+      {
+        "label_status": "case",
+        "n": 1456,
+        "phenotype_id": "disease"
+      },
+      {
+        "label_status": "control",
+        "n": 3760,
+        "phenotype_id": "disease"
+      },
+      {
+        "label_status": "observed",
+        "n": 27931,
+        "phenotype_id": "sex"
+      },
+      {
+        "label_status": "observed",
+        "n": 21121,
+        "phenotype_id": "tissue"
+      }
+    ],
+    "n_geo_phenotype_rows": 74971
+  },
+  "generated_at": "2026-09-04T15:17:44Z",
+  "merge_stats": {
+    "n_geo_rows_input": 45762,
+    "n_multi_study_gsm": 0,
+    "n_phenotype_rows_added": 74971,
+    "n_samples_skipped_hub": 7077,
+    "n_samples_touched": 38020,
+    "phenotypes_by_id": {
+      "age": 19233,
+      "cancer": 1470,
+      "disease": 5216,
+      "sex": 27931,
+      "tissue": 21121
+    },
+    "tissue_map": {
+      "ambiguous": 0,
+      "empty": 16899,
+      "mapped": 11670,
+      "unmapped": 9451
+    }
+  },
+  "n_parquet_gsm": 45762,
+  "n_studies": 50,
+  "notes": [
+    "Training heads still read Hub pack Parquet, not geo_metadata_backfill.",
+    "Do not train GEO disease/cancer until eligibility clears cases+controls.",
+    "Do not mutate frozen ATS; GEO-enriched training release is separate/not built."
+  ],
+  "per_study": [
+    {
+      "empty": 675,
+      "mapped": 0,
+      "n_age": 570,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 675,
+      "n_sex": 675,
+      "study_id": "GSE104210",
+      "unmapped": 0
+    },
+    {
+      "empty": 1658,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 1658,
+      "n_sex": 1658,
+      "study_id": "GSE105018",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 1104,
+      "n_sex": 0,
+      "study_id": "GSE109379",
+      "unmapped": 1104
+    },
+    {
+      "empty": 0,
+      "mapped": 572,
+      "n_age": 572,
+      "n_cancer": 0,
+      "n_disease": 237,
+      "n_gsm": 572,
+      "n_sex": 572,
+      "study_id": "GSE111629",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 679,
+      "n_age": 679,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 679,
+      "n_sex": 679,
+      "study_id": "GSE116339",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 608,
+      "n_age": 608,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 608,
+      "n_sex": 608,
+      "study_id": "GSE117859",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 699,
+      "n_age": 699,
+      "n_cancer": 0,
+      "n_disease": 699,
+      "n_gsm": 699,
+      "n_sex": 699,
+      "study_id": "GSE125105",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 1501,
+      "n_sex": 0,
+      "study_id": "GSE130051",
+      "unmapped": 1501
+    },
+    {
+      "empty": 795,
+      "mapped": 0,
+      "n_age": 795,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 795,
+      "n_sex": 795,
+      "study_id": "GSE132203",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 808,
+      "n_age": 808,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 808,
+      "n_sex": 808,
+      "study_id": "GSE134379",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 1505,
+      "n_sex": 0,
+      "study_id": "GSE140686",
+      "unmapped": 1505
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 557,
+      "n_sex": 557,
+      "study_id": "GSE141065",
+      "unmapped": 557
+    },
+    {
+      "empty": 0,
+      "mapped": 1889,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 930,
+      "n_gsm": 1889,
+      "n_sex": 1889,
+      "study_id": "GSE145361",
+      "unmapped": 0
+    },
+    {
+      "empty": 720,
+      "mapped": 0,
+      "n_age": 713,
+      "n_cancer": 0,
+      "n_disease": 713,
+      "n_gsm": 720,
+      "n_sex": 713,
+      "study_id": "GSE147221",
+      "unmapped": 0
+    },
+    {
+      "empty": 1129,
+      "mapped": 0,
+      "n_age": 1129,
+      "n_cancer": 0,
+      "n_disease": 1129,
+      "n_gsm": 1129,
+      "n_sex": 1129,
+      "study_id": "GSE147740",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 726,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 471,
+      "n_gsm": 726,
+      "n_sex": 726,
+      "study_id": "GSE153712",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 1218,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 1218,
+      "n_sex": 1218,
+      "study_id": "GSE157131",
+      "unmapped": 0
+    },
+    {
+      "empty": 574,
+      "mapped": 0,
+      "n_age": 574,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 574,
+      "n_sex": 574,
+      "study_id": "GSE179325",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 565,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 565,
+      "n_sex": 0,
+      "study_id": "GSE183647",
+      "unmapped": 565
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 603,
+      "n_cancer": 0,
+      "n_disease": 603,
+      "n_gsm": 603,
+      "n_sex": 603,
+      "study_id": "GSE183920",
+      "unmapped": 603
+    },
+    {
+      "empty": 0,
+      "mapped": 1471,
+      "n_age": 1471,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 1471,
+      "n_sex": 0,
+      "study_id": "GSE185920",
+      "unmapped": 0
+    },
+    {
+      "empty": 2922,
+      "mapped": 0,
+      "n_age": 2922,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 2922,
+      "n_sex": 2922,
+      "study_id": "GSE197678",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 548,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 568,
+      "n_sex": 548,
+      "study_id": "GSE208713",
+      "unmapped": 568
+    },
+    {
+      "empty": 1394,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 1394,
+      "n_sex": 1394,
+      "study_id": "GSE210255",
+      "unmapped": 0
+    },
+    {
+      "empty": 1124,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 1124,
+      "n_sex": 0,
+      "study_id": "GSE215240",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 553,
+      "n_age": 553,
+      "n_cancer": 0,
+      "n_disease": 96,
+      "n_gsm": 553,
+      "n_sex": 553,
+      "study_id": "GSE219037",
+      "unmapped": 0
+    },
+    {
+      "empty": 984,
+      "mapped": 0,
+      "n_age": 976,
+      "n_cancer": 0,
+      "n_disease": 347,
+      "n_gsm": 984,
+      "n_sex": 984,
+      "study_id": "GSE223817",
+      "unmapped": 0
+    },
+    {
+      "empty": 1107,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 1107,
+      "n_sex": 1107,
+      "study_id": "GSE224124",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 708,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 712,
+      "n_sex": 710,
+      "study_id": "GSE224365",
+      "unmapped": 712
+    },
+    {
+      "empty": 595,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 455,
+      "n_disease": 0,
+      "n_gsm": 595,
+      "n_sex": 595,
+      "study_id": "GSE225845",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 694,
+      "n_sex": 694,
+      "study_id": "GSE226569",
+      "unmapped": 694
+    },
+    {
+      "empty": 994,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 994,
+      "n_disease": 0,
+      "n_gsm": 1378,
+      "n_sex": 0,
+      "study_id": "GSE270375",
+      "unmapped": 384
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 648,
+      "n_sex": 648,
+      "study_id": "GSE280206",
+      "unmapped": 648
+    },
+    {
+      "empty": 0,
+      "mapped": 656,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 656,
+      "n_sex": 656,
+      "study_id": "GSE40279",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 689,
+      "n_cancer": 0,
+      "n_disease": 335,
+      "n_gsm": 689,
+      "n_sex": 689,
+      "study_id": "GSE42861",
+      "unmapped": 689
+    },
+    {
+      "empty": 0,
+      "mapped": 95,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 696,
+      "n_sex": 531,
+      "study_id": "GSE43414",
+      "unmapped": 601
+    },
+    {
+      "empty": 845,
+      "mapped": 0,
+      "n_age": 845,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 845,
+      "n_sex": 845,
+      "study_id": "GSE51032",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 2711,
+      "n_age": 2711,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 2711,
+      "n_sex": 2711,
+      "study_id": "GSE55763",
+      "unmapped": 0
+    },
+    {
+      "empty": 1202,
+      "mapped": 0,
+      "n_age": 1202,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 1202,
+      "n_sex": 0,
+      "study_id": "GSE56046",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 614,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 614,
+      "n_sex": 614,
+      "study_id": "GSE56105",
+      "unmapped": 614
+    },
+    {
+      "empty": 296,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 296,
+      "n_sex": 296,
+      "study_id": "GSE59065",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 80,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 531,
+      "n_sex": 531,
+      "study_id": "GSE59685",
+      "unmapped": 451
+    },
+    {
+      "empty": 0,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 562,
+      "n_sex": 0,
+      "study_id": "GSE65362",
+      "unmapped": 562
+    },
+    {
+      "empty": 1028,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 1028,
+      "n_sex": 0,
+      "study_id": "GSE68379",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 422,
+      "n_age": 422,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 422,
+      "n_sex": 422,
+      "study_id": "GSE72680",
+      "unmapped": 0
+    },
+    {
+      "empty": 593,
+      "mapped": 0,
+      "n_age": 504,
+      "n_cancer": 21,
+      "n_disease": 0,
+      "n_gsm": 593,
+      "n_sex": 584,
+      "study_id": "GSE73801",
+      "unmapped": 0
+    },
+    {
+      "empty": 675,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 450,
+      "n_gsm": 675,
+      "n_sex": 0,
+      "study_id": "GSE74193",
+      "unmapped": 0
+    },
+    {
+      "empty": 573,
+      "mapped": 0,
+      "n_age": 0,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 573,
+      "n_sex": 572,
+      "study_id": "GSE77716",
+      "unmapped": 0
+    },
+    {
+      "empty": 259,
+      "mapped": 0,
+      "n_age": 259,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 259,
+      "n_sex": 259,
+      "study_id": "GSE78874",
+      "unmapped": 0
+    },
+    {
+      "empty": 0,
+      "mapped": 675,
+      "n_age": 636,
+      "n_cancer": 0,
+      "n_disease": 0,
+      "n_gsm": 675,
+      "n_sex": 675,
+      "study_id": "GSE80417",
+      "unmapped": 0
+    }
+  ]
+}

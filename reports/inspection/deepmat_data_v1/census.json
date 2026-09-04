@@ -57,6 +57,13 @@
       "study_id": "GSE104087"
     },
     {
+      "age_max": 54.19,
+      "age_mean": 3.985794477010471,
+      "age_min": 0.0,
+      "n_samples": 570,
+      "study_id": "GSE104210"
+    },
+    {
       "age_max": 71.0,
       "age_mean": 43.30612244897959,
       "age_min": 20.0,
@@ -163,9 +170,9 @@
     },
     {
       "age_max": 92.0,
-      "age_mean": 69.4061433447099,
-      "age_min": 36.0,
-      "n_samples": 255,
+      "age_mean": 69.11001642036125,
+      "age_min": 35.0,
+      "n_samples": 571,
       "study_id": "GSE111629"
     },
     {
@@ -197,6 +204,13 @@
       "study_id": "GSE115920"
     },
     {
+      "age_max": 88.46,
+      "age_mean": 53.92447717231234,
+      "age_min": 23.0,
+      "n_samples": 679,
+      "study_id": "GSE116339"
+    },
+    {
       "age_max": 67.0,
       "age_mean": 32.432432432432435,
       "age_min": 20.0,
@@ -218,6 +232,13 @@
       "study_id": "GSE117050"
     },
     {
+      "age_max": 75.0,
+      "age_mean": 49.432565789473685,
+      "age_min": 25.0,
+      "n_samples": 608,
+      "study_id": "GSE117859"
+    },
+    {
       "age_max": 39.0,
       "age_mean": 29.2,
       "age_min": 23.0,
@@ -225,11 +246,60 @@
       "study_id": "GSE120307"
     },
     {
+      "age_max": 87.0,
+      "age_mean": 46.79399141630901,
+      "age_min": 17.0,
+      "n_samples": 699,
+      "study_id": "GSE125105"
+    },
+    {
+      "age_max": 76.0,
+      "age_mean": 42.31320754716981,
+      "age_min": 18.0,
+      "n_samples": 795,
+      "study_id": "GSE132203"
+    },
+    {
+      "age_max": 103.0,
+      "age_mean": 83.68069306930693,
+      "age_min": 54.0,
+      "n_samples": 808,
+      "study_id": "GSE134379"
+    },
+    {
+      "age_max": 70.9,
+      "age_mean": 41.695091164095366,
+      "age_min": 17.0,
+      "n_samples": 713,
+      "study_id": "GSE147221"
+    },
+    {
       "age_max": 60.0,
       "age_mean": 41.183510638297875,
       "age_min": 25.0,
       "n_samples": 1128,
       "study_id": "GSE147740"
+    },
+    {
+      "age_max": 103.0,
+      "age_mean": 66.99825783972125,
+      "age_min": 19.0,
+      "n_samples": 574,
+      "study_id": "GSE179325"
+    },
+    {
+      "age_max": 90.6,
+      "age_mean": 56.66601769911503,
+      "age_min": 5.1,
+      "n_samples": 565,
+      "study_id": "GSE183647"
+    },
+    {
+      "age_max": 79.0,
+      "age_mean": 63.159203980099505,
+      "age_min": 29.0,
+      "n_samples": 603,
+      "study_id": "GSE183920"
     },
     {
       "age_max": 60.0,
@@ -244,6 +314,34 @@
       "age_min": 5.99,
       "n_samples": 2922,
       "study_id": "GSE197678"
+    },
+    {
+      "age_max": 101.0,
+      "age_mean": 75.31934306569343,
+      "age_min": 38.0,
+      "n_samples": 548,
+      "study_id": "GSE208713"
+    },
+    {
+      "age_max": 28.0,
+      "age_mean": 19.687160940325498,
+      "age_min": 18.0,
+      "n_samples": 553,
+      "study_id": "GSE219037"
+    },
+    {
+      "age_max": 55.0,
+      "age_mean": 35.19159836065574,
+      "age_min": 18.0,
+      "n_samples": 976,
+      "study_id": "GSE223817"
+    },
+    {
+      "age_max": 42.0,
+      "age_mean": 11.242937853107344,
+      "age_min": 0.0,
+      "n_samples": 708,
+      "study_id": "GSE224365"
     },
     {
       "age_max": 103.0,
@@ -317,9 +415,9 @@
     },
     {
       "age_max": 70.0,
-      "age_mean": 51.669793621013135,
+      "age_mean": 51.963824289405686,
       "age_min": 18.0,
-      "n_samples": 448,
+      "n_samples": 689,
       "study_id": "GSE42861"
     },
     {
@@ -436,9 +534,9 @@
     },
     {
       "age_max": 72.047,
-      "age_mean": 52.63641551246544,
+      "age_mean": 53.204698724239506,
       "age_min": 34.379,
-      "n_samples": 548,
+      "n_samples": 845,
       "study_id": "GSE51032"
     },
     {
@@ -541,9 +639,9 @@
     },
     {
       "age_max": 75.0,
-      "age_mean": 25.553480475382003,
+      "age_mean": 22.849405548216644,
       "age_min": 10.0,
-      "n_samples": 446,
+      "n_samples": 614,
       "study_id": "GSE56105"
     },
     {
@@ -968,9 +1066,9 @@
     },
     {
       "age_max": 77.0,
-      "age_mean": 41.21975308641975,
+      "age_mean": 41.30170316301703,
       "age_min": 18.0,
-      "n_samples": 410,
+      "n_samples": 422,
       "study_id": "GSE72680"
     },
     {
@@ -1035,6 +1133,13 @@
       "age_min": 23.0,
       "n_samples": 13,
       "study_id": "GSE73747"
+    },
+    {
+      "age_max": 81.0,
+      "age_mean": 14.122983870967742,
+      "age_min": 1.0,
+      "n_samples": 496,
+      "study_id": "GSE73801"
     },
     {
       "age_max": 68.0,
@@ -1122,9 +1227,9 @@
     },
     {
       "age_max": 88.0,
-      "age_mean": 69.05263157894737,
+      "age_mean": 69.08289241622575,
       "age_min": 36.0,
-      "n_samples": 243,
+      "n_samples": 259,
       "study_id": "GSE78874"
     },
     {
@@ -1189,6 +1294,13 @@
       "age_min": 0.0,
       "n_samples": 11,
       "study_id": "GSE80310"
+    },
+    {
+      "age_max": 90.0,
+      "age_mean": 40.39150943396226,
+      "age_min": 18.0,
+      "n_samples": 636,
+      "study_id": "GSE80417"
     },
     {
       "age_max": 66.0,
@@ -2014,7 +2126,7 @@
       "total_bytes": 703052480523027.0
     }
   ],
-  "generated_at": "2026-09-04T14:34:53Z",
+  "generated_at": "2026-09-04T15:17:14Z",
   "label_conflicts_head": [],
   "overlap_by_n_families": [
     {
@@ -2145,9 +2257,9 @@
     },
     {
       "n_categorical_levels": 0,
-      "n_observed": 7652,
-      "n_rows": 7652,
-      "n_samples": 7652,
+      "n_observed": 19233,
+      "n_rows": 19233,
+      "n_samples": 19233,
       "phenotype_id": "age",
       "source_family": "geo_metadata_backfill"
     },
@@ -2264,10 +2376,10 @@
       "source_family": "cancer"
     },
     {
-      "n_categorical_levels": 1,
-      "n_observed": 994,
-      "n_rows": 994,
-      "n_samples": 994,
+      "n_categorical_levels": 5,
+      "n_observed": 1470,
+      "n_rows": 1470,
+      "n_samples": 1470,
       "phenotype_id": "cancer",
       "source_family": "geo_metadata_backfill"
     },
@@ -2280,10 +2392,10 @@
       "source_family": "disease"
     },
     {
-      "n_categorical_levels": 2,
-      "n_observed": 2058,
-      "n_rows": 2058,
-      "n_samples": 2058,
+      "n_categorical_levels": 9,
+      "n_observed": 5216,
+      "n_rows": 5216,
+      "n_samples": 5216,
       "phenotype_id": "disease",
       "source_family": "geo_metadata_backfill"
     },
@@ -2345,9 +2457,9 @@
     },
     {
       "n_categorical_levels": 2,
-      "n_observed": 12729,
-      "n_rows": 12729,
-      "n_samples": 12729,
+      "n_observed": 27931,
+      "n_rows": 27931,
+      "n_samples": 27931,
       "phenotype_id": "sex",
       "source_family": "geo_metadata_backfill"
     },
@@ -2416,10 +2528,10 @@
       "source_family": "disease"
     },
     {
-      "n_categorical_levels": 6,
-      "n_observed": 10528,
-      "n_rows": 10528,
-      "n_samples": 10528,
+      "n_categorical_levels": 21,
+      "n_observed": 21121,
+      "n_rows": 21121,
+      "n_samples": 21121,
       "phenotype_id": "tissue",
       "source_family": "geo_metadata_backfill"
     },
@@ -2443,12 +2555,12 @@
   "release_ewas_db": {
     "advertised_n": 1989,
     "mirror_complete": false,
-    "n_local_gsm": 145773,
+    "n_local_gsm": 145840,
     "n_local_studies": 1501,
     "refresh_is_idempotent": true,
     "remote_index_fetched": false,
-    "total_bytes": 1586377946469
+    "total_bytes": 1586886079451
   },
-  "unique_gsm": 157941,
+  "unique_gsm": 157993,
   "unique_vs_row_sum_note": "unique GSM must be compared to pack-row sum; overlap makes them unequal"
 }

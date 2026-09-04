@@ -284,12 +284,12 @@ historical CpGCorpus inspection and is not re-opened.
   running (`download_ewas_datahub.sh EWAS_db`; ~1 582/1 989 studies visited).
   Post-download hook + failure audit:
   [`plans/data-infrastructure-improvements.md`](plans/data-infrastructure-improvements.md).
-  **GEO sample backfill:** repaired **15-GSE pilot re-validated** (clean
-  zero→merge Δ; [`plans/geo-metadata-backfill-pre-scale.md`](plans/geo-metadata-backfill-pre-scale.md);
-  reports under `geo_backfill_pilot/`). Batch expansion **blocked** until that
-  audit is accepted. GEO is catalog-only (not Hub training Parquet). Do **not**
-  train on GEO disease/cancer yet; do **not** mutate frozen ATS. Training
-  release design: [`plans/geo-enriched-training-release.md`](plans/geo-enriched-training-release.md).
+  **GEO sample backfill:** repaired pilot re-validated; **batch-50 merged**
+  (45 762 GSM → catalog `geo_metadata_backfill`; report
+  `geo_backfill_batch/`). GEO remains catalog-only until immutable
+  `deepmat-data-geo-dev-v1` ([`plans/geo-enriched-training-release.md`](plans/geo-enriched-training-release.md)).
+  Do **not** mutate frozen ATS. Plans:
+  [`plans/geo-metadata-backfill-pre-scale.md`](plans/geo-metadata-backfill-pre-scale.md).
   Inventory: [`EWAS_DATA.md`](EWAS_DATA.md), [`DATA_CATALOG.md`](DATA_CATALOG.md),
   `reports/inspection/raw_inventory/`.
 
