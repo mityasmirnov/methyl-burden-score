@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Resume matched 16-epoch promotion after fold-1 completed and seed-mask
-# briefly collided on GPU 0. Starts at N-light-gene-max fold 2.
+# Resume matched 16-epoch promotion after N-light-gene-max folds 0–2 done.
+# Starts at N-light-gene-mean. Owns GPU 0; seed-mask stays paused via
+# scratch/SEED_MASK_GPU_BLOCKED.txt until promotion_decision.json unlocks.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/activate_data_environment.sh
@@ -86,40 +87,33 @@ posthoc_nested_flat() {
   log "SKIP nested enet for $prefix (post-hoc later: eval_mbs_enet_from_scores.py --nested)"
 }
 
-log "=== RESUME 16-ep screen (fold 1 done; seed-mask GPU stopped) ==="
+log "=== RESUME 16-ep screen (light-max f0–f2 done; start light-mean) ==="
 require_gpu_free
-
-log "=== N-light-gene-max fold 2 ==="
-require_gpu_free
-uv run python "$RUN" --config "$MAIN_CFG" --device cuda --arm N-light-gene-max --fold 2 2>&1 | tee -a "$LOG"
-sync_flat_arm N-light-gene-max stage0-7g-gene-probe-light-max
-posthoc_nested_flat stage0-7g-gene-probe-light-max
-sync_flat_arm N-light-gene-max stage0-7g-gene-probe-light-max
+sync_flat_arm "N-light-gene-max" "stage0-7g-gene-probe-light-max"
 
 log "=== N-light-gene-mean all folds ==="
 require_gpu_free
-uv run python "$RUN" --config "$MAIN_CFG" --device cuda --arm N-light-gene-mean 2>&1 | tee -a "$LOG"
-sync_flat_arm N-light-gene-mean stage0-7g-gene-probe-light-mean-16ep
-posthoc_nested_flat stage0-7g-gene-probe-light-mean-16ep
-sync_flat_arm N-light-gene-mean stage0-7g-gene-probe-light-mean-16ep
+uv run python "$RUN" --config "$MAIN_CFG" --device cuda --arm "N-light-gene-mean" 2>&1 | tee -a "$LOG"
+sync_flat_arm "N-light-gene-mean" "stage0-7g-gene-probe-light-mean-16ep"
+posthoc_nested_flat "stage0-7g-gene-probe-light-mean-16ep"
 
 log "=== N-cascade-scalar-mean-max ==="
 require_gpu_free
-uv run python "$RUN" --config "$MAIN_CFG" --device cuda --arm N-cascade-scalar-mean-max 2>&1 | tee -a "$LOG"
-posthoc_nested_cascade stage0-7g-gene-probe-scalar-mean-max-16ep
-sync_cascade_arm N-cascade-scalar-mean-max stage0-7g-gene-probe-scalar-mean-max-16ep
+uv run python "$RUN" --config "$MAIN_CFG" --device cuda --arm "N-cascade-scalar-mean-max" 2>&1 | tee -a "$LOG"
+posthoc_nested_cascade "stage0-7g-gene-probe-scalar-mean-max-16ep"
+sync_cascade_arm "N-cascade-scalar-mean-max" "stage0-7g-gene-probe-scalar-mean-max-16ep"
 
 log "=== N-cascade-scalar-max-mean ==="
 require_gpu_free
-uv run python "$RUN" --config "$MAIN_CFG" --device cuda --arm N-cascade-scalar-max-mean 2>&1 | tee -a "$LOG"
-posthoc_nested_cascade stage0-7g-gene-probe-scalar-max-mean-16ep
-sync_cascade_arm N-cascade-scalar-max-mean stage0-7g-gene-probe-scalar-max-mean-16ep
+uv run python "$RUN" --config "$MAIN_CFG" --device cuda --arm "N-cascade-scalar-max-mean" 2>&1 | tee -a "$LOG"
+posthoc_nested_cascade "stage0-7g-gene-probe-scalar-max-mean-16ep"
+sync_cascade_arm "N-cascade-scalar-max-mean" "stage0-7g-gene-probe-scalar-max-mean-16ep"
 
 log "=== N-cascade-vector-mean-max ==="
 require_gpu_free
-uv run python "$RUN" --config "$MAIN_CFG" --device cuda --arm N-cascade-vector-mean-max 2>&1 | tee -a "$LOG"
-posthoc_nested_cascade stage0-7g-gene-probe-vector-mean-max-16ep
-sync_cascade_arm N-cascade-vector-mean-max stage0-7g-gene-probe-vector-mean-max-16ep
+uv run python "$RUN" --config "$MAIN_CFG" --device cuda --arm "N-cascade-vector-mean-max" 2>&1 | tee -a "$LOG"
+posthoc_nested_cascade "stage0-7g-gene-probe-vector-mean-max-16ep"
+sync_cascade_arm "N-cascade-vector-mean-max" "stage0-7g-gene-probe-vector-mean-max-16ep"
 
 log "=== nested enet SKIPPED (run post-hoc after GPU queue) ==="
 log "  uv run python scripts/eval_mbs_enet_from_scores.py --run-prefix stage0-7g-gene-probe-light-max --nested"

@@ -1,0 +1,80 @@
+{
+  "arms": {
+    "P2-G": {
+      "n_folds": 3,
+      "ceiling": 15,
+      "tissue_f1_mean": 0.3731132977135239,
+      "age_mae_mean": 15.637033478743016,
+      "sex_auroc_mean": null,
+      "matched_16ep": true
+    },
+    "N-light-gene-max": {
+      "n_folds": 2,
+      "ceiling": null,
+      "tissue_f1_mean": 0.3095337288612154,
+      "age_mae_mean": 22.101165491497188,
+      "sex_auroc_mean": 0.6351453630320926,
+      "matched_16ep": false
+    },
+    "N-light-gene-mean": {
+      "n_folds": 3,
+      "ceiling": null,
+      "tissue_f1_mean": 0.12641568513659526,
+      "age_mae_mean": 23.0818874023589,
+      "sex_auroc_mean": 0.5911437277982253,
+      "matched_16ep": false
+    },
+    "N-cascade-scalar-mean-max": {
+      "n_folds": 3,
+      "ceiling": 5,
+      "tissue_f1_mean": 0.33146776680053985,
+      "age_mae_mean": 20.71265888766947,
+      "sex_auroc_mean": 0.6670903960838466,
+      "matched_16ep": false
+    },
+    "N-cascade-scalar-max-mean": {
+      "n_folds": 3,
+      "ceiling": 5,
+      "tissue_f1_mean": 0.35926336587402613,
+      "age_mae_mean": 21.356236621801802,
+      "sex_auroc_mean": 0.7011320903395286,
+      "matched_16ep": false
+    },
+    "N-cascade-vector-mean-max": {
+      "n_folds": 3,
+      "ceiling": 5,
+      "tissue_f1_mean": 0.3372764365076519,
+      "age_mae_mean": 22.752918178618216,
+      "sex_auroc_mean": 0.665483277328334,
+      "matched_16ep": false
+    }
+  },
+  "rules": {
+    "one_hop_max_near_p2": {
+      "fired": false,
+      "detail": "Prefer smaller DeepRVAT-like one-hop max if within 0.03 tissue F1 of P2-G.",
+      "light_f1": 0.3095337288612154,
+      "p2_f1": 0.3731132977135239
+    },
+    "vector_age_improves_but_gene_pool_loses": {
+      "fired": false,
+      "detail": "Proceed with typed-RBS aggregation, not scalar MBS.",
+      "vector_age_mae": 22.752918178618216,
+      "vector_tissue_f1": 0.3372764365076519
+    },
+    "scalar_mixed_closes_gap": {
+      "fired": false,
+      "detail": "Retain full 2\u00d72 pooling; max/max is not locked.",
+      "mean_max_f1": 0.33146776680053985,
+      "max_mean_f1": 0.35926336587402613
+    },
+    "nothing_beats_p2_or_classical": {
+      "fired": false,
+      "detail": "Stop architecture sweeps; start age-primary seed-gene experiment.",
+      "best_promoted_f1": 0.35926336587402613
+    }
+  },
+  "next_gate": "matched_16ep_promotion_screen",
+  "screen_complete": false,
+  "recommendation": "Wait for all 16-ep promotion folds before deciding."
+}
