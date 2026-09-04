@@ -165,7 +165,6 @@ better). Classical age (8.15) remains far ahead of both RBS and MBS.
 
 Keep **`P2-G` max/max 15 ep**. No Tier-2 promotions. Next: Stage B GPU; optional
 post-hoc `mbs_enet` / `rbs_enet` and backfill P2-G RBS probe if desired.
-
 ## Architecture questions (Stage A screen)
 
 1. **CpG → region pool (mean vs max):** `mean-max` tissue F1=0.331 vs `max-max` 0.373; age MAE 20.713 vs 15.637. Prefer **`P2-G`** on this slice (check Pareto).
@@ -227,42 +226,47 @@ Compare **`fusion_full`** (orphan RBS + MBS + direct) vs **`fusion_mbs_direct`**
 
 ## Annotation ablation grid (A0–A4, N0–N3)
 
-Fold 0, `mean` pooling, 8 epochs, two seeds. Bootstrap 95% CIs from available folds. Tissue macro-F1, age MAE, sex AUROC.
+Fold 0, `mean` pooling, ≤8 epochs, **two seeds** (primary + `-s2`) pooled. Bootstrap 95% CIs over seed runs. Primary metric `mbs_e2e` tissue macro-F1; linear probe is the representation check.
 
-**Note:** A4 and A7 are identical while regulatory channels are zero (cCRE/DHS/ChromHMM not on disk).
+**Payloads found:** 18/18 seed runs under `per_arm/N-light-gene-ablation-*.json`.
 
-| Arm | Features | Tissue macro-F1 [95% CI] | Age MAE [95% CI] | Sex AUROC [95% CI] |
-|-----|----------|-------------------------:|-----------------:|-------------------:|
-| A0 | M only |  — | — | — |
-| A1 | M + gene role |  — | — | — |
-| A2 | M + CpG context |  — | — | — |
-| A3 | M + role + context |  — | — | — |
-| A4/A7 | All (regulatory zero) |  — | — | — |
+**Note:** A4 ≈ N2 ≈ N3 while regulatory channels are zero (cCRE/DHS/ChromHMM not on disk). **`m_only` should lead** if annotations add noise under this budget.
+
+| Arm | Features | Tissue e2e [95% CI] | Linear F1 [95% CI] | Age MAE (e2e) [95% CI] | Sex AUROC (e2e) [95% CI] |
+|-----|----------|--------------------:|-------------------:|-----------------------:|-------------------------:|
+| A0 | M only | 0.276 [0.275–0.276] | 0.350 [0.350–0.350] | 20.091 [20.051–20.131] | 0.639 [0.638–0.639] |
+| A1 | M + gene role | 0.107 [0.107–0.107] | 0.316 [0.316–0.316] | 21.022 [20.992–21.053] | 0.595 [0.595–0.595] |
+| A2 | M + CpG context | 0.170 [0.170–0.170] | 0.318 [0.317–0.319] | 23.251 [23.209–23.292] | 0.596 [0.596–0.597] |
+| A3 | M + role + context | 0.168 [0.165–0.171] | 0.319 [0.318–0.319] | 21.563 [21.545–21.581] | 0.596 [0.592–0.600] |
+| A4/A7 | All (regulatory zero) | 0.174 [0.173–0.175] | 0.319 [0.319–0.319] | 21.559 [21.422–21.696] | 0.590 [0.582–0.598] |
 
 ### Negative controls
 
-| Arm | Features | Tissue macro-F1 [95% CI] | Age MAE [95% CI] | Sex AUROC [95% CI] |
-|-----|----------|-------------------------:|-----------------:|-------------------:|
-| N0 | Observed flag only |  — | — | — |
-| N1 | Annotations only (no M) |  — | — | — |
-| N2 | Reg. permuted |  — | — | — |
-| N3 | All-zero regulatory |  — | — | — |
+| Arm | Features | Tissue e2e [95% CI] | Linear F1 [95% CI] | Age MAE (e2e) [95% CI] | Sex AUROC (e2e) [95% CI] |
+|-----|----------|--------------------:|-------------------:|-----------------------:|-------------------------:|
+| N0 | Observed flag only | 0.007 [0.006–0.008] | 0.011 [0.010–0.011] | 21.171 [21.116–21.227] | 0.540 [0.532–0.549] |
+| N1 | Annotations only (no M) | 0.009 [0.009–0.009] | 0.019 [0.018–0.020] | 21.628 [21.623–21.633] | 0.531 [0.531–0.532] |
+| N2 | Reg. permuted | 0.173 [0.172–0.174] | 0.319 [0.318–0.320] | 21.269 [21.233–21.306] | 0.586 [0.585–0.588] |
+| N3 | All-zero regulatory | 0.169 [0.165–0.173] | 0.318 [0.318–0.319] | 21.455 [21.315–21.596] | 0.589 [0.586–0.592] |
+
+**Takeaway:** best e2e tissue = **`A0` (M only)** at 0.276. `m_only` leads; gene-role/context do not help under this fold-0 budget. Negatives `obs_only` / `anno_only` should be near chance.
+
 
 ### Representation diagnostics (fold 0 mean across seeds)
 
-> Values populated only when `stage_a_per_epoch_eval: true` and repr_diagnostics logged.
+> Values populated only when `stage_a_per_epoch_eval: true` and `repr_diagnostics` logged on `mbs_e2e` (often empty for these short runs).
 
 | Arm | Gene-score SD | Saturation frac | Const-score frac | Corr w/ mean-M |
 |-----|:-------------:|:---------------:|:----------------:|:--------------:|
-| stage0_7g_gene_only_probe_ablation_m_only | — | — | — | — |
-| stage0_7g_gene_only_probe_ablation_m_role | — | — | — | — |
-| stage0_7g_gene_only_probe_ablation_m_context | — | — | — | — |
-| stage0_7g_gene_only_probe_ablation_m_role_context | — | — | — | — |
-| stage0_7g_gene_only_probe_ablation_full | — | — | — | — |
-| stage0_7g_gene_only_probe_ablation_n0_obs_only | — | — | — | — |
-| stage0_7g_gene_only_probe_ablation_n1_anno_only | — | — | — | — |
-| stage0_7g_gene_only_probe_ablation_n2_reg_permuted | — | — | — | — |
-| stage0_7g_gene_only_probe_ablation_n3_reg_zero | — | — | — | — |
+| A0 | — | — | — | — |
+| A1 | — | — | — | — |
+| A2 | — | — | — | — |
+| A3 | — | — | — | — |
+| A4/A7 | — | — | — | — |
+| N0 | — | — | — | — |
+| N1 | — | — | — | — |
+| N2 | — | — | — | — |
+| N3 | — | — | — | — |
 
 ## Parallel / follow-on work
 

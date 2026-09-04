@@ -290,25 +290,33 @@ def _bootstrap_ci(
 
 def _arm_mean_ci(
     arm_payloads: dict[str, dict | None],
-    arm_id: str,
+    arm_id: str | list[str],
     *metric_keys: str,
 ) -> tuple[float, float, float]:
-    """Extract per-fold values then bootstrap."""
-    payload = arm_payloads.get(arm_id)
-    if not payload:
-        return (float("nan"),) * 3
-    folds = payload.get("folds") or []
-    vals = [v for f in folds if (v := _extract_scalar(f, *metric_keys)) is not None]
+    """Extract per-fold values then bootstrap.
+
+    ``arm_id`` may be a single id or a list (e.g. primary + ``-s2`` seed) whose
+    folds are pooled before the CI.
+    """
+    ids = [arm_id] if isinstance(arm_id, str) else list(arm_id)
+    vals: list[float] = []
+    for aid in ids:
+        payload = arm_payloads.get(aid)
+        if not payload:
+            continue
+        folds = payload.get("folds") or []
+        vals.extend(v for f in folds if (v := _extract_scalar(f, *metric_keys)) is not None)
     return _bootstrap_ci(vals)
 
 
 def _ablation_table_row(
-    arm_id: str,
+    arm_id: str | list[str],
     arm_payloads: dict[str, dict | None],
     *,
     tissue_keys: tuple[str, ...],
     age_keys: tuple[str, ...],
     sex_keys: tuple[str, ...],
+    linear_keys: tuple[str, ...] | None = None,
 ) -> str:
     t_mean, t_lo, t_hi = _arm_mean_ci(arm_payloads, arm_id, *tissue_keys)
     a_mean, a_lo, a_hi = _arm_mean_ci(arm_payloads, arm_id, *age_keys)
@@ -319,15 +327,24 @@ def _ablation_table_row(
             return "—"
         return f"{m:.3f} [{lo:.3f}–{hi:.3f}]"
 
-    return f"| {arm_id} | {_fmt(t_mean, t_lo, t_hi)} | {_fmt(a_mean, a_lo, a_hi)} | {_fmt(s_mean, s_lo, s_hi)} |"
+    cells = [_fmt(t_mean, t_lo, t_hi), _fmt(a_mean, a_lo, a_hi), _fmt(s_mean, s_lo, s_hi)]
+    if linear_keys is not None:
+        l_mean, l_lo, l_hi = _arm_mean_ci(arm_payloads, arm_id, *linear_keys)
+        cells.insert(1, _fmt(l_mean, l_lo, l_hi))
+    return "| " + " | ".join(cells) + " |"
 
 
-def _repr_diagnostics_row(arm_id: str, arm_payloads: dict[str, dict | None]) -> str:
+def _repr_diagnostics_row(arm_id: str | list[str], arm_payloads: dict[str, dict | None]) -> str:
     """Build a representation diagnostics markdown row from stored fold metrics."""
-    payload = arm_payloads.get(arm_id)
-    if not payload:
-        return f"| {arm_id} | — | — | — | — |"
-    folds = payload.get("folds") or []
+    ids = [arm_id] if isinstance(arm_id, str) else list(arm_id)
+    folds: list[dict[str, Any]] = []
+    for aid in ids:
+        payload = arm_payloads.get(aid)
+        if payload:
+            folds.extend(payload.get("folds") or [])
+    label = ids[0] if ids else "—"
+    if not folds:
+        return f"| {label} | — | — | — | — |"
 
     def _mean_key(*keys: str) -> str:
         vals = [v for f in folds if (v := _extract_scalar(f, *keys)) is not None]
@@ -339,68 +356,141 @@ def _repr_diagnostics_row(arm_id: str, arm_payloads: dict[str, dict | None]) -> 
     sat_frac = _mean_key("evaluations", "mbs_e2e", "repr_diagnostics", "saturation_fraction")
     const_frac = _mean_key("evaluations", "mbs_e2e", "repr_diagnostics", "constant_score_fraction")
     corr_m = _mean_key("evaluations", "mbs_e2e", "repr_diagnostics", "corr_mean_m")
-    return f"| {arm_id} | {score_sd} | {sat_frac} | {const_frac} | {corr_m} |"
+    return f"| {label} | {score_sd} | {sat_frac} | {const_frac} | {corr_m} |"
+
+
+def _ablation_seed_ids(base_arm_id: str) -> list[str]:
+    """Primary + optional ``-s2`` seed arm ids present under ``per_arm/``."""
+    return [base_arm_id, f"{base_arm_id}-s2"]
 
 
 def annotation_ablation_section(arm_payloads: dict[str, dict | None]) -> str:
     """Render annotation ablation grid (A0–A4/A7, N0–N3) with bootstrap CIs."""
-    # Arm IDs follow config experiment.name convention
+    # per_arm JSONs use runner arm ids ``N-light-gene-ablation-*`` (+ ``-s2``).
     ablation_arms = [
-        ("A0", "stage0_7g_gene_only_probe_ablation_m_only", "M only"),
-        ("A1", "stage0_7g_gene_only_probe_ablation_m_role", "M + gene role"),
-        ("A2", "stage0_7g_gene_only_probe_ablation_m_context", "M + CpG context"),
-        ("A3", "stage0_7g_gene_only_probe_ablation_m_role_context", "M + role + context"),
-        ("A4/A7", "stage0_7g_gene_only_probe_ablation_full", "All (regulatory zero)"),
+        ("A0", "N-light-gene-ablation-m-only", "M only"),
+        ("A1", "N-light-gene-ablation-m-role", "M + gene role"),
+        ("A2", "N-light-gene-ablation-m-context", "M + CpG context"),
+        ("A3", "N-light-gene-ablation-m-role-context", "M + role + context"),
+        ("A4/A7", "N-light-gene-ablation-full", "All (regulatory zero)"),
     ]
     neg_arms = [
-        ("N0", "stage0_7g_gene_only_probe_ablation_n0_obs_only", "Observed flag only"),
-        ("N1", "stage0_7g_gene_only_probe_ablation_n1_anno_only", "Annotations only (no M)"),
-        ("N2", "stage0_7g_gene_only_probe_ablation_n2_reg_permuted", "Reg. permuted"),
-        ("N3", "stage0_7g_gene_only_probe_ablation_n3_reg_zero", "All-zero regulatory"),
+        ("N0", "N-light-gene-ablation-n0-obs-only", "Observed flag only"),
+        ("N1", "N-light-gene-ablation-n1-anno-only", "Annotations only (no M)"),
+        ("N2", "N-light-gene-ablation-n2-reg-permuted", "Reg. permuted"),
+        ("N3", "N-light-gene-ablation-n3-reg-zero", "All-zero regulatory"),
     ]
 
-    tissue_keys = ("evaluations", "mbs_e2e", "metrics", "tissue_macro_f1")
+    tissue_keys = ("evaluations", "mbs_e2e", "metrics", "tissue", "macro_f1")
+    linear_keys = ("evaluations", "mbs_linear_probe", "metrics", "tissue", "macro_f1")
     age_keys = ("evaluations", "mbs_e2e", "metrics", "age", "mae")
     sex_keys = ("evaluations", "mbs_e2e", "metrics", "sex", "auroc")
 
+    n_present = sum(
+        1
+        for _, base, _ in ablation_arms + neg_arms
+        for aid in _ablation_seed_ids(base)
+        if arm_payloads.get(aid)
+    )
+
     header = [
         "## Annotation ablation grid (A0–A4, N0–N3)\n",
-        "Fold 0, `mean` pooling, 8 epochs, two seeds. "
-        "Bootstrap 95% CIs from available folds. "
-        "Tissue macro-F1, age MAE, sex AUROC.\n",
-        "**Note:** A4 and A7 are identical while regulatory channels are zero (cCRE/DHS/ChromHMM not on disk).\n",
-        "| Arm | Features | Tissue macro-F1 [95% CI] | Age MAE [95% CI] | Sex AUROC [95% CI] |",
-        "|-----|----------|-------------------------:|-----------------:|-------------------:|",
+        "Fold 0, `mean` pooling, ≤8 epochs, **two seeds** (primary + `-s2`) pooled. "
+        "Bootstrap 95% CIs over seed runs. "
+        "Primary metric `mbs_e2e` tissue macro-F1; linear probe is the representation check.\n",
+        f"**Payloads found:** {n_present}/18 seed runs under `per_arm/N-light-gene-ablation-*.json`.\n",
+        "**Note:** A4 ≈ N2 ≈ N3 while regulatory channels are zero (cCRE/DHS/ChromHMM not "
+        "on disk). **`m_only` should lead** if annotations add noise under this budget.\n",
+        "| Arm | Features | Tissue e2e [95% CI] | Linear F1 [95% CI] | Age MAE (e2e) [95% CI] | Sex AUROC (e2e) [95% CI] |",
+        "|-----|----------|--------------------:|-------------------:|-----------------------:|-------------------------:|",
     ]
     rows_a = [
         f"| {label} | {desc} | "
-        + _ablation_table_row(arm_id, arm_payloads, tissue_keys=tissue_keys, age_keys=age_keys, sex_keys=sex_keys).split("|", 2)[2]
+        + _ablation_table_row(
+            _ablation_seed_ids(arm_id),
+            arm_payloads,
+            tissue_keys=tissue_keys,
+            age_keys=age_keys,
+            sex_keys=sex_keys,
+            linear_keys=linear_keys,
+        )[2:]
         for label, arm_id, desc in ablation_arms
     ]
     neg_header = [
         "",
         "### Negative controls\n",
-        "| Arm | Features | Tissue macro-F1 [95% CI] | Age MAE [95% CI] | Sex AUROC [95% CI] |",
-        "|-----|----------|-------------------------:|-----------------:|-------------------:|",
+        "| Arm | Features | Tissue e2e [95% CI] | Linear F1 [95% CI] | Age MAE (e2e) [95% CI] | Sex AUROC (e2e) [95% CI] |",
+        "|-----|----------|--------------------:|-------------------:|-----------------------:|-------------------------:|",
     ]
     rows_n = [
         f"| {label} | {desc} | "
-        + _ablation_table_row(arm_id, arm_payloads, tissue_keys=tissue_keys, age_keys=age_keys, sex_keys=sex_keys).split("|", 2)[2]
+        + _ablation_table_row(
+            _ablation_seed_ids(arm_id),
+            arm_payloads,
+            tissue_keys=tissue_keys,
+            age_keys=age_keys,
+            sex_keys=sex_keys,
+            linear_keys=linear_keys,
+        )[2:]
         for label, arm_id, desc in neg_arms
     ]
+
+    # Short takeaway from seed-mean e2e tissue.
+    ranked = []
+    for label, arm_id, desc in ablation_arms + neg_arms:
+        mean, _, _ = _arm_mean_ci(arm_payloads, _ablation_seed_ids(arm_id), *tissue_keys)
+        if not math.isnan(mean):
+            ranked.append((mean, label, desc))
+    ranked.sort(reverse=True)
+    takeaway = ""
+    if ranked:
+        best = ranked[0]
+        takeaway = (
+            f"\n**Takeaway:** best e2e tissue = **`{best[1]}` ({best[2]})** at "
+            f"{best[0]:.3f}. "
+            + (
+                "`m_only` leads; gene-role/context do not help under this fold-0 budget."
+                if best[1] == "A0"
+                else "Unexpected leader — inspect representation / training curves."
+            )
+            + " Negatives `obs_only` / `anno_only` should be near chance.\n"
+        )
 
     repr_header = [
         "",
         "### Representation diagnostics (fold 0 mean across seeds)\n",
-        "> Values populated only when `stage_a_per_epoch_eval: true` and repr_diagnostics logged.\n",
+        "> Values populated only when `stage_a_per_epoch_eval: true` and "
+        "`repr_diagnostics` logged on `mbs_e2e` (often empty for these short runs).\n",
         "| Arm | Gene-score SD | Saturation frac | Const-score frac | Corr w/ mean-M |",
         "|-----|:-------------:|:---------------:|:----------------:|:--------------:|",
     ]
-    repr_rows_a = [_repr_diagnostics_row(arm_id, arm_payloads) for _, arm_id, _ in ablation_arms]
-    repr_rows_n = [_repr_diagnostics_row(arm_id, arm_payloads) for _, arm_id, _ in neg_arms]
+
+    def _relabel(row: str, label: str) -> str:
+        parts = row.split("|")
+        if len(parts) < 3:
+            return row
+        parts[1] = f" {label} "
+        return "|".join(parts)
+
+    repr_rows_a = [
+        _relabel(_repr_diagnostics_row(_ablation_seed_ids(arm_id), arm_payloads), label)
+        for label, arm_id, _ in ablation_arms
+    ]
+    repr_rows_n = [
+        _relabel(_repr_diagnostics_row(_ablation_seed_ids(arm_id), arm_payloads), label)
+        for label, arm_id, _ in neg_arms
+    ]
 
     return "\n".join(
-        header + rows_a + neg_header + rows_n + repr_header + repr_rows_a + repr_rows_n + [""]
+        header
+        + rows_a
+        + neg_header
+        + rows_n
+        + [takeaway]
+        + repr_header
+        + repr_rows_a
+        + repr_rows_n
+        + [""]
     )
 
 
