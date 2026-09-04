@@ -1,6 +1,11 @@
 {
   "arms_run": [
-    "N-light-gene-max"
+    "N-cascade-scalar-max-mean",
+    "N-cascade-scalar-mean-max",
+    "N-cascade-vector-max-max",
+    "N-cascade-vector-mean-max",
+    "N-light-gene-max",
+    "N-light-gene-mean"
   ],
   "gene_panel": {
     "graph_content_hash": "6814f01f98e3a06be564085d5c178825884147f3687ced65bb96c97ebbbed691",

@@ -579,7 +579,9 @@ def main() -> None:
             else:
                 folds = []
                 prefix = str(arm["run_prefix"])
-                for fold_dir in sorted((paths.artifact_root / "runs").glob(f"{prefix}-f*")):
+                # Exact -f{i} only — do not glob ``*-f*`` (picks up ``.stale-*`` dirs).
+                for i in range(3):
+                    fold_dir = paths.artifact_root / "runs" / f"{prefix}-f{i}"
                     metrics_path = fold_dir / "metrics.json"
                     if metrics_path.is_file():
                         folds.append(json.loads(metrics_path.read_text(encoding="utf-8")))
@@ -600,6 +602,9 @@ def main() -> None:
                     ),
                     "mean_mbs_enet_tissue_f1": _mean_metric(
                         folds, "mbs_enet.metrics.tissue.macro_f1"
+                    ),
+                    "mean_mbs_enet_nested_tissue_f1": _mean_metric(
+                        folds, "mbs_enet_nested.metrics.tissue.macro_f1"
                     ),
                 },
             )

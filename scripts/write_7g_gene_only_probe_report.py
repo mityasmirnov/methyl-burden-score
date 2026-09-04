@@ -170,8 +170,10 @@ def _metric_from_fold(blob: dict[str, Any], metric_path: str) -> float | None:
         "mbs_e2e",
         "mbs_linear_probe",
         "mbs_enet",
+        "mbs_enet_nested",
         "rbs_linear_probe",
         "rbs_enet",
+        "rbs_enet_nested",
         "fusion_full",
         "fusion_mbs_direct",
     )
@@ -749,6 +751,12 @@ def _cascade_mode_row(folds: list[dict[str, Any]], arm_id: str, mode: str) -> di
         return None
     age_mae, age_mae_std, _ = _cascade_metric_means_n(folds, mode, "age", "mae")
     age_r2, age_r2_std, _ = _cascade_metric_means_n(folds, mode, "age", "r2")
+    # Nested enet age can explode under failed scaler/SGD; do not publish.
+    if age_mae is not None and float(age_mae) > 100.0:
+        age_mae = None
+        age_mae_std = None
+        age_r2 = None
+        age_r2_std = None
     sex_auroc, sex_auroc_std, _ = _cascade_metric_means_n(folds, mode, "sex", "auroc")
     sex_f1, sex_f1_std, _ = _cascade_metric_means_n(folds, mode, "sex", "macro_f1")
     return {
@@ -1503,13 +1511,17 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
             "- **ATS Stage A Tier-1 screen + annotation ablations:** complete. "
             "Freeze **`P2-G` as current reference, not a pooling lock.**",
             "- **Matched 16-epoch promotion screen (current GPU gate):** "
-            "**`N-light-gene-max` 16-ep complete** (3/3; tissue e2e 0.336 < P2 0.373 — "
-            "do **not** rerun). Remaining **12** folds: light-mean ×3, scalar "
-            "mean→max ×3, scalar max→mean ×3, vector mean→max ×3 — "
-            "[`milestone-7g-prime-16ep-promotion.md`]"
+            "**`N-light-gene-max`** tissue e2e **0.336** (below P2 — do not rerun); "
+            "**`N-light-gene-mean`** tissue e2e **0.378** (**within ~0.03 of P2** — "
+            "viable smaller topology candidate). Remaining cascade 16-ep queue: "
+            "scalar mean→max (fold 0 done / 1–2 training), then scalar max→mean ×3, "
+            "vector mean→max ×3 — [`milestone-7g-prime-16ep-promotion.md`]"
             "(../../../docs/plans/milestone-7g-prime-16ep-promotion.md).",
-            "- **Post-hoc fixed `rbs_enet`:** done for screen cascade arms (diagnostic "
-            "only); prefer `rbs_linear_probe` / nested enet for vector RBS.",
+            "- **Post-hoc CPU enet:** Tier-1 cascade fixed `mbs_enet` ~0.36–0.37 "
+            "tissue / age MAE ~15–16. 16-ep light fixed `mbs_enet` tissue ~0.38, "
+            "age MAE ~15–16 (usable). Nested light tissue ~0.39–0.40 but **nested "
+            "age MAE exploded** — do not cite nested age; prefer fixed enet / "
+            "linear for age. Fixed `rbs_enet` already landed (diagnostic).",
             "- **CPU typed-RBS ablation (R0–R5):** done; shuffle did not collapse → "
             "neural typed aggregator **not** promoted.",
             "- **Age-primary seed-mask screen:** blocked until 16-ep decision + "
@@ -1524,9 +1536,9 @@ def write_analysis(report_dir: Path, *, lock: dict[str, Any], paths: DataPaths |
             "",
             "Ordered ops:",
             "",
-            "1. **Finish 12-fold 16-ep queue** (light-mean → scalar ×2 → vector "
-            "mean→max); nested enet post-hoc; write `promotion_decision.json` from "
-            "rules.",
+            "1. **Finish remaining 16-ep cascade queue** (scalar mean→max f1–f2 → "
+            "scalar max→mean → vector mean→max); keep nested enet post-hoc; refresh "
+            "`promotion_decision.json` after the queue.",
             "2. **Repair seed-panel manifests** (graph_content_hash, stability vs "
             "4096 prefilter audit, autosome-only sex control, overlap report) "
             "before any seed-mask GPU.",

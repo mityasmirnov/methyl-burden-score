@@ -18,11 +18,11 @@
     },
     "N-light-gene-mean": {
       "n_folds": 3,
-      "ceiling": 5,
-      "tissue_f1_mean": 0.12641568513659526,
-      "age_mae_mean": 23.0818874023589,
-      "sex_auroc_mean": 0.5911437277982253,
-      "matched_16ep": false
+      "ceiling": 16,
+      "tissue_f1_mean": 0.37771389402868943,
+      "age_mae_mean": 17.09513270506246,
+      "sex_auroc_mean": 0.6554507792646279,
+      "matched_16ep": true
     },
     "N-cascade-scalar-mean-max": {
       "n_folds": 3,
@@ -54,6 +54,12 @@
       "fired": false,
       "detail": "Prefer smaller DeepRVAT-like one-hop max if within 0.03 tissue F1 of P2-G.",
       "light_f1": 0.33645482665941434,
+      "p2_f1": 0.3731132977135239
+    },
+    "one_hop_mean_near_p2": {
+      "fired": true,
+      "detail": "Document one-hop mean as a viable smaller topology candidate if within 0.03 tissue F1 of P2-G; do not skip remaining cascade 16-ep jobs.",
+      "light_mean_f1": 0.37771389402868943,
       "p2_f1": 0.3731132977135239
     },
     "vector_age_improves_but_gene_pool_loses": {

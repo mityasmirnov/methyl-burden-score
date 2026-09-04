@@ -133,6 +133,7 @@ def decide(report_dir: Path) -> dict[str, Any]:
         }
 
     light = summary["arms"]["N-light-gene-max"]
+    light_mean = summary["arms"]["N-light-gene-mean"]
     vec = summary["arms"]["N-cascade-vector-mean-max"]
     mean_max = summary["arms"]["N-cascade-scalar-mean-max"]
     max_mean = summary["arms"]["N-cascade-scalar-max-mean"]
@@ -147,6 +148,20 @@ def decide(report_dir: Path) -> dict[str, Any]:
         "fired": r1,
         "detail": "Prefer smaller DeepRVAT-like one-hop max if within 0.03 tissue F1 of P2-G.",
         "light_f1": light.get("tissue_f1_mean"),
+        "p2_f1": p2_f1,
+    }
+
+    # Rule 1b: one-hop mean ≈ P2-G (document viable smaller topology; do not skip cascade)
+    r1b = False
+    if light_mean.get("matched_16ep") and light_mean.get("tissue_f1_mean") is not None:
+        r1b = abs(float(light_mean["tissue_f1_mean"]) - float(p2_f1)) <= 0.03
+    summary["rules"]["one_hop_mean_near_p2"] = {
+        "fired": r1b,
+        "detail": (
+            "Document one-hop mean as a viable smaller topology candidate if within "
+            "0.03 tissue F1 of P2-G; do not skip remaining cascade 16-ep jobs."
+        ),
+        "light_mean_f1": light_mean.get("tissue_f1_mean"),
         "p2_f1": p2_f1,
     }
 
