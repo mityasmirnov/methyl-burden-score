@@ -2,7 +2,8 @@
 """Run 7G′ age-primary seed-mask screen (G0/G1/G2/G3/C0/C2).
 
 Stage B CpG-panel GPU is blocked until this screen and typed-RBS diagnostics
-land. First seed source: ``internal_fold`` only (ADR 0011).
+land. First seed source: ``internal_fold`` only (ADR 0011). Discovery CpGs
+rank seed genes; G2/C2 train on expanded gene CpGs (ADR 0012).
 """
 
 from __future__ import annotations
@@ -163,6 +164,7 @@ def main() -> None:
     seeds = [int(x) for x in (cv.get("seeds") or [42, 43])]
     n_seed_genes = int((cfg.get("seed_panel") or {}).get("n_genes", cv.get("n_seed_genes", 256)))
     min_genes = int((cfg.get("seed_panel") or {}).get("min_genes", 32))
+    seed_traits = (cfg.get("seed_panel") or {}).get("traits")
     pilot = cfg.get("pilot") or {}
     matrix_id = str(pilot.get("matrix_id", "matrix-hub-age-tissue-sex-full-v1"))
     graph_id = str(pilot.get("graph_id", "graph-grch38-gencode38-cgi-tile-v2"))
@@ -300,6 +302,7 @@ def main() -> None:
                 matrix_id=matrix_id,
                 seed=42 + fold_idx,
                 min_genes=min_genes,
+                traits=seed_traits,
             )
             write_seed_panel(panel_dir, artifacts)
 
@@ -453,42 +456,48 @@ def main() -> None:
         "# 7G′ age-primary seed-mask screen",
         "",
         "Selection: validation age MAE primary; tissue F1 secondary; sex AUROC tertiary.",
-        "Seed source: **internal_fold** (ADR 0011). P2-G topology is a reference, not a lock.",
+        "Seed source: **internal_fold** (ADR 0011). Discovery CpGs ≠ G2 input (ADR 0012).",
+        "P2-G topology is a reference, not a lock.",
         "",
         f"Folds: {fold_ids}; seeds: {seeds}; K={n_seed_genes}.",
         "",
-        "Arms: G0 all-gene control; G1 head masks; G2 seed CpGs+masks; G3 matched random;",
-        "C0 classical all-gene; C2 classical on G2 CpGs.",
+        "Arms: G0 all-gene control; G1 head masks; G2 expanded gene CpGs+masks;",
+        "G3 matched random; C0 classical all-gene; C2 classical on G2 expanded CpGs.",
         "",
         f"graph_content_hash: `{panel0_obj.get('graph_content_hash')}`",
         f"panel_hash: `{panel0_obj.get('panel_hash')}`",
+        f"configured_traits: `{panel0_obj.get('configured_traits')}`",
         "",
-        "## Per-trait stability (fold 0)",
+        "## Per-trait discovery vs expanded (fold 0)",
         "",
-        "| trait | prefilter | stability seeds | n_pass@0.34 | sparsity_ok | strength_cap | nonconverged |",
-        "|---|---:|---:|---:|:---:|---:|---:|",
+        "| trait | prefilter | discovery CpGs | seed genes | unique expanded | edges | seed frac | sparsity_ok |",
+        "|---|---:|---:|---:|---:|---:|---:|:---:|",
     ]
     for trait, tmeta in sorted((panel0_obj.get("traits") or {}).items()):
         analysis.append(
             f"| {trait} | {tmeta.get('n_cols_prefiltered')} | "
-            f"{tmeta.get('n_seed_cpgs_after_stability', tmeta.get('n_seed_cpgs'))} | "
-            f"{tmeta.get('n_passing_min_frequency')} | {tmeta.get('sparsity_ok')} | "
-            f"{tmeta.get('strength_cap')} | {tmeta.get('n_fits_nonconverged')} |"
+            f"{tmeta.get('n_discovery_cpgs', tmeta.get('n_seed_cpgs_after_stability', tmeta.get('n_seed_cpgs')))} | "
+            f"{tmeta.get('n_seed_genes', tmeta.get('n_genes_actual'))} | "
+            f"{tmeta.get('n_unique_expanded_gene_cpgs')} | "
+            f"{tmeta.get('n_expanded_gene_cpg_edges', tmeta.get('n_enriched_locus_rows'))} | "
+            f"{tmeta.get('seed_fraction_of_expanded')} | {tmeta.get('sparsity_ok')} |"
         )
     ov = panel0_obj.get("overlap") or {}
     analysis.extend(
         [
             "",
-            "## Overlap (age/tissue/sex)",
+            "## Overlap (configured traits)",
             "",
+            f"- traits: `{ov.get('traits')}`",
             f"- gene set sizes: `{ov.get('gene_set_sizes')}`",
             f"- gene union: {ov.get('gene_union_size')}",
             f"- gene pairwise: `{ov.get('gene_pairwise_overlap')}`",
-            f"- CpG set sizes: `{ov.get('cpg_set_sizes')}`",
-            f"- CpG union: {ov.get('cpg_union_size')}",
+            f"- expanded CpG set sizes: `{ov.get('cpg_set_sizes')}`",
+            f"- expanded CpG union: {ov.get('cpg_union_size')}",
             f"- CpG pairwise: `{ov.get('cpg_pairwise_overlap')}`",
+            f"- seed fraction of expanded: `{ov.get('seed_fraction_of_expanded')}`",
             f"- gene-role coverage: `{ov.get('gene_role_coverage')}`",
-            f"- genes with only one CpG: `{ov.get('genes_with_only_one_seed_cpg')}`",
+            f"- genes with only one discovery CpG: `{ov.get('genes_with_only_one_seed_cpg')}`",
             f"- multi-gene CpG count: `{ov.get('multi_gene_cpg_count')}`",
             "",
             "## G3 matched-random quality",

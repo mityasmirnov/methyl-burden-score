@@ -25,10 +25,12 @@ True next milestone after bootstrap:
 scalar mixed pools, vector mean→max; tissue-primary; patience 5). Freeze
 **P2-G as the current reference, not a pooling lock.** Fixed `rbs_enet` is
 diagnostic only (vector age collapse ≠ weak RBS). Age-primary seed-mask
-(`internal_fold` G0–G3/C0/C2; ADR 0011) stays **blocked** until 16-ep decision
-rules fire. CPU typed-RBS R0–R5 is **done** (shuffle did not clearly collapse →
-neural typed aggregator **not** promoted). Stage B CpG-panel GPU stays
-**blocked**. Plans:
+(`internal_fold` G0–G3/C0/C2; ADR 0011 sources, ADR 0012 discovery-vs-input)
+stays **blocked** until 16-ep decision rules fire. Discovery CpGs (e.g. 4,096
+prefilter) rank seed genes only; G2/C2 use expanded gene-linked CpGs; traits
+are config-driven (ATS default age/tissue/sex). CPU typed-RBS R0–R5 is **done**
+(shuffle did not clearly collapse → neural typed aggregator **not** promoted).
+Stage B CpG-panel GPU stays **blocked**. Plans:
 [`plans/milestone-7g-prime-16ep-promotion.md`](plans/milestone-7g-prime-16ep-promotion.md),
 [`plans/milestone-7g-prime-age-seed-mask.md`](plans/milestone-7g-prime-age-seed-mask.md),
 [`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md).
@@ -966,7 +968,9 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   § Seed-gene Stage A repeat; protocol in
   [`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md)
 - **ADR:** [0011](adr/0011-seed-gene-sources.md) — `external_clean` /
-  `internal_fold` / `hybrid_fold`
+  `internal_fold` / `hybrid_fold`; [0012](adr/0012-seed-gene-discovery-vs-deployment-input.md)
+  — discovery CpGs rank genes; G2/C2 and deployment use expanded / observed
+  gene-linked CpGs; seed-panel traits are config-driven (ATS age/tissue/sex).
 - **First steps:** Atlas×Hub coverage join (start
   `reports/inspection/deepmat_data_v1/trait_eligibility.md`); pick **one**
   trait that clears the bar or document stop; then seed-only Stage A re-screen.

@@ -19,6 +19,22 @@
       "type": ["integer", "string"]
     },
     "selection_method": { "type": "string" },
+    "method": { "type": "string" },
+    "configured_traits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string" },
+          "role": {
+            "type": "string",
+            "enum": ["primary", "secondary", "auxiliary"]
+          },
+          "autosome_control": { "type": "boolean" }
+        }
+      }
+    },
     "thresholds": { "type": "object" },
     "excluded_study_ids": {
       "type": "array",
@@ -29,14 +45,23 @@
     "matrix_id": { "type": ["string", "null"] },
     "n_train_samples": { "type": "integer" },
     "panel_hash": { "type": "string", "minLength": 8 },
+    "overlap": { "type": "object" },
     "traits": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "n_genes": { "type": "integer" },
-          "n_loci": { "type": "integer" },
-          "autosome_only_n_genes": { "type": ["integer", "null"] }
+          "n_discovery_cpgs": { "type": "integer" },
+          "n_seed_genes": { "type": "integer" },
+          "n_expanded_gene_cpg_edges": { "type": "integer" },
+          "n_unique_expanded_gene_cpgs": { "type": "integer" },
+          "n_multigene_cpgs": { "type": "integer" },
+          "seed_fraction_of_expanded": { "type": "number" },
+          "n_seed_cpgs": { "type": "integer" },
+          "n_seed_cpgs_after_stability": { "type": "integer" },
+          "n_genes_actual": { "type": "integer" },
+          "n_enriched_locus_rows": { "type": "integer" },
+          "autosome_only_control": { "type": "boolean" }
         }
       }
     }

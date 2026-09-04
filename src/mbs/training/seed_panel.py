@@ -1,4 +1,4 @@
-"""``internal_fold`` seed-gene panel constructor (7G′ Stage B, ADR 0010/0011).
+"""``internal_fold`` seed-gene panel constructor (7G′ Stage B, ADR 0010/0011/0012).
 
 Gene-first, fold-fitted seed selection: reuse ``stability_select_columns`` on
 outer-train samples only, map selected CpG columns to genes via *explicit*
@@ -6,8 +6,10 @@ region→gene edges, rank genes by capped burden strength, then enrich each
 selected gene with all its gene-linked CpGs (siblings). DeepRVAT-faithful:
 selection is a burden over the gene's CpG set, not a single min-P locus.
 
-Callers should pass an ``explicit_only`` :class:`CascadeAssignment` (ADR 0010)
-so neural and classical arms share evidence-backed gene columns.
+Discovery CpGs (prefilter / stability) rank genes only — they are not the G2/C2
+input panel (ADR 0012). Callers should pass an ``explicit_only``
+:class:`CascadeAssignment` (ADR 0010) so neural and classical arms share
+evidence-backed gene columns.
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -27,7 +29,7 @@ from mbs.annotation.manifest import sha256_file
 from mbs.training.cascade_assign import CascadeAssignment
 from mbs.training.fold_safe_panel import stability_select_columns
 
-TRAITS: tuple[str, ...] = ("age", "tissue", "sex")
+TraitRole = Literal["primary", "secondary", "auxiliary"]
 _PROMOTER_ROLES = frozenset({"promoter_core", "promoter_proximal", "five_prime"})
 _BODY_ROLES = frozenset({"gene_body", "three_prime"})
 _SEX_CHROMS = frozenset({"chrx", "chry", "x", "y"})
@@ -45,6 +47,100 @@ DEFAULT_PREFILTER_MAX_COLS = 4096
 DEFAULT_N_INNER_FOLDS = 2
 DEFAULT_N_REPEATS = 2
 SELECTION_METHOD = "study_grouped_enet_stability_gene_first"
+
+# Traits with label arrays wired into :func:`build_internal_fold_seed_panel`.
+_SUPPORTED_PANEL_TRAITS = frozenset({"age", "tissue", "sex"})
+# Future traits: config-driven, but not yet labeled in this constructor.
+_BLOCKED_TRAIT_HINTS: dict[str, str] = {
+    "bmi": (
+        "BMI is blocked on ATS; eligible only on matrix-hub-bmi-full-v1 "
+        "(≥1000 samples, ≥5 studies). Do not join BMI onto the ATS matrix."
+    ),
+    "disease": (
+        "disease requires documented multi-study cases+controls; "
+        "unknown labels must remain unknown (not controls)"
+    ),
+    "cancer": (
+        "cancer requires documented multi-study cases+controls; "
+        "unknown labels must remain unknown (not controls)"
+    ),
+    "blood": "blood subtraits blocked until ontology / label quality confirmed",
+    "brain": "brain subtraits blocked until ontology / label quality confirmed",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class SeedTraitSpec:
+    """One seed-panel trait from experiment YAML (not Hub phenotype_registry)."""
+
+    id: str
+    role: TraitRole = "primary"
+    autosome_control: bool = False
+
+
+DEFAULT_SEED_TRAITS: tuple[SeedTraitSpec, ...] = (
+    SeedTraitSpec("age", "primary"),
+    SeedTraitSpec("tissue", "secondary"),
+    SeedTraitSpec("sex", "auxiliary", autosome_control=True),
+)
+
+# Back-compat alias for callers / tests that still import TRAITS.
+TRAITS: tuple[str, ...] = tuple(t.id for t in DEFAULT_SEED_TRAITS)
+
+
+def resolve_seed_panel_traits(
+    traits: Sequence[SeedTraitSpec | Mapping[str, Any] | str] | None = None,
+) -> list[SeedTraitSpec]:
+    """Parse experiment ``seed_panel.traits`` into :class:`SeedTraitSpec` list.
+
+    ``None`` / empty → ATS default (age / tissue / sex + sex autosome control).
+    Unknown or blocked ids raise with an eligibility hint.
+    """
+    if not traits:
+        return list(DEFAULT_SEED_TRAITS)
+    out: list[SeedTraitSpec] = []
+    seen: set[str] = set()
+    for raw in traits:
+        if isinstance(raw, SeedTraitSpec):
+            spec = raw
+        elif isinstance(raw, str):
+            spec = SeedTraitSpec(id=raw)
+        elif isinstance(raw, Mapping):
+            tid = str(raw.get("id") or raw.get("trait") or "").strip()
+            if not tid:
+                raise ValueError(f"seed_panel trait entry missing id: {raw!r}")
+            role_raw = str(raw.get("role") or "primary").strip().lower()
+            if role_raw not in {"primary", "secondary", "auxiliary"}:
+                raise ValueError(
+                    f"seed_panel trait {tid!r} has invalid role {role_raw!r}; "
+                    "expected primary|secondary|auxiliary"
+                )
+            spec = SeedTraitSpec(
+                id=tid,
+                role=role_raw,  # type: ignore[arg-type]
+                autosome_control=bool(raw.get("autosome_control", False)),
+            )
+        else:
+            raise TypeError(f"unsupported seed_panel trait entry: {type(raw)!r}")
+        tid = spec.id.strip().lower()
+        if tid in seen:
+            raise ValueError(f"duplicate seed_panel trait {tid!r}")
+        seen.add(tid)
+        if tid in _BLOCKED_TRAIT_HINTS:
+            raise ValueError(f"seed_panel trait {tid!r}: {_BLOCKED_TRAIT_HINTS[tid]}")
+        if tid not in _SUPPORTED_PANEL_TRAITS:
+            raise ValueError(
+                f"unknown seed_panel trait {tid!r}; supported={sorted(_SUPPORTED_PANEL_TRAITS)}; "
+                f"blocked={sorted(_BLOCKED_TRAIT_HINTS)}"
+            )
+        if spec.autosome_control and tid != "sex":
+            raise ValueError(
+                f"autosome_control is only valid for sex; got trait={tid!r}"
+            )
+        out.append(
+            SeedTraitSpec(id=tid, role=spec.role, autosome_control=spec.autosome_control)
+        )
+    return out
 
 
 def hash_graph_tables(graph_root: Path) -> str:
@@ -338,6 +434,8 @@ def _select_trait_genes(
         "seed_cols": seed_cols,
         "selection_meta": {
             "n_runs": int(meta.get("n_runs", 0)),
+            # ADR 0012: discovery set size (not G2/C2 input width).
+            "n_discovery_cpgs": len(seed_cols),
             "n_seed_cpgs_after_stability": len(seed_cols),
             "n_selected_cols": len(seed_cols),
             "n_passing_min_frequency": n_passing,
@@ -367,6 +465,61 @@ def _select_trait_genes(
     }
 
 
+def _trait_label_arrays(
+    trait_id: str,
+    *,
+    age: np.ndarray,
+    age_mask: np.ndarray,
+    sex: np.ndarray,
+    sex_mask: np.ndarray,
+    tissue: np.ndarray,
+    tissue_mask: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    if trait_id == "age":
+        return np.asarray(age), np.asarray(age_mask, dtype=bool)
+    if trait_id == "tissue":
+        return np.asarray(tissue), np.asarray(tissue_mask, dtype=bool)
+    if trait_id == "sex":
+        return np.asarray(sex), np.asarray(sex_mask, dtype=bool)
+    raise ValueError(f"no label arrays wired for trait {trait_id!r}")
+
+
+def _trait_expansion_stats(
+    *,
+    trait: str,
+    seed_cols_set: set[int],
+    locus_records: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """ADR 0012 discovery-vs-expanded counts for one trait summary."""
+    trait_loci = [r for r in locus_records if r["trait"] == trait]
+    expanded_cols = {int(r["locus_col"]) for r in trait_loci}
+    discovery_in_expanded = {
+        int(r["locus_col"]) for r in trait_loci if bool(r["is_seed_cpg"])
+    }
+    n_edges = len(trait_loci)
+    n_unique = len(expanded_cols)
+    n_discovery = len(seed_cols_set)
+    # Multi-gene: same locus_col linked to >1 gene_id within this trait.
+    by_col: dict[int, set[str]] = defaultdict(set)
+    for r in trait_loci:
+        by_col[int(r["locus_col"])].add(str(r["gene_id"]))
+    n_multigene = sum(1 for genes in by_col.values() if len(genes) > 1)
+    seed_frac = (
+        float(len(discovery_in_expanded) / n_unique) if n_unique > 0 else 0.0
+    )
+    return {
+        "n_discovery_cpgs": int(n_discovery),
+        "n_seed_genes": None,  # filled by caller
+        "n_expanded_gene_cpg_edges": int(n_edges),
+        "n_unique_expanded_gene_cpgs": int(n_unique),
+        "n_multigene_cpgs": int(n_multigene),
+        "seed_fraction_of_expanded": seed_frac,
+        # Aliases for older audits / reports.
+        "n_seed_cpgs": int(n_discovery),
+        "n_enriched_locus_rows": int(n_edges),
+    }
+
+
 def build_internal_fold_seed_panel(
     *,
     x_train: np.ndarray,
@@ -389,10 +542,12 @@ def build_internal_fold_seed_panel(
     matrix_id: str | None = None,
     seed: int = 42,
     min_genes: int = 32,
+    traits: Sequence[SeedTraitSpec | Mapping[str, Any] | str] | None = None,
 ) -> SeedPanelArtifacts:
     """Build fold-fitted per-trait seed-gene panels from outer-train samples only.
 
-    Raises ``ValueError`` if any trait with labeled samples yields < ``min_genes``.
+    Raises ``ValueError`` if any configured trait with labeled samples yields
+    fewer than ``min_genes``, or if a requested trait is unknown / blocked.
     """
     if selection_source != "internal_fold":
         raise ValueError(f"seed_panel only builds internal_fold; got {selection_source!r}")
@@ -403,23 +558,45 @@ def build_internal_fold_seed_panel(
             "graph_content_hash is required (hash_graph_tables(graph_root)); "
             "refusing to write an unauditable seed panel"
         )
+    trait_specs = resolve_seed_panel_traits(traits)
     col_to_genes, gene_to_cols, edge_role = _gene_edge_maps(assignment)
     gene_ids = list(assignment.gene_ids)
     n_cols = int(np.asarray(x_train).shape[1])
-    auto_mask = _autosomal_col_mask(locus_chrom, n_cols)
-    autosomal_cols = np.flatnonzero(auto_mask).astype(np.int64)
 
-    trait_jobs: list[tuple[str, np.ndarray, np.ndarray, np.ndarray | None]] = [
-        ("age", np.asarray(age), np.asarray(age_mask, dtype=bool), None),
-        ("tissue", np.asarray(tissue), np.asarray(tissue_mask, dtype=bool), None),
-        ("sex", np.asarray(sex), np.asarray(sex_mask, dtype=bool), None),
-        # Explicit autosomal sensitivity control for sex (no X/Y loci enter selection).
-        ("sex_autosome", np.asarray(sex), np.asarray(sex_mask, dtype=bool), autosomal_cols),
-    ]
+    need_autosome = any(s.id == "sex" and s.autosome_control for s in trait_specs)
+    auto_mask: np.ndarray | None = None
+    autosomal_cols: np.ndarray | None = None
+    if need_autosome:
+        auto_mask = _autosomal_col_mask(locus_chrom, n_cols)
+        autosomal_cols = np.flatnonzero(auto_mask).astype(np.int64)
+
+    trait_jobs: list[tuple[str, np.ndarray, np.ndarray, np.ndarray | None]] = []
+    for spec in trait_specs:
+        y, mask = _trait_label_arrays(
+            spec.id,
+            age=age,
+            age_mask=age_mask,
+            sex=sex,
+            sex_mask=sex_mask,
+            tissue=tissue,
+            tissue_mask=tissue_mask,
+        )
+        if not np.asarray(mask, dtype=bool).any():
+            raise ValueError(
+                f"seed_panel trait {spec.id!r} has no labeled samples on this matrix"
+            )
+        trait_jobs.append((spec.id, y, mask, None))
+        if spec.id == "sex" and spec.autosome_control:
+            if autosomal_cols is None:
+                raise RuntimeError("sex autosome_control requires autosomal_cols")
+            trait_jobs.append(
+                ("sex_autosome", y, mask, autosomal_cols)
+            )
 
     gene_records: list[dict[str, Any]] = []
     locus_records: list[dict[str, Any]] = []
     trait_summaries: dict[str, Any] = {}
+    overlap_traits = [s.id for s in trait_specs]
 
     for trait, y, mask, allowed in trait_jobs:
         print(f"[seed_panel] selecting trait={trait} …", flush=True)
@@ -436,7 +613,10 @@ def build_internal_fold_seed_panel(
             allowed_cols=allowed,
         )
         if result is None:
-            continue
+            raise ValueError(
+                f"seed_panel trait {trait!r} produced no selection "
+                "(empty after study filters?)"
+            )
         ranked = result["genes"][:n_genes]
         seed_cols_set = set(result["seed_cols"])
         if len(ranked) < min_genes:
@@ -448,6 +628,8 @@ def build_internal_fold_seed_panel(
             gene_id = gene_ids[gene_idx] if 0 <= gene_idx < len(gene_ids) else str(gene_idx)
             all_cols = sorted(gene_to_cols.get(gene_idx, set()))
             if trait == "sex_autosome":
+                if auto_mask is None:
+                    raise RuntimeError("sex_autosome requires auto_mask")
                 all_cols = [c for c in all_cols if bool(auto_mask[int(c)])]
                 gene_seed = seed_cols_set & set(gene_to_cols.get(gene_idx, set()))
                 if any(not bool(auto_mask[int(c)]) for c in gene_seed):
@@ -466,7 +648,10 @@ def build_internal_fold_seed_panel(
                     "trait": trait,
                     "rank": rank,
                     "score": gene["score"],
+                    # Discovery support (stability seed CpGs for this gene).
                     "n_cpgs": gene["n_cpgs"],
+                    # Full sibling-enriched width used by G2/C2.
+                    "n_expanded_cpgs": len(all_cols),
                     "n_studies": gene["n_studies"],
                     "mean_abs_coef": gene["mean_abs_coef"],
                     "promoter_body_coverage": _promoter_body_coverage(roles),
@@ -495,21 +680,19 @@ def build_internal_fold_seed_panel(
             for r in gene_records
             if r["trait"] == trait and r["autosome_only"] is True
         )
+        expansion = _trait_expansion_stats(
+            trait=trait,
+            seed_cols_set=seed_cols_set,
+            locus_records=locus_records,
+        )
+        expansion["n_seed_genes"] = len(ranked)
         trait_summaries[trait] = {
             "n_genes_requested": n_genes,
             "n_genes_actual": len(ranked),
-            # Prefer explicit stability count; keep n_seed_cpgs as alias for back-compat.
-            "n_seed_cpgs": int(
-                result["selection_meta"].get(
-                    "n_seed_cpgs_after_stability", len(seed_cols_set)
-                )
-            ),
-            "n_enriched_locus_rows": int(
-                sum(1 for rec in locus_records if rec["trait"] == trait)
-            ),
             "n_sex_chrom_seed_cpgs": int(sex_chrom_seed),
             "n_autosome_only_genes": int(n_autosome_genes),
             **result["selection_meta"],
+            **expansion,
         }
         if trait == "sex_autosome":
             if sex_chrom_seed != 0:
@@ -529,6 +712,7 @@ def build_internal_fold_seed_panel(
             "rank",
             "score",
             "n_cpgs",
+            "n_expanded_cpgs",
             "n_studies",
             "mean_abs_coef",
             "promoter_body_coverage",
@@ -542,7 +726,9 @@ def build_internal_fold_seed_panel(
     )
 
     panel_hash = _panel_hash(genes_df, loci_df)
-    overlap = summarize_seed_panel_overlap(genes_df, loci_df)
+    overlap = summarize_seed_panel_overlap(
+        genes_df, loci_df, traits=overlap_traits
+    )
     panel_json: dict[str, Any] = {
         "selection_source": selection_source,
         "method": SELECTION_METHOD,
@@ -551,6 +737,14 @@ def build_internal_fold_seed_panel(
         "n_genes_requested": n_genes,
         "min_genes": min_genes,
         "gene_allocation": "explicit_only",
+        "configured_traits": [
+            {
+                "id": s.id,
+                "role": s.role,
+                "autosome_control": s.autosome_control,
+            }
+            for s in trait_specs
+        ],
         "thresholds": {
             "min_frequency": DEFAULT_MIN_FREQUENCY,
             "strength_cap_quantile": DEFAULT_STRENGTH_CAP_QUANTILE,
@@ -576,9 +770,24 @@ def build_internal_fold_seed_panel(
 def summarize_seed_panel_overlap(
     genes: pd.DataFrame,
     loci: pd.DataFrame,
+    *,
+    traits: Sequence[str] | None = None,
 ) -> dict[str, Any]:
-    """Gene / CpG overlap and coverage stats across age/tissue/sex (not sex_autosome)."""
-    primary = ("age", "tissue", "sex")
+    """Gene / CpG overlap and coverage stats across configured traits.
+
+    ``sex_autosome`` is excluded unless explicitly listed in ``traits``.
+    """
+    if traits is None:
+        present = [
+            str(t)
+            for t in genes["trait"].astype(str).unique().tolist()
+            if str(t) != "sex_autosome"
+        ]
+        primary = tuple(present) if present else ("age", "tissue", "sex")
+    else:
+        primary = tuple(str(t) for t in traits if str(t) != "sex_autosome")
+    if not primary:
+        primary = ("age", "tissue", "sex")
     gene_sets = {
         t: set(genes.loc[genes["trait"] == t, "gene_id"].astype(str)) for t in primary
     }
@@ -608,6 +817,12 @@ def summarize_seed_panel_overlap(
     genes_one_cpg = {
         t: int((genes.loc[genes["trait"] == t, "n_cpgs"] == 1).sum()) for t in primary
     }
+    seed_fraction = {
+        t: (
+            float(len(seed_cpg_sets[t]) / len(cpg_sets[t])) if cpg_sets[t] else 0.0
+        )
+        for t in primary
+    }
     # Multi-gene CpGs: same locus_col linked to >1 gene_id within a trait.
     multi_gene_cpg: dict[str, int] = {}
     for t in primary:
@@ -617,20 +832,28 @@ def summarize_seed_panel_overlap(
             continue
         counts = sub.groupby("locus_col")["gene_id"].nunique()
         multi_gene_cpg[t] = int((counts > 1).sum())
+    pairwise = [
+        (primary[i], primary[j])
+        for i in range(len(primary))
+        for j in range(i + 1, len(primary))
+    ]
+    nonempty_gene = [gene_sets[t] for t in primary if gene_sets[t]]
+    nonempty_cpg = [cpg_sets[t] for t in primary if cpg_sets[t]]
     return {
+        "traits": list(primary),
         "gene_set_sizes": {t: len(gene_sets[t]) for t in primary},
-        "gene_union_size": len(set.union(*(gene_sets[t] for t in primary if gene_sets[t]))),
+        "gene_union_size": len(set.union(*nonempty_gene)) if nonempty_gene else 0,
         "gene_pairwise_overlap": {
-            f"{a}_∩_{b}": len(gene_sets[a] & gene_sets[b])
-            for a, b in (("age", "tissue"), ("age", "sex"), ("tissue", "sex"))
+            f"{a}_∩_{b}": len(gene_sets[a] & gene_sets[b]) for a, b in pairwise
         },
         "cpg_set_sizes": {t: len(cpg_sets[t]) for t in primary},
-        "cpg_union_size": len(set.union(*(cpg_sets[t] for t in primary if cpg_sets[t]))),
+        "cpg_union_size": len(set.union(*nonempty_cpg)) if nonempty_cpg else 0,
         "cpg_pairwise_overlap": {
-            f"{a}_∩_{b}": len(cpg_sets[a] & cpg_sets[b])
-            for a, b in (("age", "tissue"), ("age", "sex"), ("tissue", "sex"))
+            f"{a}_∩_{b}": len(cpg_sets[a] & cpg_sets[b]) for a, b in pairwise
         },
         "stability_seed_cpg_set_sizes": {t: len(seed_cpg_sets[t]) for t in primary},
+        "n_unique_expanded_gene_cpgs": {t: len(cpg_sets[t]) for t in primary},
+        "seed_fraction_of_expanded": seed_fraction,
         "gene_role_coverage": role_cov,
         "genes_with_only_one_seed_cpg": genes_one_cpg,
         "multi_gene_cpg_count": multi_gene_cpg,

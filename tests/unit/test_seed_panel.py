@@ -14,6 +14,7 @@ from mbs.training.seed_panel import (
     gene_mask_tensor,
     matched_random_gene_panel,
     matched_random_gene_panel_with_quality,
+    resolve_seed_panel_traits,
     write_seed_panel,
 )
 
@@ -74,6 +75,7 @@ def _build_age_only(min_genes: int, n_genes: int = 10, seed: int = 0) -> SeedPan
         n_genes=n_genes,
         min_genes=min_genes,
         graph_content_hash="test-graph-hash",
+        traits=["age"],
     )
 
 
@@ -88,6 +90,89 @@ def test_gene_enrichment_includes_sibling_cpgs() -> None:
     assert not bool(seed_flags[1])  # col 1 enriched only, not selected
     # Sanity: the seed panel JSON round-trips the trait summary.
     assert artifacts.panel_json["traits"]["age"]["n_genes_actual"] >= 1
+    age_meta = artifacts.panel_json["traits"]["age"]
+    assert "n_discovery_cpgs" in age_meta
+    assert "n_unique_expanded_gene_cpgs" in age_meta
+    assert age_meta["n_discovery_cpgs"] != age_meta["n_unique_expanded_gene_cpgs"]
+    assert age_meta["n_unique_expanded_gene_cpgs"] >= 2  # seed + sibling
+    assert 0.0 < age_meta["seed_fraction_of_expanded"] <= 1.0
+    g0_gene = artifacts.genes[
+        (artifacts.genes["gene_id"] == "G0") & (artifacts.genes["trait"] == "age")
+    ].iloc[0]
+    assert int(g0_gene["n_expanded_cpgs"]) == 2
+    assert int(g0_gene["n_cpgs"]) >= 1
+    assert int(g0_gene["n_cpgs"]) < int(g0_gene["n_expanded_cpgs"])
+
+
+def test_discovery_vs_expanded_field_semantics() -> None:
+    artifacts = _build_age_only(min_genes=1)
+    age = artifacts.panel_json["traits"]["age"]
+    discovery = {
+        int(c)
+        for c in artifacts.loci.loc[
+            (artifacts.loci["trait"] == "age") & artifacts.loci["is_seed_cpg"].astype(bool),
+            "locus_col",
+        ]
+        .astype(int)
+        .tolist()
+    }
+    expanded = {
+        int(c)
+        for c in artifacts.loci.loc[artifacts.loci["trait"] == "age", "locus_col"]
+        .astype(int)
+        .tolist()
+    }
+    assert age["n_unique_expanded_gene_cpgs"] == len(expanded)
+    assert age["n_expanded_gene_cpg_edges"] == int(
+        (artifacts.loci["trait"] == "age").sum()
+    )
+    assert age["n_seed_genes"] == age["n_genes_actual"]
+    expected_frac = len(discovery) / len(expanded)
+    assert age["seed_fraction_of_expanded"] == pytest.approx(expected_frac)
+    # Aliases for older audits.
+    assert age["n_seed_cpgs"] == age["n_discovery_cpgs"]
+    assert age["n_seed_cpgs_after_stability"] == age["n_discovery_cpgs"]
+
+
+def test_traits_age_only_skips_tissue_sex() -> None:
+    artifacts = _build_age_only(min_genes=1)
+    assert set(artifacts.panel_json["traits"]) == {"age"}
+    assert artifacts.panel_json["configured_traits"] == [
+        {"id": "age", "role": "primary", "autosome_control": False}
+    ]
+
+
+def test_traits_bmi_raises_with_eligibility_hint() -> None:
+    data = _age_signal_data(0)
+    n = data["x"].shape[0]
+    zeros = np.zeros(n, dtype=np.int64)
+    false_mask = np.zeros(n, dtype=bool)
+    with pytest.raises(ValueError, match="matrix-hub-bmi-full-v1"):
+        build_internal_fold_seed_panel(
+            x_train=data["x"],
+            age=data["age"],
+            age_mask=np.ones(n, dtype=bool),
+            sex=zeros,
+            sex_mask=false_mask,
+            tissue=zeros,
+            tissue_mask=false_mask,
+            study_ids=data["study_ids"],
+            assignment=_fake_assignment(),
+            n_genes=10,
+            min_genes=1,
+            graph_content_hash="test-graph-hash",
+            traits=["bmi"],
+        )
+
+
+def test_resolve_seed_panel_traits_default_and_reject() -> None:
+    specs = resolve_seed_panel_traits(None)
+    assert [s.id for s in specs] == ["age", "tissue", "sex"]
+    assert specs[-1].autosome_control is True
+    with pytest.raises(ValueError, match="unknown seed_panel trait"):
+        resolve_seed_panel_traits(["not_a_trait"])
+    with pytest.raises(ValueError, match="BMI is blocked"):
+        resolve_seed_panel_traits([{"id": "bmi", "role": "primary"}])
 
 
 def test_undersized_panel_raises() -> None:
@@ -170,6 +255,7 @@ def test_graph_content_hash_required() -> None:
             n_genes=10,
             min_genes=1,
             graph_content_hash=None,
+            traits=["age"],
         )
 
 
@@ -197,7 +283,9 @@ def test_sex_autosome_excludes_xy(tmp_path: Path) -> None:
         n_genes=3,
         min_genes=1,
         graph_content_hash="test-graph-hash",
+        traits=[{"id": "sex", "role": "auxiliary", "autosome_control": True}],
     )
+    assert "sex" in art.panel_json["traits"]
     assert "sex_autosome" in art.panel_json["traits"]
     assert art.panel_json["traits"]["sex_autosome"]["n_sex_chrom_seed_cpgs"] == 0
     auto_loci = art.loci[art.loci["trait"] == "sex_autosome"]
@@ -205,3 +293,4 @@ def test_sex_autosome_excludes_xy(tmp_path: Path) -> None:
         assert str(chrom[col]).lower() not in {"chrx", "chry", "x", "y"}
     assert art.panel_json.get("graph_content_hash") == "test-graph-hash"
     assert "overlap" in art.panel_json
+    assert art.panel_json["overlap"]["traits"] == ["sex"]

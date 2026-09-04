@@ -33,6 +33,11 @@ seed_panel:
   selection_source: internal_fold
   n_genes: 256
   min_genes: 32
+  # Config-driven trait list (ADR 0012). BMI/disease/cancer not eligible on ATS.
+  traits:
+    - {id: age, role: primary}
+    - {id: tissue, role: secondary}
+    - {id: sex, role: auxiliary, autosome_control: true}
 training:
   max_epochs: 15
   batch_size: auto

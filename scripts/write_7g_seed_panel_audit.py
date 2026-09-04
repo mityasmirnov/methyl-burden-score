@@ -30,17 +30,18 @@ def _audit(panel: dict[str, Any]) -> dict[str, Any]:
     trait_rows: list[dict[str, Any]] = []
     for name, t in sorted(traits.items()):
         n_pre = int(t.get("n_cols_prefiltered") or 0)
-        n_seed = int(
-            t.get("n_seed_cpgs_after_stability")
+        n_discovery = int(
+            t.get("n_discovery_cpgs")
+            or t.get("n_seed_cpgs_after_stability")
             or t.get("n_seed_cpgs")
             or t.get("n_selected_cols")
             or 0
         )
-        n_pass = int(t.get("n_passing_min_frequency") or n_seed)
-        sparse = bool(t.get("sparsity_ok", n_seed < n_pre and n_seed > 0))
-        if n_pre > 0 and n_seed >= n_pre:
+        n_pass = int(t.get("n_passing_min_frequency") or n_discovery)
+        sparse = bool(t.get("sparsity_ok", n_discovery < n_pre and n_discovery > 0))
+        if n_pre > 0 and n_discovery >= n_pre:
             issues.append(
-                f"{name}: stability selected {n_seed} CpGs == prefilter width "
+                f"{name}: discovery selected {n_discovery} CpGs == prefilter width "
                 f"{n_pre} — not demonstrably sparse"
             )
         if t.get("strength_cap") is not None and float(t.get("strength_cap") or 0) > 1e3:
@@ -53,7 +54,15 @@ def _audit(panel: dict[str, Any]) -> dict[str, Any]:
                 "n_cols_input": t.get("n_cols_input"),
                 "n_cols_prefiltered": n_pre,
                 "n_zero_variance_dropped": t.get("n_zero_variance_dropped"),
-                "n_seed_cpgs_after_stability": n_seed,
+                "n_discovery_cpgs": n_discovery,
+                "n_seed_cpgs_after_stability": n_discovery,
+                "n_seed_genes": t.get("n_seed_genes", t.get("n_genes_actual")),
+                "n_expanded_gene_cpg_edges": t.get(
+                    "n_expanded_gene_cpg_edges", t.get("n_enriched_locus_rows")
+                ),
+                "n_unique_expanded_gene_cpgs": t.get("n_unique_expanded_gene_cpgs"),
+                "n_multigene_cpgs": t.get("n_multigene_cpgs"),
+                "seed_fraction_of_expanded": t.get("seed_fraction_of_expanded"),
                 "n_passing_min_frequency": n_pass,
                 "fallback_to_top_freq": t.get("fallback_to_top_freq"),
                 "max_stability_seeds": t.get("max_stability_seeds"),
@@ -102,11 +111,24 @@ def _md(audit: dict[str, Any]) -> str:
         lines.append("- none")
     else:
         lines.extend(f"- {x}" for x in issues)
-    lines.extend(["", "## Per-trait selection", "", "| trait | prefilter | stability seeds | sparsity_ok | strength_cap |", "|---|---:|---:|:---:|---:|"])
+    lines.extend(
+        [
+            "",
+            "## Per-trait selection (ADR 0012: discovery != G2 input)",
+            "",
+            (
+                "| trait | prefilter | discovery | genes | expanded | "
+                "seed frac | sparsity_ok | strength_cap |"
+            ),
+            "|---|---:|---:|---:|---:|---:|:---:|---:|",
+        ]
+    )
     for t in audit.get("traits") or []:
         lines.append(
             f"| {t['trait']} | {t['n_cols_prefiltered']} | "
-            f"{t['n_seed_cpgs_after_stability']} | {t['sparsity_ok']} | "
+            f"{t.get('n_discovery_cpgs', t.get('n_seed_cpgs_after_stability'))} | "
+            f"{t.get('n_seed_genes')} | {t.get('n_unique_expanded_gene_cpgs')} | "
+            f"{t.get('seed_fraction_of_expanded')} | {t['sparsity_ok']} | "
             f"{t.get('strength_cap')} |"
         )
     ov = audit.get("overlap") or {}
@@ -116,10 +138,12 @@ def _md(audit: dict[str, Any]) -> str:
                 "",
                 "## Overlap",
                 "",
+                f"- traits: `{ov.get('traits')}`",
                 f"- gene union: {ov.get('gene_union_size')}",
                 f"- gene pairwise: `{ov.get('gene_pairwise_overlap')}`",
-                f"- CpG union: {ov.get('cpg_union_size')}",
+                f"- CpG union (expanded): {ov.get('cpg_union_size')}",
                 f"- CpG pairwise: `{ov.get('cpg_pairwise_overlap')}`",
+                f"- seed fraction of expanded: `{ov.get('seed_fraction_of_expanded')}`",
                 f"- genes with only one seed CpG: `{ov.get('genes_with_only_one_seed_cpg')}`",
                 f"- multi-gene CpG count: `{ov.get('multi_gene_cpg_count')}`",
             ]
