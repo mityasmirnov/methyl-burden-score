@@ -1,6 +1,6 @@
 # Trait eligibility (deepmat-data-v1)
 
-- Generated: `2026-09-03T09:22:29Z`
+- Generated: `2026-09-04T14:34:56Z`
 
 | Family | Phenotype | Task | n | studies | core | aux | ext | Reason |
 | --- | --- | --- | ---: | ---: | --- | --- | --- | --- |
@@ -36,6 +36,7 @@
 | `disease` | `sex` | binary | 10968 | 188 | False | True | False | sex is auxiliary biological / QC, not a core burden target |
 | `disease` | `tissue` | multiclass | 12218 | 209 | True | True | False |  |
 | `geo_metadata_backfill` | `age` | continuous | 7652 | 5 | True | True | False |  |
+| `geo_metadata_backfill` | `cancer` | binary_or_multilabel | 994 | 1 | False | False | True | need ≥200 cases, ≥200 controls, ≥3 studies (unknown≠control) |
 | `geo_metadata_backfill` | `disease` | binary_or_multilabel | 2058 | 2 | False | False | False | need ≥200 cases, ≥200 controls, ≥3 studies (unknown≠control) |
 | `geo_metadata_backfill` | `sex` | binary | 12729 | 8 | False | True | False | sex is auxiliary biological / QC, not a core burden target |
 | `geo_metadata_backfill` | `tissue` | multiclass | 10528 | 7 | True | True | False |  |

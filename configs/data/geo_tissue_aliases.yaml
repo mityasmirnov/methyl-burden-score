@@ -16,6 +16,12 @@ aliases:
   pbmcs: peripheral blood mononuclear cell
   peripheral blood mononuclear cell: peripheral blood mononuclear cell
   peripheral blood mononuclear cells: peripheral blood mononuclear cell
+  peripheral blood leukocytes: leukocyte
+  peripheral blood leucocytes: leukocyte
+  blood leukocytes: leukocyte
+  blood leucocytes: leukocyte
+  leukocytes: leukocyte
+  leucocytes: leukocyte
   mononuclear cell: peripheral blood mononuclear cell
   mononuclear cells: peripheral blood mononuclear cell
   cord blood: cord blood
@@ -26,3 +32,7 @@ aliases:
   adipose tissue: adipose
   fat: adipose
   skeletal muscle tissue: skeletal muscle
+  sperm: semen
+  sperm sample: semen
+  lysed sperm sample: semen
+  somatic cell lysed sperm sample: semen

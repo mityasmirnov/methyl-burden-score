@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-03T09:22:29Z",
+  "generated_at": "2026-09-04T14:34:56Z",
   "rows": [
     {
       "eligible_auxiliary_task": true,
@@ -512,6 +512,22 @@
       "phenotype_id": "age",
       "prevalence": NaN,
       "task_type": "continuous"
+    },
+    {
+      "eligible_auxiliary_task": false,
+      "eligible_core_task": false,
+      "eligible_external_evaluation": true,
+      "exclusion_reason": "need \u2265200 cases, \u2265200 controls, \u22653 studies (unknown\u2260control)",
+      "n_cases": 994,
+      "n_controls": 0,
+      "n_platforms": 1,
+      "n_samples": 994,
+      "n_studies": 1,
+      "n_unknown": 0,
+      "phenotype_family": "geo_metadata_backfill",
+      "phenotype_id": "cancer",
+      "prevalence": 1.0,
+      "task_type": "binary_or_multilabel"
     },
     {
       "eligible_auxiliary_task": false,

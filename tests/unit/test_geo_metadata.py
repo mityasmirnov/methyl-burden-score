@@ -129,6 +129,28 @@ def test_characteristics_control_disease() -> None:
     assert disease["is_observed"] is True
 
 
+def test_disease_case_extraction_explicit_only() -> None:
+    case_rows = characteristics_to_phenotypes({"group": "case"})
+    assert next(r for r in case_rows if r["phenotype_id"] == "disease")["label_status"] == "case"
+
+    patient = characteristics_to_phenotypes({"disease status": "RA patient"})
+    assert next(r for r in patient if r["phenotype_id"] == "disease")["label_status"] == "case"
+
+    # Diagnosis-only still omitted (never invent cases or controls).
+    assert characteristics_to_phenotypes({"disease status": "Crohn's disease"}) == []
+    assert characteristics_to_phenotypes({"diagnosis": "type 2 diabetes"}) == []
+
+    # Negated disease language is control.
+    nond = characteristics_to_phenotypes({"health status": "non-diseased"})
+    assert next(r for r in nond if r["phenotype_id"] == "disease")["label_status"] == "control"
+
+    # Specimen tumor/normal → cancer only.
+    tumor = characteristics_to_phenotypes({"sample type": "Tumor methylation"})
+    assert next(r for r in tumor if r["phenotype_id"] == "cancer")["label_status"] == "case"
+    normal = characteristics_to_phenotypes({"sample type": "Normal"})
+    assert next(r for r in normal if r["phenotype_id"] == "cancer")["label_status"] == "control"
+
+
 def test_consolidate_geo_agrees_and_conflicts() -> None:
     agree = pd.DataFrame(
         [

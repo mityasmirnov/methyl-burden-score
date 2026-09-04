@@ -25,6 +25,13 @@ from mbs.training.phenotype_table import load_tissue_ontology
 DEFAULT_STUDIES = Path("configs/data/geo_backfill_pilot_gse.txt")
 
 
+def _report_subdir(studies_file: Path) -> str:
+    name = studies_file.name.lower()
+    if "batch" in name:
+        return "geo_backfill_batch"
+    return "geo_backfill_pilot"
+
+
 def _load_study_ids(path: Path) -> list[str]:
     lines = path.read_text(encoding="utf-8").splitlines()
     return [line.strip().upper() for line in lines if line.strip() and not line.startswith("#")]
@@ -108,6 +115,19 @@ def main() -> None:
                 aliases=aliases,
             )
             tissue_stats = dict(frame.attrs.get("tissue_map_stats") or {})
+            pheno_counts = {
+                "age": int(frame["age"].notna().sum()) if "age" in frame.columns else 0,
+                "sex": int(frame["sex"].notna().sum()) if "sex" in frame.columns else 0,
+                "tissue": int(
+                    (frame["tissue_map_status"] == "mapped").sum()
+                    if "tissue_map_status" in frame.columns
+                    else 0
+                ),
+                "disease": int(frame["disease"].notna().sum())
+                if "disease" in frame.columns
+                else 0,
+                "cancer": int(frame["cancer"].notna().sum()) if "cancer" in frame.columns else 0,
+            }
             per_study.append(
                 {
                     "study_id": gse,
@@ -116,6 +136,7 @@ def main() -> None:
                     "soft_sha256": digest,
                     "n_geo_gsm": len(frame),
                     "tissue_map": tissue_stats,
+                    "phenotype_counts": pheno_counts,
                 }
             )
             if not frame.empty:
@@ -137,7 +158,7 @@ def main() -> None:
         / "reports"
         / "inspection"
         / "deepmat_data_v1"
-        / "geo_backfill_pilot"
+        / _report_subdir(args.studies_file)
         / "fetch_status.json"
     )
     status_path.parent.mkdir(parents=True, exist_ok=True)

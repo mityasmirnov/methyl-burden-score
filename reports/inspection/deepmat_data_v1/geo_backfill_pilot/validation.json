@@ -1,0 +1,530 @@
+{
+  "age_by_study": {
+    "GSE105018": {
+      "age_raw_examples": [],
+      "age_unit_counts": {},
+      "age_years_max": null,
+      "age_years_median": null,
+      "age_years_min": null,
+      "n_age": 0
+    },
+    "GSE109379": {
+      "age_raw_examples": [],
+      "age_unit_counts": {},
+      "age_years_max": null,
+      "age_years_median": null,
+      "age_years_min": null,
+      "n_age": 0
+    },
+    "GSE130051": {
+      "age_raw_examples": [],
+      "age_unit_counts": {},
+      "age_years_max": null,
+      "age_years_median": null,
+      "age_years_min": null,
+      "n_age": 0
+    },
+    "GSE140686": {
+      "age_raw_examples": [],
+      "age_unit_counts": {},
+      "age_years_max": null,
+      "age_years_median": null,
+      "age_years_min": null,
+      "n_age": 0
+    },
+    "GSE145361": {
+      "age_raw_examples": [],
+      "age_unit_counts": {},
+      "age_years_max": null,
+      "age_years_median": null,
+      "age_years_min": null,
+      "n_age": 0
+    },
+    "GSE147740": {
+      "age_raw_examples": [
+        "32",
+        "48",
+        "56",
+        "36",
+        "35"
+      ],
+      "age_unit_counts": {
+        "years": 1129
+      },
+      "age_years_max": 60.0,
+      "age_years_median": 42.0,
+      "age_years_min": 25.0,
+      "n_age": 1129
+    },
+    "GSE157131": {
+      "age_raw_examples": [],
+      "age_unit_counts": {},
+      "age_years_max": null,
+      "age_years_median": null,
+      "age_years_min": null,
+      "n_age": 0
+    },
+    "GSE185920": {
+      "age_raw_examples": [
+        "33",
+        "27",
+        "26",
+        "36",
+        "36"
+      ],
+      "age_unit_counts": {
+        "years": 1471
+      },
+      "age_years_max": 60.0,
+      "age_years_median": 32.0,
+      "age_years_min": 20.0,
+      "n_age": 1471
+    },
+    "GSE197678": {
+      "age_raw_examples": [
+        "42.07",
+        "21.15",
+        "38.25",
+        "45.12",
+        "30.92"
+      ],
+      "age_unit_counts": {
+        "years": 2922
+      },
+      "age_years_max": 70.19018639,
+      "age_years_median": 31.22,
+      "age_years_min": 5.99,
+      "n_age": 2922
+    },
+    "GSE210255": {
+      "age_raw_examples": [],
+      "age_unit_counts": {},
+      "age_years_max": null,
+      "age_years_median": null,
+      "age_years_min": null,
+      "n_age": 0
+    },
+    "GSE224124": {
+      "age_raw_examples": [],
+      "age_unit_counts": {},
+      "age_years_max": null,
+      "age_years_median": null,
+      "age_years_min": null,
+      "n_age": 0
+    },
+    "GSE270375": {
+      "age_raw_examples": [],
+      "age_unit_counts": {},
+      "age_years_max": null,
+      "age_years_median": null,
+      "age_years_min": null,
+      "n_age": 0
+    },
+    "GSE55763": {
+      "age_raw_examples": [
+        "57.9",
+        "42",
+        "47.4",
+        "49.3",
+        "52.5"
+      ],
+      "age_unit_counts": {
+        "years": 2711
+      },
+      "age_years_max": 75.0,
+      "age_years_median": 50.2,
+      "age_years_min": 23.7,
+      "n_age": 2711
+    },
+    "GSE56046": {
+      "age_raw_examples": [
+        "59",
+        "63",
+        "71",
+        "72",
+        "48"
+      ],
+      "age_unit_counts": {
+        "years": 1202
+      },
+      "age_years_max": 83.0,
+      "age_years_median": 60.0,
+      "age_years_min": 44.0,
+      "n_age": 1202
+    },
+    "GSE68379": {
+      "age_raw_examples": [],
+      "age_unit_counts": {},
+      "age_years_max": null,
+      "age_years_median": null,
+      "age_years_min": null,
+      "n_age": 0
+    }
+  },
+  "age_unit_global": {
+    "years": 9435
+  },
+  "age_years_global": {
+    "max": 83.0,
+    "median": 41.02121834,
+    "min": 5.99,
+    "n": 9435
+  },
+  "catalog": {
+    "catalog_present": true,
+    "hub_overlap_geo_rows": 0,
+    "label_status": [
+      {
+        "label_status": "observed",
+        "n": 7652,
+        "phenotype_id": "age"
+      },
+      {
+        "label_status": "case",
+        "n": 994,
+        "phenotype_id": "cancer"
+      },
+      {
+        "label_status": "control",
+        "n": 2058,
+        "phenotype_id": "disease"
+      },
+      {
+        "label_status": "observed",
+        "n": 12729,
+        "phenotype_id": "sex"
+      },
+      {
+        "label_status": "observed",
+        "n": 10528,
+        "phenotype_id": "tissue"
+      }
+    ],
+    "n_disease_cancer_cases": 994,
+    "n_geo_phenotype_rows": 33961
+  },
+  "conflict_stats_from_fetch": {
+    "n_conflict_fields": 0,
+    "n_conflict_samples": 0,
+    "n_input_rows": 23217,
+    "n_multi_study_gsm": 0,
+    "n_unique_gsm": 23217
+  },
+  "conflicts_from_fetch": [],
+  "generated_at": "2026-09-04T14:35:06Z",
+  "n_multi_study_gsm": 0,
+  "n_parquet_gsm": 23217,
+  "phenotype_counts_by_study": {
+    "GSE105018": {
+      "age": 0,
+      "cancer": 0,
+      "disease": 0,
+      "sex": 1658,
+      "tissue_mapped": 0
+    },
+    "GSE109379": {
+      "age": 0,
+      "cancer": 0,
+      "disease": 0,
+      "sex": 0,
+      "tissue_mapped": 0
+    },
+    "GSE130051": {
+      "age": 0,
+      "cancer": 0,
+      "disease": 0,
+      "sex": 0,
+      "tissue_mapped": 0
+    },
+    "GSE140686": {
+      "age": 0,
+      "cancer": 0,
+      "disease": 0,
+      "sex": 0,
+      "tissue_mapped": 0
+    },
+    "GSE145361": {
+      "age": 0,
+      "cancer": 0,
+      "disease": 930,
+      "sex": 1889,
+      "tissue_mapped": 1889
+    },
+    "GSE147740": {
+      "age": 1129,
+      "cancer": 0,
+      "disease": 1129,
+      "sex": 1129,
+      "tissue_mapped": 0
+    },
+    "GSE157131": {
+      "age": 0,
+      "cancer": 0,
+      "disease": 0,
+      "sex": 1218,
+      "tissue_mapped": 1218
+    },
+    "GSE185920": {
+      "age": 1471,
+      "cancer": 0,
+      "disease": 0,
+      "sex": 0,
+      "tissue_mapped": 1471
+    },
+    "GSE197678": {
+      "age": 2922,
+      "cancer": 0,
+      "disease": 0,
+      "sex": 2922,
+      "tissue_mapped": 0
+    },
+    "GSE210255": {
+      "age": 0,
+      "cancer": 0,
+      "disease": 0,
+      "sex": 1394,
+      "tissue_mapped": 0
+    },
+    "GSE224124": {
+      "age": 0,
+      "cancer": 0,
+      "disease": 0,
+      "sex": 1107,
+      "tissue_mapped": 0
+    },
+    "GSE270375": {
+      "age": 0,
+      "cancer": 994,
+      "disease": 0,
+      "sex": 0,
+      "tissue_mapped": 0
+    },
+    "GSE55763": {
+      "age": 2711,
+      "cancer": 0,
+      "disease": 0,
+      "sex": 2711,
+      "tissue_mapped": 2711
+    },
+    "GSE56046": {
+      "age": 1202,
+      "cancer": 0,
+      "disease": 0,
+      "sex": 0,
+      "tissue_mapped": 0
+    },
+    "GSE68379": {
+      "age": 0,
+      "cancer": 0,
+      "disease": 0,
+      "sex": 0,
+      "tissue_mapped": 0
+    }
+  },
+  "study_ids": [
+    "GSE105018",
+    "GSE109379",
+    "GSE130051",
+    "GSE140686",
+    "GSE145361",
+    "GSE147740",
+    "GSE157131",
+    "GSE185920",
+    "GSE197678",
+    "GSE210255",
+    "GSE224124",
+    "GSE270375",
+    "GSE55763",
+    "GSE56046",
+    "GSE68379"
+  ],
+  "tissue_by_study": {
+    "GSE105018": {
+      "ambiguous": 0,
+      "empty": 1658,
+      "mapped": 0,
+      "n_gsm": 1658,
+      "top_mapped": [],
+      "top_unmapped": [],
+      "unmapped": 0
+    },
+    "GSE109379": {
+      "ambiguous": 0,
+      "empty": 0,
+      "mapped": 0,
+      "n_gsm": 1104,
+      "top_mapped": [],
+      "top_unmapped": [
+        {
+          "label": "brain tumor",
+          "n": 1104
+        }
+      ],
+      "unmapped": 1104
+    },
+    "GSE130051": {
+      "ambiguous": 0,
+      "empty": 0,
+      "mapped": 0,
+      "n_gsm": 1501,
+      "top_mapped": [],
+      "top_unmapped": [
+        {
+          "label": "Medulloblastoma",
+          "n": 1501
+        }
+      ],
+      "unmapped": 1501
+    },
+    "GSE140686": {
+      "ambiguous": 0,
+      "empty": 0,
+      "mapped": 0,
+      "n_gsm": 1505,
+      "top_mapped": [],
+      "top_unmapped": [
+        {
+          "label": "sarcoma",
+          "n": 1505
+        }
+      ],
+      "unmapped": 1505
+    },
+    "GSE145361": {
+      "ambiguous": 0,
+      "empty": 0,
+      "mapped": 1889,
+      "n_gsm": 1889,
+      "top_mapped": [
+        {
+          "label": "whole blood",
+          "n": 1889
+        }
+      ],
+      "top_unmapped": [],
+      "unmapped": 0
+    },
+    "GSE147740": {
+      "ambiguous": 0,
+      "empty": 1129,
+      "mapped": 0,
+      "n_gsm": 1129,
+      "top_mapped": [],
+      "top_unmapped": [],
+      "unmapped": 0
+    },
+    "GSE157131": {
+      "ambiguous": 0,
+      "empty": 0,
+      "mapped": 1218,
+      "n_gsm": 1218,
+      "top_mapped": [
+        {
+          "label": "leukocyte",
+          "n": 1218
+        }
+      ],
+      "top_unmapped": [],
+      "unmapped": 0
+    },
+    "GSE185920": {
+      "ambiguous": 0,
+      "empty": 0,
+      "mapped": 1471,
+      "n_gsm": 1471,
+      "top_mapped": [
+        {
+          "label": "semen",
+          "n": 1471
+        }
+      ],
+      "top_unmapped": [],
+      "unmapped": 0
+    },
+    "GSE197678": {
+      "ambiguous": 0,
+      "empty": 2922,
+      "mapped": 0,
+      "n_gsm": 2922,
+      "top_mapped": [],
+      "top_unmapped": [],
+      "unmapped": 0
+    },
+    "GSE210255": {
+      "ambiguous": 0,
+      "empty": 1394,
+      "mapped": 0,
+      "n_gsm": 1394,
+      "top_mapped": [],
+      "top_unmapped": [],
+      "unmapped": 0
+    },
+    "GSE224124": {
+      "ambiguous": 0,
+      "empty": 1107,
+      "mapped": 0,
+      "n_gsm": 1107,
+      "top_mapped": [],
+      "top_unmapped": [],
+      "unmapped": 0
+    },
+    "GSE270375": {
+      "ambiguous": 0,
+      "empty": 994,
+      "mapped": 0,
+      "n_gsm": 1378,
+      "top_mapped": [],
+      "top_unmapped": [
+        {
+          "label": "Meningioma",
+          "n": 384
+        }
+      ],
+      "unmapped": 384
+    },
+    "GSE55763": {
+      "ambiguous": 0,
+      "empty": 0,
+      "mapped": 2711,
+      "n_gsm": 2711,
+      "top_mapped": [
+        {
+          "label": "whole blood",
+          "n": 2711
+        }
+      ],
+      "top_unmapped": [],
+      "unmapped": 0
+    },
+    "GSE56046": {
+      "ambiguous": 0,
+      "empty": 1202,
+      "mapped": 0,
+      "n_gsm": 1202,
+      "top_mapped": [],
+      "top_unmapped": [],
+      "unmapped": 0
+    },
+    "GSE68379": {
+      "ambiguous": 0,
+      "empty": 1028,
+      "mapped": 0,
+      "n_gsm": 1028,
+      "top_mapped": [],
+      "top_unmapped": [],
+      "unmapped": 0
+    }
+  },
+  "tissue_map_global": {
+    "empty": 11434,
+    "mapped": 7289,
+    "unmapped": 4494
+  },
+  "training_notes": [
+    "Training heads read Hub pack Parquet, not geo_metadata_backfill.",
+    "GEO improves catalog / eligibility only until a separate geo-dev release.",
+    "Disease/cancer cases must be >0 with eligibility cutoffs before any disease head.",
+    "Do not mutate frozen ATS (matrix-hub-age-tissue-sex-full-v1)."
+  ],
+  "validation_kind": "repaired_pilot_15gse"
+}

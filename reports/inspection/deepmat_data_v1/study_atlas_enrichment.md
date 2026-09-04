@@ -1,6 +1,6 @@
 # Study Atlas enrichment
 
-- Catalog studies: **1599**
+- Catalog studies: **1664**
 - Matched to Atlas: **175**
 
 ## Join methods

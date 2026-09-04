@@ -37,9 +37,63 @@ GPL_TO_PLATFORM: dict[str, str] = {
 
 _AGE_SENTINELS = frozenset({10002, 999, 9999})
 _CONTROL_TOKENS = frozenset(
-    {"control", "controls", "healthy", "normal", "unaffected", "non-disease", "non disease"}
+    {
+        "control",
+        "controls",
+        "healthy",
+        "normal",
+        "unaffected",
+        "non-disease",
+        "non disease",
+        "non-diseased",
+        "nondiseased",
+        "reference",
+    }
 )
-_CASE_TOKENS = frozenset({"case", "patient", "diseased", "affected", "tumor", "tumour"})
+_CASE_TOKENS = frozenset(
+    {
+        "case",
+        "cases",
+        "patient",
+        "patients",
+        "diseased",
+        "affected",
+        "tumor",
+        "tumour",
+        "cancer",
+        "carcinoma",
+        "malignant",
+        "malignancy",
+    }
+)
+# Keys that may carry case/control without the word "disease" in the key.
+_CASE_CONTROL_KEYS = frozenset(
+    {
+        "case/control",
+        "case-control",
+        "case_control",
+        "case control",
+        "disease status",
+        "disease state",
+        "disease",
+        "diagnosis",
+        "condition",
+        "health status",
+        "subject status",
+        "subject group",
+        "sample group",
+        "group",
+        "cohort",
+        "phenotype",
+        "phenotype status",
+        "status",
+        "clinical status",
+        "disease group",
+    }
+)
+_SAMPLE_TYPE_KEYS = frozenset(
+    {"sample type", "sample_type", "specimen type", "specimen_type", "material type"}
+)
 _CANCER_KEY_RE = re.compile(r"cancer|tumor|tumour|malignan|carcinoma|neoplasm", re.I)
 _BATCH_KEY_RE = re.compile(r"^batch|batch id|batch_id|lot|plate", re.I)
 _TREATMENT_KEY_RE = re.compile(r"^treatment|therapy|drug|medication", re.I)
@@ -353,19 +407,83 @@ def map_geo_tissue(
     return label, str(ontology.label_to_id[label]), "mapped"
 
 def _disease_case_control(raw: str, *, key: str) -> tuple[str | None, str | None, bool]:
-    """Return (categorical_value, label_status, write_row) for disease/cancer."""
+    """Return (categorical_value, label_status, write_row) for disease/cancer.
+
+    Diagnosis-only strings (e.g. ``Crohn's disease``) do **not** write a row.
+    Explicit case/control tokens are required. Never invent controls from blanks.
+    """
     text = raw.strip()
     if not text:
         return None, None, False
-    lowered = text.lower()
-    tokens = set(re.split(r"[\s,;/]+", lowered))
+    lowered = text.lower().strip()
+    # Negated disease language is control, not case (avoid tokenizing "non-diseased").
+    if re.search(r"\bnon[-\s]?diseased?\b", lowered) or "unaffected" in lowered:
+        return text, "control", True
+    # Whole-value shortcuts (avoid treating "disease" inside a diagnosis as a token).
+    if lowered in {
+        "control",
+        "controls",
+        "healthy",
+        "healthy control",
+        "healthy controls",
+        "normal",
+        "non-disease",
+        "non disease",
+    }:
+        return text, "control", True
+    if lowered in {
+        "case",
+        "cases",
+        "patient",
+        "patients",
+        "diseased",
+        "affected",
+        "tumor",
+        "tumour",
+        "cancer",
+    }:
+        return text, "case", True
+    tokens = set(re.split(r"[\s,;/|_-]+", lowered))
+    tokens.discard("")
     is_control = bool(tokens & _CONTROL_TOKENS) or lowered.startswith("control")
-    is_case = bool(tokens & _CASE_TOKENS) or lowered in {"case", "patient", "affected"}
+    is_case = bool(tokens & _CASE_TOKENS)
+    # "healthy control" already handled; "disease control" stays control via token.
+    if is_control and is_case:
+        # Ambiguous hybrid (e.g. "case-control study") — do not invent a label.
+        return None, None, False
     if not is_control and not is_case:
         return None, None, False
     if is_control:
         return text, "control", True
     return text, "case", True
+
+
+def _sample_type_cancer(
+    raw: str,
+) -> tuple[str | None, str | None, bool]:
+    """Map specimen tumor/normal language to cancer case/control only."""
+    text = raw.strip()
+    if not text:
+        return None, None, False
+    lowered = text.lower()
+    tokens = set(re.split(r"[\s,;/|_-]+", lowered))
+    tokens.discard("")
+    # Require explicit tumor/normal vocabulary — not diagnosis names.
+    control_hits = tokens & {"normal", "control", "controls", "healthy", "adjacent"}
+    case_hits = tokens & {
+        "tumor",
+        "tumour",
+        "cancer",
+        "malignant",
+        "carcinoma",
+        "metastasis",
+        "metastatic",
+    }
+    if control_hits and not case_hits:
+        return text, "control", True
+    if case_hits and not control_hits:
+        return text, "case", True
+    return None, None, False
 
 
 def characteristics_to_phenotypes(chars: dict[str, str]) -> list[dict[str, Any]]:
@@ -415,17 +533,37 @@ def characteristics_to_phenotypes(chars: dict[str, str]) -> list[dict[str, Any]]
                     }
                 )
             continue
-        if norm in {
-            "disease",
-            "diagnosis",
-            "condition",
-            "disease status",
-            "disease state",
-            "health status",
-        } or "disease" in norm or "diagnosis" in norm:
+        if norm in _SAMPLE_TYPE_KEYS:
+            cat, status, write = _sample_type_cancer(value)
+            if write and cat is not None and status is not None:
+                rows.append(
+                    {
+                        "phenotype_id": "cancer",
+                        "numeric_value": None,
+                        "categorical_value": cat,
+                        "label_status": status,
+                        "is_observed": True,
+                    }
+                )
+            continue
+        disease_key = (
+            norm in _CASE_CONTROL_KEYS
+            or "disease" in norm
+            or "diagnosis" in norm
+            or norm in {"case/control", "case-control", "case_control"}
+        )
+        if disease_key:
             cat, status, write = _disease_case_control(value, key=norm)
             if write and cat is not None and status is not None:
                 phenotype_id = "cancer" if _CANCER_KEY_RE.search(norm) else "disease"
+                # sample-type already handled; tumor language under disease keys → cancer
+                # when the key itself is cancer-related OR the value is pure tumor/cancer.
+                if phenotype_id == "disease" and cat.strip().lower() in {
+                    "tumor",
+                    "tumour",
+                    "cancer",
+                }:
+                    phenotype_id = "cancer"
                 rows.append(
                     {
                         "phenotype_id": phenotype_id,

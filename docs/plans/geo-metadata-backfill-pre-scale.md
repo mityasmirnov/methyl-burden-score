@@ -1,47 +1,54 @@
 # GEO metadata backfill — fixes before scaling
 
-**Status:** fixes 1–4 implemented in code (2026-09-04); scale still blocked until
-verified on pilot rebuild + remaining checklist items (disease cases, full
-per-GSE status, training release)  
+**Status:** repaired **15-GSE pilot re-validated** (clean zero→merge Δ, 2026-09-04).
+Batch expansion **blocked** until this audit is accepted. Training release
+**designed only** ([`geo-enriched-training-release.md`](geo-enriched-training-release.md)).  
 **Parent:** [`geo-metadata-backfill-ewas-db.md`](geo-metadata-backfill-ewas-db.md)
-(pilot **done** / audited) · [`data-infrastructure-improvements.md`](data-infrastructure-improvements.md) §2  
+· [`data-infrastructure-improvements.md`](data-infrastructure-improvements.md) §2  
 **Related:** [`DATA_CONTRACT.md`](../DATA_CONTRACT.md), [`EWAS_METADATA.md`](../EWAS_METADATA.md),
-[`TODO_PIPELINE.md`](../TODO_PIPELINE.md) (current gate = 7G′ promotion screen)
+[`TODO_PIPELINE.md`](../TODO_PIPELINE.md)
 
 ## Why this exists
 
-The 15-GSE pilot proved fetch → parquet → Hub-wins merge → census. It is **not**
-ready for a full EWAS_db crawl or for training on GEO phenotypes. The gaps below
-would silently corrupt age, tissue classes, multi-GSE GSM identity, disease
-eligibility, and audit deltas if we scaled first.
+The original committed pilot summary was generated **before** unit-aware age,
+tissue ontology, GSM conflict handling, and clean Δ audit — it proved the old
+pipeline, not the repaired one. GEO still improves the **catalog only** (training
+heads read Hub pack Parquet). Disease/cancer from GEO are **not** training-ready
+in this pilot (disease controls-only; cancer cases without matched GEO controls /
+eligibility). **Do not** silently enlarge frozen ATS.
 
 ## Recommended order (binding)
 
-1. **Finish remaining matched 16-epoch promotion arms** (7G′ current gate).
-2. **Correct GEO backfill code** (this plan § Fixes 1–4 minimum; 5–6 as ready).
-3. **Expand GEO** from 15 studies to a larger audited batch (status table per GSE).
-4. **Eligibility report** by trait and study (`geo_metadata_backfill` + Hub).
-5. **New GEO-enriched development cohort** (separate release id; not frozen ATS).
-6. **Only then** add eligible GEO samples to age/tissue training and seed-gene
-   selection — with Hub-only / GEO-only / Hub+GEO / metadata-only arms.
-
-Do **not** silently enlarge ATS (`matrix-hub-age-tissue-sex-full-v1`) or retrain
-frozen v0.1.
+1. **Finish remaining matched 16-epoch promotion arms** (7G′ current gate; parallel OK).
+2. **Correct GEO backfill code** (fixes 1–4) — **done** in tree.
+3. **Re-validate the 15-study pilot with the new code** ← **done** (2026-09-04)
+   - Rebuilt pilot parquet from cache.
+   - Clean before/after: zero `geo_metadata_backfill` → merge → exact Δ (**33961**).
+   - Tissue mapped/unmapped **per study** (`validation.md`).
+   - Age distributions after unit conversion (`age_unit` all `years` in this slice).
+   - Multi-GSE conflicts: **0** in pilot.
+   - Per-GSE `fetch_status.json` + `validation.{json,md}`.
+4. **Only then** expand to a larger audited GSE batch (e.g. batch-50) — **pending acceptance**.
+5. Eligibility report by trait and study.
+6. **Separate immutable** GEO-enriched training release
+   (`deepmat-data-geo-dev-v1`) — samples with methylation **and** acceptable
+   labels; Hub-only / GEO-only / Hub+GEO / metadata-only arms. Not ATS.
+7. Only then add eligible GEO samples to age/tissue training / seed-gene work.
 
 ## Done when (pre-scale gate)
 
 | # | Fix | Acceptance |
 |---|-----|------------|
-| 1 | Age unit-aware | Years/months/weeks/days parsed explicitly; original string retained; unit tests for `"6 months"`, `"120 days"`, bare years |
-| 2 | Tissue ontology | GEO tissue → existing coarse ontology; unmapped/ambiguous reported; equivalent labels (whole blood / peripheral blood / blood) collapse when ontology says so |
-| 3 | No silent GSM dedup | Multi-GSE GSM: metadata agreement check; sample–study membership persisted; conflicts counted, not `keep="first"` |
-| 4 | Clean before/after audit | Incremental test starts from catalog with **zero** `geo_metadata_backfill` rows and reports exact phenotype delta |
-| 5 | Disease extraction | Structured case/control study-by-study; still never invent controls from diagnosis-free samples; report case vs control counts |
-| 6 | Per-GSE status table | Every crawled GSE has download status, SOFT checksum, GEO/EWAS_db GSM counts, phenotype counts, ambiguous fields, ontology coverage, conflict counts |
-| 7 | Separate training release | New phenotype/matrix release id after QC; comparison arms Hub-only / GEO-only / Hub+GEO / metadata-only confounding |
+| 1 | Age unit-aware | Years/months/weeks/days parsed; `age_raw` retained; unit tests |
+| 2 | Tissue ontology | Aliases + Hub map; unmapped/ambiguous reported |
+| 3 | No silent GSM dedup | Membership + conflicts; not `keep="first"` |
+| 4 | Clean before/after audit | Start from **zero** GEO rows; exact phenotype Δ |
+| 4b | **Pilot re-validation report** | New `geo_backfill_pilot` summary after fixes; per-study tissue/age/conflict/status |
+| 5 | Disease extraction | Explicit case/control only; never invent controls; **not for training while cases=0** |
+| 6 | Per-GSE status table | Download, checksum, counts, ontology, conflicts |
+| 7 | Separate training release | New immutable release id; not frozen ATS |
 
-Fixes **1–4** are the hard coding gate before any batch larger than the pilot.
-**5–7** may land with the first expanded batch / cohort build.
+Code for 1–4 and 5 is in tree. **4b is the gate before step 4 (batch expand).**
 
 ## Fix 1 — Age unit-aware
 
@@ -170,13 +177,17 @@ After QC on an expanded audited batch:
 - [x] Tissue ontology pass + unmapped report
 - [x] Multi-GSE GSM membership + conflict handling (remove silent `keep="first"`)
 - [x] Zero-GEO baseline → merge incremental audit path
-  (authoritative Δ = `n_phenotype_rows_added` / in-memory before_merge;
-  dirty disk census flagged; operator recipe in report notes)
-- [ ] Per-GSE status artifact schema + writer
-  (partial: `fetch_status.json` with download/checksum/tissue_map/conflicts)
-- [ ] Disease case extraction playbook (study batches; no invented controls)
-- [ ] Design ADR or plan addendum for GEO-enriched training release id + arms
-- [ ] Expand beyond 15 GSE only after fixes 1–4 green
+  (**re-validated 2026-09-04:** `MBS_SKIP_GEO_BACKFILL=1` → 0 GEO rows → merge →
+  disk_before=0, dirty=false, authoritative Δ=33961)
+- [x] Per-GSE status + repaired-pilot validation
+  (`fetch_status.json`, `validation.{json,md}`: tissue/age by study, conflicts)
+- [x] Disease case extraction (explicit only; diagnosis-alone omitted)
+  **Pilot after repair:** disease=2058 controls; cancer=994 cases (sample-type);
+  **neither** trait is core-eligible — **do not train disease/cancer on GEO yet**
+- [x] Training release **design only**
+  → [`geo-enriched-training-release.md`](geo-enriched-training-release.md)
+- [ ] Expand beyond 15 GSE — **blocked until this repaired-pilot audit is accepted**
+  (batch-50 list/cache may exist; do **not** merge until then)
 
 ## Code touchpoints (when implementing)
 

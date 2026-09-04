@@ -1,6 +1,6 @@
 {
   "census_after": {
-    "generated_at": "2026-09-03T09:22:12Z",
+    "generated_at": "2026-09-04T14:34:40Z",
     "geo_prevalence": [
       {
         "n_categorical_levels": 0,
@@ -8,6 +8,14 @@
         "n_rows": 7652,
         "n_samples": 7652,
         "phenotype_id": "age",
+        "source_family": "geo_metadata_backfill"
+      },
+      {
+        "n_categorical_levels": 1,
+        "n_observed": 994,
+        "n_rows": 994,
+        "n_samples": 994,
+        "phenotype_id": "cancer",
         "source_family": "geo_metadata_backfill"
       },
       {
@@ -27,7 +35,7 @@
         "source_family": "geo_metadata_backfill"
       },
       {
-        "n_categorical_levels": 7,
+        "n_categorical_levels": 6,
         "n_observed": 10528,
         "n_rows": 10528,
         "n_samples": 10528,
@@ -36,59 +44,30 @@
       }
     ],
     "pack_row_sum": 47843,
-    "unique_gsm": 150947
+    "unique_gsm": 157941
   },
   "census_before": {
-    "generated_at": "2026-09-03T01:55:06Z",
-    "geo_prevalence": [
-      {
-        "n_categorical_levels": 0,
-        "n_observed": 7652,
-        "n_rows": 7652,
-        "n_samples": 7652,
-        "phenotype_id": "age",
-        "source_family": "geo_metadata_backfill"
-      },
-      {
-        "n_categorical_levels": 2,
-        "n_observed": 2058,
-        "n_rows": 2058,
-        "n_samples": 2058,
-        "phenotype_id": "disease",
-        "source_family": "geo_metadata_backfill"
-      },
-      {
-        "n_categorical_levels": 2,
-        "n_observed": 12729,
-        "n_rows": 12729,
-        "n_samples": 12729,
-        "phenotype_id": "sex",
-        "source_family": "geo_metadata_backfill"
-      },
-      {
-        "n_categorical_levels": 7,
-        "n_observed": 10528,
-        "n_rows": 10528,
-        "n_samples": 10528,
-        "phenotype_id": "tissue",
-        "source_family": "geo_metadata_backfill"
-      }
-    ],
+    "generated_at": "2026-09-04T14:31:41Z",
+    "geo_prevalence": [],
     "pack_row_sum": 47843,
-    "unique_gsm": 150725
+    "unique_gsm": 157938
   },
   "census_delta": {
-    "geo_observed_rows_after": 32967,
-    "geo_observed_rows_before": 32967,
-    "n_geo_observed_samples": 18599,
+    "authoritative_delta_rows": 33961,
+    "dirty_disk_census_baseline": false,
+    "geo_observed_rows_after": 33961,
+    "geo_observed_rows_before_disk_census": 0,
+    "geo_phenotype_rows_before_merge": 0,
+    "n_geo_observed_samples": 19593,
     "phenotypes_by_id": {
       "age": 7652,
+      "cancer": 994,
       "disease": 2058,
       "sex": 12729,
       "tissue": 10528
     },
-    "unique_gsm_after": 150947,
-    "unique_gsm_before": 150725
+    "unique_gsm_after": 157941,
+    "unique_gsm_before": 157938
   },
   "eligibility": [
     {
@@ -100,6 +79,16 @@
       "n_samples": 7652,
       "n_unknown": 0,
       "phenotype_id": "age"
+    },
+    {
+      "eligible_auxiliary_task": false,
+      "eligible_core_task": false,
+      "exclusion_reason": "need \u2265200 cases, \u2265200 controls, \u22653 studies (unknown\u2260control)",
+      "n_cases": 994,
+      "n_controls": 0,
+      "n_samples": 994,
+      "n_unknown": 0,
+      "phenotype_id": "cancer"
     },
     {
       "eligible_auxiliary_task": false,
@@ -132,7 +121,7 @@
       "phenotype_id": "tissue"
     }
   ],
-  "generated_at": "2026-09-03T09:22:12Z",
+  "generated_at": "2026-09-04T14:34:40Z",
   "geo_source_family": "geo_metadata_backfill",
   "invariants": {
     "atlas_enrichment_on_sample": 0,
@@ -144,6 +133,11 @@
       "label_status": "observed",
       "n": 7652,
       "phenotype_id": "age"
+    },
+    {
+      "label_status": "case",
+      "n": 994,
+      "phenotype_id": "cancer"
     },
     {
       "label_status": "control",
@@ -163,8 +157,10 @@
   ],
   "merge_stats": {
     "enabled": true,
+    "n_geo_phenotype_rows_before_merge": 0,
     "n_geo_rows_input": 23217,
-    "n_phenotype_rows_added": 32967,
+    "n_multi_study_gsm": 0,
+    "n_phenotype_rows_added": 33961,
     "n_samples_skipped_hub": 2210,
     "n_samples_skipped_missing": 386,
     "n_samples_touched": 20621,
@@ -215,7 +211,7 @@
         "samples": 1107
       },
       "GSE270375": {
-        "phenotypes": 0,
+        "phenotypes": 994,
         "samples": 994
       },
       "GSE55763": {
@@ -233,6 +229,7 @@
     },
     "phenotypes_by_id": {
       "age": 7652,
+      "cancer": 994,
       "disease": 2058,
       "sex": 12729,
       "tissue": 10528
@@ -253,16 +250,30 @@
       "GSE55763",
       "GSE56046",
       "GSE68379"
+    ],
+    "tissue_map": {
+      "ambiguous": 0,
+      "empty": 10093,
+      "mapped": 6419,
+      "unmapped": 4109
+    },
+    "tissue_ontology": "/data/projects/methyl-burden-score/data/canonical/phenotypes/tissue_ontology_hub_nine_pack_v1.yaml",
+    "unmapped_tissue_examples": [
+      "sarcoma",
+      "Medulloblastoma",
+      "brain tumor"
     ]
   },
   "n_samples_with_geo_json": 20621,
-  "n_samples_with_geo_phenotype": 18599,
+  "n_samples_with_geo_phenotype": 19593,
   "notes": [
     "GEO rows are omitted for Hub GSM (Hub wins).",
     "Atlas enrichment stays on study.metadata_json only.",
     "Disease/cancer rows need explicit case/control tokens.",
     "Diagnosis-only text stays in metadata_json.",
-    "Training heads read Hub pack Parquet, not geo_metadata_backfill."
+    "Training heads read Hub pack Parquet, not geo_metadata_backfill.",
+    "Authoritative GEO \u0394 is merge_stats.n_phenotype_rows_added (in-memory phenotypes before merge are usually 0 on a full refresh).",
+    "For a clean incremental test: MBS_SKIP_GEO_BACKFILL=1 refresh \u2192 assert zero geo_metadata_backfill rows \u2192 fetch/merge \u2192 compare exact \u0394."
   ],
   "prevalence": [
     {
@@ -270,6 +281,13 @@
       "n_rows": 7652,
       "n_samples": 7652,
       "phenotype_id": "age",
+      "source_family": "geo_metadata_backfill"
+    },
+    {
+      "n_observed": 994,
+      "n_rows": 994,
+      "n_samples": 994,
+      "phenotype_id": "cancer",
       "source_family": "geo_metadata_backfill"
     },
     {

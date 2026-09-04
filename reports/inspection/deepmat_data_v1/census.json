@@ -2006,15 +2006,15 @@
   },
   "ewas_db_ingest": [
     {
-      "n_assay_files": 105005,
-      "n_samples": 103665,
-      "n_studies": 1129,
+      "n_assay_files": 109340,
+      "n_samples": 107993,
+      "n_studies": 1194,
       "source_release_id": "ewas-datahub-db-v1",
       "source_system": "ewas_datahub_db",
-      "total_bytes": 692072549531879.0
+      "total_bytes": 703052480523027.0
     }
   ],
-  "generated_at": "2026-09-03T09:22:26Z",
+  "generated_at": "2026-09-04T14:34:53Z",
   "label_conflicts_head": [],
   "overlap_by_n_families": [
     {
@@ -2264,6 +2264,14 @@
       "source_family": "cancer"
     },
     {
+      "n_categorical_levels": 1,
+      "n_observed": 994,
+      "n_rows": 994,
+      "n_samples": 994,
+      "phenotype_id": "cancer",
+      "source_family": "geo_metadata_backfill"
+    },
+    {
       "n_categorical_levels": 30,
       "n_observed": 5288,
       "n_rows": 12218,
@@ -2408,7 +2416,7 @@
       "source_family": "disease"
     },
     {
-      "n_categorical_levels": 7,
+      "n_categorical_levels": 6,
       "n_observed": 10528,
       "n_rows": 10528,
       "n_samples": 10528,
@@ -2435,12 +2443,12 @@
   "release_ewas_db": {
     "advertised_n": 1989,
     "mirror_complete": false,
-    "n_local_gsm": 135068,
-    "n_local_studies": 1384,
+    "n_local_gsm": 145773,
+    "n_local_studies": 1501,
     "refresh_is_idempotent": true,
     "remote_index_fetched": false,
-    "total_bytes": 1504682184538
+    "total_bytes": 1586377946469
   },
-  "unique_gsm": 150947,
+  "unique_gsm": 157941,
   "unique_vs_row_sum_note": "unique GSM must be compared to pack-row sum; overlap makes them unequal"
 }

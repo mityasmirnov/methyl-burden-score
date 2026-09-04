@@ -105,18 +105,25 @@ from Atlas enrichment. Atlas stays study-level. GEO writes GSM phenotypes with
 `source_family=geo_metadata_backfill`. Hub sample-info still wins on overlapping
 GSM. Operator brief, join keys, GPL map, and audit:
 [`plans/geo-metadata-backfill-ewas-db.md`](plans/geo-metadata-backfill-ewas-db.md).
+Pre-scale / batch-50:
+[`plans/geo-metadata-backfill-pre-scale.md`](plans/geo-metadata-backfill-pre-scale.md).
+Training release design (not built; do not mutate ATS):
+[`plans/geo-enriched-training-release.md`](plans/geo-enriched-training-release.md).
 
 ```bash
 source scripts/activate_data_environment.sh
-make fetch-geo-sample-metadata
-# merge on next refresh (parquet present). Skip merge: MBS_SKIP_GEO_BACKFILL=1
-make catalog-refresh-release
+make fetch-geo-sample-metadata          # pilot 15 (re-validate with current code)
+# Batch expand only after repaired-pilot audit is accepted:
+# make fetch-geo-sample-metadata-batch
+MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
+# Clean Δ recipe: MBS_SKIP_GEO_BACKFILL=1 refresh → assert 0 GEO rows → merge
 ```
 
-Report: `reports/inspection/deepmat_data_v1/geo_backfill_pilot/summary.{json,md}`.
+Reports: `reports/inspection/deepmat_data_v1/geo_backfill_pilot/`
+(`summary.*`, `validation.*`, `fetch_status.json`).
 
-This does **not** assign training labels from Atlas cohort tables, and GEO rows
-are not MBS encoder features.
+Age is unit-aware (years/months/weeks/days); tissue maps through Hub ontology
+aliases; diagnosis-only disease text is **not** a case/control label.
 
 ```bash
 source scripts/activate_data_environment.sh

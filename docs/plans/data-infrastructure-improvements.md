@@ -39,7 +39,11 @@ columns empty; EWAS_db-only samples lack Hub phenotype rows.
 | Extend post hook to `validate-release` + `phenotype-census` + `trait-eligibility` | Single command = full 7A reports | **Done** (via `make catalog-refresh-release`) |
 | Ingest EWAS_db sample metadata where available (Atlas study/cohort joins) | Labels for ~113k EWAS_db-only GSM | Medium — plan: [`geo-metadata-backfill-ewas-db.md`](geo-metadata-backfill-ewas-db.md) |
 | **GEO sample metadata backfill (pilot)** | Sample-level SOFT → `geo_metadata_backfill` for EWAS_db-only GSM | **Done** (audit 2026-09-03; GPL13534=HM450; report `geo_backfill_pilot/`) |
-| **GEO pre-scale fixes** (age units, tissue ontology, GSM conflicts, clean Δ audit, per-GSE status) | Required before larger crawl / training cohort | **In progress** — fixes 1–4 coded ([`geo-metadata-backfill-pre-scale.md`](geo-metadata-backfill-pre-scale.md)); rebuild parquet + refresh to verify; disease/training-release still pending |
+| **GEO pre-scale fixes** (age/tissue/GSM/Δ) | Code before larger crawl | **Done** |
+| **GEO repaired-pilot re-validation** | Clean zero→merge Δ + validation.md | **Done** (2026-09-04; report `geo_backfill_pilot/`) |
+| **GEO batch-50 expansion** | Audited crawl beyond pilot 15 | **Blocked** until pilot audit accepted |
+| **GEO disease/cancer for training** | Need cases+controls+eligibility | **No** — disease controls-only; cancer cases w/o GEO controls |
+| **GEO-enriched training release** | Separate immutable release; not ATS | **Designed** — [`geo-enriched-training-release.md`](geo-enriched-training-release.md); **not built** |
 | **Study-level Atlas enrichment** (`study_atlas_enrichment` + `study.metadata_json.atlas_enrichment`) | External stratification (tissue, cohort size, disease area); not sample labels | **Done** (auto `seed-atlas-gse-map` on `catalog-refresh-release`; **175**/1587 matched) |
 | Registry `sample_count` from matrix sample indexes | Honest N in `phenotype_registry.yaml` | Small |
 | Normalize `450K` → `HM450` on catalog refresh | Fewer platform string splits | Small |

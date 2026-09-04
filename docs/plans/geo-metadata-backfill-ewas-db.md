@@ -1,9 +1,8 @@
 # GEO metadata backfill for EWAS_db-only studies
 
-**Status:** pilot implemented and audited (2026-09-03)  
-**Next:** [`geo-metadata-backfill-pre-scale.md`](geo-metadata-backfill-pre-scale.md)
-(age units, tissue ontology, GSM conflicts, clean audit, per-GSE status —
-**before** any crawl larger than the pilot; after 7G′ 16-epoch promotion arms)  
+**Status:** pilot **done**; pre-scale fixes 1–4 **done** + batch-50 expansion
+**in progress** — see [`geo-metadata-backfill-pre-scale.md`](geo-metadata-backfill-pre-scale.md)
+and [`geo-enriched-training-release.md`](geo-enriched-training-release.md)  
 **Parent:** [`data-infrastructure-improvements.md`](data-infrastructure-improvements.md) §2  
 **Related:** [`EWAS_METADATA.md`](../EWAS_METADATA.md), [`DATA_CONTRACT.md`](../DATA_CONTRACT.md),
 study-level Atlas enrichment (`seed_atlas_gse_es_map.py` — **done**, automatic on
@@ -11,7 +10,8 @@ study-level Atlas enrichment (`seed_atlas_gse_es_map.py` — **done**, automatic
 
 This is the operator + audit brief for the **pilot**. Atlas GSE↔ES enrichment is a
 **different** lane (study-level only). Do not copy Atlas cohort tissue/disease onto
-GSM. Do **not** scale beyond 15 GSE until the pre-scale plan’s fixes 1–4 are done.
+GSM. Pre-scale fixes 1–4 are green; the next crawl is the audited **batch-50** list
+(`configs/data/geo_backfill_batch50_gse.txt`), not a full EWAS_db crawl.
 
 ## Scope and acceptance
 
@@ -44,12 +44,16 @@ enter the MBS encoder.
 ```bash
 source scripts/activate_data_environment.sh
 
-# 1. Fetch / rebuild parquet from NCBI family SOFT (caches under $MBS_CACHE_ROOT/geo/{GSE}/)
+# Pilot (15 GSE)
 make fetch-geo-sample-metadata
-# cache-only rebuild (no FTP):
-uv run python scripts/fetch_geo_sample_metadata.py --from-cache-only
 
-# 2. Merge into catalog (skip Atlas NCBI seed if the map is current)
+# Audited expansion (50 GSE = pilot + 35)
+make fetch-geo-sample-metadata-batch
+# cache-only rebuild (no FTP):
+uv run python scripts/fetch_geo_sample_metadata.py \
+  --studies-file configs/data/geo_backfill_batch50_gse.txt --from-cache-only
+
+# Merge into catalog (skip Atlas NCBI seed if the map is current)
 MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
 # skip GEO merge even if parquet exists:
 MBS_SKIP_GEO_BACKFILL=1 make catalog-refresh-release
@@ -62,13 +66,16 @@ Refresh does **not** download SOFT. Fetch is a separate Makefile target.
 | Path | Role |
 |------|------|
 | `configs/data/geo_backfill_pilot_gse.txt` | 15-GSE pilot list |
+| `configs/data/geo_backfill_batch50_gse.txt` | Pilot + 35 high-N studies (audited expansion) |
+| `configs/data/geo_tissue_aliases.yaml` | GEO tissue → Hub ontology aliases |
 | `$MBS_CACHE_ROOT/geo/{GSE}/{GSE}_family.soft.gz` | Cached NCBI family SOFT |
 | `$MBS_DATA_ROOT/canonical/phenotypes/geo_sample_metadata.parquet` | One row per GSM |
 | `$MBS_DATA_ROOT/canonical/phenotypes/geo_sample_metadata.manifest.json` | Parquet checksum + study list |
 | `sample_phenotype` rows with `source_family=geo_metadata_backfill` | Catalog phenotype SoT for GEO |
 | `sample.metadata_json.geo` | Raw characteristics, GPL, SOFT hash (not training features) |
 | `study.metadata_json.geo.pubmed_ids` | Series PubMed IDs (not Atlas ES*) |
-| `reports/inspection/deepmat_data_v1/geo_backfill_pilot/summary.{json,md}` | Audit |
+| `reports/inspection/deepmat_data_v1/geo_backfill_pilot/summary.{json,md}` | Pilot audit |
+| `reports/inspection/deepmat_data_v1/geo_backfill_batch/fetch_status.json` | Batch per-GSE status |
 
 ## Distinction from Atlas enrichment (done)
 
@@ -98,10 +105,11 @@ Hub-wins implementation: `sample.metadata_json` is null (or not `source=ewas_db`
 | `characteristics_ch1` tokens | age / sex / tissue / disease / cancer | only if eligibility passes |
 | `source_name_ch1` | `sample.metadata_json.geo.source_name` | no |
 | `platform_id` (GPL) | `sample.metadata_json.geo.platform_id`; `study.platform_id` only if **one** known methylation GPL and Hub left it null | no |
+| Age | unit-aware years (months/weeks/days); `age_raw` retained | yes |
 | Sex / gender | `sex` + `sample.sex` | yes |
-| age | `age` if numeric 0–120 | yes |
-| tissue / cell type / organism part | `tissue` + `sample.tissue_raw` (no ontology pass in pilot) | yes |
-| disease / diagnosis / condition / disease status | `disease` or `cancer` **only** if explicit case/control token | yes only then |
+| tissue / cell type / organism part | `tissue` + ontology map when possible; raw in `tissue_raw` / geo JSON | yes |
+| disease / diagnosis / condition / disease status / group / case-control | `disease` or `cancer` **only** if explicit case/control token | yes only then |
+| sample type (tumor/normal) | `cancer` case/control only for explicit tumor/normal language | yes only then |
 | treatment / batch / plate / chip | `characteristics_raw` only | **no** |
 | series PubMed ID | `study.metadata_json.geo.pubmed_ids` | no |
 
@@ -119,10 +127,16 @@ Unknown GPL must not be written to `study.platform_id` (FK to `platform`). Mixed
 
 ## Eligibility (ingest)
 
-1. **Age:** first numeric token, 0–120; sentinels 999 / 9999 / 10002 omitted.
+1. **Age:** unit-aware parse to years (0–120); sentinels 999 / 9999 / 10002 omitted;
+   original string in `age_raw`.
 2. **Sex:** `M`/`Male`/`F`/`Female` → catalog Male/Female; else unknown and **not** written as observed.
-3. **Tissue:** raw string observed; `tissue_ontology_id` stays null in this pilot.
-4. **Disease / cancer:** write a row only when the value has an explicit control token (`control`, `healthy`, `normal`, `unaffected`, …) or case token (`case`, `patient`, `tumor`, …). A diagnosis name alone (e.g. `Crohn's disease`) stays in `metadata_json` — **never** default to control.
+3. **Tissue:** map via Hub ontology + `configs/data/geo_tissue_aliases.yaml`; unmapped
+   raw kept for audit; `tissue_ontology_id` set when mapped.
+4. **Disease / cancer:** write a row only when the value has an explicit control token
+   (`control`, `healthy`, `normal`, …) or case token (`case`, `patient`, `tumor`, …),
+   including `group` / `case/control` keys and `sample type` tumor/normal → cancer.
+   A diagnosis name alone (e.g. `Crohn's disease`) stays in `metadata_json` — **never**
+   default to control.
 5. **Hub-wins:** skip Hub GSM entirely.
 6. **Encoder:** batch / study-id / GPL are not `sample_phenotype` and must not enter MBS encoder features.
 
