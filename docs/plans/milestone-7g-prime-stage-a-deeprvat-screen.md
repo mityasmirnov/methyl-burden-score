@@ -357,8 +357,8 @@ grid. Full write-up:
 | One-hop vs cascade | **Cascade preferred** (e2e); one-hop has linear signal |
 | One scalar MBS/gene enough? | **No** for age/sex |
 | `cpg_context` / gene-role help? | **No** under fold-0 budget; prefer M-only |
-| Gene pool vs RBS loss locus | **Open** — run post-hoc `rbs_*` probes |
-| Post-hoc `mbs_enet` on screen arms | **Open** |
+| Gene pool vs RBS loss locus | **Partial:** screen `rbs_linear_probe` landed (report bug hid it). Vector-mean-max: RBS age/sex ≫ MBS; tissue near-neutral. P2-G RBS probe not in historical metrics |
+| Post-hoc `mbs_enet` / `rbs_enet` on screen arms | **Open** |
 
 ### Remaining work
 
@@ -375,7 +375,7 @@ grid. Full write-up:
 
 1. ~~Mean vs max at each cascade level.~~ → **max/max**
 2. ~~Whether scalar RBS discards information.~~ → **not under Tier-1 budget**
-3. Whether gene pooling discards information relative to RBS. ← *post-hoc*
+3. Whether gene pooling discards information relative to RBS. ← *partial: screen `rbs_linear_probe` yes; vector arm shows age/sex loss at gene pool*
 4. ~~Whether one-hop matches or beats the cascade.~~ → **no (e2e)**
 5. ~~Whether one scalar MBS per gene is enough for age/sex/tissue.~~ → **no for age/sex**
 6. ~~Whether `cpg_context` annotation adds measurable signal over M-only.~~ → **no**

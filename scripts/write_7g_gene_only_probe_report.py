@@ -142,7 +142,15 @@ def _classical_metric_means(
 
 def _metric_from_fold(blob: dict[str, Any], metric_path: str) -> float | None:
     parts = metric_path.split(".")
-    eval_keys = ("mbs_e2e", "mbs_linear_probe", "mbs_enet", "fusion_full", "fusion_mbs_direct")
+    eval_keys = (
+        "mbs_e2e",
+        "mbs_linear_probe",
+        "mbs_enet",
+        "rbs_linear_probe",
+        "rbs_enet",
+        "fusion_full",
+        "fusion_mbs_direct",
+    )
     if parts[0] in eval_keys:
         evaluations = blob.get("evaluations") or {}
         cur: Any = evaluations.get(parts[0])
@@ -645,8 +653,35 @@ def render_architecture_qa(rows: list[dict[str, Any]]) -> list[str]:
     max_mean = _e2e("N-cascade-scalar-max-mean")
     vec = _e2e("N-cascade-vector-mean-max") or _e2e("N-cascade-vector-max-max")
     light = _e2e("N-light-gene-max") or _e2e("N-light-gene-mean")
-    rbs = _mode("P2-G", "rbs_enet") or _mode("P2-G", "rbs_linear_probe")
-    mbs_enet = _mode("P2-G", "mbs_enet")
+    # Prefer locked P2 if present; else the screen arm with the clearest
+    # RBS-vs-MBS age gap (gene-pooling diagnostic), falling back to any RBS row.
+    rbs_arm = None
+    rbs = None
+    mbs_probe = None
+    candidates: list[tuple[str, dict[str, Any], dict[str, Any], float]] = []
+    for arm in (
+        "P2-G",
+        "N-cascade-scalar-max-mean",
+        "N-cascade-scalar-mean-max",
+        "N-cascade-vector-mean-max",
+        "N-cascade-vector-max-max",
+        "P4-G",
+    ):
+        cand = _mode(arm, "rbs_enet") or _mode(arm, "rbs_linear_probe")
+        if cand is None:
+            continue
+        probe = _mode(arm, "mbs_enet") or _mode(arm, "mbs_linear_probe")
+        if probe is None:
+            continue
+        rbs_age = float(cand.get("age_mae") or 99.0)
+        mbs_age = float(probe.get("age_mae") or 99.0)
+        gap = mbs_age - rbs_age  # >0 ⇒ gene pool worsens age
+        candidates.append((arm, cand, probe, gap))
+    if candidates:
+        # Prefer P2 if present; else largest positive age gap.
+        p2_hit = next((c for c in candidates if c[0] == "P2-G"), None)
+        chosen = p2_hit or max(candidates, key=lambda c: c[3])
+        rbs_arm, rbs, mbs_probe, _ = chosen
     classical = next((r for r in rows if r.get("arm_id") == "C-mvalue-enet-G"), None)
 
     def _cmp_pool(level: str) -> str:
@@ -673,15 +708,24 @@ def render_architecture_qa(rows: list[dict[str, Any]]) -> list[str]:
         )
 
     q3 = "Pending RBS diagnostic."
-    if rbs is not None and mbs_enet is not None:
+    if rbs is not None and mbs_probe is not None:
         q3 = (
-            f"P2 `rbs_*` tissue F1={_fmt(rbs.get('tissue_f1'))}, age MAE={_fmt(rbs.get('age_mae'))}; "
-            f"`mbs_enet` tissue={_fmt(mbs_enet.get('tissue_f1'))}, age={_fmt(mbs_enet.get('age_mae'))}. "
+            f"`{rbs_arm}` `rbs_*` tissue F1={_fmt(rbs.get('tissue_f1'))}, "
+            f"age MAE={_fmt(rbs.get('age_mae'))}, sex AUROC={_fmt(rbs.get('sex_auroc'))}; "
+            f"same-arm MBS probe tissue={_fmt(mbs_probe.get('tissue_f1'))}, "
+            f"age={_fmt(mbs_probe.get('age_mae'))}, sex={_fmt(mbs_probe.get('sex_auroc'))}. "
             + (
-                "Gene pooling recovers tissue but **drops age/sex** relative to RBS."
-                if (rbs.get("age_mae") or 99) < (mbs_enet.get("age_mae") or 0)
-                else "Loss is not clearly at gene pooling; check scalar RBS vs raw CpG."
+                "Gene pooling is near-neutral on tissue; **age/sex often better on RBS** "
+                "(pre–gene-pool), so some phenotype signal is lost at region→gene."
+                if (rbs.get("age_mae") or 99) + 0.5 < (mbs_probe.get("age_mae") or 0)
+                or (rbs.get("sex_auroc") or 0) > (mbs_probe.get("sex_auroc") or 0) + 0.02
+                else "Loss is not clearly at gene pooling on this arm; check scalar RBS vs raw CpG."
             )
+        )
+    elif rbs is not None:
+        q3 = (
+            f"`{rbs_arm}` `rbs_*` tissue F1={_fmt(rbs.get('tissue_f1'))}, "
+            f"age MAE={_fmt(rbs.get('age_mae'))} (no paired MBS probe row)."
         )
     if classical is not None and rbs is not None:
         q3 += (

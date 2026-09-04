@@ -34,7 +34,15 @@ DEFAULT_ONTOLOGY = "canonical/phenotypes/tissue_ontology_age_tissue_sex_full_v1.
 def _metric_from_fold(blob: dict[str, Any], metric_path: str) -> float | None:
     """Resolve dotted path like ``mbs_e2e.metrics.tissue.macro_f1`` on fold metrics."""
     parts = metric_path.split(".")
-    eval_keys = ("mbs_e2e", "mbs_linear_probe", "mbs_enet", "fusion_full", "fusion_mbs_direct")
+    eval_keys = (
+        "mbs_e2e",
+        "mbs_linear_probe",
+        "mbs_enet",
+        "rbs_linear_probe",
+        "rbs_enet",
+        "fusion_full",
+        "fusion_mbs_direct",
+    )
     if parts[0] in eval_keys:
         evaluations = blob.get("evaluations") or {}
         cur: Any = evaluations.get(parts[0])

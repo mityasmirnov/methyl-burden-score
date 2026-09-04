@@ -42,7 +42,7 @@ Report interpretation:
 | Vector cascade arms (`vector-mean-max`, `vector-max-max`) | **done** 3/3 — both ≤ scalar P2; no promote |
 | `N-light-gene-max` / `N-light-gene-mean` one-hop | **done** 3/3 — weak e2e (~0.12); linear ~0.30–0.35 |
 | Annotation ablation grid (A0–A7, N0–N3) | **done** fold 0 — **`m_only` best**; role/context hurt |
-| Post-hoc `mbs_enet` / RBS probes on screen arms | **pending** |
+| Post-hoc `mbs_enet` / `rbs_enet` on screen arms | **pending** (`rbs_linear_probe` already in screen cascade metrics) |
 | Stage A DeepRVAT screen (Tier-1) | **done** ← lock stays **`P2-G`**; Stage B unblocked on topology |
 | Stage B GPU run | **pending** (next ops gate) |
 | Milestone **7** 5×6 OOF | **blocked** |
