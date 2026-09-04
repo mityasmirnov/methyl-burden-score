@@ -1,9 +1,10 @@
 # 7G′ Stage A: N-light-gene-max (annotated CpG → gene max).
+# P5-style: 30-epoch ceiling + early stop (same budget as P5-G-max).
 split_id: hub-ats-7e-3fold-v1
 sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
 cv_budget:
   max_loci: 65536
-  max_epochs: 5
+  max_epochs: 30
 experiment:
   name: stage0_7g_gene_only_probe_light_max
   seed: 42
@@ -65,23 +66,21 @@ pilot:
 stage0:
   use_cpgpt_static_features: false
 training:
-  # Large micro-batch on exclusive GPU0 (~49GB Ada, sequential Stage A).
-  # Target ~20–30GB activations; back off only if OOM.
-  batch_size: 256
-  batch_token_budget: 16000000
+  # P5-style: 30-epoch ceiling + early stop. Calibrate down from 512 if OOM.
+  batch_size: 512
+  batch_token_budget: 32000000
   early_stopping_patience: 5
   gene_linked_only: true
   gene_allocation: explicit_only
   primary_evaluation: mbs_e2e
-  # Screen: leave mbs_enet/rbs_enet for post-hoc (scripts/eval_mbs_enet_from_scores.py).
+  # Skip enet during screen; linear probe still runs (deferred CPU).
   stage_a_include_mbs_enet: false
-  # Overlap sklearn linear/enet with next-fold GPU train.
   stage_a_defer_cpu_probes: true
   checkpoint_selection: validation_tissue_macro_f1_then_age_mae
   stage_a_per_epoch_eval: true
   gradient_clip_norm: 2.0
   learning_rate: 0.001
-  max_epochs: 5
+  max_epochs: 30
   optimizer: adamw
   precision: bf16-mixed
   require_cuda: true
