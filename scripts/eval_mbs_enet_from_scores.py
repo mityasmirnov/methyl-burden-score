@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Post-hoc elastic-net readout on saved MBS (no encoder retrain).
+"""Post-hoc elastic-net readout on saved MBS / gene-linked RBS (no encoder retrain).
 
 Supports:
 - Cascade layout: ``artifacts/runs/<run-id>/fold_{i}/`` (zarr score blocks)
+  - ``--which mbs`` → ``mbs_enet``
+  - ``--which rbs`` → ``rbs_enet`` on ``all_gene_rbs.zarr``
+  - ``--which both`` → both
 - Flat light layout: ``artifacts/runs/<run-prefix>-f{i}/`` (``scores/mbs.npy`` +
-  ``stage_a_probe_inputs.npz`` when present)
+  ``stage_a_probe_inputs.npz`` when present; MBS only)
 """
 
 from __future__ import annotations
@@ -76,6 +79,8 @@ def patch_cascade_fold(
     fold: dict,
     ph_by_id: dict,
     class_names: list[str],
+    which: str = "mbs",
+    force: bool = False,
 ) -> dict:
     metrics_path = fold_dir / "metrics.json"
     score_dir = fold_dir / "scores"
@@ -84,33 +89,50 @@ def patch_cascade_fold(
     train_idx, test_idx = _fold_index(fold, sample_ids)
     arrays = _phenotype_arrays(sample_ids, ph_by_id)
     blocks = load_cascade_score_blocks(score_dir)
-    blob = _evaluate_mbs_enet(
-        blocks,
-        train_idx=train_idx,
-        test_idx=test_idx,
-        ages=arrays["age"],
-        age_mask=arrays["age_mask"],
-        tissue=arrays["tissue"],
-        tissue_mask=arrays["tissue_mask"],
-        sex=arrays["sex"],
-        sex_mask=arrays["sex_mask"],
-        study_ids=arrays["study_ids"],
-        class_names=class_names,
-    )
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
     evaluations = dict(metrics.get("evaluations") or {})
-    evaluations["mbs_enet"] = blob
+    written: dict[str, dict] = {}
+
+    modes: list[tuple[str, dict]] = []
+    if which in ("mbs", "both"):
+        modes.append(("mbs_enet", blocks))
+    if which in ("rbs", "both"):
+        if "all_gene_rbs" not in blocks or int(blocks["all_gene_rbs"].shape[1]) == 0:
+            raise FileNotFoundError(f"missing all_gene_rbs under {score_dir}")
+        modes.append(("rbs_enet", {"mbs": blocks["all_gene_rbs"]}))
+
+    for eval_key, score_blocks in modes:
+        if not force and isinstance(evaluations.get(eval_key), dict):
+            print(f"[{eval_key}] skip {fold_dir.name}: already present", flush=True)
+            continue
+        blob = _evaluate_mbs_enet(
+            score_blocks,
+            train_idx=train_idx,
+            test_idx=test_idx,
+            ages=arrays["age"],
+            age_mask=arrays["age_mask"],
+            tissue=arrays["tissue"],
+            tissue_mask=arrays["tissue_mask"],
+            sex=arrays["sex"],
+            sex_mask=arrays["sex_mask"],
+            study_ids=arrays["study_ids"],
+            class_names=class_names,
+        )
+        blob["evaluation"] = eval_key
+        evaluations[eval_key] = blob
+        written[eval_key] = blob
+        tissue_f1 = (blob.get("metrics") or {}).get("tissue", {}).get("macro_f1")
+        age_mae = (blob.get("metrics") or {}).get("age", {}).get("mae")
+        sex_auroc = (blob.get("metrics") or {}).get("sex", {}).get("auroc")
+        print(
+            f"[{eval_key}] {fold_dir.name} tissue_f1={tissue_f1} age_mae={age_mae} "
+            f"sex_auroc={sex_auroc} n_features={blob.get('n_score_features')}",
+            flush=True,
+        )
+
     metrics["evaluations"] = evaluations
     write_json(metrics_path, metrics)
-    tissue_f1 = (blob.get("metrics") or {}).get("tissue", {}).get("macro_f1")
-    age_mae = (blob.get("metrics") or {}).get("age", {}).get("mae")
-    sex_auroc = (blob.get("metrics") or {}).get("sex", {}).get("auroc")
-    print(
-        f"[mbs_enet] {fold_dir.name} tissue_f1={tissue_f1} age_mae={age_mae} "
-        f"sex_auroc={sex_auroc} n_features={blob.get('n_score_features')}",
-        flush=True,
-    )
-    return blob
+    return written
 
 
 def patch_flat_run(
@@ -217,6 +239,12 @@ def main() -> None:
     )
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--force", action="store_true")
+    parser.add_argument(
+        "--which",
+        choices=("mbs", "rbs", "both"),
+        default="mbs",
+        help="Cascade only: evaluate mbs_enet, rbs_enet (all_gene_rbs), or both",
+    )
     args = parser.parse_args()
     if not args.run_id and not args.run_prefix:
         args.run_id = DEFAULT_RUN
@@ -244,11 +272,7 @@ def main() -> None:
     for i, (kind, target) in enumerate(targets):
         metrics_path = target / "metrics.json"
         if not metrics_path.is_file():
-            print(f"[mbs_enet] skip {target.name}: metrics missing", flush=True)
-            continue
-        prior = json.loads(metrics_path.read_text(encoding="utf-8"))
-        if not args.force and isinstance((prior.get("evaluations") or {}).get("mbs_enet"), dict):
-            print(f"[mbs_enet] skip {target.name}: already present", flush=True)
+            print(f"[enet] skip {target.name}: metrics missing", flush=True)
             continue
         fold = folds[min(i, len(folds) - 1)]
         if kind == "cascade_fold":
@@ -257,8 +281,17 @@ def main() -> None:
                 fold=fold,
                 ph_by_id=ph_by_id,
                 class_names=class_names,
+                which=args.which,
+                force=args.force,
             )
         else:
+            if args.which == "rbs":
+                print(f"[enet] skip {target.name}: --which rbs is cascade-only", flush=True)
+                continue
+            prior = json.loads(metrics_path.read_text(encoding="utf-8"))
+            if not args.force and isinstance((prior.get("evaluations") or {}).get("mbs_enet"), dict):
+                print(f"[mbs_enet] skip {target.name}: already present", flush=True)
+                continue
             patch_flat_run(
                 run_dir=target,
                 fold=fold,

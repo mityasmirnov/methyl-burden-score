@@ -90,6 +90,7 @@ Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare row
 
 | Arm | Readout | Tissue F1 | Age MAE | Age R² | Sex AUROC | Sex F1 | folds |
 |-----|---------|----------:|--------:|-------:|----------:|-------:|------:|
+| `N-cascade-scalar-mean-max` | `rbs_enet` | 0.390 (±0.045) | 12.578 (±1.476) | 0.574 (±0.056) | 0.762 (±0.024) | 0.709 (±0.029) | 3 |
 | `C-mvalue-enet-G` | `classical` | 0.388 (±0.018) | 8.150 (±0.714) | 0.797 (±0.039) | 0.882 (±0.033) | — | 3 |
 | `P2-G` | `mbs_enet` | 0.385 (±0.053) | 14.393 (±0.655) | 0.452 (±0.054) | 0.765 (±0.027) | 0.702 (±0.026) | 3 |
 | `N-cascade-scalar-mean-max` | `rbs_linear_probe` | 0.385 (±0.042) | 14.668 (±1.041) | 0.362 (±0.130) | 0.773 (±0.013) | 0.700 (±0.020) | 3 |
@@ -99,6 +100,7 @@ Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare row
 | `N-cascade-scalar-mean-max` | `mbs_linear_probe` | 0.375 (±0.029) | 14.382 (±1.173) | 0.390 (±0.161) | 0.711 (±0.031) | 0.654 (±0.024) | 3 |
 | `P2-G` | `mbs_e2e` | 0.373 (±0.038) | 15.637 (±0.787) | 0.315 (±0.140) | — | 0.708 (±0.030) | 3 |
 | `P2-G` | `mbs_linear_probe` | 0.373 (±0.052) | 13.393 (±1.104) | 0.488 (±0.110) | 0.784 (±0.020) | 0.717 (±0.021) | 3 |
+| `N-cascade-scalar-max-mean` | `rbs_enet` | 0.372 (±0.061) | 11.254 (±2.129) | 0.642 (±0.081) | 0.789 (±0.057) | 0.747 (±0.054) | 3 |
 | `P5-G-max` | `mbs_linear_probe` | 0.371 (±0.039) | 13.274 (±0.893) | 0.476 (±0.091) | 0.714 (±0.009) | 0.659 (±0.003) | 3 |
 | `P4-G` | `mbs_e2e` | 0.370 (±0.059) | 20.380 (±2.156) | -0.036 (±0.059) | — | 0.664 (±0.038) | 3 |
 | `N-cascade-vector-mean-max` | `rbs_linear_probe` | 0.368 (±0.044) | 10.459 (±0.402) | 0.686 (±0.026) | 0.842 (±0.054) | 0.774 (±0.041) | 3 |
@@ -114,11 +116,10 @@ Same **`explicit_only`** gene-linked panel and outer **test** folds. Compare row
 | `C-mvalue-ridge-G` | `classical` | 0.337 (±0.040) | 6.489 (±0.907) | 0.856 (±0.033) | 0.904 (±0.056) | — | 3 |
 | `N-cascade-scalar-mean-max` | `mbs_e2e` | 0.331 (±0.020) | 20.713 (±1.893) | -0.083 (±0.141) | 0.667 (±0.032) | 0.597 (±0.024) | 3 |
 | `N-cascade-vector-max-max` | `rbs_linear_probe` | 0.329 (±0.074) | 12.102 (±2.226) | 0.592 (±0.095) | 0.803 (±0.111) | 0.734 (±0.097) | 3 |
-| `N-light-gene-max` | `mbs_linear_probe` | 0.295 (±0.122) | 13.438 (±2.818) | 0.483 (±0.171) | 0.731 (±0.107) | 0.678 (±0.089) | 3 |
+| `N-light-gene-max` | `mbs_linear_probe` | 0.327 (±0.000) | 12.943 (±0.000) | 0.558 (±0.000) | 0.776 (±0.000) | 0.705 (±0.000) | 1 |
+| `N-light-gene-max` | `mbs_e2e` | 0.305 (±0.000) | 18.058 (±0.000) | 0.230 (±0.000) | 0.669 (±0.000) | 0.574 (±0.000) | 1 |
 | `N-light-gene-mean` | `mbs_enet` | 0.278 (±0.000) | 20.882 (±0.000) | -0.008 (±0.000) | 0.760 (±0.000) | 0.553 (±0.000) | 3 |
-| `N-light-gene-max` | `mbs_enet` | 0.131 (±0.000) | 20.872 (±0.000) | -0.022 (±0.000) | 0.627 (±0.000) | 0.536 (±0.000) | 3 |
 | `N-light-gene-mean` | `mbs_e2e` | 0.126 (±0.064) | 23.082 (±2.533) | -0.406 (±0.533) | 0.591 (±0.014) | 0.462 (±0.091) | 3 |
-| `N-light-gene-max` | `mbs_e2e` | 0.122 (±0.102) | 21.888 (±0.553) | -0.232 (±0.120) | 0.575 (±0.022) | 0.458 (±0.117) | 3 |
 | `C-mvalue-hgb-G` | `classical` | 0.114 (±0.081) | 9.066 (±1.022) | 0.753 (±0.052) | 0.938 (±0.059) | — | 3 |
 
 **Readouts:** `mbs_e2e` = jointly trained neural heads on MBS (Stage A lock metric); `mbs_linear_probe` / `mbs_enet` = new sklearn heads on the **same frozen MBS**; `rbs_linear_probe` / `rbs_enet` = frozen **gene-linked RBS** (pre–gene-pool); `classical` = sklearn on gene-linked CpG M-values (no encoder).
@@ -140,30 +141,30 @@ Tier-1 DeepRVAT screen + fold-0 annotation ablations are in. **No new arm displa
 `P2-G` (max/max, 15 ep)** or closes the classical gap. Cascade remains **not**
 ≥0.03 tissue F1 ahead of `C-mvalue-enet-G`.
 
-### RBS-only frozen diagnostic (`rbs_linear_probe`)
+### RBS diagnostics (linear + post-hoc enet)
 
-**It did run** on all four screen cascade arms (inline; `rbs_enet` deferred with
-screen `mbs_enet` policy). Report writer previously omitted `rbs_*` from eval
-keys (fixed). **`P2-G` / `P4-G` still lack `rbs_linear_probe`** in metrics
-(historical runs; only fold 0 has `all_gene_rbs.zarr` for P2).
+Screen cascade arms have inline **`rbs_linear_probe`**. Post-hoc **`rbs_enet`**
+on frozen `all_gene_rbs.zarr` (13 212 regions) for the scalar mixed arms:
 
-On **vector-mean-max**, RBS beats MBS on age (~4.6 y) and sex (+0.15 AUROC) —
-evidence that **region→gene pooling discards age/sex signal** even though vector
-e2e did not beat scalar P2. Tissue is near-neutral across gene pooling.
+| Arm | `rbs_enet` tissue | age MAE | sex AUROC | `rbs_linear` tissue | `rbs_linear` age |
+|-----|------------------:|--------:|----------:|--------------------:|-----------------:|
+| `N-cascade-scalar-mean-max` | **0.390** | 12.58 | 0.762 | 0.385 | 14.67 |
+| `N-cascade-scalar-max-mean` | 0.372 | **11.25** | **0.789** | 0.383 | 13.51 |
+
+**Read:** elastic-net on RBS is close to (or slightly above) linear on tissue;
+age improves vs linear on both arms. Classical age (8.15) still leads. Gene
+pooling vs RBS: compare these to same-arm `mbs_linear_probe` / e2e in the task
+table — RBS remains the stronger age/sex readout on several arms.
 
 ### Annotation + representation diagnostics
 
-- **`m_only` (A0)** leads ablation e2e (0.276) and linear (0.350); gene-role hurts;
-  context/full ≤ M-only; N0/N1 near chance.
-- **Repr (post-hoc):** A0 gene-score SD≈0.15 (encoder not collapsed); N0 const-score=1
-  (obs-only collapsed — good control); no 0/1 saturation; corr(mean MBS, panel mean-M)≈0
-  (gene MBS is not bulk methylation intensity). Head ‖w‖₂ similar across arms — do **not**
-  block on L5.
+- **`m_only` (A0)** leads ablation e2e/linear; gene-role hurts; N0 collapsed.
+- Repr post-hoc: A0 SD≈0.15; no saturation; corr(mean MBS, panel mean-M)≈0.
 
 ### Lock (unchanged)
 
-Keep **`P2-G` max/max 15 ep**. Next: **Stage B GPU**; optional post-hoc `mbs_enet` /
-`rbs_enet`.
+Keep **`P2-G` max/max 15 ep**. Next: **Stage B GPU**; optional `mbs_enet` on
+screen arms.
 
 ## Architecture questions (Stage A screen)
 
@@ -171,25 +172,41 @@ Keep **`P2-G` max/max 15 ep**. Next: **Stage B GPU**; optional post-hoc `mbs_ene
 2. **Region → gene pool (mean vs max):** `max-mean` tissue F1=0.359 vs `max-max` 0.373; age MAE 21.356 vs 15.637. Prefer **`P2-G`** on this slice (check Pareto).
 3. **Does scalar RBS discard information?** Vector arm `0.337` tissue vs P2 `0.373`; if vector does not beat scalar on age/sex, bottleneck is elsewhere.
 4. **Gene pooling vs RBS:** `N-cascade-vector-mean-max` `rbs_*` tissue F1=0.368, age MAE=10.459, sex AUROC=0.842; same-arm MBS probe tissue=0.360, age=15.051, sex=0.697. Gene pooling is near-neutral on tissue; **age/sex often better on RBS** (pre–gene-pool), so some phenotype signal is lost at region→gene. Classical enet age MAE=8.150 remains the age ceiling.
-5. **One-hop vs cascade:** One-hop `N-light-gene-max` tissue=0.122 / age=21.888 vs P2-G 0.373 / 15.637.
+5. **One-hop vs cascade:** One-hop `N-light-gene-max` tissue=0.305 / age=18.058 vs P2-G 0.373 / 15.637.
 6. **One-scalar-per-gene bottleneck:** Gene aggregation still trails classical on age/sex; one scalar MBS/gene is **not yet adequate** unless a screen arm closes the gap.
 7. **Best performance/compute:** Prefer landed P2/P4 (15 ep) over P5; promote Tier-1 (5 ep) arms only when Pareto/near-best, then confirm at 15 ep.
 
+## Training epochs (ceiling / ran / best)
+
+Ceiling is the configured `max_epochs`. **Ran** is how many epochs the trainer completed (early stop may cut short). **Best** is the checkpoint selected by `validation_tissue_macro_f1_then_age_mae` (used for test `mbs_e2e`). Per-fold lists are fold 0,1,2 when present.
+
+| Arm | Ceiling | Epochs ran (per fold) | Best epoch (per fold) | folds |
+|-----|--------:|----------------------:|----------------------:|------:|
+| `P2-G` | 15 | — | 15,9,6 (μ=10.0) | 3 |
+| `P4-G` | 15 | — | 12,6,15 (μ=11.0) | 3 |
+| `P5-G-max` | 30 | — | 13,9,13 (μ=11.7) | 3 |
+| `N-cascade-scalar-mean-max` | 5 | 5,5,5 (μ=5.0) | 5,5,4 (μ=4.7) | 3 |
+| `N-cascade-scalar-max-mean` | 5 | 5,5,5 (μ=5.0) | 5,5,5 (μ=5.0) | 3 |
+| `N-cascade-vector-mean-max` | 5 | — | 5,5,4 (μ=4.7) | 3 |
+| `N-cascade-vector-max-max` | 5 | — | 5,4,5 (μ=4.7) | 3 |
+| `N-light-gene-max` | 30 | 21 | 16 | 1 |
+| `N-light-gene-mean` | 30 | 5,5,5 (μ=5.0) | 5,4,5 (μ=4.7) | 3 |
+
 ## Cascade arms (gene-linked CpGs only)
 
-Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** are readouts of the **same frozen MBS**; **`rbs_*`** use gene-linked RBS. Contaminated pre-fix **`mbs_e2e`** shown as *invalid*.
+Primary **`mbs_e2e`** (test split only); **`mbs_linear_probe`** and **`mbs_enet`** are readouts of the **same frozen MBS**; **`rbs_*`** use gene-linked RBS. Contaminated pre-fix **`mbs_e2e`** shown as *invalid*. **Best ep** = checkpoint epoch used for test eval; **ran** = epochs completed.
 
-| Arm | mbs_e2e F1 | linear probe F1 | mbs_enet F1 | age MAE (e2e) | sex AUROC (probe) | folds |
-|-----|-----------:|----------------:|------------:|--------------:|------------------:|------:|
-| P2-G | 0.373 (±0.038) | 0.373 | 0.385 (±0.053) | 15.637 | 0.784 | 3 |
-| P4-G | 0.370 (±0.059) | 0.379 | 0.379 (±0.059) | 20.380 | 0.800 | 3 |
-| N-cascade-scalar-max-mean | 0.359 (±0.075) | 0.367 | — | 21.356 | 0.800 | 3 |
-| P5-G-max | 0.356 (±0.042) | 0.371 | — | 21.402 | 0.714 | 3 |
-| N-cascade-vector-max-max | 0.343 (±0.063) | 0.367 | — | 21.458 | 0.687 | 3 |
-| N-cascade-vector-mean-max | 0.337 (±0.036) | 0.360 | — | 22.753 | 0.697 | 3 |
-| N-cascade-scalar-mean-max | 0.331 (±0.020) | 0.375 | — | 20.713 | 0.711 | 3 |
-| N-light-gene-mean | 0.126 (±0.064) | 0.345 | 0.278 (±0.000) | 23.082 | 0.770 | 3 |
-| N-light-gene-max | 0.122 (±0.102) | 0.295 | 0.131 (±0.000) | 21.888 | 0.731 | 3 |
+| Arm | mbs_e2e F1 | linear probe F1 | mbs_enet F1 | age MAE (e2e) | sex AUROC (probe) | best ep | ran | folds |
+|-----|-----------:|----------------:|------------:|--------------:|------------------:|--------:|----:|------:|
+| P2-G | 0.373 (±0.038) | 0.373 | 0.385 (±0.053) | 15.637 | 0.784 | 15,9,6 (μ=10.0) | — | 3 |
+| P4-G | 0.370 (±0.059) | 0.379 | 0.379 (±0.059) | 20.380 | 0.800 | 12,6,15 (μ=11.0) | — | 3 |
+| N-cascade-scalar-max-mean | 0.359 (±0.075) | 0.367 | — | 21.356 | 0.800 | 5,5,5 (μ=5.0) | 5,5,5 (μ=5.0) | 3 |
+| P5-G-max | 0.356 (±0.042) | 0.371 | — | 21.402 | 0.714 | 13,9,13 (μ=11.7) | — | 3 |
+| N-cascade-vector-max-max | 0.343 (±0.063) | 0.367 | — | 21.458 | 0.687 | 5,4,5 (μ=4.7) | — | 3 |
+| N-cascade-vector-mean-max | 0.337 (±0.036) | 0.360 | — | 22.753 | 0.697 | 5,5,4 (μ=4.7) | — | 3 |
+| N-cascade-scalar-mean-max | 0.331 (±0.020) | 0.375 | — | 20.713 | 0.711 | 5,5,4 (μ=4.7) | 5,5,5 (μ=5.0) | 3 |
+| N-light-gene-max | 0.305 (±0.000) | 0.327 | — | 18.058 | 0.776 | 16 | 21 | 1 |
+| N-light-gene-mean | 0.126 (±0.064) | 0.345 | 0.278 (±0.000) | 23.082 | 0.770 | 5,4,5 (μ=4.7) | 5,5,5 (μ=5.0) | 3 |
 
 ## Classical arms (-G panel)
 
