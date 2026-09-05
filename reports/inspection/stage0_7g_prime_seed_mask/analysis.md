@@ -42,66 +42,81 @@ configured_traits: `[{'autosome_control': False, 'id': 'age', 'role': 'primary'}
 
 See `/data/projects/methyl-burden-score/reports/inspection/stage0_7g_prime_seed_mask/summary.json` and `panel_audit.md`.
 (Raw `summary.json` is 218 MB, mostly per-study confusion matrices and ROC
-curves — interpreted below, not tracked in git.)
+curves — interpreted below, not tracked in git. Note: `run_7g_prime_seed_mask.py`
+rewrites this file from scratch each run, so this section is re-added after
+every rerun rather than living only in git history.)
 
 ## GPU screen results (2026-09-05, fold 0, seeds {42, 43})
 
 First launch (weekend supervisor) crashed on `C0` seed 42 with
-`KeyError: 'tissues'` in `classical_mvalue.fit_eval_mvalue_fold`
-(`_phenotype_arrays()` in `run_7g_prime_seed_mask.py` / `run_7g_prime_stage_b.py`
-never populated a string-name `ph["tissues"]` array). Fixed by threading
-`class_names` through both scripts; relaunched the full grid and it completed
-cleanly end to end.
+`KeyError: 'tissues'` in `classical_mvalue.fit_eval_mvalue_fold` — fixed by
+threading `class_names` through `_phenotype_arrays()` in
+`run_7g_prime_seed_mask.py` / `run_7g_prime_stage_b.py` (`d00a7b1`).
 
-**Classical arms trained normally:**
+**Classical arms (unaffected by any of this, both runs identical):**
 
 | Arm | Age MAE | Age R² | Tissue F1 | Sex AUROC |
 |---|---:|---:|---:|---:|
 | `C0` (all-gene enet) | 8.94 | 0.779 | 0.367 | 0.854 |
 | `C2` (seed-CpG enet) | 10.61 | 0.704 | 0.352 | 0.856 |
 
-**Cascade arms (G0–G3, `mbs_e2e`) mostly did not train — do not use for a
-G0-vs-G1/G2/G3 decision yet:**
+**Cascade arms, run 1 (no gradient clipping) — 7 of 8 collapsed:** age
+MAE≈25 (≈ predicting the training mean), tissue F1≈0, sex AUROC=0.5, flat
+across all 15 epochs; `encoder_grad_norm` went from normal (0.03–0.6) at
+epoch 1 to ~1e-9–1e-13 by epoch 3 in every collapsed run, including `G0`
+(no seed-masking at all) — pointing to a generic cascade-trainer
+instability, not a `SeedMaskedLinearHead` bug specifically. Root cause:
+`train_cascade_on_arrays` had no gradient clipping at all (unlike the
+flat-baseline trainer, which defaults to `gradient_clip_norm=2.0`), combined
+with this screen's age-primary loss weights (`age_loss_weight=1.0` vs. the
+`0.3` used by every previously-validated tissue-primary cascade arm).
 
-| Arm | Seed | Age MAE | Age R² | Tissue F1 | Sex AUROC | Status |
-|---|---:|---:|---:|---:|---:|---|
-| G0 (all genes, no mask) | 42 | 25.10 | −0.03 | 0.000 | 0.500 | **collapsed** |
-| G0 (all genes, no mask) | 43 | 13.93 | 0.474 | 0.304 | 0.720 | trained |
-| G1 (all CpGs, seed heads) | 42 | 25.08 | ~0 | 0.000 | 0.500 | **collapsed** |
-| G1 (all CpGs, seed heads) | 43 | 25.10 | ~0 | 0.000 | 0.500 | **collapsed** |
-| G2 (seed CpGs, seed heads) | 42 | 25.08 | ~0 | 0.000 | 0.500 | **collapsed** |
-| G2 (seed CpGs, seed heads) | 43 | 25.10 | ~0 | 0.000 | 0.500 | **collapsed** |
-| G3 (matched random) | 42 | 25.09 | ~0 | 0.000 | 0.500 | **collapsed** |
-| G3 (matched random) | 43 | 25.08 | ~0 | 0.000 | 0.500 | **collapsed** |
+**Fix applied:** added `gradient_clip_norm` (default 2.0, matching
+`loop.py`) to `train_cascade_on_arrays`, threaded through both call sites.
+All 9 existing cascade unit tests still pass.
 
-**7 of 8 cascade runs collapsed** to the random/constant-prediction baseline
-(tissue F1 ≈ 0, sex AUROC = 0.5, age MAE ≈ 25 ≈ predicting the training
-mean) and never recovered across all 15 epochs. `val_history` shows this is
-not a checkpoint-selection artifact — age MAE/tissue F1/sex AUROC are flat
-at the random-baseline level from epoch 1 through 15 in every collapsed run.
-Per-batch logs show `encoder_grad_norm` starting at a normal order of
-magnitude (0.03–0.6) at epoch 1 but collapsing to ~1e-9–1e-13 by epoch 3 in
-every collapsed run — consistent with an early large update saturating the
-encoder (dead-gradient region) rather than random noise. Collapse happens
-**even for `G0` (no seed-masking at all)**, so this is not specific to
-`SeedMaskedLinearHead` — it reproduces with plain cascade training under
-this config's loss weights.
+**Cascade arms, run 2 (gradient clipping added) — `G0` fixed, `G1`/`G2`/`G3`
+still collapse:**
 
-**Likely cause:** `configs/experiment/stage0_7g_prime_seed_mask.yaml` sets
-`age_loss_weight: 1.0` (age-primary, vs. `lambda_age: 0.3` on every
-previously-validated tissue-primary cascade arm) with **no
-`gradient_clip_norm`** and **no age-target standardization** — neither
-exists in `train_cascade_on_arrays` (`src/mbs/training/cascade_loop.py`) at
-all, unlike the flat-baseline trainer (`loop.py`) which has both. Raw
-unstandardized age (years) driving the dominant loss term with unclipped
-gradients is a plausible mechanism for the saturating first-few-epochs
-blowup. This is the **first age-primary GPU run** in the project, so no
-previously-committed result depends on this loss-weight regime — earlier
-cascade arms (P2-G, N-cascade-*) are tissue-primary (`lambda_tissue: 3.0`)
-and did not hit this failure mode.
+| Arm | Seed | Age MAE | Tissue F1 | Sex AUROC | Status |
+|---|---:|---:|---:|---:|---|
+| G0 (all genes, no mask) | 42 | 13.07 | 0.142 | 0.704 | **fixed** |
+| G0 (all genes, no mask) | 43 | 13.99 | 0.170 | 0.822 | **fixed** |
+| G1 (all CpGs, seed heads) | 42 | 25.08 | 0.0001 | 0.500 | still collapsed |
+| G1 (all CpGs, seed heads) | 43 | 25.10 | 0.0001 | 0.500 | still collapsed |
+| G2 (seed CpGs, seed heads) | 42 | 25.08 | 0.0001 | 0.500 | still collapsed |
+| G2 (seed CpGs, seed heads) | 43 | 25.10 | 0.0001 | 0.500 | still collapsed |
+| G3 (matched random) | 42 | 25.09 | 0.0000 | 0.500 | still collapsed |
+| G3 (matched random) | 43 | 25.08 | 0.0034 | 0.500 | still collapsed |
 
-**Recommendation:** do not treat this run as the seed-mask decision. Add
-gradient clipping (and ideally train-fold age standardization, matching
-`loop.py`'s `target_standardization: train_fold`) to
-`train_cascade_on_arrays`, then rerun G0–G3 before drawing any conclusion
-about seed-masking's effect on age-primary training.
+Gradient clipping fully fixed `G0` (both seeds now train normally, matching
+classical-arm ballpark). **All 6 seed-masked runs (`G1`/`G2`/`G3` × 2 seeds)
+still collapse identically to before** — same flat epoch-1-through-15
+trajectory, same `encoder_grad_norm` decay to ~0 by epoch 3-6. This isolates
+the remaining failure specifically to `SeedMaskedLinearHead`
+(`src/mbs/models.py:611`), not the generic cascade-training instability
+clipping just fixed.
+
+Checked and ruled out: the seed masks themselves are not degenerate (`age`
+256/2646 genes active, `sex` 50/2646, `tissue` 41/2646 per class row across
+47 classes for G1/G2; `G3`'s matched-random masks are similarly sized) — so
+this isn't a masks-are-all-zero bug.
+
+**Working (unconfirmed) hypothesis:** `SeedMaskedLinearHead.gene_weight` is
+zero-initialized (`nn.Parameter(torch.zeros(n_outputs, n_genes))`), and the
+effective weight is `gene_weight * seed_mask`. The gradient into the shared
+encoder through this head is `d(loss)/d(mbs) = d(loss)/d(output) @ weight.T`,
+which is exactly zero at initialization since `weight = 0`. Combined with
+AdamW `weight_decay` acting on `gene_weight` every step, a head whose only
+active parameters are a small masked subset (41–331 of 2646 genes) may have
+too weak/noisy a gradient signal to escape zero net drift, while `G0`'s
+dense 2646-gene head has a much stronger aggregate gradient that overcomes
+decay easily. Not yet confirmed — would need e.g. a small-scale random init
+for `gene_weight`, or excluding masked-head params from weight decay, then
+a targeted rerun on `G1` alone before spending a full 8-run grid again.
+
+**Recommendation:** do not treat `G1`/`G2`/`G3` results as valid — the
+G0-vs-seed-masking comparison this milestone exists to answer is still
+unanswered. `G0`'s numbers (now trained normally) and `C0`/`C2` are usable.
+Next step is architectural (fix `SeedMaskedLinearHead` init/optimizer
+interaction), not another blind rerun.

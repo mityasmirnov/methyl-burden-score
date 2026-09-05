@@ -441,6 +441,7 @@ def main() -> None:
                     age_loss_weight=float(train_cfg.get("age_loss_weight", 1.0)),
                     tissue_loss_weight=float(train_cfg.get("tissue_loss_weight", 0.3)),
                     sex_loss_weight=float(train_cfg.get("sex_loss_weight", 0.1)),
+                    gradient_clip_norm=float(train_cfg.get("gradient_clip_norm", 2.0)),
                     primary_evaluation="mbs_e2e",
                     gene_linked_only=False,
                     include_mbs_enet=False,

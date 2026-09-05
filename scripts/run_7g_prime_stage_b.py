@@ -75,6 +75,9 @@ def _training_params_from_lock(
             src.get("tissue_loss_weight", defaults.get("tissue_loss_weight", 3.0))
         ),
         "sex_loss_weight": float(src.get("sex_loss_weight", defaults.get("sex_loss_weight", 1.0))),
+        "gradient_clip_norm": float(
+            src.get("gradient_clip_norm", defaults.get("gradient_clip_norm", 2.0))
+        ),
         "early_stopping_patience": src.get(
             "early_stopping_patience", defaults.get("early_stopping_patience")
         ),
@@ -244,6 +247,7 @@ def main() -> None:
             age_loss_weight=train_params["age_loss_weight"],
             tissue_loss_weight=train_params["tissue_loss_weight"],
             sex_loss_weight=train_params["sex_loss_weight"],
+            gradient_clip_norm=train_params["gradient_clip_norm"],
             early_stopping_patience=early_patience,
             gene_linked_only=False,
             primary_evaluation="mbs_e2e",
@@ -293,6 +297,7 @@ def main() -> None:
             age_loss_weight=train_params["age_loss_weight"],
             tissue_loss_weight=train_params["tissue_loss_weight"],
             sex_loss_weight=train_params["sex_loss_weight"],
+            gradient_clip_norm=train_params["gradient_clip_norm"],
             early_stopping_patience=early_patience,
             gene_linked_only=False,
             primary_evaluation="late_fusion",

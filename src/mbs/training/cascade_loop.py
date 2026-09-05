@@ -12,6 +12,7 @@ from typing import Any, Literal, cast
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 from mbs.annotation.manifest import write_json
@@ -830,6 +831,7 @@ def train_cascade_on_arrays(
     age_loss_weight: float = 1.0,
     tissue_loss_weight: float = 1.0,
     sex_loss_weight: float = 1.0,
+    gradient_clip_norm: float = 2.0,
     early_stopping_patience: int | None = None,
     early_stopping_min_delta: float = 0.0,
     fusion: dict[str, Any] | None = None,
@@ -1106,6 +1108,11 @@ def train_cascade_on_arrays(
                     logged_grad_norms = True
                 opt.zero_grad(set_to_none=True)
                 loss.backward()
+                if gradient_clip_norm > 0:
+                    nn.utils.clip_grad_norm_(
+                        list(model.parameters()) + list(heads.parameters()),
+                        gradient_clip_norm,
+                    )
                 opt.step()
                 n_optimizer_steps += 1
             if log_this_epoch and not logged_grad_norms:
@@ -1637,6 +1644,7 @@ def run_cascade_hub(
     age_loss_weight = float(training_cfg.get("age_loss_weight", 1.0))
     tissue_loss_weight = float(training_cfg.get("tissue_loss_weight", 1.0))
     sex_loss_weight = float(training_cfg.get("sex_loss_weight", 1.0))
+    gradient_clip_norm = float(training_cfg.get("gradient_clip_norm", 2.0))
     patience_raw = training_cfg.get("early_stopping_patience")
     early_stopping_patience = None if patience_raw is None else int(patience_raw)
     early_stopping_min_delta = float(training_cfg.get("early_stopping_min_delta", 0.0))
@@ -1868,6 +1876,7 @@ def run_cascade_hub(
             age_loss_weight=age_loss_weight,
             tissue_loss_weight=tissue_loss_weight,
             sex_loss_weight=sex_loss_weight,
+            gradient_clip_norm=gradient_clip_norm,
             early_stopping_patience=early_stopping_patience,
             early_stopping_min_delta=early_stopping_min_delta,
             fusion=fusion_cfg,
