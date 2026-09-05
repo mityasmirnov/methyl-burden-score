@@ -18,9 +18,21 @@ True next milestone after bootstrap:
 > **Phase-2 gene-only cascade grid (7G′ Stage A — DeepRVAT Tier-1 screen
 > done; no architecture lock)** → **matched 16-epoch promotion screen
 > (done; full 2×2 pooling grid retained)** → **age-primary seed-mask screen
-> (← current; GPU 0, unblocked)** →
+> (blocked on `SeedMaskedLinearHead` collapse fix)** →
+> **7H extended architecture campaign (← current; GPU 0, ~40h user-granted
+> budget)** →
 > **fold-selected panel Stage B (blocked)** →
 > **final OOF cross-fitting (7)** → one score matrix.
+
+**7H campaign (2026-09-05, user-directed, ~40h autonomous GPU-0 budget):**
+find/train the best gene-level (MBS) and region-level (RBS) architecture(s)
+for a pretrained methylation-scoring framework (feature aggregation +
+interpretation, normalization, multi-trait association testing with
+reduced multiple-testing burden, cross-platform target). Phased plan,
+running log, and scope boundaries (e.g. ONT/PacBio ingestion is out of
+scope — no ingestion path exists) in
+[`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md).
+Phase 0 (fix `SeedMaskedLinearHead` collapse) is in progress.
 
 **Current gate:** **age-primary seed-mask screen** on GPU 0 (G0–G3/C0/C2,
 fold 0, seeds {42,43}). The matched 16-epoch promotion screen **finished**
