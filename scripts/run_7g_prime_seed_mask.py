@@ -50,10 +50,17 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "configs/experiment/stage0_7g_prime_seed_mask.yaml"
 
 
-def _phenotype_arrays(phenotypes: list[Any], sample_ids: list[str]) -> dict[str, np.ndarray]:
+def _phenotype_arrays(
+    phenotypes: list[Any], sample_ids: list[str], class_names: list[str] | None = None
+) -> dict[str, np.ndarray]:
     by_id = {p.sample_id: p for p in phenotypes}
+    class_idx = [int(by_id[s].class_index) for s in sample_ids]
+    names = class_names or []
     return {
-        "tissue": np.asarray([int(by_id[s].class_index) for s in sample_ids], dtype=np.int64),
+        "tissue": np.asarray(class_idx, dtype=np.int64),
+        "tissues": np.asarray(
+            [names[i] if 0 <= i < len(names) else str(i) for i in class_idx], dtype=object
+        ),
         "tissue_mask": np.asarray([bool(by_id[s].tissue_mask) for s in sample_ids], dtype=bool),
         "age": np.asarray([float(by_id[s].age or 0.0) for s in sample_ids], dtype=np.float64),
         "age_mask": np.asarray([bool(by_id[s].age_mask) for s in sample_ids], dtype=bool),
@@ -267,7 +274,7 @@ def main() -> None:
         train_idx = np.asarray([id_to_pos[s] for s in train_ids], dtype=np.int64)
         val_idx = np.asarray([id_to_pos[s] for s in val_ids], dtype=np.int64)
         test_idx = np.asarray([id_to_pos[s] for s in test_ids], dtype=np.int64)
-        ph = _phenotype_arrays(phenotypes, sample_ids)
+        ph = _phenotype_arrays(phenotypes, sample_ids, class_names)
         studies = np.asarray([str(ph_by_id[s].study_id or "NA") for s in sample_ids], dtype=object)
         excluded = sorted({str(ph_by_id[s].study_id or "NA") for s in test_ids})
 

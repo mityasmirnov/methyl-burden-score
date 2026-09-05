@@ -1,14 +1,37 @@
 # Plan: Age-first seed-mask screen (7G′ Stage B blocker)
 
-Status: **blocked on 16-ep GPU only** — fold-0 seed-panel auditability gate is
-met (`graph_content_hash` set, stability diagnostics ≠ prefilter width for
-tissue/sex, age uses documented `univariate_prefilter_top_k` when SGD coefs
-explode, `sex_autosome` control with zero X/Y seeds, overlap + G3 quality in
-`analysis.md` / `panel_audit.md`). Do **not** launch
-`scripts/run_7g_prime_seed_mask.py --device cuda` while the 16-ep queue owns
-GPU 0. `--reuse-panels` is allowed only for panels with non-null
-`graph_content_hash` (runner enforces). Stage B CpG-panel GPU stays blocked
-until this screen and typed-RBS diagnostics land.
+Status (2026-09-05): **unblocked, GPU screen running.** The matched 16-ep
+promotion screen finished (`87b22c3`, provenance landed `e644ed4`) with
+`next_gate: retain_pooling_2x2` and `recommendation: "Retain full 2×2
+pooling result; no pooling lock. Proceed to age-primary seed-mask."` — the
+full 2×2 cascade pooling grid (mean/max × mean/max) is retained, not locked
+down to a single pooling choice.
+
+The first launch attempt (weekend supervisor, `weekend_seed_mask_20260904_190816.log`)
+completed all 8 cascade runs (G0–G3 × seeds {42,43}) cleanly but crashed on
+arm `C0` seed 42 with `KeyError: 'tissues'` in
+`classical_mvalue.fit_eval_mvalue_fold` (`tissue_ovr_curves` call expected a
+`ph_te["tissues"]` string-name array that `_phenotype_arrays()` in both
+`scripts/run_7g_prime_seed_mask.py` and `scripts/run_7g_prime_stage_b.py`
+never populated — only numeric `ph["tissue"]` class indices existed). Fixed
+by threading `class_names` through `_phenotype_arrays()` in both scripts to
+populate `ph["tissues"]`. Relaunched the full grid (`--device cuda
+--reuse-panels`, no `--arm` filter, since the runner has no skip-if-done
+cache) on the now-idle GPU 0 at 2026-09-05 ~10:57. It completed end to end
+(`C0`/`C2` no longer crash) — but revealed a **second, more serious issue**:
+7 of 8 cascade runs (`G0` seed 42, `G1`/`G2`/`G3` both seeds) collapsed to
+random-baseline performance (tissue F1≈0, sex AUROC=0.5, age MAE≈25) and
+never recovered across 15 epochs; only `G0` seed 43 trained normally.
+Classical `C0`/`C2` are fine. Full evidence and diagnosis in
+`reports/inspection/stage0_7g_prime_seed_mask/analysis.md` — likely cause is
+missing gradient clipping + age-target standardization in
+`train_cascade_on_arrays` combined with this screen's age-primary loss
+weights (`age_loss_weight: 1.0`), a combination no prior committed cascade
+result exercised. **Do not treat this run as the G0-vs-G1/G2/G3 decision.**
+Fix (fold-safe fix to `_phenotype_arrays` in both `run_7g_prime_seed_mask.py`
+/ `run_7g_prime_stage_b.py`) is ready to commit; gradient-clipping /
+age-standardization fix to `cascade_loop.py` + rerun is the next step,
+pending direction.
 
 ## Done already (2026-09-04)
 

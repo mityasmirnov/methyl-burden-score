@@ -17,28 +17,33 @@ True next milestone after bootstrap:
 > (7F — done)** → **methylation-only full eval (7G — done)** →
 > **Phase-2 gene-only cascade grid (7G′ Stage A — DeepRVAT Tier-1 screen
 > done; no architecture lock)** → **matched 16-epoch promotion screen
-> (← current; GPU 0)** → **age-primary seed-mask screen (scaffolding +
-> fold-0 audit done; CUDA blocked on 16-ep)** →
+> (done; full 2×2 pooling grid retained)** → **age-primary seed-mask screen
+> (← current; GPU 0, unblocked)** →
 > **fold-selected panel Stage B (blocked)** →
 > **final OOF cross-fitting (7)** → one score matrix.
 
-**Current gate:** **matched 16-epoch promotion screen** on GPU 0 (tissue-primary;
-patience 5). Freeze **P2-G as the current reference, not a pooling lock.**
-Fixed `rbs_enet` is diagnostic only. **Progress (2026-09-04):**
-`N-light-gene-max` 16-ep **done** (3/3; tissue ≈0.336 — below P2); 
-`N-light-gene-mean` 16-ep **done** (3/3; tissue ≈0.378 e2e, age MAE ≈17.1 —
-within ~0.03 of P2; refresh `promotion_decision.json` after the full queue);
-`N-cascade-scalar-mean-max` 16-ep **in progress** (fold 0 early-stopped;
-fold 1 training). Still queued: scalar `max→mean`, vector `mean→max`.
+**Current gate:** **age-primary seed-mask screen** on GPU 0 (G0–G3/C0/C2,
+fold 0, seeds {42,43}). The matched 16-epoch promotion screen **finished**
+(2026-09-04, `87b22c3`; per-arm provenance `e644ed4`):
+`N-light-gene-max` tissue F1 0.336 (below P2); `N-light-gene-mean` tissue F1
+**0.378** (edges out P2-G's 0.373 — `one_hop_mean_near_p2` fired);
+`N-cascade-scalar-mean-max` 0.346; `N-cascade-scalar-max-mean` 0.369;
+`N-cascade-vector-mean-max` 0.360. `nothing_beats_p2_or_classical` did not
+fire → `next_gate: retain_pooling_2x2` (full 2×2 cascade pooling grid
+retained, not locked to one choice) → proceed to age-primary seed-mask.
 
-**Age-primary seed-mask (next after 16-ep decision rules):** scaffolding,
+**Age-primary seed-mask (unblocked, running 2026-09-05):** scaffolding,
 ADR 0011/0012, and **fold-0 panel audit are done**
 (`ok_for_seed_mask_gpu: true`; hashed panel under
-`reports/inspection/stage0_7g_prime_seed_mask/`). Do **not** launch
-`run_7g_prime_seed_mask.py --device cuda` until
-`promotion_decision.json` unlocks (`next_gate` /
-`scratch/SEED_MASK_GPU_BLOCKED.txt`). Discovery CpGs rank seed genes only;
-G2/C2 use expanded gene-linked CpGs (ADR 0012). CPU typed-RBS R0–R5 is
+`reports/inspection/stage0_7g_prime_seed_mask/`). First launch attempt
+(weekend supervisor) completed all 8 cascade runs (G0–G3 × seeds {42,43})
+but crashed on classical arm `C0` with `KeyError: 'tissues'`
+(`fit_eval_mvalue_fold` expected a string tissue-name array that
+`_phenotype_arrays()` never populated in `run_7g_prime_seed_mask.py` /
+`run_7g_prime_stage_b.py` — fixed by threading `class_names` through).
+Full grid relaunched on GPU 0; fix commit pending confirmation it clears
+`C0`/`C2`. Discovery CpGs rank seed genes only; G2/C2 use expanded
+gene-linked CpGs (ADR 0012). CPU typed-RBS R0–R5 is
 **done** (neural typed aggregator **not** promoted). Stage B CpG-panel GPU
 stays **blocked**. Plans:
 [`plans/milestone-7g-prime-16ep-promotion.md`](plans/milestone-7g-prime-16ep-promotion.md),
@@ -61,11 +66,11 @@ Report:
 | Annotation ablation grid (A0–A7, N0–N3) | **done** fold 0 — **`m_only` best** under raw concat; not proof annotations uninformative |
 | Post-hoc `mbs_enet` / `rbs_enet` on screen arms | **pending** (fixed enet diagnostic; nested enet required) |
 | Stage A DeepRVAT screen (Tier-1) | **done** — no architecture lock |
-| Matched 16-epoch promotion screen | **in_progress** ← **current GPU gate** |
+| Matched 16-epoch promotion screen | **done** — `next_gate: retain_pooling_2x2` |
 | CPU typed-RBS R0–R5 | **done** (R1–R3 age↑; shuffle Δ≪1 y; neural typed **not** promoted) |
 | Neural typed aggregator | **deferred** (needs clear shuffle collapse; not Stage B go/no-go) |
 | Seed-mask scaffolding + fold-0 audit | **done** (hash, diagnostics, `sex_autosome`, overlap/G3; panel `ef6cd307…`) |
-| Age-primary seed-mask GPU (G0–G3/C0/C2) | **blocked** (wait for 16-ep `promotion_decision.json`) |
+| Age-primary seed-mask GPU (G0–G3/C0/C2) | **in_progress** ← **current GPU gate** (relaunched post `tissues`-KeyError fix) |
 | Atlas association catalog | **done** (SQL 013 + constructors; non-blocking for GPU) |
 | Stage B GPU run (fold-panel) | **blocked** (after seed-mask screen + typed-RBS diagnostics) |
 | Milestone **7** 5×6 OOF | **blocked** |

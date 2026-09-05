@@ -1,9 +1,10 @@
 # Plan: Matched 16-epoch promotion screen (7G′ Stage A)
 
-Status: **in progress** — current GPU gate (GPU 0). Age-primary seed-mask CUDA
-stays **blocked** until the decision rules below fire
-(`promotion_decision.json` / `scratch/SEED_MASK_GPU_BLOCKED.txt`). Seed-mask
-**scaffolding + fold-0 audit are already done** — see
+Status: **complete** (2026-09-04, `87b22c3`; per-arm provenance landed
+`e644ed4` on 2026-09-05). `promotion_decision.json`: `next_gate:
+retain_pooling_2x2`, `recommendation: "Retain full 2×2 pooling result; no
+pooling lock. Proceed to age-primary seed-mask."` Age-primary seed-mask CUDA
+is now **unblocked and running** — see
 [`milestone-7g-prime-age-seed-mask.md`](milestone-7g-prime-age-seed-mask.md).
 
 Parent: [`milestone-7g-prime-stage-a-deeprvat-screen.md`](milestone-7g-prime-stage-a-deeprvat-screen.md).
@@ -29,15 +30,22 @@ vector representation is weak.
 | Vector max→max | Do **not** promote yet |
 | Nested enet | Post-hoc CPU; train-fold StandardScaler + inner-val α/l1 |
 
-## Queue progress (2026-09-04)
+## Queue progress (final, 2026-09-04)
 
 | Arm | Status | Notes |
 |-----|--------|-------|
-| `N-light-gene-max` | **done** 3/3 | Tissue ≈0.336; age MAE ≈21.6 — below P2; do not rerun |
-| `N-light-gene-mean` | **done** 3/3 | Tissue ≈0.378 e2e; age MAE ≈17.1 — **within ~0.03 of P2**; include in decision refresh |
-| `N-cascade-scalar-mean-max` | **in progress** | Fold 0 early-stopped (best val tissue F1≈0.24); fold 1 training on GPU 0 |
-| `N-cascade-scalar-max-mean` | **queued** | 3 folds |
-| `N-cascade-vector-mean-max` | **queued** | 3 folds |
+| `N-light-gene-max` | **done** 3/3 | Tissue F1 0.336; age MAE 21.6 — below P2 |
+| `N-light-gene-mean` | **done** 3/3 | Tissue F1 **0.378** e2e; age MAE 17.1 — edges out P2-G (0.373) on tissue F1; `one_hop_mean_near_p2` rule fired |
+| `N-cascade-scalar-mean-max` | **done** 3/3 | Tissue F1 0.346; age MAE 20.4 |
+| `N-cascade-scalar-max-mean` | **done** 3/3 | Tissue F1 0.369; age MAE 20.8 |
+| `N-cascade-vector-mean-max` | **done** 3/3 | Tissue F1 0.360; age MAE 21.9 |
+| `P2-G` (reference, 15 ep) | reference | Tissue F1 0.373; age MAE 15.6 — best age MAE of the neural set |
+
+No arm beats classical (`C-mvalue-enet-G` F1 0.388; `C-mvalue-ridge-G` age
+MAE 6.5) outright. Among neural arms, `N-light-gene-mean` and `P2-G` are
+statistically tied on tissue F1; `nothing_beats_p2_or_classical` did not
+fire, so the full 2×2 cascade pooling grid stays retained rather than locked
+to one pooling choice.
 
 Driver: `scripts/run_7g_16ep_promotion_resume.sh`. **Nested / fixed elastic-net
 is post-hoc only** — do not run `eval_mbs_enet_from_scores.py` inside the GPU

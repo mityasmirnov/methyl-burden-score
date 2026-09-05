@@ -34,9 +34,16 @@ POSTHOC_FULL_ARM = "N-mbs-posthoc-full-fusion"
 POSTHOC_MBS_DIRECT_ARM = "N-mbs-posthoc-mbs-direct"
 
 
-def _phenotype_arrays(phenotypes: list[Any], sample_ids: list[str]) -> dict[str, np.ndarray]:
+def _phenotype_arrays(
+    phenotypes: list[Any], sample_ids: list[str], class_names: list[str] | None = None
+) -> dict[str, np.ndarray]:
     by_id = {p.sample_id: p for p in phenotypes}
-    tissue = np.asarray([int(by_id[s].class_index) for s in sample_ids], dtype=np.int64)
+    class_idx = [int(by_id[s].class_index) for s in sample_ids]
+    names = class_names or []
+    tissue = np.asarray(class_idx, dtype=np.int64)
+    tissues = np.asarray(
+        [names[i] if 0 <= i < len(names) else str(i) for i in class_idx], dtype=object
+    )
     tissue_mask = np.asarray([bool(by_id[s].tissue_mask) for s in sample_ids], dtype=bool)
     age = np.asarray([float(by_id[s].age or 0.0) for s in sample_ids], dtype=np.float64)
     age_mask = np.asarray([bool(by_id[s].age_mask) for s in sample_ids], dtype=bool)
@@ -44,6 +51,7 @@ def _phenotype_arrays(phenotypes: list[Any], sample_ids: list[str]) -> dict[str,
     sex_mask = np.asarray([bool(by_id[s].sex_mask) for s in sample_ids], dtype=bool)
     return {
         "tissue": tissue,
+        "tissues": tissues,
         "tissue_mask": tissue_mask,
         "age": age,
         "age_mask": age_mask,
@@ -174,7 +182,7 @@ def main() -> None:
         m_vals = m_all[rows]
         train_idx = np.arange(0, len(train_ids), dtype=np.int64)
         test_idx = np.arange(len(train_ids), len(sample_ids), dtype=np.int64)
-        ph = _phenotype_arrays(phenotypes, sample_ids)
+        ph = _phenotype_arrays(phenotypes, sample_ids, class_names)
         studies = np.asarray([str(ph_by_id[s].study_id or "NA") for s in sample_ids], dtype=object)
 
         panel_info = select_multitask_fold_panel(
