@@ -253,3 +253,20 @@ Produce the actual pretrained artifact(s) this milestone exists to justify:
   15 to 40 in `configs/experiment/stage0_7g_prime_seed_mask.yaml` and
   relaunched the full grid to give that recovery room to complete before
   drawing the G0-vs-seed-masking conclusion.
+- 2026-09-06: **40-epoch grid complete — Phase 0 and Phase 1 both done.**
+  7 of 8 cascade runs now train to real, non-degenerate results (only `G3`
+  seed 43 remains a stubborn outlier, collapsed by epoch 2, never
+  recovered). Full numbers and conclusion in
+  `reports/inspection/stage0_7g_prime_seed_mask/analysis.md`. Headline:
+  **`G0` (dense, unmasked) clearly beats every seed-masked variant**
+  (age MAE 16-18 vs 21-25; tissue F1 0.23 vs 0.06-0.10; sex AUROC 0.79 vs
+  0.51-0.72), and `G1`/`G2`/`G3` don't meaningfully separate from each
+  other — no evidence the specific discovered seed genes carry more age
+  signal than a same-sized random gene set once training actually
+  converges. Classical (`C0`, MAE 8.94) still beats every cascade arm.
+  **Conclusion: seed-gene masking is not a promising direction for the
+  age-primary objective on this cohort — don't adopt it for the pretrained
+  MBS/RBS framework on this evidence.** Phase 0 (fix the collapse) and
+  Phase 1 (answer the milestone's actual question) are both closed. Next:
+  Phase 2 (resolve remaining Stage A pooling/one-hop questions with larger
+  budgets) or Phase 3 (scale to nine-pack cohort) — see phase plan above.
