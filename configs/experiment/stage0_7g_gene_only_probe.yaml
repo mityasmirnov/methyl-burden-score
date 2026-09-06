@@ -153,6 +153,20 @@ arms:
     run_prefix: stage0-7g-gene-probe-ablation-n3-reg-zero-s2
     config: configs/experiment/stage0_7g_gene_only_probe_ablation_n3_reg_zero_s2.yaml
     pool: mean
+  # Matched-budget rerun (7H Phase 2): the fold-0/8-epoch ablation grid above
+  # never set stage_a_per_epoch_eval, so checkpoint_selection silently never
+  # worked (same class of bug fixed for light_mean/light_max) -- m_only vs
+  # full at the same 16-epoch/3-fold budget as the main light_mean arm.
+  - id: N-light-gene-ablation-m-only-16ep
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-m-only-16ep
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_m_only_16ep.yaml
+    pool: mean
+  - id: N-light-gene-ablation-full-16ep
+    kind: flat_region_train
+    run_prefix: stage0-7g-gene-probe-ablation-full-16ep
+    config: configs/experiment/stage0_7g_gene_only_probe_ablation_full_16ep.yaml
+    pool: mean
   # Historical / inactive — keep out of default grid
   - id: P5-G-max
     kind: cascade_train

@@ -1,0 +1,95 @@
+# 7G′ Stage A ablation, matched-budget rerun: Full annotations, 16 epochs, 3 folds.
+# Prior ablation_m_only.yaml ran 8 epochs, fold 0 only, and (like the
+# original N-light-gene bug) never set stage_a_per_epoch_eval: true, so
+# checkpoint_selection: validation_tissue_macro_f1_then_age_mae never had
+# the per-epoch metric it needs -- same silent no-op class of bug fixed for
+# the main light_mean/light_max arms. This config matches
+# stage0_7g_gene_only_probe_light_mean.yaml exactly except for
+# flat_region_feature_mode, so the only difference vs light_mean is
+# annotations on/off.
+split_id: hub-ats-7e-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+cv_budget:
+  max_loci: 65536
+  max_epochs: 16
+experiment:
+  name: stage0_7g_gene_only_probe_ablation_full_16ep
+  seed: 42
+  stage: 0
+features:
+  methylation:
+    beta: true
+    epsilon: 0.001
+    m_value: true
+    robust_deviation: false
+  static_feature_set: none
+heads:
+  age:
+    enabled: true
+    huber_delta: 1.0
+    linear: true
+    loss: huber
+    target_standardization: train_fold
+  sex:
+    enabled: true
+    linear: true
+    loss: cross_entropy
+    n_classes: 2
+  tissue:
+    class_weighting: train_fold_balanced
+    enabled: true
+    linear: true
+    loss: cross_entropy
+    ontology: harmonized
+loss:
+  lambda_age: 0.3
+  lambda_sex: 1.0
+  lambda_tissue: 3.0
+model:
+  topology: flat_region
+  flat_region_feature_mode: full
+  gene_allocation: explicit_only
+  encoder:
+    activation: gelu
+    cpg_hidden_dim: 64
+    dropout: 0.1
+    layer_norm: true
+  neutral_score: 0.5
+  output_activation: sigmoid
+  phi_hidden_dimension: 64
+  phi_layers: 2
+  pooling: mean
+  rho_hidden_dimension: 10
+  rho_layers: 2
+  type: flat_deepset
+pilot:
+  auto_split: false
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+  matrix_id: matrix-hub-age-tissue-sex-full-v1
+  mode: multitask_hub
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_age_tissue_sex_full_v1.parquet
+  split_id: hub-ats-7e-3fold-v1
+  static_feature_set: none
+  tissue_ontology: canonical/phenotypes/tissue_ontology_age_tissue_sex_full_v1.yaml
+stage0:
+  use_cpgpt_static_features: false
+training:
+  batch_size: 256
+  batch_token_budget: 16000000
+  early_stopping_patience: 5
+  gene_linked_only: true
+  gene_allocation: explicit_only
+  primary_evaluation: mbs_e2e
+  stage_a_include_mbs_enet: false
+  stage_a_defer_cpu_probes: true
+  checkpoint_selection: validation_tissue_macro_f1_then_age_mae
+  stage_a_per_epoch_eval: true
+  gradient_clip_norm: 2.0
+  learning_rate: 0.001
+  max_epochs: 16
+  optimizer: adamw
+  precision: bf16-mixed
+  require_cuda: true
+  weight_decay: 0.0001
+device:
+  torch_device: cuda
