@@ -263,6 +263,31 @@ Fold 0, `mean` pooling, ≤8 epochs, **two seeds** (primary + `-s2`) pooled. Boo
 
 **Takeaway:** best e2e tissue = **`A0` (M only)** at 0.276. `m_only` leads; gene-role/context do not help under this fold-0 budget. Negatives `obs_only` / `anno_only` should be near chance.
 
+### Matched-budget confirmation (2026-09-06, 7H Phase 2)
+
+The grid above ran 8 epochs, fold 0 only, and — like the original N-light-
+gene bug — never set `stage_a_per_epoch_eval: true`, so its
+`checkpoint_selection: validation_tissue_macro_f1_then_age_mae` may never
+have actually worked either (same silent no-op class of bug). Reran
+`m_only` vs `full` at the exact budget used for every trustworthy Stage A
+number (16 epochs, 3 folds, `stage_a_per_epoch_eval`, `gradient_clip_norm`):
+
+| Arm | Tissue e2e F1 (mean, 3 folds) | Age MAE (mean, 3 folds) |
+|---|---:|---:|
+| `N-light-gene-ablation-m-only-16ep` | **0.372** | **17.7** |
+| `N-light-gene-ablation-full-16ep` | 0.351 | 21.8 |
+
+**The direction holds** (m-only still beats full), confirming this isn't
+purely an artifact of the earlier mismatched/possibly-broken-selection
+budget — but the **magnitude is much smaller on tissue F1** than the
+original 0.276-vs-0.174 headline (a 0.10 gap) suggested: at a real budget
+the gap is ~0.02 on tissue F1, though still a clear and now more decisive
+~4-year gap on age MAE. Read this as: annotation channels (gene-role,
+CpG-context) genuinely add noise rather than signal for this one-hop
+architecture, but the effect is more modest than the fold-0/8-epoch grid
+implied — don't over-weight the original grid's raw magnitudes when citing
+this finding.
+
 
 ### Representation diagnostics (fold 0 mean across seeds)
 
