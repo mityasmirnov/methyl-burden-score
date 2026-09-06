@@ -6,7 +6,7 @@ milestone: 7G-prime-seed-mask
 report_dir: reports/inspection/stage0_7g_prime_seed_mask
 cv_budget:
   max_loci: 65536
-  max_epochs: 15
+  max_epochs: 40
   folds: [0]
   seeds: [42, 43]
   n_seed_genes: 256
@@ -39,7 +39,13 @@ seed_panel:
     - {id: tissue, role: secondary}
     - {id: sex, role: auxiliary, autosome_control: true}
 training:
-  max_epochs: 15
+  # 15 was too short for the sparse-masked arms (G1/G2/G3) to escape the
+  # early bad-optimum regime the lr-threading bug (fixed 2026-09-05) caused
+  # -- G1-s43/G3-s42 showed clear late-epoch recovery (encoder_grad_norm
+  # climbing back to 0.6+ by epoch 12-15) that the 15-epoch budget cut off
+  # before validation metrics could catch up. Raised to 40 to give that
+  # recovery room to complete; see milestone-7h-pretrained-mbs-rbs-campaign.md.
+  max_epochs: 40
   batch_size: auto
   learning_rate: 0.001
   age_loss_weight: 1.0

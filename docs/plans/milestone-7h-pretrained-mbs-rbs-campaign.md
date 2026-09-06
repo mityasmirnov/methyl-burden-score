@@ -236,4 +236,20 @@ Produce the actual pretrained artifact(s) this milestone exists to justify:
   `gradient_clip_norm` (fixed `G0` outright), `AdamW` + `weight_decay=1e-4`
   (neutral-to-positive, standard regularization), and the `lr=` threading
   fix (the actual root cause). Full `G0`–`G3`/`C0`/`C2` grid relaunched
-  with all four fixes combined; awaiting result.
+  with all four fixes combined.
+- 2026-09-06: Full 15-epoch grid result: **`G0` fully recovered on both
+  seeds** (age MAE ~20, tissue F1 ~0.22, sex AUROC ~0.7 — real, non-
+  degenerate numbers, though not as strong as the single earlier lucky
+  `G0` run). `G1`/`G2`/`G3` are still mostly poor by validation-selected
+  checkpoint (tissue F1 0.0000–0.0152), **but the raw training logs show
+  clear late-epoch recovery the 15-epoch budget cuts off before validation
+  catches up**: `G1` seed 43 and `G3` seed 42 both climb from
+  near-zero `encoder_grad_norm` back to 0.6+ by epoch 12–15, with training
+  losses visibly improving in the same window — validation-based
+  checkpoint selection just never got to see a good-enough epoch within
+  15. This reads as "escaping the bad optimum takes longer than 15 epochs
+  for the sparse-masked arms," not a further code bug. Raised
+  `training.max_epochs` (and `cv_budget.max_epochs` for consistency) from
+  15 to 40 in `configs/experiment/stage0_7g_prime_seed_mask.yaml` and
+  relaunched the full grid to give that recovery room to complete before
+  drawing the G0-vs-seed-masking conclusion.
