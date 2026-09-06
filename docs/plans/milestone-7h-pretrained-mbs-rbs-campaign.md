@@ -270,3 +270,43 @@ Produce the actual pretrained artifact(s) this milestone exists to justify:
   Phase 1 (answer the milestone's actual question) are both closed. Next:
   Phase 2 (resolve remaining Stage A pooling/one-hop questions with larger
   budgets) or Phase 3 (scale to nine-pack cohort) — see phase plan above.
+- 2026-09-06: **Phase 2 partial: annotation ablation confirmed at matched
+  budget.** Reran `m_only` vs `full` at 16 epochs/3 folds (the existing
+  grid ran 8 epochs/fold-0-only and had the same missing
+  `stage_a_per_epoch_eval` issue as the original bug). Direction holds
+  (`m_only` still wins) but the magnitude is much smaller than the
+  original headline: tissue F1 0.372 vs 0.351 (was reported as 0.276 vs
+  0.174 — a 0.10 gap that shrinks to 0.02 at a real budget), age MAE 17.7
+  vs 21.8 (a clearer, more decisive gap). See
+  `reports/inspection/stage0_7g_gene_only_probe/analysis.md` § Matched-
+  budget confirmation.
+- 2026-09-06: While setting up a multi-seed rerun of the 2×2 cascade
+  pooling grid, found that the repo's established "-s2" second-seed
+  convention has **never actually worked**: `run_7g_gene_only_probe.py`'s
+  flat/one-hop training path called `inject_fold_into_config(...,
+  seed=42 + fold_i)` unconditionally, ignoring the config's own
+  `experiment.seed` — so "primary" and "-s2" ablation configs (seed 42 vs
+  43 in YAML) always trained with the *identical* effective per-fold seed.
+  The small differences seen between those pairs throughout this project
+  were run-to-run noise (cudnn nondeterminism etc.), not real seed
+  diversity. Fixed by reading `experiment.seed` as the base offset
+  (default 42, so every config without an explicit seed is unaffected).
+  Cascade arms (`train_cascade_arm`) use a different code path and were
+  never affected — they never had "-s2" variants, so the 2×2 pooling
+  grid's "retained, not locked" call already rested on genuine 3-fold
+  (not seed) variance, which is a legitimate but different kind of
+  evidence than multi-seed averaging.
+- 2026-09-06: **Phase 3 (nine-pack scale-up) blocked on missing
+  infrastructure, not a quick config change.** Checked
+  `matrix-hub-nine-pack-virtual-v1` (34,234 samples,
+  `sample_phenotype_table_hub_nine_pack_v1.parquet` with age/tissue/sex/
+  disease/cancer/blood/brain mask columns) — no frozen, study-grouped
+  k-fold split exists for it yet (only `hub-ats-7e-3fold-v1` does, under
+  `artifacts/splits/`). Also confirmed **all 34,234 nine-pack samples are
+  a single platform (`HM450`)** — cross-platform generalization isn't
+  testable with current data regardless of cohort size, reinforcing the
+  earlier scope note. Building a new leakage-safe split is real,
+  correctness-critical infrastructure work (study-grouping, dedup) that
+  deserves careful design rather than a rushed one-shot script in an
+  already-long session — left as the explicit next step for Phase 3
+  rather than attempted ad hoc.
