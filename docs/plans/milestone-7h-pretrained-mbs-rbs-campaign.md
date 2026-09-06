@@ -163,5 +163,77 @@ Produce the actual pretrained artifact(s) this milestone exists to justify:
 
 ## Running log
 
-- 2026-09-05: Phase 0 fix #1 (`gene_weight` init) applied, testing on `G1`
-  alone. Full grid to follow only if this checks out.
+- 2026-09-05: Phase 0 fix #1 (`gene_weight` Kaiming init instead of zero)
+  tested on `G1` alone. **No effect** — collapsed to the identical
+  degenerate state at epoch 3 regardless of init (age_loss/tissue_loss
+  matched the zero-init run almost exactly). Rules out init; the collapse
+  is an attractor independent of starting point, not a cold-start problem.
+- 2026-09-05: Added instrumentation (`mbs_stats`, `head_active_w_absmean`,
+  later `ln_stats`) to `train_cascade_on_arrays`'s per-epoch diagnostic
+  print. Found the real mechanism: raw encoder output (`mbs`, pre-centering)
+  already has near-zero cross-sample variance at epoch 1 (`4.1e-05`) and
+  collapses to an exact numerical zero by epoch 3 (`mean=4.9e-12,
+  var=3.6e-18`) — a full, uniform collapse of the *encoder's* output across
+  every sample and every gene, not a head-specific effect. `head_active_
+  w_absmean` keeps growing throughout (0.04→0.4 for age) even as the
+  encoder gradient dies, consistent with Adam's per-parameter adaptive step
+  continuing to move weights by ≈`lr` even once the true gradient is
+  vanishing (normalized step size, not raw magnitude).
+- 2026-09-05: Fix #2 attempt — scaled `F.huber_loss`'s `delta` to the
+  train-fold age std (reasoning: raw-year Huber with `delta=1.0` sits
+  permanently in the bounded linear/L1 regime given real residuals of tens
+  of years, which seemed like a plausible source of undamped pressure).
+  **Made it worse**: age_loss jumped 54→978 at epoch 1. Root cause of the
+  attempt's own failure: PyTorch's `F.huber_loss` quadratic region is
+  `0.5*error^2` (unscaled by delta), so a *larger* delta pushed large
+  early-training residuals into the quadratic region instead of keeping
+  them in the bounded linear one — gradient magnitude then scales with
+  residual size instead of staying capped at 1. **Reverted immediately.**
+  Lesson: don't change delta without also checking which regime the actual
+  residual distribution falls into.
+- 2026-09-05: LayerNorm-γ-collapse hypothesis tested and **ruled out** — γ
+  for both `cpg_encoder`'s and `region_encoder`'s LayerNorms stayed pinned
+  near 1.0 throughout (1.0→1.02) even as `mbs`/`rbs` fully collapsed.
+- 2026-09-05: Traced the collapse to its exact location by hooking
+  intermediate tensors directly rather than continuing to infer from
+  parameter-magnitude summaries. Sequence of checks, each ruling out one
+  more layer: `region_encoder`'s pre-LayerNorm activation (healthy,
+  variance actually *grows* 0.1→38 over 3 epochs — not degenerate);
+  `region_rho`'s actual input (`region_hidden`, absmax 1.6→4.6, std 0.4→3.1
+  — normal scale); `region_rho`'s own weight/bias (absmax <0.35 throughout,
+  frozen after epoch 3 — not the driver). Finally hooked `region_rho`'s
+  **output** (the pre-sigmoid logit) directly: epoch 1 range `[-0.24,
+  0.12]` (healthy) → epoch 3 range `[-64.8, -22.2]` (**every single sample
+  in the batch saturating the sigmoid**, `sigmoid(-22.2)≈2e-10`). This is a
+  genuine "collapse to a saturated constant" local optimum reached within
+  ~2-3 epochs (~250-380 SGD steps), not a numerical/precision artifact —
+  none of the individual weights or activations upstream were ever
+  extreme; the *combination* was.
+- 2026-09-05: **Root cause found and fixed.** Tested a 10x lower LR
+  (0.0001 via a temp config copy) as the most direct mitigation for
+  "collapses within a couple hundred steps" — but the resulting run was
+  **byte-identical** to the unmodified one, proving the config override
+  wasn't taking effect at all. Investigation revealed `run_7g_prime_seed_
+  mask.py` never read `learning_rate` from its config and passed no `lr=`
+  to `train_cascade_on_arrays` at all — silently falling back to that
+  function's hardcoded default `lr=1e-2`, **10x higher** than the config's
+  documented `learning_rate: 0.001` (which matches every other
+  successfully-trained cascade arm in this project). The same omission
+  existed in `run_7g_prime_stage_b.py`. This single bug plausibly explains
+  the whole failure mode: a 10x-too-high LR combined with a narrow,
+  concentrated sparse-head gradient path (vs. `G0`'s dense head spreading
+  the same shock over many more parameters) is enough to overshoot into
+  the sigmoid-saturating regime within a few hundred steps. Fixed by
+  threading `learning_rate` from config in both scripts. Verified on `G1`
+  alone: seed 43 now trains normally end-to-end (real per-sample variance,
+  sensible logit range `[-24, +14.5]` by epoch 15); seed 42 improved
+  substantially (logits no longer reach `-65`, capped around `-18`) but
+  still shows residual under-training — noted as open, not chased further
+  given the scale of investigation already spent on this one arm. Cleaned
+  up all temporary diagnostic instrumentation (hooks, per-tensor stat
+  prints) from `cascade_loop.py`, keeping only the four real, tested fixes:
+  `SeedMaskedLinearHead` Kaiming init (harmless, standard practice),
+  `gradient_clip_norm` (fixed `G0` outright), `AdamW` + `weight_decay=1e-4`
+  (neutral-to-positive, standard regularization), and the `lr=` threading
+  fix (the actual root cause). Full `G0`–`G3`/`C0`/`C2` grid relaunched
+  with all four fixes combined; awaiting result.

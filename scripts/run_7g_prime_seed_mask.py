@@ -429,6 +429,7 @@ def main() -> None:
                     class_names=class_names or ["A", "B"],
                     out_dir=out_dir,
                     max_epochs=int(train_cfg.get("max_epochs", 15)),
+                    lr=float(train_cfg.get("learning_rate", 1e-3)),
                     seed=seed,
                     device_str=args.device,
                     age_mask=ph["age_mask"],

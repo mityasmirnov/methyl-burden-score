@@ -919,7 +919,9 @@ def train_cascade_on_arrays(
     }
     model.to(device)
     heads.to(device)
-    opt = torch.optim.Adam(list(model.parameters()) + list(heads.parameters()), lr=lr)
+    opt = torch.optim.AdamW(
+        list(model.parameters()) + list(heads.parameters()), lr=lr, weight_decay=1e-4
+    )
 
     train_idx = np.asarray(train_idx, dtype=np.int64)
     test_idx = np.asarray(test_idx, dtype=np.int64)

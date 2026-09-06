@@ -70,6 +70,9 @@ def _training_params_from_lock(
         "cpg_pool": str(src.get("pooling_cpg", defaults.get("pooling_cpg", "max"))),
         "region_pool": str(src.get("pooling_region", defaults.get("pooling_region", "max"))),
         "max_epochs": int(src.get("max_epochs", defaults.get("max_epochs", 15))),
+        "learning_rate": float(
+            src.get("learning_rate", defaults.get("learning_rate", 1e-3))
+        ),
         "age_loss_weight": float(src.get("age_loss_weight", defaults.get("age_loss_weight", 0.3))),
         "tissue_loss_weight": float(
             src.get("tissue_loss_weight", defaults.get("tissue_loss_weight", 3.0))
@@ -240,6 +243,7 @@ def main() -> None:
             class_names=class_names or ["A", "B"],
             out_dir=report_dir / f"_staging_N_cascade_S_fold_{fold_idx}",
             max_epochs=train_params["max_epochs"],
+            lr=train_params["learning_rate"],
             seed=42 + fold_idx,
             device_str=args.device,
             cpg_pool=train_params["cpg_pool"],  # type: ignore[arg-type]
@@ -290,6 +294,7 @@ def main() -> None:
             class_names=class_names or ["A", "B"],
             out_dir=report_dir / f"_staging_posthoc_fusion_fold_{fold_idx}",
             max_epochs=train_params["max_epochs"],
+            lr=train_params["learning_rate"],
             seed=42 + fold_idx,
             device_str=args.device,
             cpg_pool=train_params["cpg_pool"],  # type: ignore[arg-type]

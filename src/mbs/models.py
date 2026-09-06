@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from typing import Literal, TypedDict
 
@@ -630,7 +631,17 @@ class SeedMaskedLinearHead(nn.Module):
         self.n_covariates = n_covariates
         self.neutral_score = neutral_score
         self.register_buffer("seed_mask", seed_mask.to(torch.float32))
-        self.gene_weight = nn.Parameter(torch.zeros(n_outputs, n_genes))
+        self.gene_weight = nn.Parameter(torch.empty(n_outputs, n_genes))
+        # A zero init gives d(loss)/d(mbs) = grad_output @ (gene_weight * seed_mask).T
+        # = 0 exactly at step 0, since weight = 0 -- the encoder gets literally no
+        # gradient from this head until gene_weight moves off zero on its own (from
+        # its own outer-product gradient), and with a sparse active-column count
+        # (tens to a few hundred of n_genes) that self-bootstrap can be too weak to
+        # outrun weight_decay. Match nn.Linear's default (Kaiming uniform) instead,
+        # then zero out masked-off columns for a clean read of "active" weights.
+        nn.init.kaiming_uniform_(self.gene_weight, a=math.sqrt(5))
+        with torch.no_grad():
+            self.gene_weight.mul_(seed_mask.to(torch.float32))
         self.bias = nn.Parameter(torch.zeros(n_outputs))
         self.covariate_head = (
             nn.Linear(n_covariates, n_outputs, bias=False) if n_covariates > 0 else None
