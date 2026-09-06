@@ -161,6 +161,45 @@ Produce the actual pretrained artifact(s) this milestone exists to justify:
   project (caught and fixed 2026-09-05, but avoid repeating it here given
   the much longer unattended window this campaign runs under).
 
+### Reference checkpoints landed (2026-09-06)
+
+Two candidate reference architectures, both on `explicit_only` (51,375
+CpGs, 2,646 genes), `hub-ats-7e-3fold-v1` split:
+
+| Arm | Topology | Tissue F1 (mean, 3-fold) | Age MAE | Sex AUROC | Params | Checkpoints |
+|---|---|---:|---:|---:|---:|---|
+| **P2-G (reference, refit)** | cascade CpG→region→gene, max/max pooling, scalar RBS | 0.379 | 18.89 | 0.747 | 265,737 (9,025 encoder + 256,712 heads) | `artifacts/runs/stage0-7h-P2-G-reference/fold_{0,1,2}/best.pt` |
+| N-light-gene-mean (m_only) | one-hop CpG→gene, mean pooling | 0.372 | 17.7 | — | (one-hop, no region intermediate) | `artifacts/runs/stage0-7g-gene-probe-ablation-m-only-16ep-f{0,1,2}/best.pt` |
+
+P2-G was retrained fresh (fold-fresh, `--force-retrain`, new `stage0-7h-
+P2-G-reference` run id — the original `stage0-7g-gene-probe-P2-G-explicit`
+reference is left untouched for comparison) to pick up all fixes landed
+this campaign (`gradient_clip_norm` default, `AdamW`+`weight_decay=1e-4`).
+Result is consistent with the original P2-G reference within normal
+run-to-run noise (0.379 vs 0.373 tissue F1; age MAE moved from 15.6 to
+18.9, plausibly `weight_decay` trading a little age-regression precision
+for tissue generalization — not confirmed, would need an ablation to
+isolate). `N-light-gene-mean` (m_only) numbers are the already-landed
+matched-budget ablation-confirmation run from earlier this session, not a
+new retrain.
+
+**Recommendation:** use **P2-G** as the primary reference — it natively
+produces both region-level RBS (pre-gene-pool, `rbs_linear_probe`/
+`rbs_enet` readouts) and gene-level MBS (`mbs_e2e`), matching the
+project's stated dual-output goal, at comparable accuracy to the one-hop
+alternative. `N-light-gene-mean` (m_only) is a valid **lighter-weight,
+gene-score-only** alternative when the region-level intermediate isn't
+needed — it has no RBS output by construction (one-hop CpG→gene).
+
+**Caveat — these are architecture-selection checkpoints, not deployment
+scores.** Each fold's checkpoint was trained holding that fold's studies
+out; there is no single "deploy this" checkpoint yet, and scoring the full
+cohort without leakage requires proper out-of-fold combination (train on
+folds A+B, score fold C, rotate) — that is exactly what the still-blocked
+Milestone 7 "final OOF cross-fitting" step is for. Phase 4's role here is
+to hand that step a validated, bug-fixed architecture + config, not to
+bypass it.
+
 ## Running log
 
 - 2026-09-05: Phase 0 fix #1 (`gene_weight` Kaiming init instead of zero)
