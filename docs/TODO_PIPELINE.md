@@ -18,7 +18,7 @@ True next milestone after bootstrap:
 > **Phase-2 gene-only cascade grid (7G′ Stage A — DeepRVAT Tier-1 screen
 > done; no architecture lock)** → **matched 16-epoch promotion screen
 > (done; full 2×2 pooling grid retained)** → **age-primary seed-mask screen
-> (blocked on `SeedMaskedLinearHead` collapse fix)** →
+> (done — seed-masking does not beat all-gene control)** →
 > **7H extended architecture campaign (← current; GPU 0, ~40h user-granted
 > budget)** →
 > **fold-selected panel Stage B (blocked)** →
@@ -32,30 +32,28 @@ reduced multiple-testing burden, cross-platform target). Phased plan,
 running log, and scope boundaries (e.g. ONT/PacBio ingestion is out of
 scope — no ingestion path exists) in
 [`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md).
-Phase 0 (fix `SeedMaskedLinearHead` collapse) is in progress.
+Phase 0 (fix `SeedMaskedLinearHead` collapse) and Phase 1 (age-primary
+seed-mask decision) are **done**; current work is Phase 2 (resolve
+remaining Stage A pooling/one-hop questions with larger budgets) and
+Phase 3 (scale to the nine-pack cohort).
 
-**Current gate:** **age-primary seed-mask screen** on GPU 0 (G0–G3/C0/C2,
-fold 0, seeds {42,43}). The matched 16-epoch promotion screen **finished**
-(2026-09-04, `87b22c3`; per-arm provenance `e644ed4`):
-`N-light-gene-max` tissue F1 0.336 (below P2); `N-light-gene-mean` tissue F1
-**0.378** (edges out P2-G's 0.373 — `one_hop_mean_near_p2` fired);
-`N-cascade-scalar-mean-max` 0.346; `N-cascade-scalar-max-mean` 0.369;
-`N-cascade-vector-mean-max` 0.360. `nothing_beats_p2_or_classical` did not
-fire → `next_gate: retain_pooling_2x2` (full 2×2 cascade pooling grid
-retained, not locked to one choice) → proceed to age-primary seed-mask.
-
-**Age-primary seed-mask (unblocked, running 2026-09-05):** scaffolding,
-ADR 0011/0012, and **fold-0 panel audit are done**
-(`ok_for_seed_mask_gpu: true`; hashed panel under
-`reports/inspection/stage0_7g_prime_seed_mask/`). First launch attempt
-(weekend supervisor) completed all 8 cascade runs (G0–G3 × seeds {42,43})
-but crashed on classical arm `C0` with `KeyError: 'tissues'`
-(`fit_eval_mvalue_fold` expected a string tissue-name array that
-`_phenotype_arrays()` never populated in `run_7g_prime_seed_mask.py` /
-`run_7g_prime_stage_b.py` — fixed by threading `class_names` through).
-Full grid relaunched on GPU 0; fix commit pending confirmation it clears
-`C0`/`C2`. Discovery CpGs rank seed genes only; G2/C2 use expanded
-gene-linked CpGs (ADR 0012). CPU typed-RBS R0–R5 is
+**Age-primary seed-mask screen: done (2026-09-06).** Two real bugs found
+and fixed along the way (full trail in
+[`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md)):
+a `KeyError: 'tissues'` crash in classical arms (`_phenotype_arrays()`
+never populated a string tissue-name array `fit_eval_mvalue_fold` needed),
+and a silent `learning_rate` threading bug that left every cascade run
+training at `lr=1e-2` (10x the intended `0.001`) — combined with sparse
+seed-masked heads, this caused near-total training collapse (sigmoid
+saturation within ~2-3 epochs). Fixed both, added gradient clipping, and
+raised the epoch budget 15→40 (several arms only escaped the bad regime
+after epoch 20-30). **Result:** `G0` (dense, unmasked) clearly beats every
+seed-masked variant (age MAE 16-18 vs 21-25; tissue F1 0.23 vs 0.06-0.10;
+sex AUROC 0.79 vs 0.51-0.72); `G1`/`G2`/`G3` don't meaningfully separate
+from each other — no evidence discovered seed genes carry more age signal
+than a same-sized random gene set. Classical `C0` (age MAE 8.94) still
+beats every cascade arm. **Seed-gene masking is not adopted** for the
+pretrained MBS/RBS framework on this evidence. CPU typed-RBS R0–R5 is
 **done** (neural typed aggregator **not** promoted). Stage B CpG-panel GPU
 stays **blocked**. Plans:
 [`plans/milestone-7g-prime-16ep-promotion.md`](plans/milestone-7g-prime-16ep-promotion.md),
@@ -82,9 +80,9 @@ Report:
 | CPU typed-RBS R0–R5 | **done** (R1–R3 age↑; shuffle Δ≪1 y; neural typed **not** promoted) |
 | Neural typed aggregator | **deferred** (needs clear shuffle collapse; not Stage B go/no-go) |
 | Seed-mask scaffolding + fold-0 audit | **done** (hash, diagnostics, `sex_autosome`, overlap/G3; panel `ef6cd307…`) |
-| Age-primary seed-mask GPU (G0–G3/C0/C2) | **in_progress** ← **current GPU gate** (relaunched post `tissues`-KeyError fix) |
+| Age-primary seed-mask GPU (G0–G3/C0/C2) | **done** — `G0` beats all masked variants; seed-masking not adopted |
 | Atlas association catalog | **done** (SQL 013 + constructors; non-blocking for GPU) |
-| Stage B GPU run (fold-panel) | **blocked** (after seed-mask screen + typed-RBS diagnostics) |
+| Stage B GPU run (fold-panel) | **blocked** (7H Phase 2/3 in progress; see campaign plan) |
 | Milestone **7** 5×6 OOF | **blocked** |
 
 **Trustworthy numbers (`explicit_only` panel, 51 375 gene-linked CpGs, test split):**
