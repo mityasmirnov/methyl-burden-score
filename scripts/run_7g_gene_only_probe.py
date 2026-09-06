@@ -303,6 +303,7 @@ def train_flat_region_arm(
     from mbs.training.loop import load_experiment_config, train_flat_baseline
 
     cfg = load_experiment_config(config_path)
+    base_seed = int((cfg.get("experiment") or {}).get("seed", 42))
     split_id = str(cfg.get("split_id", "hub-ats-7e-3fold-v1"))
     fold_pack = load_frozen_folds(paths.artifact_root / "splits" / split_id / "folds.json")
     cv_budget = cfg.get("cv_budget") or {}
@@ -341,7 +342,7 @@ def train_flat_region_arm(
                 metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
                 if _mbs_e2e_stale(metrics):
                     print(f"[gene-probe] stale e2e {run_id} → reeval", flush=True)
-                    fold_cfg = inject_fold_into_config(deepcopy(cfg), fold, seed=42 + fold_i)
+                    fold_cfg = inject_fold_into_config(deepcopy(cfg), fold, seed=base_seed + fold_i)
                     fold_cfg.setdefault("training", {})["reeval_only"] = True
                     fold_cfg["training"]["max_epochs"] = 0
                     train_flat_baseline(
@@ -369,7 +370,7 @@ def train_flat_region_arm(
                     print(f"[gene-probe] skip-if-done {run_id}", flush=True)
                 _drain_ready()
                 continue
-            fold_cfg = inject_fold_into_config(deepcopy(cfg), fold, seed=42 + fold_i)
+            fold_cfg = inject_fold_into_config(deepcopy(cfg), fold, seed=base_seed + fold_i)
             fold_cfg.setdefault("training", {})["stage_a_defer_cpu_probes"] = defer_cpu
             print(
                 f"[gene-probe flat] train {run_id} max_loci={max_loci} max_epochs={max_epochs} "
