@@ -20,7 +20,8 @@ from typing import Any
 import numpy as np
 import yaml
 
-from mbs.matrix.store import matrix_store_paths, open_betas_for_matrix, read_sample_index
+from mbs.matrix.store import matrix_store_paths, read_sample_index
+from mbs.matrix.virtual_hub_store import open_betas_for_matrix
 from mbs.paths import DataPaths
 from mbs.training.cascade_assign import build_cascade_assignment
 from mbs.training.dev_cv import load_frozen_folds
@@ -65,7 +66,7 @@ def _load_ats_fold0(*, max_loci: int) -> dict[str, Any]:
     graph_id = str(pilot["graph_id"])
     split_id = str(cfg.get("split_id") or "hub-ats-7e-3fold-v1")
     matrix_root = paths.data_root / "canonical" / "matrices" / matrix_id
-    sample_index = read_sample_index(matrix_store_paths(matrix_root)["sample_index"])
+    sample_index = read_sample_index(matrix_store_paths(matrix_root).sample_index_path)
     sample_ids = [str(s) for s in sample_index["sample_id"].tolist()]
     row_by_id = {sid: i for i, sid in enumerate(sample_ids)}
     phenotypes, class_names = load_multitask_phenotypes(
