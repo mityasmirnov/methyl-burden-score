@@ -1,0 +1,48 @@
+# 7H / Milestone 10: nine-pack scalar RBS — max→mean.
+# Same cohort/split/budget as P2-G scalar max/max (15 ep, 65k loci).
+# Completes nine-pack parity with the ATS-scale 5-combo grid (P2-G scalar
+# max/max, scalar mean/max, scalar max/mean, vector mean/max, vector
+# max/max) -- this was "retained, not locked" at ATS scale; testing at
+# nine-pack scale is the honest scale check Milestone 11 is gated on.
+split_id: hub-nine-pack-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+milestone: 7H-nine-pack-scalar-max-mean
+report_dir: reports/inspection/stage0_7h_nine_pack_smoke/_staging_scalar_max_mean
+cv_budget:
+  max_loci: 65536
+  max_epochs: 15
+experiment:
+  name: stage0_7h_nine_pack_scalar_max_mean
+  seed: 42
+  stage: 0
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-nine-pack-virtual-v1
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology_hub_nine_pack_v1.yaml
+  split_id: hub-nine-pack-3fold-v1
+model:
+  topology: rbs_gene_direct
+  tbs_arm: false
+  cpg_pool: max
+  region_pool: mean
+  gene_aggregation: scalar_rbs
+  gene_allocation: explicit_only
+  cpg_hidden_dim: 64
+  region_hidden_dim: 32
+  dropout: 0.1
+training:
+  max_epochs: 15
+  batch_size: auto
+  learning_rate: 0.001
+  tissue_loss_weight: 3.0
+  age_loss_weight: 0.3
+  sex_loss_weight: 1.0
+  gene_linked_only: true
+  primary_evaluation: mbs_e2e
+  stage_a_include_mbs_enet: false
+  checkpoint_selection: validation_tissue_macro_f1_then_age_mae
+  gradient_clip_norm: 2.0
+device:
+  torch_device: cuda
