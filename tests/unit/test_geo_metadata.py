@@ -9,6 +9,7 @@ import pandas as pd
 
 from mbs.geo_metadata import (
     GEO_SOURCE_FAMILY,
+    build_geo_frame_from_soft,
     catalog_platform_from_gpl,
     characteristics_to_phenotypes,
     consolidate_geo_sample_rows,
@@ -86,6 +87,59 @@ def test_map_geo_tissue_aliases() -> None:
     assert status2 == "mapped" and label2 == "whole blood"
     _, _, status3 = map_geo_tissue("mystery organ", ontology=ont, aliases=aliases)
     assert status3 == "unmapped"
+
+
+def test_map_geo_tissue_tumor_stays_independent_of_organ() -> None:
+    """Tumor/cell-line aliases must never collapse onto the plain organ label."""
+    labels = ("brain", "brain - tumor", "breast", "breast - cell line")
+    ont = TissueOntology(
+        labels=labels,
+        min_n=1,
+        label_to_id={lab: i for i, lab in enumerate(labels)},
+    )
+    aliases = {
+        "brain tumor": "brain - tumor",
+        "breast cancer cell line": "breast - cell line",
+    }
+    label, _, status = map_geo_tissue("brain tumor", ontology=ont, aliases=aliases)
+    assert status == "mapped"
+    assert label == "brain - tumor"
+    assert label != "brain"
+    label2, _, status2 = map_geo_tissue(
+        "breast cancer cell line", ontology=ont, aliases=aliases
+    )
+    assert status2 == "mapped"
+    assert label2 == "breast - cell line"
+    assert label2 not in {"breast"}
+
+
+def test_build_geo_frame_source_name_tissue_fallback() -> None:
+    """No structured tissue characteristics key -> fall back to source_name."""
+    soft = (
+        "^SERIES = GSE_FALLBACK\n"
+        "!Series_geo_accession = GSE_FALLBACK\n"
+        "^SAMPLE = GSM_FB1\n"
+        "!Sample_geo_accession = GSM_FB1\n"
+        "!Sample_source_name_ch1 = Whole Blood\n"
+        "!Sample_characteristics_ch1 = age: 30\n"
+        "!Sample_platform_id = GPL21145\n"
+        "^SAMPLE = GSM_FB2\n"
+        "!Sample_geo_accession = GSM_FB2\n"
+        "!Sample_source_name_ch1 = not a tissue string at all\n"
+        "!Sample_characteristics_ch1 = age: 31\n"
+        "!Sample_platform_id = GPL21145\n"
+    )
+    ont = _mini_ontology()
+    aliases = {"whole blood": "whole blood"}
+    frame = build_geo_frame_from_soft(
+        soft, fetched_at="2026-01-01T00:00:00Z", soft_sha256="abc", ontology=ont, aliases=aliases
+    )
+    by_id = frame.set_index("sample_id")
+    assert by_id.loc["GSM_FB1", "tissue"] == "whole blood"
+    assert by_id.loc["GSM_FB1", "tissue_map_status"] == "mapped"
+    assert bool(by_id.loc["GSM_FB1", "tissue_from_source_name_fallback"]) is True
+    # A source_name that isn't a known tissue synonym must not be invented as one.
+    assert by_id.loc["GSM_FB2", "tissue_map_status"] == "unmapped"
 
 
 def test_parse_family_soft_samples() -> None:

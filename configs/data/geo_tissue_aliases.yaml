@@ -44,6 +44,16 @@ aliases:
   umbilical cord blood buffy coat: cord blood
   cord blood buffy coat: cord blood
   buffy coat: leukocyte
+  blood - buffy coat: leukocyte
+  blood samples: whole blood
+  blood sample: whole blood
+  genomic dna from whole blood: whole blood
+  peripheral white blood cells: leukocyte
+  peripheral whole blood: whole blood
+  blood - edta tube: whole blood
+  dlpfc: brain - dorsolateral prefrontal cortex
+  frozen normal breast tissue: breast
+  frozen adjacent normal breast tissue: breast
   cerebellum: brain - cerebellum
   frontal cortex: brain - frontal cortex
   frontal lobe: brain - frontal lobe
@@ -61,3 +71,34 @@ aliases:
   sperm sample: semen
   lysed sperm sample: semen
   somatic cell lysed sperm sample: semen
+  # Wave-1 recoveries (source_name fallback + common unmapped strings).
+  cd14+ cell: CD14+ monocyte
+  cd14+ cells: CD14+ monocyte
+  cd14+ monocyte: CD14+ monocyte
+  cd14+ monocytes: CD14+ monocyte
+  # Tumor tissue is methylation-distinct from its tissue of origin (CpG
+  # island methylator phenotype, systematic hyper/hypomethylation) -- map to
+  # a separate "{organ} - tumor" class, never to the plain organ label, so
+  # it can't get silently averaged into what should be normal-tissue ground
+  # truth. Still records the anatomical origin, just as an independent class.
+  brain tumor: brain - tumor
+  brain tumours: brain - tumor
+  cns tumor tissue: brain - tumor
+  cns tumour tissue: brain - tumor
+  meningioma: brain - tumor
+  medulloblastoma: brain - tumor
+  glioblastoma: brain - tumor
+  malignant glioma: brain - tumor
+  ependymal tumor: brain - tumor
+  ependymal tumour: brain - tumor
+  cns-pnet: brain - tumor
+  primary brain tumor tissue: brain - tumor
+  primary atrt tumor tissue: brain - tumor
+  breast tumor: breast - tumor
+  breast tumours: breast - tumor
+  frozen tumor breast tissue: breast - tumor
+  # Cell lines are immortalized/heavily-passaged cultures with their own
+  # well-documented methylation drift, independent of tumor-vs-normal status
+  # -- a third, distinct class from both normal tissue and primary tumor.
+  breast cancer cell line: breast - cell line
+  colorectal cancer cell line: colon - cell line

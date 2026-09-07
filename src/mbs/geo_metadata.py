@@ -681,7 +681,17 @@ def build_geo_frame_from_soft(
     rows: list[dict[str, Any]] = []
     for sample in samples:
         chars = sample.get("characteristics_raw") or {}
-        tissue_raw = sample.get("tissue_raw") or sample.get("tissue")
+        structured_tissue = sample.get("tissue_raw") or sample.get("tissue")
+        tissue_raw = structured_tissue
+        if _is_blank(tissue_raw):
+            # No structured characteristics_ch1 key recognized as tissue
+            # ("tissue"/"cell type"/"organ"/...). Many GEO series instead put
+            # tissue info only in Sample_source_name_ch1. map_geo_tissue only
+            # succeeds on an exact alias/ontology match, so falling back here
+            # can only recover real tissue strings the structured-key
+            # extraction missed -- it can't turn unrelated text into a false
+            # tissue label.
+            tissue_raw = sample.get("source_name")
         tissue_label = None
         tissue_ont = None
         tissue_status = "empty"
@@ -714,6 +724,8 @@ def build_geo_frame_from_soft(
                 "tissue": tissue_label if tissue_status == "mapped" else tissue_raw,
                 "tissue_ontology_id": tissue_ont,
                 "tissue_map_status": tissue_status,
+                "tissue_from_source_name_fallback": _is_blank(structured_tissue)
+                and not _is_blank(tissue_raw),
                 "disease": sample.get("disease"),
                 "disease_label_status": sample.get("disease_label_status"),
                 "cancer": sample.get("cancer"),
@@ -1010,9 +1022,25 @@ def merge_geo_sample_metadata(
         mapped_ont: list[object] = []
         mapped_status: list[str] = []
         mapped_raw: list[object] = []
+        mapped_from_source_name: list[bool] = []
         for rec in geo_frame.to_dict(orient="records"):
-            raw = rec.get("tissue_raw") or rec.get("tissue")
+            structured = rec.get("tissue_raw") or rec.get("tissue")
+            raw = structured
+            from_source_name = False
+            if _is_blank(raw):
+                # No structured characteristics_ch1 key recognized as tissue
+                # (e.g. only "tissue"/"cell type"/"organ" are matched there).
+                # Many GEO series instead put tissue info in Sample_source_
+                # name_ch1 with no separate characteristics line at all.
+                # map_geo_tissue only succeeds on an exact alias/ontology
+                # match, so a source_name string that isn't actually about
+                # tissue just stays unmapped -- this fallback can't turn
+                # unrelated text into a false tissue label, only recover
+                # real ones the structured-key extraction missed.
+                raw = rec.get("source_name")
+                from_source_name = not _is_blank(raw)
             mapped_raw.append(raw)
+            mapped_from_source_name.append(from_source_name)
             if _is_blank(raw):
                 mapped_tissue.append(None)
                 mapped_ont.append(None)
@@ -1032,6 +1060,7 @@ def merge_geo_sample_metadata(
         geo_frame["tissue"] = mapped_tissue
         geo_frame["tissue_ontology_id"] = mapped_ont
         geo_frame["tissue_map_status"] = mapped_status
+        geo_frame["tissue_from_source_name_fallback"] = mapped_from_source_name
 
     new_pheno_rows: list[dict[str, Any]] = []
     sample_index = (
