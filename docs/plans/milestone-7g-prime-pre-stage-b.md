@@ -3,18 +3,18 @@
 > **Canonical milestones: 9d** (typed-RBS) / gate notes for **11**. Historical 7G′ pre–Stage-B. See [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
 
 
-Status: **reporting + R0–R5 done** — **no P2-G architecture lock**. Current
-GPU gate is the **matched 16-epoch promotion screen**
-([`milestone-7g-prime-16ep-promotion.md`](milestone-7g-prime-16ep-promotion.md)).
-Age-primary seed-mask scaffolding + fold-0 audit are **done**; CUDA waits on
-16-ep unlock
-([`milestone-7g-prime-age-seed-mask.md`](milestone-7g-prime-age-seed-mask.md)).
-Fold-selected-panel Stage B is later and separate. R0–R5 does **not** decide
+Status: **reporting + R0–R5 done** — **no P2-G architecture lock**. Seed-mask
+Stage A (9c) is **done** and **not adopted**. Matched 16-ep promotion (9b) is
+**done**. Current scientific gate is Milestone **10** scale review
+(`next_gate: milestone_10_scale_review` in
+`lock_recommendation.json`). Fold-selected-panel Stage B is **Milestone 11**
+and stays blocked until 10a+10b are reviewed. R0–R5 does **not** decide
 Stage B. Neural typed pool **not** promoted (R1–R3 age MAE ↑ vs R0, but
 within-gene role shuffle did not collapse).
 
 Parent: [`milestone-7g-prime-stage-a-deeprvat-screen.md`](milestone-7g-prime-stage-a-deeprvat-screen.md).
 Report: [`reports/inspection/stage0_7g_gene_only_probe/analysis.md`](../../reports/inspection/stage0_7g_gene_only_probe/analysis.md).
+Stage B plan: [`milestone-11-fold-selected-panel.md`](milestone-11-fold-selected-panel.md).
 
 ## Scope and acceptance
 
@@ -24,10 +24,11 @@ Report: [`reports/inspection/stage0_7g_gene_only_probe/analysis.md`](../../repor
 2. Drop any declared/retained P2-G (or cascade) architecture lock from the ATS
    screen.
 3. CPU typed-RBS ablation R0–R5 on saved scores (concurrent, cheap).
-4. Retarget the next gate to a trait/seed-gene **Stage A repeat**.
+4. ~~Retarget the next gate to a trait/seed-gene Stage A repeat.~~ **Superseded:**
+   9c cleared the seed-mask path (not adopted); next gate is Milestone **10**.
 
 **Done when:** report + `lock_recommendation.json` show `architecture_locked:
-false`; analysis states the seed-gene gate; R0–R5 summary exists under
+false`; analysis states the current next gate; R0–R5 summary exists under
 `reports/inspection/stage0_7g_gene_only_probe/typed_rbs_pooling/`; unit tests
 cover fold counts and typed pooling.
 
@@ -36,28 +37,23 @@ cover fold counts and typed pooling.
 | Choice | Decision | Why |
 |--------|----------|-----|
 | Architecture lock | **None** from ATS screen | Tissue-primary all-gene screen ≠ DeepRVAT seed protocol |
-| Next gate | Trait/seed-gene Stage A repeat | Real DeepRVAT-analogue selection |
-| Stage B fold-panel | Later, separate | Not unblocked by R0–R5 or free GPU |
+| Provisional reference | **P2-G** (not locked) | Best landed cascade; YAML Stage B defaults while `locked_cascade_arm` is null |
+| Next gate | Milestone **10** scale review | Seed-mask (9c) cleared; need nine-pack + 10b pooling honesty |
+| Stage B fold-panel | Milestone **11**, later | Not unblocked by R0–R5 or free GPU |
 | R0–R5 | Concurrent CPU diagnostic | Cheap; pooling evidence only |
 | Neural typed pool | Follow-up only if R1–R4 beat R0 **and** shuffle collapses | Not a Stage B go/no-go; **blocked** after R0–R5 (shuffle held) |
 
-## Seed-gene Stage A repeat (next gate)
+## Seed-gene Stage A repeat (historical; gate cleared)
 
-Relabel the former “Stage B seed-gene transfer / design only” sketch as a
-**Stage A repeat**:
-
-1. Join EWAS Atlas CpG→trait tables to Hub sample/study IDs (start from
-   `reports/inspection/deepmat_data_v1/trait_eligibility.md`; do not invent a trait).
-2. Pick **one** trait that clears the bar (labels, Atlas CpG set, genes after
-   `explicit_only`, ≥2 independent studies). If none, stop and document.
-3. Persist seed gene IDs with study-overlap control.
-4. Re-run the Stage A architecture screen with the shared encoder trained on
-   **seed genes only**, applied to all eligible genes; evaluate non-seed transfer.
+The former “Stage A seed-gene repeat” / age-primary seed-mask path ran as
+Milestone **9c**. Result: **G0 beats G1–G3** — seed-masking **not adopted**.
+Do not reopen unless a new hypothesis appears. See
+[`milestone-7g-prime-age-seed-mask.md`](milestone-7g-prime-age-seed-mask.md).
 
 ## Non-goals
 
 - Declaring a P2-G lock
-- Starting fold-panel Stage B because R0–R5 finished or GPU 0 is free
+- Starting fold-panel Stage B GPU because R0–R5 finished or GPU 0 is free
 - 30-epoch N-light retrain / gated one-hop training in this change
 - Neural typed aggregator in this change
 - Raising LR

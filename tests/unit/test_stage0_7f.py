@@ -11,6 +11,7 @@ import torch
 from mbs.models import CascadeDeepSet
 from mbs.training.cascade_assign import (
     ORPHAN_GENE_INDEX,
+    assignment_gene_linked_only,
     build_cascade_assignment,
     gene_linked_col_index,
     nearest_gene_on_chromosome,
@@ -19,6 +20,7 @@ from mbs.training.cascade_loop import (
     make_synthetic_cascade_tables,
     run_cascade_fixture,
     score_samples,
+    train_cascade_on_arrays,
 )
 from mbs.training.cascade_scores import (
     fusion_feature_matrix,
@@ -206,3 +208,64 @@ def test_train_cascade_fixture_writes_report(tmp_path: Path) -> None:
     assert summary["tbs_arm"] is False
     assert summary["assignment"]["n_direct"] >= 1
     assert summary["assignment"]["n_orphan_rbs"] >= 1
+
+
+def test_assignment_gene_linked_only_drops_direct() -> None:
+    tables = make_synthetic_cascade_tables(seed=1)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    assert assignment.n_direct >= 1
+    linked = assignment_gene_linked_only(assignment)
+    assert linked.direct_col_index.size == 0
+    assert linked.n_direct == 0
+
+
+def test_cascade_writes_direct_cpg_when_locus_ids_provided(tmp_path: Path) -> None:
+    tables = make_synthetic_cascade_tables(seed=2)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    assert assignment.n_direct >= 1
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, max(2, (n * 2) // 3), dtype=np.int64)
+    test_idx = np.arange(train_idx[-1] + 1, n, dtype=np.int64)
+    if test_idx.size == 0:
+        test_idx = train_idx.copy()
+    locus_ids = tables["locus_index"]["locus_id"].astype(str).tolist()
+    out_dir = tmp_path / "cascade_direct_cpg"
+    metrics = train_cascade_on_arrays(
+        assignment=assignment,
+        betas=tables["betas"],
+        train_idx=train_idx,
+        test_idx=test_idx,
+        ages=tables["ages"],
+        tissue=tables["tissue"],
+        sex=tables["sex"],
+        study_ids=tables["study_ids"],
+        sample_ids=tables["sample_ids"],
+        class_names=tables["class_names"],
+        out_dir=out_dir,
+        max_epochs=2,
+        seed=2,
+        device_str="cpu",
+        cpg_hidden_dim=16,
+        region_hidden_dim=8,
+        dropout=0.0,
+        locus_ids=locus_ids,
+        include_mbs_enet=False,
+    )
+    score_dir = Path(str(metrics["score_dir"]))
+    assert (score_dir / "direct_cpg.zarr").exists()
+    assert (score_dir / "direct_locus_index.parquet").is_file()
+    manifest = __import__("json").loads(
+        (score_dir / "score_manifest.json").read_text(encoding="utf-8")
+    )
+    assert manifest.get("direct_cpg") is True
+    assert int(manifest.get("n_direct_loci") or 0) == int(assignment.n_direct)

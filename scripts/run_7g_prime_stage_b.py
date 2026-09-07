@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +13,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import torch
 
 from mbs.annotation.manifest import write_json
 from mbs.matrix.store import matrix_store_paths, open_betas_zarr, read_locus_index, read_sample_index
@@ -32,6 +34,24 @@ DEFAULT_CONFIG = ROOT / "configs/experiment/stage0_7g_prime_stage_b.yaml"
 
 POSTHOC_FULL_ARM = "N-mbs-posthoc-full-fusion"
 POSTHOC_MBS_DIRECT_ARM = "N-mbs-posthoc-mbs-direct"
+
+
+def parse_folds_arg(raw: str | None, n_folds: int) -> list[int]:
+    """Parse ``--folds`` CSV into 0-based fold indices; default = all folds."""
+    if raw is None or str(raw).strip() == "":
+        return list(range(n_folds))
+    out: list[int] = []
+    for part in str(raw).split(","):
+        part = part.strip()
+        if not part:
+            continue
+        idx = int(part)
+        if idx < 0 or idx >= n_folds:
+            raise ValueError(f"fold index {idx} out of range [0, {n_folds})")
+        out.append(idx)
+    if not out:
+        raise ValueError("--folds parsed to empty list")
+    return out
 
 
 def _phenotype_arrays(
@@ -91,8 +111,30 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument(
+        "--panels-only",
+        action="store_true",
+        help="Write fold_panels/fold_*_panel.json only; skip neural and enetS",
+    )
+    parser.add_argument(
+        "--classical-only",
+        action="store_true",
+        help="Require existing panels; run C-mvalue-enetS only; skip neural",
+    )
+    parser.add_argument(
+        "--folds",
+        default=None,
+        help="Comma-separated 0-based fold indices (default: all folds in split)",
+    )
     args = parser.parse_args()
+    if args.panels_only and args.classical_only:
+        parser.error("--panels-only and --classical-only are mutually exclusive")
 
+    # Cap torch/BLAS fan-out for CPU panel selection (huge design matrices).
+    if args.panels_only or args.classical_only or args.device == "cpu":
+        n_threads = int(os.environ.get("OMP_NUM_THREADS", "8"))
+        torch.set_num_threads(n_threads)
+        torch.set_num_interop_threads(1)
     paths = DataPaths.from_environment()
     config_path = args.config if args.config.is_absolute() else paths.project_root / args.config
     cfg = load_experiment_config(config_path)
@@ -118,8 +160,14 @@ def main() -> None:
 
     folds_path = paths.artifact_root / "splits" / split_id / "folds.json"
     fold_pack = load_frozen_folds(folds_path)
-
-    print(f"[stage-b] split={split_id} max_loci={max_loci} device={args.device}", flush=True)
+    all_folds = fold_pack["folds"]
+    fold_indices = parse_folds_arg(args.folds, len(all_folds))
+    mode = "panels_only" if args.panels_only else ("classical_only" if args.classical_only else "full")
+    print(
+        f"[stage-b] mode={mode} split={split_id} folds={fold_indices} "
+        f"max_loci={max_loci} device={args.device}",
+        flush=True,
+    )
     matrix_paths = matrix_store_paths(paths.data_root / "canonical" / "matrices" / matrix_id)
     sample_index = read_sample_index(matrix_paths.sample_index_path)
     locus_index = read_locus_index(matrix_paths.locus_index_path)
@@ -166,17 +214,21 @@ def main() -> None:
     if lock_path.is_file():
         lock = json.loads(lock_path.read_text(encoding="utf-8"))
     train_params = _training_params_from_lock(lock, stage_a_defaults)
-    print(f"[stage-b] cascade train params: {train_params}", flush=True)
+    if mode == "full":
+        print(f"[stage-b] cascade train params: {train_params}", flush=True)
 
     results: dict[str, Any] = {
         "milestone": "7G-prime-stage-B",
+        "mode": mode,
         "lock_from_stage_a": lock,
-        "cascade_train_params": train_params,
+        "cascade_train_params": train_params if mode == "full" else None,
         "folds": [],
     }
     enetS_folds: list[dict[str, Any]] = []
+    panel_manifest_folds: list[dict[str, Any]] = []
 
-    for fold_idx, fold in enumerate(fold_pack["folds"]):
+    for fold_idx in fold_indices:
+        fold = all_folds[fold_idx]
         train_ids = [s for s in fold["train_sample_ids"] if s in row_by_id and s in ph_by_id]
         external = fold.get("external_test_sample_ids") or []
         test_ids = [s for s in external if s in row_by_id and s in ph_by_id]
@@ -191,24 +243,56 @@ def main() -> None:
         ph = _phenotype_arrays(phenotypes, sample_ids, class_names)
         studies = np.asarray([str(ph_by_id[s].study_id or "NA") for s in sample_ids], dtype=object)
 
-        panel_info = select_multitask_fold_panel(
-            x_train=m_vals[train_idx],
-            age=ph["age"][train_idx],
-            age_mask=ph["age_mask"][train_idx],
-            sex=ph["sex"][train_idx],
-            sex_mask=ph["sex_mask"][train_idx],
-            tissue=ph["tissue"][train_idx],
-            tissue_mask=ph["tissue_mask"][train_idx],
-            study_ids=studies[train_idx],
-            assignment=assignment,
-            max_seeds=max_seeds,
-            matrix_id=matrix_id,
-            graph_id=graph_id,
-            graph_content_hash=graph_hash,
-        )
         panel_path = panel_dir / f"fold_{fold_idx}_panel.json"
-        write_json(panel_path, panel_info)
+        if args.classical_only:
+            if not panel_path.is_file():
+                raise FileNotFoundError(
+                    f"--classical-only requires existing panel artifact: {panel_path}"
+                )
+            panel_info = json.loads(panel_path.read_text(encoding="utf-8"))
+            print(f"[stage-b] fold {fold_idx}: loaded panel {panel_path}", flush=True)
+        else:
+            panel_info = select_multitask_fold_panel(
+                x_train=m_vals[train_idx],
+                age=ph["age"][train_idx],
+                age_mask=ph["age_mask"][train_idx],
+                sex=ph["sex"][train_idx],
+                sex_mask=ph["sex_mask"][train_idx],
+                tissue=ph["tissue"][train_idx],
+                tissue_mask=ph["tissue_mask"][train_idx],
+                study_ids=studies[train_idx],
+                assignment=assignment,
+                max_seeds=max_seeds,
+                matrix_id=matrix_id,
+                graph_id=graph_id,
+                graph_content_hash=graph_hash,
+            )
+            write_json(panel_path, panel_info)
+            print(
+                f"[stage-b] fold {fold_idx}: wrote panel "
+                f"n_seed={panel_info.get('n_seed')} n_panel={panel_info.get('n_panel')}",
+                flush=True,
+            )
         panel = np.asarray(panel_info["panel_cols"], dtype=np.int64)
+        panel_manifest_folds.append(
+            {
+                "fold": fold_idx,
+                "panel_artifact": str(panel_path),
+                "n_seed": panel_info.get("n_seed"),
+                "n_panel": panel_info.get("n_panel"),
+            }
+        )
+
+        if args.panels_only:
+            results["folds"].append(
+                {
+                    "fold": fold_idx,
+                    "panel_artifact": str(panel_path),
+                    "panel": panel_info,
+                    "arms": {},
+                }
+            )
+            continue
 
         enet_metrics = fit_eval_mvalue_fold(
             m_vals[train_idx][:, panel],
@@ -226,6 +310,10 @@ def main() -> None:
             "panel": panel_info,
             "arms": {},
         }
+        if args.classical_only:
+            results["folds"].append(fold_out)
+            continue
+
         panel_subset = assignment_col_subset(assignment, panel)
         patience = train_params.get("early_stopping_patience")
         early_patience = int(patience) if patience is not None else None
@@ -315,6 +403,23 @@ def main() -> None:
 
         results["folds"].append(fold_out)
 
+    if args.panels_only:
+        write_json(
+            panel_dir / "manifest.json",
+            {
+                "mode": "panels_only",
+                "split_id": split_id,
+                "matrix_id": matrix_id,
+                "graph_id": graph_id,
+                "max_loci": max_loci,
+                "max_seeds": max_seeds,
+                "folds": panel_manifest_folds,
+            },
+        )
+        print(f"[stage-b] panels-only wrote {panel_dir / 'manifest.json'}", flush=True)
+        return
+
+    (report_dir / "per_arm").mkdir(parents=True, exist_ok=True)
     write_json(
         report_dir / "per_arm" / "C-mvalue-enetS.json",
         {
@@ -323,6 +428,11 @@ def main() -> None:
             "note": "Shared fold panel artifacts; study-grouped multitask enet stability.",
         },
     )
+    if args.classical_only:
+        write_json(report_dir / "summary_classical_only.json", results)
+        print(f"[stage-b] classical-only wrote {report_dir / 'per_arm' / 'C-mvalue-enetS.json'}", flush=True)
+        return
+
     write_json(report_dir / "summary.json", results)
     report_script = paths.project_root / "scripts" / "write_7g_prime_stage_b_report.py"
     if report_script.is_file():

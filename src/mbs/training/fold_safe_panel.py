@@ -36,7 +36,8 @@ def _enet_classifier_pipeline(*, alpha: float, l1_ratio: float) -> Pipeline:
                     max_iter=60,
                     tol=1e-3,
                     random_state=42,
-                    n_jobs=-1,
+                    # ponytail: n_jobs=1 — OvR×65k-col fits thrash with n_jobs=-1
+                    n_jobs=1,
                 ),
             ),
         ]
@@ -100,16 +101,12 @@ def _coef_abs(model: Pipeline, n_cols: int) -> np.ndarray:
 def _finite_nonconstant_cols(x: np.ndarray) -> np.ndarray:
     """Columns with ≥2 finite values and positive finite variance (train-fold only)."""
     x64 = np.asarray(x, dtype=np.float64)
-    keep: list[int] = []
-    for j in range(x64.shape[1]):
-        col = x64[:, j]
-        finite = col[np.isfinite(col)]
-        if finite.size < 2:
-            continue
-        if float(np.nanstd(finite)) <= 0.0:
-            continue
-        keep.append(j)
-    return np.asarray(keep, dtype=np.int64)
+    n_finite = np.sum(np.isfinite(x64), axis=0)
+    # nanstd ignores NaNs; replace non-finite with nan so std is over observed only.
+    with np.errstate(all="ignore"):
+        col_std = np.nanstd(np.where(np.isfinite(x64), x64, np.nan), axis=0)
+    keep = (n_finite >= 2) & np.isfinite(col_std) & (col_std > 0.0)
+    return np.flatnonzero(keep).astype(np.int64)
 
 
 def stability_select_columns(
@@ -178,30 +175,61 @@ def stability_select_columns(
                 continue
             if task != "age" and len(np.unique(y_tr)) < 2:
                 continue
+            # Impute+scale once per inner-train split (identical for all α/l1).
+            imputer = SimpleImputer(strategy="median", keep_empty_features=True)
+            scaler = StandardScaler(with_mean=True)
+            x_fit = scaler.fit_transform(imputer.fit_transform(x_tr))
+            if task == "age":
+                y_fit = np.asarray(y_tr, dtype=np.float64)
+                y_std = float(np.nanstd(y_fit))
+                if y_std > 0.0 and np.isfinite(y_std):
+                    y_fit = (y_fit - float(np.nanmean(y_fit))) / y_std
+                else:
+                    y_fit = y_fit - float(np.nanmean(y_fit))
+            else:
+                y_fit = y_tr
             for alpha in ENET_ALPHA_GRID:
                 for l1_ratio in ENET_L1_GRID:
                     if task == "age":
-                        model = _enet_regressor_pipeline(alpha=alpha, l1_ratio=l1_ratio)
-                        # Scale y inside the train fold only; raw years → ~1e10 SGD coefs.
-                        y_fit = np.asarray(y_tr, dtype=np.float64)
-                        y_std = float(np.nanstd(y_fit))
-                        if y_std > 0.0 and np.isfinite(y_std):
-                            y_fit = (y_fit - float(np.nanmean(y_fit))) / y_std
-                        else:
-                            y_fit = y_fit - float(np.nanmean(y_fit))
+                        sgd: SGDRegressor | SGDClassifier = SGDRegressor(
+                            loss="squared_error",
+                            penalty="elasticnet",
+                            alpha=alpha,
+                            l1_ratio=l1_ratio,
+                            max_iter=60,
+                            tol=1e-3,
+                            random_state=42,
+                        )
                     else:
-                        model = _enet_classifier_pipeline(alpha=alpha, l1_ratio=l1_ratio)
-                        y_fit = y_tr
+                        sgd = SGDClassifier(
+                            loss="log_loss",
+                            penalty="elasticnet",
+                            alpha=alpha,
+                            l1_ratio=l1_ratio,
+                            max_iter=60,
+                            tol=1e-3,
+                            random_state=42,
+                            n_jobs=1,
+                        )
                     n_attempted += 1
-                    model.fit(x_tr, y_fit)
-                    sgd = model.named_steps["sgd"]
+                    if n_attempted == 1 or n_attempted % 9 == 0:
+                        print(
+                            f"[fold-panel] task={task} fit {n_attempted} "
+                            f"(repeat={repeat} n_cols={n_cols})",
+                            flush=True,
+                        )
+                    sgd.fit(x_fit, y_fit)
                     n_iter = getattr(sgd, "n_iter_", None)
                     max_iter = int(getattr(sgd, "max_iter", 0) or 0)
                     if n_iter is not None and max_iter > 0 and int(n_iter) >= max_iter:
                         n_nonconverged += 1
                     else:
                         n_converged += 1
-                    coef = _coef_abs(model, n_cols)
+                    raw_coef = sgd.coef_
+                    if raw_coef.ndim == 2:
+                        coef = np.max(np.abs(raw_coef), axis=0)
+                    else:
+                        coef = np.abs(raw_coef.ravel())
                     if coef.size != n_cols:
                         raise ValueError(f"coef size {coef.size} != n_cols {n_cols}")
                     k = min(STABILITY_TOP_K_PER_FIT, n_cols)

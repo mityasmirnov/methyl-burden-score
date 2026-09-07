@@ -92,8 +92,14 @@ def test_lock_allowed_with_valid_mbs_e2e() -> None:
     assert lock["locked_cascade_arm"] is None
     assert lock["architecture_locked"] is False
     assert lock["best_landed_cascade_arm"] == "P2-G"
+    assert lock["provisional_reference_arm"] == "P2-G"
     assert lock["mbs_e2e_valid"] is True
-    assert lock.get("next_gate") == "trait_seed_gene_stage_a_repeat"
+    assert lock["seed_mask_adopted"] is False
+    assert lock["pooling_2x2_status"] == "retained_pending_10b_seed43"
+    assert lock.get("next_gate") == "milestone_10_scale_review"
+    assert lock["pooling_cpg"] == "max"
+    assert lock["pooling_region"] == "max"
+    assert lock["max_epochs"] == 15
 
 
 def test_cascade_mode_row_metric_specific_fold_count() -> None:

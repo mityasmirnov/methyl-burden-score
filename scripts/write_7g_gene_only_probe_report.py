@@ -240,24 +240,31 @@ def build_lock_recommendation(
     Retained filename ``lock_recommendation.json`` for compatibility; fields
     ``locked_cascade_arm`` / ``architecture_locked`` stay null/false.
     """
+    provisional_reason = (
+        "P2-G is the provisional cascade reference, not a pooling lock; "
+        "ATS 2x2 pooling retained pending Milestone 10b seed-43; "
+        "seed-mask not adopted (9c); Stage B waits on honest 10a+10b review."
+    )
     rec: dict[str, Any] = {
         "primary_metric": "mbs_e2e.metrics.tissue.macro_f1",
         "architecture_locked": False,
         "locked_cascade_arm": None,
+        "provisional_reference_arm": None,
         "best_landed_cascade_arm": None,
         "pooling_cpg": None,
         "pooling_region": None,
         "max_epochs": None,
+        "seed_mask_adopted": False,
+        "pooling_2x2_status": "retained_pending_10b_seed43",
         "cascade_clearly_ahead": None,
         "recommend_encoder_parity": False,
         "best_classical_arm": None,
         "lock_blocked_reason": (
             "ATS gene-only screen is evidence only; no cascade architecture lock. "
-            "P2-G is the current reference, not a pooling lock. "
-            "Next gate: matched 16-epoch promotion screen."
+            + provisional_reason
         ),
         "mbs_e2e_valid": False,
-        "next_gate": "matched_16ep_promotion_screen",
+        "next_gate": "milestone_10_scale_review",
     }
     folds_by_arm = cascade_folds_by_arm or {}
     valid_cascade_rows = [
@@ -277,7 +284,7 @@ def build_lock_recommendation(
     if not valid_classical_rows:
         rec["lock_blocked_reason"] = (
             "ATS screen incomplete (no classical -G folds); still no architecture lock. "
-            "Next gate: matched 16-epoch promotion screen."
+            + provisional_reason
         )
         return rec
 
@@ -288,10 +295,17 @@ def build_lock_recommendation(
     arm_id = str(best_cascade["arm_id"])
     rec["best_landed_cascade_arm"] = arm_id
     # Deliberately leave locked_cascade_arm None — do not retain a P2-G lock.
-    pool = ARM_POOLING.get(arm_id)
+    # Prefer P2-G as the human-readable provisional reference when present.
+    p2_row = next((r for r in valid_cascade_rows if str(r["arm_id"]) == "P2-G"), None)
+    provisional = "P2-G" if p2_row is not None else arm_id
+    rec["provisional_reference_arm"] = provisional
+    # Human-readable pooling for provisional P2-G; unused while locked_cascade_arm is null.
+    pool = ARM_POOLING.get(provisional) or ARM_POOLING.get(arm_id)
     if pool:
         rec["pooling_cpg"], rec["pooling_region"], rec["max_epochs"] = pool
     rec["best_classical_arm"] = best_classical["arm_id"]
+    rec["lock_blocked_reason"] = provisional_reason
+    rec["next_gate"] = "milestone_10_scale_review"
     c_f1 = best_cascade.get("mbs_e2e_f1")
     cl_f1 = best_classical.get("tissue_f1")
     if c_f1 is not None and cl_f1 is not None:
