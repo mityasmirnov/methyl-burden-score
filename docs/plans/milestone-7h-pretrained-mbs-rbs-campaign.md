@@ -349,3 +349,17 @@ bypass it.
   deserves careful design rather than a rushed one-shot script in an
   already-long session — left as the explicit next step for Phase 3
   rather than attempted ad hoc.
+- 2026-09-07: **Nine-pack split frozen** (`hub-nine-pack-3fold-v1`, 34,234 /
+  470 studies) via `scripts/build_hub_nine_pack_split.py` (`c2530e2`).
+- 2026-09-07: **Virtual multi-store loader unblocked (Track A).** Extended
+  `RoutedBetas` for dense `[:, :n]` / row+col slices (pack-batched, chunked);
+  wired cascade / classical / transparent / `dev_cv` through
+  `open_betas_for_matrix`. Unit + per-pack alignment tests in
+  `tests/unit/test_routed_betas_dense_slice.py`. Fold-0 smoke on full cohort:
+  P2-G (3 ep) tissue F1 **0.343**, age MAE **15.0**, sex AUROC **0.891**;
+  m-only (3 ep) tissue **0.119**, age **18.1**, sex **0.735** — finite
+  `eval_split=test`. Full 3-fold refs launched
+  (`scripts/run_7h_nine_pack_smoke.py --phase full`). Trait adequacy census:
+  age/sex PASS ≥1k; tissue only `whole blood` ≥1k among 64 labels;
+  blood/brain masks empty; disease/cancer mask_true large but false≠control.
+  Report: `reports/inspection/stage0_7h_nine_pack_smoke/`.

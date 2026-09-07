@@ -1,0 +1,66 @@
+{
+  "generated_at": "2026-09-07T10:15:06.371671+00:00",
+  "split_id": "hub-nine-pack-3fold-v1",
+  "matrix_id": "matrix-hub-nine-pack-virtual-v1",
+  "n_samples": 34234,
+  "platform": "HM450",
+  "cross_platform_claim": false,
+  "phase": "smoke",
+  "loader_self_check": {
+    "matrix_id": "matrix-hub-nine-pack-virtual-v1",
+    "shape": [
+      34234,
+      482379
+    ],
+    "checked_rows": 8,
+    "checked_cols": 64,
+    "finite_fraction": 0.91796875,
+    "packs_in_check": {
+      "matrix-hub-blood-full-v1": 8
+    },
+    "platform_claim": "HM450_only_no_cross_platform"
+  },
+  "arms": {
+    "P2-G": {
+      "arm": "P2-G",
+      "n_folds": 1,
+      "folds": [
+        {
+          "eval_split": "test",
+          "tissue_f1": 0.3433791888216678,
+          "age_mae": 15.037650264341393,
+          "sex_auroc": 0.8914664301304904,
+          "best_epoch": 3,
+          "fold": 0,
+          "run_id": "stage0-7h-nine-pack-P2-G-smoke"
+        }
+      ],
+      "tissue_f1_mean": 0.3433791888216678,
+      "tissue_f1_sd": null,
+      "age_mae_mean": 15.037650264341393,
+      "age_mae_sd": null,
+      "sex_auroc_mean": 0.8914664301304904,
+      "sex_auroc_sd": null
+    },
+    "m_only": {
+      "arm": "N-light-gene-ablation-m-only",
+      "n_folds": 1,
+      "folds": [
+        {
+          "eval_split": "test",
+          "tissue_f1": 0.11920655025403026,
+          "age_mae": 18.060063433191566,
+          "sex_auroc": 0.7352226095439334,
+          "best_epoch": 3,
+          "fold": 0
+        }
+      ],
+      "tissue_f1_mean": 0.11920655025403026,
+      "tissue_f1_sd": null,
+      "age_mae_mean": 18.060063433191566,
+      "age_mae_sd": null,
+      "sex_auroc_mean": 0.7352226095439334,
+      "sex_auroc_sd": null
+    }
+  }
+}

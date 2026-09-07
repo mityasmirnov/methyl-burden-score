@@ -16,10 +16,10 @@ from mbs.annotation.manifest import write_json
 from mbs.evaluation.splits import assert_no_study_leakage, build_outer_study_grouped_folds
 from mbs.matrix.store import (
     matrix_store_paths,
-    open_betas_zarr,
     read_locus_index,
     read_sample_index,
 )
+from mbs.matrix.virtual_hub_store import open_betas_for_matrix
 from mbs.training.branch import train_branch_arm
 from mbs.training.controls import fit_metadata_only
 from mbs.training.hier_loop import train_hierarchical_baseline
@@ -326,7 +326,7 @@ def run_hub_transparent_arm(
         max_loci=max_loci,
         region_systems=("gene",),
     )
-    betas = open_betas_zarr(matrix_paths.betas_path)
+    betas = open_betas_for_matrix(matrix_paths.root)
     row_by_id = {
         str(sid): int(row)
         for sid, row in zip(
@@ -433,7 +433,7 @@ def run_hub_late_fusion_arm(
     sample_index = read_sample_index(matrix_paths.sample_index_path)
     locus_index = read_locus_index(matrix_paths.locus_index_path)
     lr_edges, regions = load_graph_tables(data_root / "canonical" / "graphs" / graph_id)
-    betas = open_betas_zarr(matrix_paths.betas_path)
+    betas = open_betas_for_matrix(matrix_paths.root)
     row_by_id = {
         str(sid): int(row)
         for sid, row in zip(

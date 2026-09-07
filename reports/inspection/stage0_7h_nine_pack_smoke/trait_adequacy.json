@@ -1,0 +1,72 @@
+{
+  "n_samples": 34234,
+  "min_per_arm": 1000,
+  "traits": {
+    "age": {
+      "n_labeled": 10002,
+      "passes_1k": true,
+      "age_finite": 10002
+    },
+    "tissue": {
+      "n_labeled": 13457,
+      "n_levels": 64,
+      "n_levels_ge_1k": 1,
+      "top15": {
+        "whole blood": 2070,
+        "leukocyte": 934,
+        "CD14+ monocyte": 724,
+        "saliva": 629,
+        "breast": 595,
+        "liver": 474,
+        "CD4+ T cell": 443,
+        "F": 392,
+        "M": 390,
+        "brain - dorsolateral prefrontal cortex": 373,
+        "kidney": 366,
+        "buccal epithelium": 351,
+        "lymphocyte": 313,
+        "semen": 300,
+        "lung": 300
+      },
+      "levels_ge_1k": {
+        "whole blood": 2070
+      },
+      "passes_usable_multiclass": false
+    },
+    "sex": {
+      "n_labeled": 12445,
+      "levels": {
+        "Female": 6238,
+        "Male": 6207
+      },
+      "passes_1k_per_arm": true
+    },
+    "disease": {
+      "n_mask_true": 12218,
+      "n_mask_false": 22016,
+      "passes_binary_1k_naive": true,
+      "caveat": "False may be unlabeled\u2260control"
+    },
+    "cancer": {
+      "n_mask_true": 10101,
+      "n_mask_false": 24133,
+      "passes_binary_1k_naive": true,
+      "caveat": "False may be unlabeled\u2260control"
+    },
+    "blood": {
+      "n_mask_true": 0,
+      "n_mask_false": 34234,
+      "passes_binary_1k_naive": false,
+      "caveat": "False may be unlabeled\u2260control"
+    },
+    "brain": {
+      "n_mask_true": 0,
+      "n_mask_false": 34234,
+      "passes_binary_1k_naive": false,
+      "caveat": "False may be unlabeled\u2260control"
+    },
+    "platform": {
+      "HM450": 34234
+    }
+  }
+}

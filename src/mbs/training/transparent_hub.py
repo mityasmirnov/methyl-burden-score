@@ -9,10 +9,10 @@ import numpy as np
 
 from mbs.matrix.store import (
     matrix_store_paths,
-    open_betas_zarr,
     read_locus_index,
     read_sample_index,
 )
+from mbs.matrix.virtual_hub_store import open_betas_for_matrix
 from mbs.training.dev_cv import _phenotype_arrays
 from mbs.training.locus_gene import build_locus_gene_index, load_graph_tables
 from mbs.training.locus_region_gene import build_locus_region_gene_index
@@ -42,7 +42,7 @@ def run_hub_transparent_arm(
     sample_index = read_sample_index(matrix_paths.sample_index_path)
     locus_index = read_locus_index(matrix_paths.locus_index_path)
     lr_edges, regions = load_graph_tables(data_root / "canonical" / "graphs" / graph_id)
-    betas = open_betas_zarr(matrix_paths.betas_path)
+    betas = open_betas_for_matrix(matrix_paths.root)
     row_by_id = {
         str(sid): int(row)
         for sid, row in zip(

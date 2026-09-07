@@ -18,10 +18,10 @@ import torch.nn.functional as F
 from mbs.annotation.manifest import write_json
 from mbs.matrix.store import (
     matrix_store_paths,
-    open_betas_zarr,
     read_locus_index,
     read_sample_index,
 )
+from mbs.matrix.virtual_hub_store import open_betas_for_matrix
 from mbs.models import CascadeDeepSet
 from mbs.segment_ops import PoolName
 from mbs.training.cascade_assign import (
@@ -1734,7 +1734,7 @@ def run_cascade_hub(
         f"gene_allocation={gene_allocation}",
         flush=True,
     )
-    betas_z = open_betas_zarr(matrix_paths.betas_path)
+    betas_z = open_betas_for_matrix(matrix_paths.root)
     row_by_id = {
         str(sid): int(row)
         for sid, row in zip(
@@ -1761,7 +1761,7 @@ def run_cascade_hub(
     fold_summaries: list[dict[str, Any]] = []
     n_cols = assignment.n_study_loci
 
-    # Dense prefix load once (~3.5 GB float32 for 13.5k × 65k).
+    # Dense prefix load once (~3.5 GB float32 for 13.5k × 65k; ~8.4 GB for 34k × 65k).
     print(f"[cascade] loading betas[:, :{n_cols}] into RAM…", flush=True)
     betas_all = np.asarray(betas_z[:, :n_cols], dtype=np.float32)
     print(f"[cascade] betas shape={betas_all.shape} dtype={betas_all.dtype}", flush=True)

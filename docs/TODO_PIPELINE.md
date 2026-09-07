@@ -151,18 +151,19 @@ unlock) · Stage B
 
 ### Next steps (ordered)
 
-1. **Continue 7H on GPU 0** — follow
-   [`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md).
-   Matched 16-ep promotion + age-primary seed-mask are **done** (seed-masking
-   not adopted). Prefer one-hop **`m_only`** and retain the cascade **2×2**
-   pooling grid (no pooling lock); `P2-G` / one-hop mean remain references.
-2. **Phase 3 nine-pack** — split `hub-nine-pack-3fold-v1` is frozen via
-   `scripts/build_hub_nine_pack_split.py` (34 234 samples / 470 studies).
-   Next: smoke + reference arms on that split before trait expansion.
-   All nine-pack samples are **HM450** today — no cross-platform claim yet.
-3. **Optional CPU (non-blocking)** — finish any remaining nested/post-hoc
-   `eval_mbs_enet_from_scores.py` / typed-RBS diagnostics; do **not** stall GPU.
-4. **Still blocked:** Stage B `run_7g_prime_stage_b.py`, Milestone **7** OOF,
+1. **7H Phase 3 nine-pack (in progress on GPU 0)** — virtual multi-store
+   loader unblocked (`RoutedBetas` `[:, :n]` + cascade/classical/flat wiring).
+   Fold-0 smoke landed (P2-G tissue F1 ~0.34 / age MAE ~15 / sex AUROC ~0.89
+   at 3 ep). Full 3-fold P2-G + m-only references:
+   `scripts/run_7h_nine_pack_smoke.py --phase full` (log
+   `scratch/logs/7h_nine_pack_full.log`). HM450 only — no cross-platform claim.
+   Report: [`reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
+2. **Track B (ATS, after GPU frees or second device)** — genuine seed-43
+   2×2 cascade pooling confirmation; trait adequacy already drafted in
+   `stage0_7h_nine_pack_smoke/trait_adequacy.md` (age/sex PASS; tissue only
+   1 level ≥1k; blood/brain masks empty; disease/cancer mask_true large but
+   false≠control).
+3. **Still blocked:** Stage B `run_7g_prime_stage_b.py`, Milestone **7** OOF,
    GEO-enriched GPU training, ONT/PacBio ingestion.
 
 **7G** methylation eval and **tissue probe P0–P3** are done (historical evidence
@@ -191,10 +192,12 @@ the shipped topology (7F replaces it). 7E′ hygiene is **done**. Readiness:
 [`reports/inspection/stage0_7f_rbs_gene_direct/analysis.md`](../reports/inspection/stage0_7f_rbs_gene_direct/analysis.md).
 
 **7A–7D** are `done` (7C = fixture + Hub smoke). Hub nine packs and 7B full
-matrices are in the live DuckDB release (refresh 2026-09-02:
-**149 244** samples, **1 584** studies, **216 476** phenotype rows, **21**
-matrix artifacts including all nine Hub full packs). EWAS_db is incomplete
-(**1 353**/1 989 studies, **132 289** GSM files) and **not** a gate. Authoritative
+matrices are in the live DuckDB release (refresh 2026-09-07:
+**173 076** samples, **1 763** studies, **291 447** phenotype rows, **21**
+matrix artifacts including all nine Hub full packs). EWAS_db study walk is
+complete (**1 989**/1 989 dirs visited) but ingest is incomplete
+(**1 695** studies with sample `.txt`, **170 641** assay files of which
+**~157 240** are GSM; `mirror_complete=false`) and **not** a gate. Authoritative
 census: `reports/inspection/deepmat_data_v1/` (underscore; matches this
 refresh). Ignore `reports/inspection/deepmat-data-v1/` if it shows ~5 GSM
 (fixture leak into the CLI default hyphen path).
@@ -223,10 +226,13 @@ near-chance on an ordered 512-sample prefix is **not** evidence that noncoding
 CpGs lack signal.
 
 Hub **disease** profile zip is complete (2026-08-11). `EWAS_db` All-Data
-mirror remains in progress (**1 353** local studies / 1 989 advertised;
-**132 289** GSM files; failure manifest + post-download hook — see
-[`EWAS_DATA.md`](EWAS_DATA.md)) and is **not** a gate for 7G′ or Milestone 7;
-re-run `make catalog-refresh-release` as more `EWAS_db/{GSE}/` dirs arrive.
+study walk finished 2026-09-07 (**1 989**/1 989); local ingest
+**1 695** studies / **170 641** sample `.txt` (**~157 240** GSM + non-GSM
+TCGA/ArrayExpress/…); **~1 723** GSM still in retry manifest — see
+[`EWAS_DATA.md`](EWAS_DATA.md) and
+[`ewas_db_empty_studies.md`](../reports/inspection/deepmat_data_v1/ewas_db_empty_studies.md).
+Not a gate for 7H / Milestone 7; `make retry-ewas-db-failures` then
+`make catalog-refresh-release` recover gaps.
 
 Primary open data source going forward: **EWAS Data Hub**
 ([ADR 0002](adr/0002-ewas-datahub-primary-source.md);

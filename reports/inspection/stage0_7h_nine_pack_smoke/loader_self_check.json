@@ -1,0 +1,14 @@
+{
+  "matrix_id": "matrix-hub-nine-pack-virtual-v1",
+  "shape": [
+    34234,
+    482379
+  ],
+  "checked_rows": 8,
+  "checked_cols": 64,
+  "finite_fraction": 0.91796875,
+  "packs_in_check": {
+    "matrix-hub-blood-full-v1": 8
+  },
+  "platform_claim": "HM450_only_no_cross_platform"
+}

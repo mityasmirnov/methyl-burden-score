@@ -24,10 +24,10 @@ from sklearn.preprocessing import StandardScaler
 from mbs.evaluation.metrics import multiclass_metrics, regression_metrics
 from mbs.matrix.store import (
     matrix_store_paths,
-    open_betas_zarr,
     read_locus_index,
     read_sample_index,
 )
+from mbs.matrix.virtual_hub_store import open_betas_for_matrix
 from mbs.training.dev_cv import _phenotype_arrays
 from mbs.training.fold_safe_panel import select_multitask_fold_panel
 from mbs.training.features import beta_to_m_value
@@ -323,7 +323,7 @@ def run_classical_mvalue(
         )
     pheno_ids = {p.sample_id for p in phenotypes}
     print(f"[classical] loading betas[:, :{n_cols}] once…", flush=True)
-    betas = open_betas_zarr(matrix_paths.betas_path)
+    betas = open_betas_for_matrix(matrix_paths.root)
     m_all = np.asarray(
         beta_to_m_value(
             np.clip(np.asarray(betas[:, :n_cols], dtype=np.float32), 0, 1),
@@ -446,7 +446,7 @@ def run_classical_mvalue_enetS(
         )
     }
     pheno_ids = {p.sample_id for p in phenotypes}
-    betas = open_betas_zarr(matrix_paths.betas_path)
+    betas = open_betas_for_matrix(matrix_paths.root)
     m_all = np.asarray(
         beta_to_m_value(
             np.clip(np.asarray(betas[:, :n_cols], dtype=np.float32), 0, 1),

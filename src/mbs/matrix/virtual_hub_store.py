@@ -64,7 +64,8 @@ class VirtualHubBuildResult:
 class RoutedBetas:
     """Zarr-like ``[n_samples, n_loci]`` view over multiple pack stores.
 
-    Supports ``arr[row]``, ``arr[row, :]``, ``arr[row, start:stop]``, and
+    Supports ``arr[row]``, ``arr[row, :]``, ``arr[row, start:stop]``,
+    ``arr[:, :n]`` / ``arr[row_slice, col_slice]`` (dense training idiom), and
     ``arr[np.ix_(rows, cols)]`` for Level-1 fitting.
     """
 
@@ -91,97 +92,128 @@ class RoutedBetas:
     def shape(self) -> tuple[int, int]:
         return (self._n_samples, self._n_loci)
 
+    def _normalize_row_ids(self, rows: Any) -> np.ndarray:
+        if isinstance(rows, slice):
+            start = 0 if rows.start is None else int(rows.start)
+            stop = self._n_samples if rows.stop is None else int(rows.stop)
+            step = 1 if rows.step is None else int(rows.step)
+            return np.arange(start, stop, step, dtype=np.int64)
+        if isinstance(rows, (int, np.integer)):
+            return np.asarray([int(rows)], dtype=np.int64)
+        if isinstance(rows, np.ndarray):
+            if rows.ndim == 2:
+                return np.asarray(rows[:, 0], dtype=np.int64)
+            return np.asarray(rows, dtype=np.int64).reshape(-1)
+        return np.asarray(rows, dtype=np.int64).reshape(-1)
+
+    def _normalize_col_ids(self, cols: Any) -> np.ndarray:
+        if isinstance(cols, slice):
+            start = 0 if cols.start is None else int(cols.start)
+            stop = self._n_loci if cols.stop is None else int(cols.stop)
+            step = 1 if cols.step is None else int(cols.step)
+            return np.arange(start, stop, step, dtype=np.int64)
+        if isinstance(cols, (int, np.integer)):
+            return np.asarray([int(cols)], dtype=np.int64)
+        if isinstance(cols, np.ndarray):
+            if cols.ndim == 2:
+                return np.asarray(cols[0, :], dtype=np.int64)
+            return np.asarray(cols, dtype=np.int64).reshape(-1)
+        return np.asarray(cols, dtype=np.int64).reshape(-1)
+
+    def _block(self, row_ids: np.ndarray, col_ids: np.ndarray) -> np.ndarray:
+        """Materialize ``(n_rows, n_cols)`` via pack-batched Zarr reads.
+
+        Rows are processed in chunks per pack so cascade ``[:, :max_loci]`` loads
+        (tens of thousands of samples × tens of thousands of columns) stay
+        tractable. Contiguous virtual prefixes prefer full pack-row reads when
+        that is cheaper than a huge fancy column index.
+        """
+        row_ids = np.asarray(row_ids, dtype=np.int64).reshape(-1)
+        col_ids = np.asarray(col_ids, dtype=np.int64).reshape(-1)
+        block = np.empty((row_ids.shape[0], col_ids.shape[0]), dtype=np.float32)
+        if row_ids.size == 0 or col_ids.size == 0:
+            return block
+        contiguous_prefix = bool(
+            col_ids.size > 0
+            and int(col_ids[0]) == 0
+            and np.array_equal(col_ids, np.arange(col_ids.size, dtype=np.int64))
+        )
+        # Dense training prefixes ([:, :max_loci]) and near-full-width requests:
+        # read full pack rows then gather — fewer Zarr seeks than fancy 65k cols.
+        wide = contiguous_prefix or col_ids.shape[0] >= max(self._n_loci // 2, 1)
+        by_pack: dict[str, list[tuple[int, int]]] = {}
+        for i, r in enumerate(row_ids.tolist()):
+            rec = self._route.iloc[int(r)]
+            mid = str(rec["matrix_id"])
+            src_row = int(rec["src_row_index"])
+            by_pack.setdefault(mid, []).append((i, src_row))
+        # Bound peak RAM: full pack row is ~n_pack_loci floats.
+        row_chunk = 128 if wide else (64 if col_ids.shape[0] >= 8192 else 256)
+        n_packs = len(by_pack)
+        for pack_i, (mid, pairs) in enumerate(by_pack.items()):
+            if row_ids.shape[0] >= 4096 and col_ids.shape[0] >= 8192:
+                print(
+                    f"[RoutedBetas] pack {pack_i + 1}/{n_packs} {mid} "
+                    f"rows={len(pairs)} cols={col_ids.shape[0]} "
+                    f"chunk={row_chunk} wide={wide}",
+                    flush=True,
+                )
+            arr = self._pack_arrays[mid]
+            col_map = self._pack_col_maps[mid]
+            src_cols = col_map[col_ids]
+            valid = src_cols >= 0
+            out_idx = np.where(valid)[0]
+            valid_src = src_cols[valid]
+            if not valid.any():
+                order = [i for i, _ in pairs]
+                block[order, :] = np.nan
+                continue
+            for start in range(0, len(pairs), row_chunk):
+                chunk = pairs[start : start + row_chunk]
+                order = [i for i, _ in chunk]
+                src_rows = [sr for _, sr in chunk]
+                if wide:
+                    dense = np.asarray(arr[src_rows], dtype=np.float32)
+                    gathered = dense[:, valid_src]
+                else:
+                    gathered = np.asarray(
+                        arr[np.ix_(src_rows, valid_src.tolist())], dtype=np.float32
+                    )
+                out = np.full((len(order), col_ids.shape[0]), np.nan, dtype=np.float32)
+                out[:, out_idx] = gathered
+                block[order, :] = out
+        return block
+
     def _row_vector(self, row: int, col_sl: slice | None = None) -> np.ndarray:
-        rec = self._route.iloc[int(row)]
-        mid = str(rec["matrix_id"])
-        src_row = int(rec["src_row_index"])
-        arr = self._pack_arrays[mid]
-        col_map = self._pack_col_maps[mid]
-        if col_sl is None:
-            out_cols = np.arange(self._n_loci, dtype=np.int64)
-        else:
-            start = 0 if col_sl.start is None else int(col_sl.start)
-            stop = self._n_loci if col_sl.stop is None else int(col_sl.stop)
-            step = 1 if col_sl.step is None else int(col_sl.step)
-            out_cols = np.arange(start, stop, step, dtype=np.int64)
-        src_cols = col_map[out_cols]
-        out = np.full(out_cols.shape[0], np.nan, dtype=np.float32)
-        valid = src_cols >= 0
-        if not valid.any():
-            return out
-        valid_src = src_cols[valid]
-        # Full-width: one contiguous pack-row read. Narrow slices: fancy-index
-        # only the needed columns (avoid pulling ~0.5M floats for max_loci smoke).
-        if out_cols.shape[0] >= self._n_loci // 2:
-            src_vec = np.asarray(arr[src_row], dtype=np.float32).reshape(-1)
-            out[valid] = src_vec[valid_src]
-        else:
-            out[valid] = np.asarray(arr[src_row, valid_src.tolist()], dtype=np.float32)
-        return out
+        col_ids = (
+            np.arange(self._n_loci, dtype=np.int64)
+            if col_sl is None
+            else self._normalize_col_ids(col_sl)
+        )
+        return self._block(np.asarray([int(row)], dtype=np.int64), col_ids)[0]
 
     def __getitem__(self, key: Any) -> Any:
         if isinstance(key, tuple) and len(key) == 2:
             rows, cols = key
-            if isinstance(rows, np.ndarray) and isinstance(cols, np.ndarray):
-                # np.ix_(rows, cols) → two 2-d broadcast arrays; take unique axes.
-                if rows.ndim == 2 and cols.ndim == 2:
-                    row_ids = np.asarray(rows[:, 0], dtype=np.int64)
-                    col_ids = np.asarray(cols[0, :], dtype=np.int64)
-                else:
-                    row_ids = np.asarray(rows, dtype=np.int64).reshape(-1)
-                    col_ids = np.asarray(cols, dtype=np.int64).reshape(-1)
-                # Only materialize requested columns (Level-1 column chunks).
-                # Batch by pack: one multi-row Zarr read per source matrix.
-                # Narrow chunks fancy-index columns; never pull full ~0.5M pack rows.
-                block = np.empty((row_ids.shape[0], col_ids.shape[0]), dtype=np.float32)
-                wide = col_ids.shape[0] >= self._n_loci // 2
-                # Group virtual rows that share a pack store.
-                by_pack: dict[str, list[tuple[int, int]]] = {}
-                for i, r in enumerate(row_ids.tolist()):
-                    rec = self._route.iloc[int(r)]
-                    mid = str(rec["matrix_id"])
-                    src_row = int(rec["src_row_index"])
-                    by_pack.setdefault(mid, []).append((i, src_row))
-                for mid, pairs in by_pack.items():
-                    arr = self._pack_arrays[mid]
-                    col_map = self._pack_col_maps[mid]
-                    src_cols = col_map[col_ids]
-                    valid = src_cols >= 0
-                    out_idx = np.where(valid)[0]
-                    valid_src = src_cols[valid]
-                    order = [i for i, _ in pairs]
-                    src_rows = [sr for _, sr in pairs]
-                    if not valid.any():
-                        block[order, :] = np.nan
-                        continue
-                    if wide:
-                        # Full-width contiguous rows, then gather columns.
-                        dense = np.asarray(arr[src_rows], dtype=np.float32)
-                        gathered = dense[:, valid_src]
-                    else:
-                        gathered = np.asarray(
-                            arr[np.ix_(src_rows, valid_src.tolist())], dtype=np.float32
-                        )
-                    out = np.full((len(order), col_ids.shape[0]), np.nan, dtype=np.float32)
-                    out[:, out_idx] = gathered
-                    block[order, :] = out
-                return block
+            # Dense training idiom: arr[:, :n] / arr[start:stop, :n] / np.ix_.
+            if isinstance(rows, slice) or isinstance(rows, np.ndarray):
+                row_ids = self._normalize_row_ids(rows)
+                col_ids = self._normalize_col_ids(cols)
+                return self._block(row_ids, col_ids)
             if isinstance(rows, (int, np.integer)):
                 if isinstance(cols, slice):
                     return self._row_vector(int(rows), cols)
                 if isinstance(cols, (int, np.integer)):
                     return float(self._row_vector(int(rows))[int(cols)])
-                col_ids = np.asarray(cols, dtype=np.int64).reshape(-1)
-                return self._row_vector(int(rows))[col_ids]
+                col_ids = self._normalize_col_ids(cols)
+                return self._block(np.asarray([int(rows)], dtype=np.int64), col_ids)[0]
             raise TypeError(f"unsupported RoutedBetas index: {type(rows)}, {type(cols)}")
         if isinstance(key, (int, np.integer)):
             return self._row_vector(int(key))
         if isinstance(key, slice):
-            start = 0 if key.start is None else int(key.start)
-            stop = self._n_samples if key.stop is None else int(key.stop)
-            step = 1 if key.step is None else int(key.step)
-            rows = list(range(start, stop, step))
-            return np.stack([self._row_vector(r) for r in rows], axis=0)
+            row_ids = self._normalize_row_ids(key)
+            col_ids = np.arange(self._n_loci, dtype=np.int64)
+            return self._block(row_ids, col_ids)
         raise TypeError(f"unsupported RoutedBetas key: {type(key)}")
 
 
