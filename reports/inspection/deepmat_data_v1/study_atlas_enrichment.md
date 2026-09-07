@@ -1,11 +1,11 @@
 # Study Atlas enrichment
 
-- Catalog studies: **1664**
-- Matched to Atlas: **175**
+- Catalog studies: **1763**
+- Matched to Atlas: **182**
 
 ## Join methods
 
-- `gse_es_map`: 175
+- `gse_es_map`: 182
 
 Atlas joins use curated GSE↔ES/PMID map and/or PMID bridge — never raw GSE = ES* equality.
 
@@ -63,4 +63,4 @@ This is **external stratification metadata**, not training labels.
 | `GSE116992` | `gse_es_map` | `["ES00996", "ES00997", "ES00998"]` | 30459321 | 6.0 | 182.0 | whole blood |
 | `GSE117859` | `gse_es_map` | `["ES01026", "ES01027"]` | 30545403 | 8.0 | 1458.0 | leukocyte |
 | `GSE117860` | `gse_es_map` | `["ES01026", "ES01027"]` | 30545403 | 8.0 | 1458.0 | leukocyte |
-| … | (125 more) | | | | | |
+| … | (132 more) | | | | | |

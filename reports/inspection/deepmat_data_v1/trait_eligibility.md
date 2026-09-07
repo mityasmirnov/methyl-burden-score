@@ -1,6 +1,6 @@
 # Trait eligibility (deepmat-data-v1)
 
-- Generated: `2026-09-04T15:17:18Z`
+- Generated: `2026-09-07T13:50:01Z`
 
 | Family | Phenotype | Task | n | studies | core | aux | ext | Reason |
 | --- | --- | --- | ---: | ---: | --- | --- | --- | --- |
@@ -35,11 +35,14 @@
 | `disease` | `disease` | binary_or_multilabel | 5288 | 76 | False | True | True | need ≥200 cases, ≥200 controls, ≥3 studies (unknown≠control) |
 | `disease` | `sex` | binary | 10968 | 188 | False | True | False | sex is auxiliary biological / QC, not a core burden target |
 | `disease` | `tissue` | multiclass | 12218 | 209 | True | True | False |  |
-| `geo_metadata_backfill` | `age` | continuous | 19233 | 27 | True | True | False |  |
-| `geo_metadata_backfill` | `cancer` | binary_or_multilabel | 1470 | 3 | True | True | True |  |
-| `geo_metadata_backfill` | `disease` | binary_or_multilabel | 5216 | 11 | True | True | True |  |
-| `geo_metadata_backfill` | `sex` | binary | 27931 | 38 | False | True | False | sex is auxiliary biological / QC, not a core burden target |
-| `geo_metadata_backfill` | `tissue` | multiclass | 21121 | 29 | True | True | False |  |
+| `ewas_datahub_repository` | `age` | continuous | 61078 | 469 | True | True | False |  |
+| `ewas_datahub_repository` | `disease` | binary_or_multilabel | 67283 | 892 | False | True | True | need ≥200 cases, ≥200 controls, ≥3 studies (unknown≠control) |
+| `ewas_datahub_repository` | `tissue` | multiclass | 122130 | 1286 | True | True | False |  |
+| `geo_metadata_backfill` | `age` | continuous | 21940 | 42 | True | True | False |  |
+| `geo_metadata_backfill` | `cancer` | binary_or_multilabel | 1687 | 7 | True | True | True |  |
+| `geo_metadata_backfill` | `disease` | binary_or_multilabel | 6065 | 22 | True | True | True |  |
+| `geo_metadata_backfill` | `sex` | binary | 32083 | 66 | False | True | False | sex is auxiliary biological / QC, not a core burden target |
+| `geo_metadata_backfill` | `tissue` | multiclass | 25303 | 63 | True | True | False |  |
 | `sex` | `age` | continuous | 1617 | 95 | True | True | False |  |
 | `sex` | `bmi` | continuous | 440 | 21 | False | True | False | need ≥1000 samples, ≥5 studies, range across >1 study |
 | `sex` | `sex` | binary | 2978 | 161 | False | True | False | sex is auxiliary biological / QC, not a core burden target |

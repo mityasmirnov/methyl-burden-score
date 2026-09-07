@@ -85,8 +85,18 @@ mirror_ewas_db() {
     i=$((i + 1))
     mkdir -p "$dest/$study"
     printf '[%s/%s] %s\n' "$i" "${#studies[@]}" "$study"
-    mapfile -t files < <(list_hrefs "${root_url}${study}/" | grep -Ev '/$' | grep -E '^GSM[0-9]+\.txt$')
-    for f in "${files[@]}"; do
+    # Prefer GSM*.txt (Hub-compatible). If the study has none (TCGA / ArrayExpress /
+    # ENCODE / CPTAC / …), fall back to other sample .txt — never HTML-parse artifacts.
+    mapfile -t all_files < <(list_hrefs "${root_url}${study}/" | grep -Ev '/$' | grep -E '\.txt$' | grep -Ev '^\(\.\+')
+    mapfile -t files < <(printf '%s\n' "${all_files[@]:-}" | grep -E '^GSM[0-9]+\.txt$' || true)
+    if [[ ${#files[@]} -eq 0 || -z "${files[0]:-}" ]]; then
+      mapfile -t files < <(printf '%s\n' "${all_files[@]:-}" | grep -Ev '^\s*$' || true)
+      if [[ ${#files[@]} -gt 0 && -n "${files[0]:-}" ]]; then
+        printf '  note: no GSM*.txt; fetching %s non-GSM sample txt\n' "${#files[@]}"
+      fi
+    fi
+    for f in "${files[@]:-}"; do
+      [[ -z "$f" ]] && continue
       wget -c --tries=3 --retry-connrefused --waitretry=10 --timeout=60 --read-timeout=120 -q \
         -O "$dest/$study/$f" "${root_url}${study}/${f}" || {
         printf 'WARN: failed %s/%s\n' "$study" "$f" >&2
@@ -132,7 +142,17 @@ case "$MODE" in
     ;;
 esac
 
-if [[ "${EWAS_DATAHUB_SKIP_POST_HOOK:-0}" != "1" && ( "$MODE" == "EWAS_db" || "$MODE" == "all" ) ]]; then
+# Post-hook is a separate process. Do not use nested `( )` inside `[[ ]]` here:
+# if this file is edited while a long `EWAS_db` mirror is still running, bash may
+# re-read the trailing lines from disk and hit "syntax error near unexpected
+# token `)'" (seen after [1989/1989] on 2026-09-07).
+run_post_hook=0
+if [[ "${EWAS_DATAHUB_SKIP_POST_HOOK:-0}" != "1" ]]; then
+  if [[ "$MODE" == "EWAS_db" || "$MODE" == "all" ]]; then
+    run_post_hook=1
+  fi
+fi
+if [[ "$run_post_hook" -eq 1 ]]; then
   EWAS_DATAHUB_LOG="${EWAS_DATAHUB_LOG:-$LOGDIR/ewas_datahub_EWAS_db.log}" \
     bash "$SCRIPT_DIR/post_ewas_datahub_download.sh"
 fi

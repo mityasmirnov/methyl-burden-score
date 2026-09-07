@@ -1,8 +1,8 @@
 {
-  "n_catalog_studies": 1664,
-  "n_matched": 175,
+  "n_catalog_studies": 1763,
+  "n_matched": 182,
   "by_join_method": {
-    "gse_es_map": 175
+    "gse_es_map": 182
   },
   "note": "Study-level Atlas context for external stratification only; not sample phenotype labels.",
   "rows": [
@@ -2048,6 +2048,32 @@
       "atlas_traits": "[\"fatigue\"]"
     },
     {
+      "study_id": "GSE77056",
+      "join_method": "gse_es_map",
+      "atlas_study_ids": "[\"ES01207\"]",
+      "pmid": "31116258",
+      "n_atlas_cohorts": 2.0,
+      "total_sample_size": 47.0,
+      "tissues": "[\"whole blood\"]",
+      "cohort_descriptions": "[\"Cases\", \"Controls\"]",
+      "platforms": "[\"450K\"]",
+      "ancestries": "[\"African unspecified,European\", \"European,African unspecified\"]",
+      "atlas_traits": "[\"cocaine and crack dependents\"]"
+    },
+    {
+      "study_id": "GSE77696",
+      "join_method": "gse_es_map",
+      "atlas_study_ids": "[\"ES00252\"]",
+      "pmid": "27672717",
+      "n_atlas_cohorts": 2.0,
+      "total_sample_size": 378.0,
+      "tissues": "[\"whole blood\"]",
+      "cohort_descriptions": "[\"HIV-infected\", \"HIV-uninfected\"]",
+      "platforms": "[\"450K\"]",
+      "ancestries": "[\"European,African American or Afro-Caribbean,Other\"]",
+      "atlas_traits": "[\"HIV infection\"]"
+    },
+    {
       "study_id": "GSE77871",
       "join_method": "gse_es_map",
       "atlas_study_ids": "[\"ES00804\"]",
@@ -2087,6 +2113,19 @@
       "atlas_traits": "[\"fetal alcohol spectrum disorder (FASD)\"]"
     },
     {
+      "study_id": "GSE81337",
+      "join_method": "gse_es_map",
+      "atlas_study_ids": "[\"ES00242\"]",
+      "pmid": "27417303",
+      "n_atlas_cohorts": 2.0,
+      "total_sample_size": 27.0,
+      "tissues": "[\"left ventricle\", \"right ventricle\"]",
+      "cohort_descriptions": "[\"case\", \"control\"]",
+      "platforms": "[\"450K\"]",
+      "ancestries": "[\"Not reported\"]",
+      "atlas_traits": "[\"dilated cardiomyopathy (DCM)\"]"
+    },
+    {
       "study_id": "GSE82084",
       "join_method": "gse_es_map",
       "atlas_study_ids": "[\"ES00181\", \"ES00182\", \"ES00183\", \"ES00184\"]",
@@ -2098,6 +2137,19 @@
       "platforms": "[\"450K\"]",
       "ancestries": "[\"Not reported\"]",
       "atlas_traits": "[\"preterm birth\"]"
+    },
+    {
+      "study_id": "GSE83424",
+      "join_method": "gse_es_map",
+      "atlas_study_ids": "[\"ES00227\"]",
+      "pmid": "27404287",
+      "n_atlas_cohorts": 4.0,
+      "total_sample_size": 1529.0,
+      "tissues": "[\"whole blood\"]",
+      "cohort_descriptions": "[\"ASD\", \"control\"]",
+      "platforms": "[\"27K\", \"450K\"]",
+      "ancestries": "[\"European\", \"Not reported\"]",
+      "atlas_traits": "[\"autism spectrum disorders (ASD)\"]"
     },
     {
       "study_id": "GSE85566",
@@ -2150,6 +2202,19 @@
       "platforms": "[\"450K\"]",
       "ancestries": "[\"Hispanic or Latin American\", \"Not reported\"]",
       "atlas_traits": "[\"rheumatoid arthritis (RA)\"]"
+    },
+    {
+      "study_id": "GSE87621",
+      "join_method": "gse_es_map",
+      "atlas_study_ids": "[\"ES00245\"]",
+      "pmid": "28125717",
+      "n_atlas_cohorts": 2.0,
+      "total_sample_size": 10.0,
+      "tissues": "[\"endometrium\"]",
+      "cohort_descriptions": "[\"Endometriosis\", \"control\"]",
+      "platforms": "[\"450K\"]",
+      "ancestries": "[\"Not reported\"]",
+      "atlas_traits": "[\"endometriosis\"]"
     },
     {
       "study_id": "GSE87640",
@@ -2228,6 +2293,32 @@
       "platforms": "[\"450K\"]",
       "ancestries": "[\"Not reported\"]",
       "atlas_traits": "[\"chronic obstructive pulmonary disease (COPD)\", \"smoking\"]"
+    },
+    {
+      "study_id": "GSE94734",
+      "join_method": "gse_es_map",
+      "atlas_study_ids": "[\"ES00925\", \"ES00926\", \"ES00927\"]",
+      "pmid": "30351206",
+      "n_atlas_cohorts": 3.0,
+      "total_sample_size": 1014.0,
+      "tissues": "[\"buccal epithelium\"]",
+      "cohort_descriptions": "[]",
+      "platforms": "[\"450K\"]",
+      "ancestries": "[\"Asian unspecified,Other,African American or Afro-Caribbean,Hispanic or Latin American,European\", \"European,Asian unspecified,Other,African American or Afro-Caribbean,Hispanic or Latin American\", \"Other,African American or Afro-Caribbean,Hispanic or Latin American,European,Asian unspecified\"]",
+      "atlas_traits": "[\"household socioeconomic status in childhood\"]"
+    },
+    {
+      "study_id": "GSE96879",
+      "join_method": "gse_es_map",
+      "atlas_study_ids": "[\"ES00907\", \"ES00908\", \"ES00909\", \"ES00910\", \"ES00911\"]",
+      "pmid": "30301579",
+      "n_atlas_cohorts": 10.0,
+      "total_sample_size": 303.0,
+      "tissues": "[\"peripheral blood mononuclear cell\"]",
+      "cohort_descriptions": "[\"Non-SLE patients\", \"SLE patients\", \"SLE patients (disease activity index<=6)\", \"SLE patients (disease activity index>6)\"]",
+      "platforms": "[\"450K\"]",
+      "ancestries": "[\"African American or Afro-Caribbean\", \"African American or Afro-Caribbean,European\", \"European\", \"European,African American or Afro-Caribbean\"]",
+      "atlas_traits": "[\"systemic lupus erythematosus (SLE)\"]"
     },
     {
       "study_id": "GSE97466",

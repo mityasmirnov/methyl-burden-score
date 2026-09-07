@@ -8,7 +8,11 @@ PLATFORM_ALIASES = {
     "450K": "HM450",
     "450k": "HM450",
     "HM450": "HM450",
+    "850K": "EPIC",
+    "850k": "EPIC",
     "EPIC": "EPIC",
+    "935K": "EPICv2",
+    "935k": "EPICv2",
     "EPICv2": "EPICv2",
 }
 

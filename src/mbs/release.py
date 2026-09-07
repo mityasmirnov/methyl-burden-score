@@ -23,6 +23,19 @@ from mbs.atlas_study_enrichment import (
     write_study_atlas_enrichment_report,
 )
 from mbs.catalog import build_catalog
+from mbs.datahub_census import (
+    CENSUS_MANIFEST_NAME,
+    CENSUS_PARQUET_NAME,
+    build_sample_lane_flags,
+    build_study_lane_flags,
+    datahub_census_enabled,
+    load_datahub_census,
+    merge_datahub_census,
+    stamp_lane_flags_into_metadata,
+    write_datahub_census_report,
+    write_lane_flags_report,
+)
+from mbs.ewas_download import PARSE_ARTIFACT_NAMES
 from mbs.geo_metadata import (
     GEO_PARQUET_NAME,
     geo_backfill_enabled,
@@ -168,7 +181,11 @@ def _is_control_sample_type(value: object) -> bool:
 
 
 def scan_ewas_db_tree(ewas_db_root: Path) -> pd.DataFrame:
-    """Shallow inventory of ``EWAS_db/{STUDY}/GSM*.txt`` (no beta reads)."""
+    """Shallow inventory of ``EWAS_db/{STUDY}/*.txt`` sample files (no beta reads).
+
+    Skips HTML-index parse artifacts such as ``(.+?)``. Includes non-GSM sample
+    names (TCGA / ArrayExpress / ENCODE) when present on disk.
+    """
     ewas_db_root = ewas_db_root.resolve()
     rows: list[dict[str, Any]] = []
     if not ewas_db_root.is_dir():
@@ -185,6 +202,8 @@ def scan_ewas_db_tree(ewas_db_root: Path) -> pd.DataFrame:
     for study_dir in sorted(p for p in ewas_db_root.iterdir() if p.is_dir()):
         study_id = study_dir.name
         for path in sorted(p for p in study_dir.iterdir() if p.is_file() and p.suffix == ".txt"):
+            if path.name in PARSE_ARTIFACT_NAMES:
+                continue
             try:
                 stat = path.stat()
             except OSError:
@@ -901,6 +920,8 @@ def _populate_duckdb(
             "experiment",
             "trait_eligibility",
             "study_atlas_enrichment",
+            "sample_lane_flags",
+            "study_lane_flags",
         ]
         for table in order:
             _load_table(connection, table, tables_dir / f"{table}.parquet")
@@ -1150,6 +1171,33 @@ def refresh_release(
     if not fold_rows.empty and not samples.empty:
         fold_rows = _as_dataframe(fold_rows[fold_rows["sample_id"].isin(samples["sample_id"])])
 
+    # DataHub census is primary for platform/tissue; GEO fills remaining nulls only.
+    datahub_merge_stats: dict[str, Any] = {"enabled": False}
+    census_frame = pd.DataFrame()
+    census_manifest: dict[str, Any] | None = None
+    hub_member_ids: set[str] = (
+        set(membership["sample_id"].astype(str)) if not membership.empty else set()
+    )
+    if datahub_census_enabled():
+        census_frame = load_datahub_census(paths.data_root)
+        if not census_frame.empty:
+            samples, phenotypes, studies, datahub_merge_stats = merge_datahub_census(
+                samples=samples,
+                phenotypes=phenotypes,
+                studies=studies,
+                census=census_frame,
+                hub_sample_ids=hub_member_ids,
+            )
+            datahub_merge_stats["enabled"] = True
+            man_path = (
+                paths.data_root / "canonical" / "phenotypes" / CENSUS_MANIFEST_NAME
+            )
+            if man_path.is_file():
+                census_manifest = json.loads(man_path.read_text(encoding="utf-8"))
+            datahub_merge_stats["parquet_path"] = str(
+                paths.data_root / "canonical" / "phenotypes" / CENSUS_PARQUET_NAME
+            )
+
     geo_merge_stats: dict[str, Any] = {"enabled": False}
     geo_path = paths.data_root / "canonical" / "phenotypes" / GEO_PARQUET_NAME
     if geo_backfill_enabled() and geo_path.is_file():
@@ -1174,10 +1222,28 @@ def refresh_release(
         if ont_path is not None:
             geo_merge_stats["tissue_ontology"] = str(ont_path)
 
-    if not samples.empty and study_rows:
+    sample_lane_flags = build_sample_lane_flags(
+        samples=samples,
+        membership=membership,
+        ewas_files=ewas_files,
+    )
+    study_lane_flags = build_study_lane_flags(
+        studies=studies,
+        sample_flags=sample_lane_flags,
+    )
+    if not samples.empty:
+        samples, studies = stamp_lane_flags_into_metadata(
+            samples=samples,
+            studies=studies,
+            sample_flags=sample_lane_flags,
+            study_flags=study_lane_flags,
+        )
+
+    if not samples.empty and not studies.empty:
         samples_for_elig = samples.copy()
         platform_lookup = {
-            str(sid): (meta or {}).get("platform_id") for sid, meta in study_rows.items()
+            str(rec["study_id"]): rec.get("platform_id")
+            for rec in studies.to_dict(orient="records")
         }
         samples_for_elig["platform_id"] = samples_for_elig["study_id"].map(
             lambda sid: platform_lookup.get(str(sid))  # type: ignore[misc]
@@ -1355,6 +1421,27 @@ def refresh_release(
             "atlas_traits",
         ],
     )
+    sample_lane_flags = _ensure(
+        sample_lane_flags,
+        [
+            "sample_id",
+            "study_id",
+            "in_hub_baseline",
+            "in_ewas_db",
+            "hub_families",
+        ],
+    )
+    study_lane_flags = _ensure(
+        study_lane_flags,
+        [
+            "study_id",
+            "in_hub_baseline",
+            "in_ewas_db",
+            "n_hub_samples",
+            "n_ewas_db_samples",
+            "n_samples",
+        ],
+    )
 
     # Durable parquet
     _write_parquet(rp.catalog_tables / "source_release.parquet", source_releases)
@@ -1373,8 +1460,12 @@ def refresh_release(
     _write_parquet(rp.catalog_tables / "trait_eligibility.parquet", eligibility)
     _write_parquet(rp.catalog_tables / "ewas_db_study_inventory.parquet", study_inv)
     _write_parquet(rp.catalog_tables / "study_atlas_enrichment.parquet", atlas_enrichment)
+    _write_parquet(rp.catalog_tables / "sample_lane_flags.parquet", sample_lane_flags)
+    _write_parquet(rp.catalog_tables / "study_lane_flags.parquet", study_lane_flags)
     _write_parquet(rp.phenotypes_dir / "sample_phenotype.parquet", phenotypes)
     _write_parquet(rp.phenotypes_dir / "sample_source_membership.parquet", membership)
+    _write_parquet(rp.phenotypes_dir / "sample_lane_flags.parquet", sample_lane_flags)
+    _write_parquet(rp.phenotypes_dir / "study_lane_flags.parquet", study_lane_flags)
     _write_parquet(rp.matrices_dir / "index.parquet", matrix_artifacts)
 
     # Ontologies / split copies (small)
@@ -1500,6 +1591,7 @@ def refresh_release(
             "remote_index_fetched": remote_names is not None,
         },
         "geo_backfill": geo_merge_stats,
+        "datahub_census": datahub_merge_stats,
         "catalog_path": str(rp.catalog_db),
         "notes": (
             "Re-run mbs catalog refresh-release after EWAS_db download adds study dirs. "
@@ -1525,6 +1617,19 @@ def refresh_release(
             enrichment=atlas_enrichment,
             report_dir=resolved_report,
         )
+        write_lane_flags_report(
+            sample_flags=sample_lane_flags,
+            study_flags=study_lane_flags,
+            report_dir=resolved_report,
+        )
+        if datahub_merge_stats.get("enabled") or not census_frame.empty:
+            write_datahub_census_report(
+                census=census_frame,
+                sample_flags=sample_lane_flags,
+                merge_stats=datahub_merge_stats,
+                report_dir=resolved_report,
+                manifest=census_manifest,
+            )
         if geo_merge_stats.get("enabled"):
             write_geo_backfill_pilot_report(
                 stats=geo_merge_stats,

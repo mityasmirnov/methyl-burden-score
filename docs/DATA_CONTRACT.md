@@ -188,6 +188,32 @@ phenotype rows. GPL is stored on `sample.metadata_json.geo.platform_id`; catalog
 Atlas enrichment remains on `study.metadata_json` only.
 Operator brief: [`plans/geo-metadata-backfill-ewas-db.md`](plans/geo-metadata-backfill-ewas-db.md).
 
+**DataHub repository census (`source_family=ewas_datahub_repository`):** official
+All-Data metadata from CNCB `repository/basic` (paginated by platform
+450K/850K/935K). Fills a compact `sample.metadata_json.datahub` bag (core fields),
+promotes tissue / sample_type / age / sex for non-Hub GSM, and sets
+`study.platform_id` when a study has a single mapped platform
+(`450K→HM450`, `850K→EPIC`, `935K→EPICv2`). Full sparse rows stay in
+`$MBS_DATA_ROOT/canonical/phenotypes/ewas_datahub_sample_census.parquet`.
+Hub pack phenotypes still win. Disease rows only when sample type is
+`disease tissue`. Skip merge with `MBS_SKIP_DATAHUB_CENSUS=1`.
+Plan: [`plans/datahub-metadata-census.md`](plans/datahub-metadata-census.md).
+
+### `sample_lane_flags` / `study_lane_flags`
+
+First-class Hub vs EWAS_db membership (refresh-populated):
+
+```text
+sample_id / study_id
+in_hub_baseline      # in any Hub pack sample_source_membership
+in_ewas_db            # has EWAS_db assay .txt on disk
+hub_families          # JSON list of phenotype_family (sample only)
+n_hub_samples / n_ewas_db_samples / n_samples   # study only
+```
+
+Views: `v_sample_lane_flags`, `v_study_lane_flags` (`lane_class` =
+hub_only | ewas_db_only | both | neither).
+
 ### `probe`
 
 ```text

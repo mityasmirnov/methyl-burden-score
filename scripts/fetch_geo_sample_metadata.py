@@ -14,6 +14,7 @@ from mbs.geo_metadata import (
     build_geo_frame_from_soft,
     consolidate_geo_sample_rows,
     download_family_soft,
+    load_geo_frame,
     load_geo_tissue_aliases,
     read_cached_soft,
     resolve_tissue_ontology_path,
@@ -150,9 +151,26 @@ def main() -> None:
     if not frames:
         raise SystemExit("no GEO samples fetched")
 
+    # Merge with existing parquet so expansions do not wipe prior batches.
+    existing = load_geo_frame(paths.data_root)
+    new_ids = {s.upper() for s in study_ids}
+    if not existing.empty:
+        keep = ~existing["study_id"].astype(str).str.upper().isin(new_ids)
+        existing = existing.loc[keep]
+        if not existing.empty:
+            frames.insert(0, existing)
+
     combined = pd.concat(frames, ignore_index=True)
     combined, conflict_stats = consolidate_geo_sample_rows(combined)
-    out = write_geo_parquet(paths.data_root, combined, study_ids=study_ids)
+    all_study_ids = sorted(
+        {
+            str(s).strip().upper()
+            for s in combined["study_id"].dropna().astype(str).tolist()
+            if str(s).strip()
+        }
+        | new_ids
+    )
+    out = write_geo_parquet(paths.data_root, combined, study_ids=all_study_ids)
     status_path = (
         paths.project_root
         / "reports"

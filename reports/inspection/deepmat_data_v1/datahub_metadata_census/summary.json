@@ -1,0 +1,60 @@
+{
+  "official": {
+    "n_samples": 180317,
+    "n_fields": 296,
+    "n_tissues": 1413,
+    "n_diseases": 842
+  },
+  "local_census": {
+    "n_samples": 180317,
+    "platform_counts": {
+      "450K": 105085,
+      "850K": 74187,
+      "935K": 1045
+    },
+    "n_tissues": 1415,
+    "n_diseases": 847,
+    "n_fields": 269
+  },
+  "vs_catalog": {
+    "n_overlap": 157402,
+    "census_not_in_catalog": 22915,
+    "catalog_not_in_census": 15674,
+    "hub_samples_in_census": 34234
+  },
+  "merge_stats": {
+    "n_census_rows": 180317,
+    "n_samples_matched": 157402,
+    "n_platform_filled": 157402,
+    "n_tissue_filled": 122712,
+    "n_sample_type_filled": 143774,
+    "n_phenotype_rows_added": 250491,
+    "n_studies_platform_set": 942,
+    "enabled": true,
+    "parquet_path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/ewas_datahub_sample_census.parquet"
+  },
+  "manifest": {
+    "generated_at": "2026-09-07T10:44:33Z",
+    "n_samples": 180317,
+    "official_n_samples": 180317,
+    "platform_totals_api": {
+      "450K": 105085,
+      "850K": 74187,
+      "935K": 1045
+    },
+    "platform_counts_local": {
+      "450K": 105085,
+      "850K": 74187,
+      "935K": 1045
+    },
+    "n_tissues": 1415,
+    "n_diseases": 847,
+    "official_n_tissues": 1413,
+    "official_n_diseases": 842,
+    "n_fields": 269,
+    "official_n_fields": 296,
+    "census_parquet": "/data/projects/methyl-burden-score/data/canonical/phenotypes/ewas_datahub_sample_census.parquet",
+    "census_sha256": "a71f5ce300ffe23a78031a22f6282192ffd1ccb88ac627ecd10012f29590426c",
+    "cache_root": "/data/projects/methyl-burden-score/cache/ewas_datahub_repository"
+  }
+}

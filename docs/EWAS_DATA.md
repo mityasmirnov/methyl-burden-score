@@ -135,34 +135,40 @@ Authoritative on-disk snapshot:
 [`reports/inspection/raw_inventory/summary.md`](../reports/inspection/raw_inventory/summary.md)
 (+ narrative in [`DATA_CATALOG.md`](DATA_CATALOG.md)).
 
-| Asset | Status (2026-08-24) |
+| Asset | Status (2026-09-07) |
 |-------|---------------------|
 | All nine Hub **profile** zips (age…disease) | **Complete** (Zip OK; disease finished 2026-08-11 after CNCB drop/416 failures) |
 | All nine Hub **sample-info** zips + Parquet | **Complete** |
 | Atlas batch TSVs | **Complete** (~0.26 GiB) |
 | EPICv2 manifests | **Complete** |
-| `EWAS_db/` All Data | **In progress** — see ingest counts below (~990 GiB betas under `ewas_datahub/`) |
-| Host disk | `/data` ~2 T free at last check — watch space as `EWAS_db` grows (~1.4 TiB) |
+| `EWAS_db/` All Data | **Study walk complete** (1989/1989); post-hook shell bug fixed; clean GSM retry (≤710) in progress — see ingest counts |
+| Host disk | Watch `/data` free space as retries refill (~1.8 TiB betas under `ewas_datahub/`) |
 
 ### EWAS_db ingest counts (what the release manifest reports)
 
 `mbs catalog refresh-release` does a **shallow directory listing** of
 `$MBS_DATA_ROOT/raw/ewas_datahub/EWAS_db/` (no beta reads, no per-file content
-hashes). Snapshot from the 2026-09-02 `deepmat-data-v1` refresh:
+hashes). Skips HTML-index parse artifacts (`(.+?)`). Includes non-GSM sample
+filenames (TCGA / ArrayExpress / ENCODE / CPTAC) when present. Snapshot from the
+2026-09-07 `deepmat-data-v1` refresh:
 
 | Field | Value | Meaning |
 |-------|-------|---------|
-| `n_local_studies` | **1 353** | Study dirs under `EWAS_db/` that contain at least one `*.txt` GSM beta file |
-| `n_local_gsm` | **132 289** | Total `*.txt` GSM files found across those studies |
-| `n_samples` (catalog) | **149 244** | Unique GSM in release (Hub packs + EWAS_db-only) |
-| `advertised_n` | **1 989** | Study count advertised by the remote EWAS_db index |
-| `mirror_complete` | **false** | `n_local_studies < advertised_n` — All-Data mirror is still downloading |
+| `n_samples` (catalog) | **173 076** | Unique sample IDs in release (`sample` table; Hub + EWAS_db) |
+| `n_studies` (catalog) | **1 763** | Studies in release |
+| `n_local_studies` | **1 695** | Study dirs with ≥1 real sample `.txt` |
+| `n_local_gsm` | **170 641** | Total inventoried sample `.txt` (GSM + non-GSM); on-disk GSM alone ≈ **157 240** |
+| `advertised_n` | **1 989** | Study count on remote EWAS_db index |
+| `mirror_complete` | **false** | Still short of advertised studies / missing GSM retries |
+| Atlas enrichment | **182** / 1 763 | Study-level GSE↔ES via GEO PMID map |
 
-Download failure audit (2026-09-02):
+Download failure audit (2026-09-07):
 [`reports/inspection/deepmat_data_v1/ewas_db_download_failures.md`](../reports/inspection/deepmat_data_v1/ewas_db_download_failures.md)
-— **~2 710** real GSM in retry manifest after filtering **~1 474** historical
-`(.+?)` parser artifacts (logged failures still report both). Mirror crawl and
-retry manifest keep only `GSM[0-9]+.txt`. Resilient wget:
+— **1 723** real GSM in retry manifest (plus logged `(.+?)` artifacts filtered
+out of the manifest). Empty / no-GSM dirs (**339**): 
+[`ewas_db_empty_studies.md`](../reports/inspection/deepmat_data_v1/ewas_db_empty_studies.md).
+Mirror prefers `GSM*.txt`, falls back to other sample `.txt` when a study has
+no GSM. Resilient wget:
 `--retry-connrefused --waitretry=10 --timeout=60 --read-timeout=120`.
 
 ```bash
@@ -171,14 +177,11 @@ make retry-ewas-db-failures       # or nohup in background; post-hook refreshes 
 ```
 
 Empty study dirs (wget not started or not finished) are skipped and do **not**
-count toward `n_local_studies`. More study dirs may exist on disk than 883; only
-dirs with `GSM*.txt` are ingested. Hub nine-pack phenotypes are a separate SoT
-and are already complete — EWAS_db completeness is **not** a Milestone 7A/7B gate
+count toward `n_local_studies`. Hub nine-pack phenotypes are a separate SoT
+and are already complete — EWAS_db completeness is **not** a Milestone 7A/7B/7H gate
 ([ADR 0007](adr/0007-crossfit-prerequisites.md)).
 
-After additional `EWAS_db/{GSE}/` study dirs appear (or in-progress downloads finish),
-re-run the versioned catalog release — it rescans the tree and upserts studies
-without rebuilding Hub phenotypes from scratch:
+After retries add more `EWAS_db/{STUDY}/*.txt` files, re-run:
 
 ```bash
 make catalog-refresh-release   # seeds Atlas GSE map (NCBI) + full refresh + census
@@ -211,7 +214,24 @@ After the mirror finishes (or on demand), the download script runs
 writes `artifacts/logs/downloads/ewas_db_retry_manifest.tsv`, then
 `make catalog-refresh-release` (includes `seed-atlas-gse-map` from NCBI GEO
 PubMed IDs → Atlas PMID index). Skip the hook with `EWAS_DATAHUB_SKIP_POST_HOOK=1`.
-Sample-level GEO backfill for EWAS_db-only GSM: [`plans/geo-metadata-backfill-ewas-db.md`](plans/geo-metadata-backfill-ewas-db.md).
+
+Dirs with no `GSM*.txt` (~339 after the full study walk): see
+[`reports/inspection/deepmat_data_v1/ewas_db_empty_studies.md`](../reports/inspection/deepmat_data_v1/ewas_db_empty_studies.md)
+— TCGA/ArrayExpress/ENCODE use non-GSM filenames (mirror now falls back);
+many empty GSE dirs still have remote GSM and need `make retry-ewas-db-failures`.
+Sample-level GEO backfill for EWAS_db-only GSM:
+[`plans/geo-metadata-backfill-ewas-db.md`](plans/geo-metadata-backfill-ewas-db.md).
+
+Official All-Data metadata census (180 317 samples, platform/tissue/disease):
+
+```bash
+make fetch-ewas-datahub-census   # CNCB repository/basic → Parquet (+ cache)
+MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
+```
+
+Reports: `hub_vs_ewas_db_membership.*`, `datahub_metadata_census/summary.*`.
+Plan: [`plans/datahub-metadata-census.md`](plans/datahub-metadata-census.md).
+Skip census merge: `MBS_SKIP_DATAHUB_CENSUS=1`.
 
 Retry only missing GSM files:
 

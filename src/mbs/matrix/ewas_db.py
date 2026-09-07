@@ -8,6 +8,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from mbs.ewas_download import PARSE_ARTIFACT_NAMES
+
 
 @dataclass(frozen=True, slots=True)
 class EwasDbSampleFile:
@@ -34,7 +36,11 @@ def list_ewas_db_sample_files(source_dir: Path) -> list[EwasDbSampleFile]:
     source_dir = source_dir.resolve()
     if not source_dir.is_dir():
         raise FileNotFoundError(f"EWAS_db study directory not found: {source_dir}")
-    files = sorted(p for p in source_dir.iterdir() if p.is_file() and p.suffix == ".txt")
+    files = sorted(
+        p
+        for p in source_dir.iterdir()
+        if p.is_file() and p.suffix == ".txt" and p.name not in PARSE_ARTIFACT_NAMES
+    )
     if not files:
         raise FileNotFoundError(f"no *.txt sample files under {source_dir}")
     out: list[EwasDbSampleFile] = []

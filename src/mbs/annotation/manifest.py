@@ -102,7 +102,24 @@ def validate_graph_manifest(manifest: dict[str, Any]) -> None:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, default=_json_default) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _json_default(obj: Any) -> Any:
+    """Serialize numpy/pandas scalars and arrays (DuckDB/pandas census dumps)."""
+    item = getattr(obj, "item", None)
+    if callable(item):
+        try:
+            return item()
+        except (ValueError, AttributeError):
+            pass
+    tolist = getattr(obj, "tolist", None)
+    if callable(tolist):
+        return tolist()
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 def utc_now_iso() -> str:

@@ -1,13 +1,13 @@
 # EWAS_db download failures
 
-- Generated: `2026-09-03T01:52:03Z`
+- Generated: `2026-09-07T13:44:58Z`
 - Log: `/data/projects/methyl-burden-score/artifacts/logs/downloads/ewas_datahub_EWAS_db.log`
 - EWAS_db root: `/data/projects/methyl-burden-score/data/raw/ewas_datahub/EWAS_db`
-- Studies with ≥1 logged failure: **1500**
-- Total `WARN: failed` lines: **5206**
-- Still missing or empty on disk: **30**
-- HTML-parse artifact filenames (`(.+?)`): **1500**
-- Last study progress in log: **1610** / **1989**
+- Studies with ≥1 logged failure: **1818**
+- Total `WARN: failed` lines: **8142**
+- Still missing or empty on disk: **710**
+- HTML-parse artifact filenames (`(.+?)`): **1818**
+- Last study progress in log: **1989** / **1989**
 
 ## Retry
 
@@ -21,31 +21,31 @@ bash scripts/retry_ewas_db_download_failures.sh
 
 | study_id | failures | still_missing |
 | --- | ---: | ---: |
+| `GSE90496` | 274 | 223 |
 | `GSE197678` | 254 | 0 |
+| `GSE89353` | 110 | 79 |
 | `GSE112611` | 95 | 0 |
+| `GSE84727` | 85 | 0 |
+| `GSE82273` | 82 | 0 |
 | `GSE56046` | 81 | 0 |
+| `GSE87571` | 81 | 1 |
 | `GSE140686` | 79 | 0 |
+| `GSE87648` | 61 | 43 |
 | `GSE59685` | 59 | 0 |
+| `GSE73801` | 58 | 0 |
 | `GSE141441` | 57 | 0 |
 | `GSE210255` | 57 | 0 |
+| `GSE74193` | 56 | 0 |
 | `CPTAC-3` | 52 | 0 |
 | `GSE163970` | 51 | 0 |
 | `GSE174422` | 50 | 0 |
+| `GSE77716` | 49 | 0 |
+| `TCGA-PRAD` | 49 | 0 |
 | `GSE157131` | 48 | 0 |
 | `GSE55763` | 48 | 0 |
-| `GSE68379` | 43 | 0 |
-| `GSE168779` | 42 | 0 |
-| `GSE185920` | 37 | 0 |
-| `GSE112893` | 36 | 0 |
-| `GSE59250` | 32 | 0 |
-| `GSE183647` | 31 | 0 |
-| `GSE51032` | 31 | 0 |
-| `GSE130051` | 30 | 0 |
-| `GSE169646` | 30 | 0 |
-| `GSE210254` | 30 | 0 |
-| `GSE141065` | 28 | 0 |
-| `GSE153712` | 27 | 0 |
-| `GSE161476` | 24 | 0 |
+| `GSE72774` | 45 | 0 |
+| `TCGA-BLCA` | 45 | 0 |
+| `GSE85212` | 44 | 0 |
 
 ## Notes
 

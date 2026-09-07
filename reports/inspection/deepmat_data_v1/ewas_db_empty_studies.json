@@ -1,0 +1,3415 @@
+{
+  "generated_at": "2026-09-07T08:58:06Z",
+  "n_no_gsm_dirs": 339,
+  "by_bucket": {
+    "consortium_other": 7,
+    "ArrayExpress": 6,
+    "GSE": 292,
+    "other": 1,
+    "TCGA": 33
+  },
+  "truly_empty_or_artifact_only": 294,
+  "artifact_only_dirs": 123,
+  "dirs_with_non_gsm_sample_txt": 45,
+  "cause": "mirror_ewas_db only wget files matching ^GSM[0-9]+\\.txt$. TCGA/ArrayExpress/ENCODE/CPTAC use other sample filenames; those dirs that already have files came from an earlier broader mirror. Empty GSE dirs are failed/missing GSM downloads or HTML-index parse failures (artifact (.+?)).",
+  "remote_probes": {
+    "GSE102119": {
+      "n_remote": 146,
+      "n_remote_gsm": 146,
+      "n_remote_other_txt": 0,
+      "remote_sample": [
+        "GSM2724241.txt",
+        "GSM2724242.txt",
+        "GSM2724243.txt"
+      ],
+      "error": null
+    },
+    "GSE107143": {
+      "n_remote": 16,
+      "n_remote_gsm": 16,
+      "n_remote_other_txt": 0,
+      "remote_sample": [
+        "GSM2861662.txt",
+        "GSM2861663.txt",
+        "GSM2861664.txt"
+      ],
+      "error": null
+    },
+    "GSE110724": {
+      "n_remote": 21,
+      "n_remote_gsm": 21,
+      "n_remote_other_txt": 0,
+      "remote_sample": [
+        "GSM3015190.txt",
+        "GSM3015191.txt",
+        "GSM3015192.txt"
+      ],
+      "error": null
+    },
+    "GSE84399": {
+      "n_remote": 1,
+      "n_remote_gsm": 0,
+      "n_remote_other_txt": 1,
+      "remote_sample": [
+        "GSE84399.txt"
+      ],
+      "error": null
+    },
+    "TCGA-ACC": {
+      "n_remote": 80,
+      "n_remote_gsm": 0,
+      "n_remote_other_txt": 80,
+      "remote_sample": [
+        "TCGA-OR-A5J1-01A-11D-A29J-05.txt",
+        "TCGA-OR-A5J2-01A-11D-A29J-05.txt",
+        "TCGA-OR-A5J3-01A-11D-A29J-05.txt"
+      ],
+      "error": null
+    },
+    "TCGA-BLCA": {
+      "n_remote": 440,
+      "n_remote_gsm": 0,
+      "n_remote_other_txt": 440,
+      "remote_sample": [
+        "TCGA-2F-A9KO-01A-11D-A38H-05.txt",
+        "TCGA-2F-A9KP-01A-11D-A38H-05.txt",
+        "TCGA-2F-A9KQ-01A-11D-A38H-05.txt"
+      ],
+      "error": null
+    },
+    "E-MTAB-1274": {
+      "n_remote": 20,
+      "n_remote_gsm": 0,
+      "n_remote_other_txt": 20,
+      "remote_sample": [
+        "CB11130.txt",
+        "CB11171.txt",
+        "CB152.txt"
+      ],
+      "error": null
+    },
+    "E-MTAB-1866": {
+      "n_remote": 648,
+      "n_remote_gsm": 0,
+      "n_remote_other_txt": 648,
+      "remote_sample": [
+        "TWPID10016.txt",
+        "TWPID10017.txt",
+        "TWPID10024.txt"
+      ],
+      "error": null
+    },
+    "TARGET-ALL-P3": {
+      "n_remote": 112,
+      "n_remote_gsm": 0,
+      "n_remote_other_txt": 112,
+      "remote_sample": [
+        "TARGET-10-PANJRD-09A.txt",
+        "TARGET-10-PANKMB-09A.txt",
+        "TARGET-10-PANRIM-03A.txt"
+      ],
+      "error": null
+    },
+    "TARGET-AML": {
+      "n_remote": 197,
+      "n_remote_gsm": 0,
+      "n_remote_other_txt": 197,
+      "remote_sample": [
+        "TARGET-20-PABLDZ-14A-01D.txt",
+        "TARGET-20-PADYIR-04A-01D.txt",
+        "TARGET-20-PADZCG-04A-02D.txt"
+      ],
+      "error": null
+    },
+    "CGCI-HTMCP-CC": {
+      "n_remote": 120,
+      "n_remote_gsm": 0,
+      "n_remote_other_txt": 120,
+      "remote_sample": [
+        "HTMCP-03-06-02001-01A.txt",
+        "HTMCP-03-06-02002-01A.txt",
+        "HTMCP-03-06-02003-01A.txt"
+      ],
+      "error": null
+    },
+    "CPTAC-3": {
+      "n_remote": 1998,
+      "n_remote_gsm": 0,
+      "n_remote_other_txt": 1998,
+      "remote_sample": [
+        "2f2e5477-42a4-4906-a943-bf7f80.txt",
+        "5a84eae1-197e-4463-ad65-59becc.txt",
+        "93e30fd5-e57e-4503-a175-863c7d.txt"
+      ],
+      "error": null
+    }
+  },
+  "studies": [
+    {
+      "study_id": "CGCI-HTMCP-CC",
+      "bucket": "consortium_other",
+      "n_local_files": 120,
+      "n_local_real": 120,
+      "local_sample": [
+        "HTMCP-03-06-02001-01A.txt",
+        "HTMCP-03-06-02002-01A.txt",
+        "HTMCP-03-06-02003-01A.txt"
+      ],
+      "has_non_gsm_txt": true,
+      "remote_probe": {
+        "n_remote": 120,
+        "n_remote_gsm": 0,
+        "n_remote_other_txt": 120,
+        "remote_sample": [
+          "HTMCP-03-06-02001-01A.txt",
+          "HTMCP-03-06-02002-01A.txt",
+          "HTMCP-03-06-02003-01A.txt"
+        ],
+        "error": null
+      }
+    },
+    {
+      "study_id": "CPTAC-3",
+      "bucket": "consortium_other",
+      "n_local_files": 1999,
+      "n_local_real": 1998,
+      "local_sample": [
+        "2f2e5477-42a4-4906-a943-bf7f80.txt",
+        "5a84eae1-197e-4463-ad65-59becc.txt",
+        "93e30fd5-e57e-4503-a175-863c7d.txt"
+      ],
+      "has_non_gsm_txt": true,
+      "remote_probe": {
+        "n_remote": 1998,
+        "n_remote_gsm": 0,
+        "n_remote_other_txt": 1998,
+        "remote_sample": [
+          "2f2e5477-42a4-4906-a943-bf7f80.txt",
+          "5a84eae1-197e-4463-ad65-59becc.txt",
+          "93e30fd5-e57e-4503-a175-863c7d.txt"
+        ],
+        "error": null
+      }
+    },
+    {
+      "study_id": "E-MTAB-1274",
+      "bucket": "ArrayExpress",
+      "n_local_files": 21,
+      "n_local_real": 20,
+      "local_sample": [
+        "CB11130.txt",
+        "CB11171.txt",
+        "CB152.txt"
+      ],
+      "has_non_gsm_txt": true,
+      "remote_probe": {
+        "n_remote": 20,
+        "n_remote_gsm": 0,
+        "n_remote_other_txt": 20,
+        "remote_sample": [
+          "CB11130.txt",
+          "CB11171.txt",
+          "CB152.txt"
+        ],
+        "error": null
+      }
+    },
+    {
+      "study_id": "E-MTAB-1866",
+      "bucket": "ArrayExpress",
+      "n_local_files": 649,
+      "n_local_real": 648,
+      "local_sample": [
+        "TWPID10016.txt",
+        "TWPID10017.txt",
+        "TWPID10024.txt"
+      ],
+      "has_non_gsm_txt": true,
+      "remote_probe": {
+        "n_remote": 648,
+        "n_remote_gsm": 0,
+        "n_remote_other_txt": 648,
+        "remote_sample": [
+          "TWPID10016.txt",
+          "TWPID10017.txt",
+          "TWPID10024.txt"
+        ],
+        "error": null
+      }
+    },
+    {
+      "study_id": "E-MTAB-3161",
+      "bucket": "ArrayExpress",
+      "n_local_files": 25,
+      "n_local_real": 24,
+      "local_sample": [
+        "X7539308103_R01C01.txt",
+        "X7539308103_R01C02.txt",
+        "X7539308103_R02C01.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "E-MTAB-4059",
+      "bucket": "ArrayExpress",
+      "n_local_files": 55,
+      "n_local_real": 54,
+      "local_sample": [
+        "HPSI0114i-bezi.txt",
+        "HPSI0114i-eipl.txt",
+        "HPSI0114i-fikt.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "E-MTAB-6421",
+      "bucket": "ArrayExpress",
+      "n_local_files": 107,
+      "n_local_real": 106,
+      "local_sample": [
+        "X101231030021_R01C01.txt",
+        "X101231030021_R01C02.txt",
+        "X101231030021_R02C01.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "E-MTAB-6988",
+      "bucket": "ArrayExpress",
+      "n_local_files": 159,
+      "n_local_real": 158,
+      "local_sample": [
+        "X9647450010_R01C01.txt",
+        "X9647450010_R01C02.txt",
+        "X9647450010_R02C01.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "ENCODE",
+      "bucket": "consortium_other",
+      "n_local_files": 155,
+      "n_local_real": 154,
+      "local_sample": [
+        "ENCSR001NCN.txt",
+        "ENCSR002EIR.txt",
+        "ENCSR002LED.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "GSE102119",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false,
+      "remote_probe": {
+        "n_remote": 146,
+        "n_remote_gsm": 146,
+        "n_remote_other_txt": 0,
+        "remote_sample": [
+          "GSM2724241.txt",
+          "GSM2724242.txt",
+          "GSM2724243.txt"
+        ],
+        "error": null
+      }
+    },
+    {
+      "study_id": "GSE107143",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false,
+      "remote_probe": {
+        "n_remote": 16,
+        "n_remote_gsm": 16,
+        "n_remote_other_txt": 0,
+        "remote_sample": [
+          "GSM2861662.txt",
+          "GSM2861663.txt",
+          "GSM2861664.txt"
+        ],
+        "error": null
+      }
+    },
+    {
+      "study_id": "GSE110724",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false,
+      "remote_probe": {
+        "n_remote": 21,
+        "n_remote_gsm": 21,
+        "n_remote_other_txt": 0,
+        "remote_sample": [
+          "GSM3015190.txt",
+          "GSM3015191.txt",
+          "GSM3015192.txt"
+        ],
+        "error": null
+      }
+    },
+    {
+      "study_id": "GSE110776",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE110778",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE110828",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE112047",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE112812",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE117087",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE117130",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE120357",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE147377",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE152006",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE152026",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE152027",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE152035",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE152204",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE152245",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE152380",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE152427",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE152519",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE152561",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE152802",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE153347",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE154403",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE154446",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE154683",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE154915",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE155207",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE155660",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE155962",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE155985",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE156012",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE156090",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE156299",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE156358",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE156374",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE156512",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE156546",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE156669",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE156792",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE157273",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE157611",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE157896",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE157908",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE157914",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE157973",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE157989",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE158063",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE159479",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE159655",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE159710",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE159907",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE160878",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE161020",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE161175",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE161814",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE162288",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE162350",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE162560",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE162984",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE164056",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE164149",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE164195",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE164269",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE164468",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE164822",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE165050",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE165180",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE165357",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE165687",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE165688",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE166067",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE166212",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE166503",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE166587",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE166844",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE166845",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE167347",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE167429",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE167883",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE167885",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE168185",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE168581",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE168614",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE168739",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE168930",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE168999",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE169156",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE169595",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE169598",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE169622",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE171140",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE171142",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE171318",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE171424",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE171550",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE171911",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE171956",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE172081",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE172365",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE172468",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE173081",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE173356",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE173382",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE173613",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE173717",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE173836",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE174201",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE174525",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE174568",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE174613",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE174625",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE174818",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE175379",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE175399",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE175699",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE175769",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE175892",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE176273",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE176334",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE176450",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE178416",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE178700",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE178737",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE179181",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE179234",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE179414",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE179759",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE179801",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE179847",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE180061",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE180130",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE180453",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE180474",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE180535",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE180660",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE180929",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE181126",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE182707",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE182772",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE182874",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE183015",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE183798",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE184047",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE184206",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE184269",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE184500",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE184576",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE185041",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE185556",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE185854",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE185973",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE186782",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE188547",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE188552",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE190540",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE190908",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE190931",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE191277",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE191297",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE192353",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE192451",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE202097",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE211483",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE211508",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE211591",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE42409",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE46394",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE46419",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE46573",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE49031",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54115",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54335",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54375",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54399",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54415",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54719",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54767",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54776",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54840",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54880",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54882",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54939",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE54966",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE55006",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE56719",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE57107",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE58783",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE59038",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE59065",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE59091",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE60274",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE60316",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61044",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61107",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61151",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61160",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61195",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61257",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61258",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61259",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61278",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61380",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61431",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61441",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61446",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61450",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61452",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61461",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61467",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61496",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE61653",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE62053",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE62086",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE62111",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE63347",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE63366",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE64096",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE64316",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE64380",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE67530",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE67619",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE67705",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE67733",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE67748",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE67749",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE67751",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE67767",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE70645",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE70737",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE72364",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE72495",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE72556",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE72778",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE72867",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE72872",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE73832",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE73894",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE73895",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE73901",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE73938",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE73948",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE73949",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE74013",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE74797",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE74845",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE74877",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE75008",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE75041",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE75704",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE75937",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE76056",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE76171",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE76263",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE76269",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE76285",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE76372",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE76938",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE77036",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE78217",
+      "bucket": "GSE",
+      "n_local_files": 1,
+      "n_local_real": 0,
+      "local_sample": [
+        "(.+?)"
+      ],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE78875",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE78904",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE79064",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE80071",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE80226",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE80241",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE80243",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE80261",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE80283",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE80310",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE81961",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE82084",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE82218",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE83691",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE83917",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE83933",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE83944",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE84003",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE84399",
+      "bucket": "GSE",
+      "n_local_files": 2,
+      "n_local_real": 1,
+      "local_sample": [
+        "GSE84399.txt"
+      ],
+      "has_non_gsm_txt": true,
+      "remote_probe": {
+        "n_remote": 1,
+        "n_remote_gsm": 0,
+        "n_remote_other_txt": 1,
+        "remote_sample": [
+          "GSE84399.txt"
+        ],
+        "error": null
+      }
+    },
+    {
+      "study_id": "GSE86829",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE86831",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE97687",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE97784",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE97853",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE99029",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE99036",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE99716",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE99755",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE99788",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE99863",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "GSE99994",
+      "bucket": "GSE",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "HCMI-CMDC",
+      "bucket": "other",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false
+    },
+    {
+      "study_id": "TARGET-ALL-P3",
+      "bucket": "consortium_other",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false,
+      "remote_probe": {
+        "n_remote": 112,
+        "n_remote_gsm": 0,
+        "n_remote_other_txt": 112,
+        "remote_sample": [
+          "TARGET-10-PANJRD-09A.txt",
+          "TARGET-10-PANKMB-09A.txt",
+          "TARGET-10-PANRIM-03A.txt"
+        ],
+        "error": null
+      }
+    },
+    {
+      "study_id": "TARGET-AML",
+      "bucket": "consortium_other",
+      "n_local_files": 0,
+      "n_local_real": 0,
+      "local_sample": [],
+      "has_non_gsm_txt": false,
+      "remote_probe": {
+        "n_remote": 197,
+        "n_remote_gsm": 0,
+        "n_remote_other_txt": 197,
+        "remote_sample": [
+          "TARGET-20-PABLDZ-14A-01D.txt",
+          "TARGET-20-PADYIR-04A-01D.txt",
+          "TARGET-20-PADZCG-04A-02D.txt"
+        ],
+        "error": null
+      }
+    },
+    {
+      "study_id": "TARGET-NBL",
+      "bucket": "consortium_other",
+      "n_local_files": 176,
+      "n_local_real": 175,
+      "local_sample": [
+        "ARGET-30-PASATK-01A-01D.txt",
+        "TARGET-30-PAIFXV-01A-01D.txt",
+        "TARGET-30-PAISNS-01A-01D.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TARGET-OS",
+      "bucket": "consortium_other",
+      "n_local_files": 87,
+      "n_local_real": 86,
+      "local_sample": [
+        "TARGET-40-0A4HLD-01A-01D.txt",
+        "TARGET-40-0A4HMC-01A-01D.txt",
+        "TARGET-40-0A4HX8-01A-01D.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-ACC",
+      "bucket": "TCGA",
+      "n_local_files": 81,
+      "n_local_real": 80,
+      "local_sample": [
+        "TCGA-OR-A5J1-01A-11D-A29J-05.txt",
+        "TCGA-OR-A5J2-01A-11D-A29J-05.txt",
+        "TCGA-OR-A5J3-01A-11D-A29J-05.txt"
+      ],
+      "has_non_gsm_txt": true,
+      "remote_probe": {
+        "n_remote": 80,
+        "n_remote_gsm": 0,
+        "n_remote_other_txt": 80,
+        "remote_sample": [
+          "TCGA-OR-A5J1-01A-11D-A29J-05.txt",
+          "TCGA-OR-A5J2-01A-11D-A29J-05.txt",
+          "TCGA-OR-A5J3-01A-11D-A29J-05.txt"
+        ],
+        "error": null
+      }
+    },
+    {
+      "study_id": "TCGA-BLCA",
+      "bucket": "TCGA",
+      "n_local_files": 441,
+      "n_local_real": 440,
+      "local_sample": [
+        "TCGA-2F-A9KO-01A-11D-A38H-05.txt",
+        "TCGA-2F-A9KP-01A-11D-A38H-05.txt",
+        "TCGA-2F-A9KQ-01A-11D-A38H-05.txt"
+      ],
+      "has_non_gsm_txt": true,
+      "remote_probe": {
+        "n_remote": 440,
+        "n_remote_gsm": 0,
+        "n_remote_other_txt": 440,
+        "remote_sample": [
+          "TCGA-2F-A9KO-01A-11D-A38H-05.txt",
+          "TCGA-2F-A9KP-01A-11D-A38H-05.txt",
+          "TCGA-2F-A9KQ-01A-11D-A38H-05.txt"
+        ],
+        "error": null
+      }
+    },
+    {
+      "study_id": "TCGA-BRCA",
+      "bucket": "TCGA",
+      "n_local_files": 896,
+      "n_local_real": 895,
+      "local_sample": [
+        "TCGA-3C-AAAU-01A-11D-A41Q-05.txt",
+        "TCGA-3C-AALI-01A-11D-A41Q-05.txt",
+        "TCGA-3C-AALJ-01A-31D-A41Q-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-CESC",
+      "bucket": "TCGA",
+      "n_local_files": 313,
+      "n_local_real": 312,
+      "local_sample": [
+        "TCGA-2W-A8YY-01A-11D-A37Q-05.txt",
+        "TCGA-4J-AA1J-01A-21D-A388-05.txt",
+        "TCGA-BI-A0VR-01A-11D-A10W-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-CHOL",
+      "bucket": "TCGA",
+      "n_local_files": 46,
+      "n_local_real": 45,
+      "local_sample": [
+        "TCGA-3X-AAV9-01A-72D-A418-05.txt",
+        "TCGA-3X-AAVA-01A-11D-A418-05.txt",
+        "TCGA-3X-AAVB-01A-31D-A418-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-COAD",
+      "bucket": "TCGA",
+      "n_local_files": 344,
+      "n_local_real": 343,
+      "local_sample": [
+        "TCGA-3L-AA1B-01A-11D-A36Y-05.txt",
+        "TCGA-4N-A93T-01A-11D-A36Y-05.txt",
+        "TCGA-4T-AA8H-01A-11D-A40X-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-DLBC",
+      "bucket": "TCGA",
+      "n_local_files": 49,
+      "n_local_real": 48,
+      "local_sample": [
+        "TCGA-FA-8693-01A-11D-2399-05.txt",
+        "TCGA-FA-A4BB-01A-11D-A31Y-05.txt",
+        "TCGA-FA-A4XK-01A-11D-A31Y-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-ESCA",
+      "bucket": "TCGA",
+      "n_local_files": 203,
+      "n_local_real": 202,
+      "local_sample": [
+        "TCGA-2H-A9GF-01A-11D-A37D-05.txt",
+        "TCGA-2H-A9GG-01A-11D-A37D-05.txt",
+        "TCGA-2H-A9GH-01A-11D-A37D-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-GBM",
+      "bucket": "TCGA",
+      "n_local_files": 156,
+      "n_local_real": 155,
+      "local_sample": [
+        "TCGA-06-0125-01A-01D-A45W-05.txt",
+        "TCGA-06-0125-02A-11D-2004-05.txt",
+        "TCGA-06-0152-01A-02D-A45W-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-HNSC",
+      "bucket": "TCGA",
+      "n_local_files": 581,
+      "n_local_real": 580,
+      "local_sample": [
+        "TCGA-4P-AA8J-01A-11D-A392-05.txt",
+        "TCGA-BA-4074-01A-01D-1433-05.txt",
+        "TCGA-BA-4075-01A-01D-1433-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-KICH",
+      "bucket": "TCGA",
+      "n_local_files": 67,
+      "n_local_real": 66,
+      "local_sample": [
+        "TCGA-KL-8323-01A-21D-2312-05.txt",
+        "TCGA-KL-8324-01A-11D-2312-05.txt",
+        "TCGA-KL-8325-01A-11D-2312-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-KIRC",
+      "bucket": "TCGA",
+      "n_local_files": 486,
+      "n_local_real": 485,
+      "local_sample": [
+        "TCGA-3Z-A93Z-01A-11D-A36Y-05.txt",
+        "TCGA-6D-AA2E-01A-11D-A36Y-05.txt",
+        "TCGA-A3-3357-01A-02D-1418-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-KIRP",
+      "bucket": "TCGA",
+      "n_local_files": 322,
+      "n_local_real": 321,
+      "local_sample": [
+        "TCGA-2K-A9WE-01A-11D-A383-05.txt",
+        "TCGA-2Z-A9J1-01A-11D-A383-05.txt",
+        "TCGA-2Z-A9J2-01A-11D-A383-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-LAML",
+      "bucket": "TCGA",
+      "n_local_files": 195,
+      "n_local_real": 194,
+      "local_sample": [
+        "TCGA-AB-2802-03A-01D-0741-05.txt",
+        "TCGA-AB-2803-03A-01D-0741-05.txt",
+        "TCGA-AB-2804-03A-01D-0741-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-LGG",
+      "bucket": "TCGA",
+      "n_local_files": 535,
+      "n_local_real": 534,
+      "local_sample": [
+        "TCGA-CS-4938-01B-11D-1894-05.txt",
+        "TCGA-CS-4941-01A-01D-1467-05.txt",
+        "TCGA-CS-4942-01A-01D-1467-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-LIHC",
+      "bucket": "TCGA",
+      "n_local_files": 431,
+      "n_local_real": 430,
+      "local_sample": [
+        "TCGA-2V-A95S-01A-11D-A36Y-05.txt",
+        "TCGA-2Y-A9GS-01A-12D-A383-05.txt",
+        "TCGA-2Y-A9GT-01A-11D-A383-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-LUAD",
+      "bucket": "TCGA",
+      "n_local_files": 561,
+      "n_local_real": 560,
+      "local_sample": [
+        "TCGA-05-4384-01A-01D-1756-05.txt",
+        "TCGA-05-4390-01A-02D-1756-05.txt",
+        "TCGA-05-4396-01A-21D-1856-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-LUSC",
+      "bucket": "TCGA",
+      "n_local_files": 413,
+      "n_local_real": 412,
+      "local_sample": [
+        "TCGA-18-3417-01A-01D-1440-05.txt",
+        "TCGA-18-3417-11A-01D-1440-05.txt",
+        "TCGA-18-4721-01A-01D-1440-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-MESO",
+      "bucket": "TCGA",
+      "n_local_files": 88,
+      "n_local_real": 87,
+      "local_sample": [
+        "TCGA-3H-AB3K-01A-11D-A39S-05.txt",
+        "TCGA-3H-AB3L-01A-11D-A39S-05.txt",
+        "TCGA-3H-AB3M-01A-11D-A39S-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-OV",
+      "bucket": "TCGA",
+      "n_local_files": 11,
+      "n_local_real": 10,
+      "local_sample": [
+        "TCGA-13-A5FT-01A-11D-A409-05.txt",
+        "TCGA-13-A5FU-01A-11D-A409-05.txt",
+        "TCGA-29-A5NZ-01A-11D-A409-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-PAAD",
+      "bucket": "TCGA",
+      "n_local_files": 196,
+      "n_local_real": 195,
+      "local_sample": [
+        "TCGA-2J-AAB1-01A-11D-A40Y-05.txt",
+        "TCGA-2J-AAB4-01A-12D-A40Y-05.txt",
+        "TCGA-2J-AAB6-01A-11D-A40Y-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-PCPG",
+      "bucket": "TCGA",
+      "n_local_files": 188,
+      "n_local_real": 187,
+      "local_sample": [
+        "TCGA-P7-A5NX-01A-11D-A35E-05.txt",
+        "TCGA-P7-A5NY-01A-12D-A35E-05.txt",
+        "TCGA-P7-A5NY-05A-11D-A35E-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-PRAD",
+      "bucket": "TCGA",
+      "n_local_files": 554,
+      "n_local_real": 553,
+      "local_sample": [
+        "TCGA-2A-A8VL-01A-21D-A378-05.txt",
+        "TCGA-2A-A8VO-01A-11D-A378-05.txt",
+        "TCGA-2A-A8VT-01A-11D-A378-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-READ",
+      "bucket": "TCGA",
+      "n_local_files": 107,
+      "n_local_real": 106,
+      "local_sample": [
+        "TCGA-AF-2687-01A-02D-1734-05.txt",
+        "TCGA-AF-2690-01A-02D-1734-05.txt",
+        "TCGA-AF-2693-01A-02D-1734-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-SARC",
+      "bucket": "TCGA",
+      "n_local_files": 270,
+      "n_local_real": 269,
+      "local_sample": [
+        "TCGA-3B-A9HI-01A-11D-A388-05.txt",
+        "TCGA-3B-A9HJ-01A-11D-A388-05.txt",
+        "TCGA-3B-A9HL-01A-11D-A388-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-SKCM",
+      "bucket": "TCGA",
+      "n_local_files": 476,
+      "n_local_real": 475,
+      "local_sample": [
+        "TCGA-3N-A9WB-06A-11D-A38H-05.txt",
+        "TCGA-3N-A9WC-06A-11D-A38H-05.txt",
+        "TCGA-3N-A9WD-06A-11D-A38H-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-STAD",
+      "bucket": "TCGA",
+      "n_local_files": 398,
+      "n_local_real": 397,
+      "local_sample": [
+        "TCGA-3M-AB46-01A-11D-A411-05.txt",
+        "TCGA-3M-AB47-01A-22D-A411-05.txt",
+        "TCGA-B7-5816-01A-21D-1601-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-TGCT",
+      "bucket": "TCGA",
+      "n_local_files": 157,
+      "n_local_real": 156,
+      "local_sample": [
+        "TCGA-2G-AAEW-01A-11D-A42Z-05.txt",
+        "TCGA-2G-AAEX-01A-11D-A42Z-05.txt",
+        "TCGA-2G-AAF1-01A-11D-A42Z-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-THCA",
+      "bucket": "TCGA",
+      "n_local_files": 572,
+      "n_local_real": 571,
+      "local_sample": [
+        "TCGA-4C-A93U-01A-11D-A398-05.txt",
+        "TCGA-BJ-A0YZ-01A-11D-A10W-05.txt",
+        "TCGA-BJ-A0Z0-01A-11D-A10W-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-THYM",
+      "bucket": "TCGA",
+      "n_local_files": 127,
+      "n_local_real": 126,
+      "local_sample": [
+        "TCGA-3G-AB0O-01A-22D-A424-05.txt",
+        "TCGA-3G-AB0Q-01A-11D-A424-05.txt",
+        "TCGA-3G-AB0T-01A-11D-A424-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-UCEC",
+      "bucket": "TCGA",
+      "n_local_files": 486,
+      "n_local_real": 485,
+      "local_sample": [
+        "TCGA-2E-A9G8-01A-11D-A409-05.txt",
+        "TCGA-4E-A92E-01A-11D-A37Q-05.txt",
+        "TCGA-5B-A90C-01A-11D-A37Q-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-UCS",
+      "bucket": "TCGA",
+      "n_local_files": 58,
+      "n_local_real": 57,
+      "local_sample": [
+        "TCGA-N5-A4R8-01A-11D-A28S-05.txt",
+        "TCGA-N5-A4RA-01A-11D-A28S-05.txt",
+        "TCGA-N5-A4RD-01A-11D-A28S-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    },
+    {
+      "study_id": "TCGA-UVM",
+      "bucket": "TCGA",
+      "n_local_files": 81,
+      "n_local_real": 80,
+      "local_sample": [
+        "TCGA-RZ-AB0B-01A-11D-A39X-05.txt",
+        "TCGA-V3-A9ZX-01A-11D-A39X-05.txt",
+        "TCGA-V3-A9ZY-01A-11D-A39X-05.txt"
+      ],
+      "has_non_gsm_txt": true
+    }
+  ]
+}

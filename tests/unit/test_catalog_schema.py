@@ -8,9 +8,9 @@ import duckdb
 from mbs.catalog import build_catalog, init_catalog
 from mbs.paths import DataPaths
 
-# sql/001 + 002 + 010 + 011 + 012 + 013 (keep in sync when schema changes)
-EXPECTED_TABLES = 31
-EXPECTED_VIEWS = 23
+# sql/001 + 002 + 010 + 011 + 012 + 013 + 014 (keep in sync when schema changes)
+EXPECTED_TABLES = 33
+EXPECTED_VIEWS = 25
 
 
 def _repo_root() -> Path:
@@ -38,6 +38,7 @@ def test_build_catalog_applies_project_sql(tmp_path: Path) -> None:
         "011_census_views.sql",
         "012_study_atlas_enrichment.sql",
         "013_association_seed_panels.sql",
+        "014_sample_lane_flags.sql",
     ]
     assert result["tables"] == EXPECTED_TABLES
     assert result["views"] == EXPECTED_VIEWS
