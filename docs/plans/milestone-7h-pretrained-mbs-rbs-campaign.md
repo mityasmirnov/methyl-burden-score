@@ -1,6 +1,7 @@
 # Plan: Pretrained MBS/RBS framework — extended architecture campaign
 
-Status (2026-09-05): **active, autonomous, ~40h GPU-0 budget granted by user.**
+Status (2026-09-07): **active.** Track A nine-pack unblocked; full 3-fold refs
+**running** on GPU 0; Track B.5 trait census done; Track B.4 queued after full.
 User mandate (verbatim intent, condensed): dig into the `SeedMaskedLinearHead`
 init/weight-decay collapse, then use GPU 0 freely to find/train the best
 architecture(s) for gene-level (MBS) and region-level (RBS) methylation
@@ -48,7 +49,48 @@ rather than relying on conversation memory.
   better region-level interpretability than reading RBS off an MBS-primary
   model, at the cost of a second model to maintain?
 
-## Phase 0 — fix the SeedMaskedLinearHead collapse (in progress)
+## Operational schedule (A → B → C → D) — live board 2026-09-07
+
+User-revised order: **A first**, then **B.4/B.5 in parallel where possible**,
+then **C**, then **D**. Map onto this campaign:
+
+| Track | What | Status | Owner |
+|-------|------|--------|-------|
+| **A.1–A.3** | Virtual multi-store `RoutedBetas` dense slices + alignment tests | **DONE** | `ebe48df` |
+| **A.4 smoke** | Fold-0 P2-G + m-only @ 3 ep, full 34 234 samples | **DONE** | report `stage0_7h_nine_pack_smoke/` |
+| **A.4 full** | 3-fold P2-G (15 ep) then m-only (16 ep) | **RUNNING** | PID `scratch/logs/7h_nine_pack_full.pid`; log `7h_nine_pack_full.log` |
+| **B.5** | Trait adequacy ≥1k-per-arm census | **DONE** | `trait_adequacy.md` |
+| **B.4** | Genuine seed-43 ATS 2×2 cascade pooling | **QUEUED** | after A.4 full frees GPU 0 |
+| **C** | Nine-pack scale decisions + trait expansion hygiene | **BLOCKED** on A.4 full results + disease/cancer case≠control | manual |
+| **D** | Phase 4 reference checkpoint(s) + how-to note | **BLOCKED** on C | later |
+
+### Job queue (do not duplicate A.4 full)
+
+1. **Now (already launched):** `uv run python -u scripts/run_7h_nine_pack_smoke.py --phase full`
+   — owns GPU 0. **Do not kill / do not start a second fold.**
+2. **Auto-chained next:** `scripts/run_7h_next_queue.sh`
+   — waits for (1), refreshes `--phase report`, then runs Track **B.4**
+   (`scripts/run_7h_ats_pooling_s2.sh`: four ATS cascade arms, seed=43).
+3. **Hard stop after B.4.** Do **not** auto-launch Stage B / Milestone 7 OOF /
+   disease-cancer GPU / blood-brain GPU.
+4. **Track C (manual, after reviewing A.4 + B.4 reports):**
+   - Interpret nine-pack 3-fold P2-G vs m-only vs ATS refs.
+   - Define proper disease/cancer case/control (mask `false` ≠ control).
+   - Repair blood/brain phenotype labels (masks empty today; pack ≠ trait).
+   - Tissue: only `whole blood` ≥1k among 64 labels — do not expand tissue head
+     without collapsing labels.
+   - Platform: all HM450 — no cross-platform claim.
+5. **Track D (after C):** pretrained MBS/RBS checkpoint contract + association-
+   testing note (Phase 4 below). Stage B / OOF remain blocked until architecture
+   refs are honest.
+
+Launch chain (once):
+```bash
+nohup bash scripts/run_7h_next_queue.sh >> scratch/logs/7h_next_queue.log 2>&1 &
+echo $! > scratch/logs/7h_next_queue.pid
+```
+
+## Phase 0 — fix the SeedMaskedLinearHead collapse (**DONE**)
 
 Symptom (documented in
 [`milestone-7g-prime-age-seed-mask.md`](milestone-7g-prime-age-seed-mask.md)
@@ -61,41 +103,11 @@ non-zero, correctly sized). Not a `weight_decay` interaction — `Adam` in
 `cascade_loop.py` is called with no `weight_decay` at all (default 0), so
 that part of the original hypothesis was wrong.
 
-Applied fix #1 (`src/mbs/models.py`, uncommitted as of this writing):
-`SeedMaskedLinearHead.gene_weight` was zero-initialized, so
-`d(loss)/d(mbs) = grad_output @ (gene_weight * seed_mask).T = 0` exactly at
-step 0 for every masked head. Switched to `nn.init.kaiming_uniform_`
-(matching `nn.Linear`'s own default) then masked, so active columns start
-non-zero. **Currently testing on `G1` alone** (both seeds, `--arm G1`) to
-see if this alone is sufficient — first empirical check is whether
-`encoder_grad_norm` still decays to ~0 by epoch 3 the way it did before.
-
-If init alone doesn't fix it, next candidates in priority order (test each
-on `G1` alone before committing to a full-grid rerun — each full 8-run grid
-costs ~2h wall-clock):
-1. **Per-head learning rate / separate param group** — sparse heads may
-   need a higher effective LR than the shared encoder's dense parameters to
-   overcome the small active-column count; Adam's per-parameter adaptive
-   rate should partially handle this already, so this is a secondary guess.
-2. **Warm-start from `G0`'s trained encoder** — freeze or lightly fine-tune
-   the encoder (already known to reach a working state under `G0`) and only
-   train the masked head fresh, isolating whether the *encoder* or the
-   *masked head* is where the pathology actually lives.
-3. **Disable gradient clipping for masked-head runs specifically** to check
-   whether global-norm clipping is inadvertently starving the sparse
-   heads' already-small gradient contribution relative to the dense age
-   loss term (clip shrinks everything proportionally; if age's raw
-   gradient dominates the pre-clip norm, post-clip the sparse tissue/sex
-   signal could become even more negligible in absolute terms).
-4. **Instrument, don't guess** — if 1–3 don't resolve it, add per-epoch
-   logging of `gene_weight.abs().sum()` and the fraction of `present=True`
-   for masked gene columns specifically, to distinguish "head weight died"
-   from "encoder stopped producing usable signal for the seed-gene subset"
-   from "present-mask degenerated for the small CpG panel."
-
-**Do not run the full G0–G3×2-seed grid again until a `G1`-only test shows
-healthy `encoder_grad_norm` through epoch 15**, to avoid burning the ~2h
-full-grid cost on a guess that didn't work.
+**Closed:** kaiming init + LR threading + seed-offset/`-s2` path fixes landed;
+full G0–G3 screen completed. **G0 beats G1/G2/G3** — seed-masking **not
+adopted**. See `reports/inspection/stage0_7g_prime_seed_mask/analysis.md`.
+Historical debug candidates (per-head LR, warm-start, clip ablation) are
+archived; do not reopen unless a new seed-mask hypothesis appears.
 
 ## Phase 1 — close out the age-primary seed-mask decision
 
@@ -363,3 +375,7 @@ bypass it.
   age/sex PASS ≥1k; tissue only `whole blood` ≥1k among 64 labels;
   blood/brain masks empty; disease/cancer mask_true large but false≠control.
   Report: `reports/inspection/stage0_7h_nine_pack_smoke/`.
+- 2026-09-07: **Next-job queue launched** (`scripts/run_7h_next_queue.sh`,
+  pid `scratch/logs/7h_next_queue.pid`) — waits for nine-pack full, refreshes
+  report, then Track B.4 ATS seed-43 2×2 pooling; hard-stops before Stage B /
+  OOF / disease GPU. Live board: § Operational schedule above.

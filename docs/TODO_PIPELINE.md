@@ -151,19 +151,22 @@ unlock) · Stage B
 
 ### Next steps (ordered)
 
-1. **7H Phase 3 nine-pack (in progress on GPU 0)** — virtual multi-store
-   loader unblocked (`RoutedBetas` `[:, :n]` + cascade/classical/flat wiring).
-   Fold-0 smoke landed (P2-G tissue F1 ~0.34 / age MAE ~15 / sex AUROC ~0.89
-   at 3 ep). Full 3-fold P2-G + m-only references:
-   `scripts/run_7h_nine_pack_smoke.py --phase full` (log
-   `scratch/logs/7h_nine_pack_full.log`). HM450 only — no cross-platform claim.
-   Report: [`reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
-2. **Track B (ATS, after GPU frees or second device)** — genuine seed-43
-   2×2 cascade pooling confirmation; trait adequacy already drafted in
-   `stage0_7h_nine_pack_smoke/trait_adequacy.md` (age/sex PASS; tissue only
-   1 level ≥1k; blood/brain masks empty; disease/cancer mask_true large but
-   false≠control).
-3. **Still blocked:** Stage B `run_7g_prime_stage_b.py`, Milestone **7** OOF,
+Live board: [`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md)
+§ Operational schedule (A→B→C→D).
+
+1. **A.4 full (RUNNING on GPU 0)** — 3-fold nine-pack P2-G then m-only.
+   PID `scratch/logs/7h_nine_pack_full.pid`; log `7h_nine_pack_full.log`.
+   **Do not duplicate.** Smoke already done (3 ep fold-0). Report:
+   [`reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
+2. **B.4 queued** via `scripts/run_7h_next_queue.sh` (pid
+   `scratch/logs/7h_next_queue.pid`) — waits for (1), refreshes report, then
+   ATS seed-43 2×2 cascade pooling (`run_7h_ats_pooling_s2.sh`). **B.5 DONE**
+   (`trait_adequacy.md`: age/sex PASS; tissue 1/64 ≥1k; blood/brain empty;
+   disease/cancer false≠control).
+3. **Hard stop after B.4.** Track **C** (manual): interpret full refs; fix
+   disease/cancer case/control; repair blood/brain labels before any trait
+   GPU. Track **D** = Phase 4 checkpoint contract after C.
+4. **Still blocked:** Stage B `run_7g_prime_stage_b.py`, Milestone **7** OOF,
    GEO-enriched GPU training, ONT/PacBio ingestion.
 
 **7G** methylation eval and **tissue probe P0–P3** are done (historical evidence
