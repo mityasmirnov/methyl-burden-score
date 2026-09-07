@@ -120,7 +120,9 @@ MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
 
 Reports: `geo_backfill_pilot/` (repaired 15-GSE validation) and
 `geo_backfill_batch/` (batch-50 `fetch_status.json`, `batch_summary.*`).
-Training still Hub pack Parquet only until `deepmat-data-geo-dev-v1`.
+Training still Hub pack Parquet only for live `mbs train` until GEO arms are
+explicitly wired after Milestone **10/11** gates. Phenotype release
+`deepmat-data-geo-dev-v1` exists (no ATS mutate).
 
 Age is unit-aware (years/months/weeks/days); tissue maps through Hub ontology
 aliases; diagnosis-only disease text is **not** a case/control label.

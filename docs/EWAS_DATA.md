@@ -141,7 +141,7 @@ Authoritative on-disk snapshot:
 | All nine Hub **sample-info** zips + Parquet | **Complete** |
 | Atlas batch TSVs | **Complete** (~0.26 GiB) |
 | EPICv2 manifests | **Complete** |
-| `EWAS_db/` All Data | **Study walk complete** (1989/1989); post-hook shell bug fixed; clean GSM retry (≤710) in progress — see ingest counts |
+| `EWAS_db/` All Data | **Study walk complete** (1989/1989); post-hook shell bug fixed; **GSM failure retry complete** (**0** still missing) — see ingest counts |
 | Host disk | Watch `/data` free space as retries refill (~1.8 TiB betas under `ewas_datahub/`) |
 
 ### EWAS_db ingest counts (what the release manifest reports)
@@ -159,13 +159,13 @@ filenames (TCGA / ArrayExpress / ENCODE / CPTAC) when present. Snapshot from the
 | `n_local_studies` | **1 695** | Study dirs with ≥1 real sample `.txt` |
 | `n_local_gsm` | **170 641** | Total inventoried sample `.txt` (GSM + non-GSM); on-disk GSM alone ≈ **157 240** |
 | `advertised_n` | **1 989** | Study count on remote EWAS_db index |
-| `mirror_complete` | **false** | Still short of advertised studies / missing GSM retries |
+| `mirror_complete` | **false** | Empty / no-usable-`.txt` study dirs remain (not missing GSM from retry) |
 | Atlas enrichment | **182** / 1 763 | Study-level GSE↔ES via GEO PMID map |
 
 Download failure audit (2026-09-07):
 [`reports/inspection/deepmat_data_v1/ewas_db_download_failures.md`](../reports/inspection/deepmat_data_v1/ewas_db_download_failures.md)
-— **1 723** real GSM in retry manifest (plus logged `(.+?)` artifacts filtered
-out of the manifest). Empty / no-GSM dirs (**339**): 
+— failure retry cleared (**0** still missing on disk; earlier clean manifest had
+**710** GSM). Empty / no-GSM dirs (**339**) still keep `mirror_complete=false`:
 [`ewas_db_empty_studies.md`](../reports/inspection/deepmat_data_v1/ewas_db_empty_studies.md).
 Mirror prefers `GSM*.txt`, falls back to other sample `.txt` when a study has
 no GSM. Resilient wget:

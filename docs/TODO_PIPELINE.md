@@ -168,9 +168,12 @@ Milestone **12**), [0008](adr/0008-score-identifiability.md),
   [`plans/data-infrastructure-improvements.md`](plans/data-infrastructure-improvements.md).
   **GEO sample backfill:** repaired pilot re-validated; **batch-50 merged**
   (45 762 GSM → catalog `geo_metadata_backfill`; report
-  `geo_backfill_batch/`). GEO remains catalog-only until immutable
-  `deepmat-data-geo-dev-v1` ([`plans/geo-enriched-training-release.md`](plans/geo-enriched-training-release.md)).
-  Do **not** mutate frozen ATS. Plans:
+  `geo_backfill_batch/`). Eligibility-by-study audit done
+  (`eligibility_by_study.md`). Immutable phenotype release
+  `deepmat-data-geo-dev-v1` **built** (Hub/GEO arms; no matrix convert yet) —
+  [`plans/geo-enriched-training-release.md`](plans/geo-enriched-training-release.md).
+  Do **not** mutate frozen ATS; do **not** wire GEO into age/tissue training or
+  enlarge the crawl until Milestone **10/11** gates allow. Plans:
   [`plans/geo-metadata-backfill-pre-scale.md`](plans/geo-metadata-backfill-pre-scale.md).
   Inventory: [`EWAS_DATA.md`](EWAS_DATA.md), [`DATA_CATALOG.md`](DATA_CATALOG.md),
   `reports/inspection/raw_inventory/`.
@@ -964,7 +967,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 | ID | Candidate | Intent / acceptance hint |
 |----|-----------|--------------------------|
 | **a** | EWAS Atlas enrichment | Compare significant gene–trait hits to Atlas curated associations / pathway enrichment |
-| **b** | GEO-enriched training release | Immutable `deepmat-data-geo-dev-v1` (or successor); catalog-only until freeze |
+| **b** | GEO-enriched training release | Phenotype `deepmat-data-geo-dev-v1` **built**; matrix convert + train launch still gated |
 | **c** | Epivariants / episignatures | Explicit epivariant calling and clinical episignature work |
 | **d** | Learned ProbeNormalizer (Level 2) | Bounded residual adapter; fold-fitted; after Level-1 |
 | **e** | PROTRIDER-style / masked AE (Level 3) | Only if 7D/7E show Level-1 insufficient; Student-t or masked recon + phenotype; not default |

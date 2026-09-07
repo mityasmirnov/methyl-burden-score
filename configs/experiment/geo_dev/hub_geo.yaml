@@ -1,0 +1,9 @@
+# GEO-dev comparison arm: hub_geo
+# Release: deepmat-data-geo-dev-v1
+# Phenotype tables only — no training launch until gates allow.
+release_id: deepmat-data-geo-dev-v1
+arm: hub_geo
+phenotype_table: canonical/releases/deepmat-data-geo-dev-v1/phenotypes/sample_info_hub_geo.parquet
+mutate_ats: false
+disease_training_ok: false
+cancer_training_ok: false

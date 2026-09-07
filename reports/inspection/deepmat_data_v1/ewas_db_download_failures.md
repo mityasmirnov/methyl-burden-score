@@ -1,11 +1,11 @@
 # EWAS_db download failures
 
-- Generated: `2026-09-07T13:44:58Z`
+- Generated: `2026-09-07T14:23:14Z`
 - Log: `/data/projects/methyl-burden-score/artifacts/logs/downloads/ewas_datahub_EWAS_db.log`
 - EWAS_db root: `/data/projects/methyl-burden-score/data/raw/ewas_datahub/EWAS_db`
 - Studies with ≥1 logged failure: **1818**
 - Total `WARN: failed` lines: **8142**
-- Still missing or empty on disk: **710**
+- Still missing or empty on disk: **0**
 - HTML-parse artifact filenames (`(.+?)`): **1818**
 - Last study progress in log: **1989** / **1989**
 
@@ -21,16 +21,16 @@ bash scripts/retry_ewas_db_download_failures.sh
 
 | study_id | failures | still_missing |
 | --- | ---: | ---: |
-| `GSE90496` | 274 | 223 |
+| `GSE90496` | 274 | 0 |
 | `GSE197678` | 254 | 0 |
-| `GSE89353` | 110 | 79 |
+| `GSE89353` | 110 | 0 |
 | `GSE112611` | 95 | 0 |
 | `GSE84727` | 85 | 0 |
 | `GSE82273` | 82 | 0 |
 | `GSE56046` | 81 | 0 |
-| `GSE87571` | 81 | 1 |
+| `GSE87571` | 81 | 0 |
 | `GSE140686` | 79 | 0 |
-| `GSE87648` | 61 | 43 |
+| `GSE87648` | 61 | 0 |
 | `GSE59685` | 59 | 0 |
 | `GSE73801` | 58 | 0 |
 | `GSE141441` | 57 | 0 |

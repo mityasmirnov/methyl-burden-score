@@ -3789,522 +3789,93 @@
       "n_studies": 1293,
       "source_release_id": "ewas-datahub-db-v1",
       "source_system": "ewas_datahub_db",
-      "total_bytes": 770742413693388.0
+      "total_bytes": 776062903331756.0
     }
   ],
-  "generated_at": "2026-09-07T13:49:58Z",
+  "generated_at": "2026-09-07T14:29:07Z",
   "label_conflicts_head": [
     {
       "n_distinct_values": 2,
       "phenotype_id": "tissue",
-      "sample_id": "GSM7021049",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "baby_venous_blood",
-        "venous blood"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM7021295",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "baby_venous_blood",
-        "venous blood"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM7078978",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "breast tumor",
-        "breast"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM7079136",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "breast tumor",
-        "breast"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM5566507",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "meningioma",
-        "meningioma tissue"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM1593602",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "ependymal tumor",
-        "ependyma"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM4194284",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "Umbilical cord blood buffy coat",
-        "cord blood"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM4754704",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "leukocyte",
-        "peripheral blood leukocyte"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM8591807",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "Blood DNA",
-        "peripheral blood"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM3944794",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "brain - cerebellum",
-        "brain"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM4430649",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "CD8+ T cell",
-        "CD8 T cells"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM4753870",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "peripheral blood leukocyte",
-        "leukocyte"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM5625776",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "sperm",
-        "semen"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM7079641",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "breast",
-        "breast tumor"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "disease",
-      "sample_id": "GSM3453369",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "embryonal tumor multilayered rosettes",
-        "Embryonal Tumor/Multilayered Rosettes (ETMR) patient"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "disease",
-      "sample_id": "GSM3562857",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "case",
-        "depression"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "age",
-      "sample_id": "GSM5927895",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "24.26027397",
-        "24.2603"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM3876461",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "Medulloblastoma",
-        "brain"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM3877702",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "Medulloblastoma",
-        "brain"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM5625928",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "semen",
-        "sperm"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM3944928",
+      "sample_id": "GSM3945298",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
       ],
       "values": [
         "brain",
-        "brain - cerebellum"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "age",
-      "sample_id": "GSM7020659",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "0.0",
-        "24.0"
+        "brain - middle temporal gyrus"
       ]
     },
     {
       "n_distinct_values": 2,
       "phenotype_id": "tissue",
-      "sample_id": "GSM7020945",
+      "sample_id": "GSM3945351",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
       ],
       "values": [
-        "venous blood",
-        "baby_venous_blood"
+        "brain",
+        "brain - middle temporal gyrus"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "disease",
+      "sample_id": "GSM5574314",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "non-muscle-invasive bladder cancer (NMIBC)",
+        "non-muscle-invasive bladder cancer"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "disease",
+      "sample_id": "GSM6765707",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "Control",
+        "SARS-CoV-2"
       ]
     },
     {
       "n_distinct_values": 2,
       "phenotype_id": "tissue",
-      "sample_id": "GSM7021195",
+      "sample_id": "GSM4231082",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
       ],
       "values": [
-        "venous blood",
-        "baby_venous_blood"
+        "whole blood",
+        "peripheral blood sample"
       ]
     },
     {
       "n_distinct_values": 2,
       "phenotype_id": "tissue",
-      "sample_id": "GSM7079331",
+      "sample_id": "GSM3537953",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
       ],
       "values": [
-        "breast tumor",
-        "breast"
+        "Oligodendroglioma tissue",
+        "brain - glioma"
       ]
     },
     {
       "n_distinct_values": 2,
       "phenotype_id": "tissue",
-      "sample_id": "GSM7079651",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "breast tumor",
-        "breast"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM5566790",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "meningioma tissue",
-        "meningioma"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM1593365",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "ependymal tumor",
-        "ependyma"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM1593598",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "ependymal tumor",
-        "ependyma"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM4194207",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "Umbilical cord blood buffy coat",
-        "cord blood"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM4194302",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "Umbilical cord blood buffy coat",
-        "cord blood"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM4753781",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "peripheral blood leukocyte",
-        "leukocyte"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM4754613",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "peripheral blood leukocyte",
-        "leukocyte"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM8592018",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "peripheral blood",
-        "Blood DNA"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM3490203",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "brain - glioblastoma tissue",
-        "glioblastoma"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM4430696",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "CD8 T cells",
-        "CD8+ T cell"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "age",
-      "sample_id": "GSM7625579",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "37.76111111",
-        "37.7611"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "age",
-      "sample_id": "GSM7625618",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "19.9361",
-        "19.93611111"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM3024471",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "brain - hippocampus head",
-        "brain_neg"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM3877542",
+      "sample_id": "GSM3876973",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
@@ -4317,7 +3888,46 @@
     {
       "n_distinct_values": 2,
       "phenotype_id": "tissue",
-      "sample_id": "GSM4194219",
+      "sample_id": "GSM3877089",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "brain",
+        "Medulloblastoma"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM3877442",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "brain",
+        "Medulloblastoma"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM3945378",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "brain - middle temporal gyrus",
+        "brain"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM4193971",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
@@ -4330,7 +3940,20 @@
     {
       "n_distinct_values": 2,
       "phenotype_id": "tissue",
-      "sample_id": "GSM4754065",
+      "sample_id": "GSM4230971",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "peripheral blood sample",
+        "whole blood"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM4754412",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
@@ -4343,33 +3966,7 @@
     {
       "n_distinct_values": 2,
       "phenotype_id": "tissue",
-      "sample_id": "GSM5566715",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "meningioma",
-        "meningioma tissue"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM5573957",
-      "source_families": [
-        "ewas_datahub_repository",
-        "geo_metadata_backfill"
-      ],
-      "values": [
-        "white blood cell",
-        "White blood cell"
-      ]
-    },
-    {
-      "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM5625984",
+      "sample_id": "GSM5627166",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
@@ -4382,20 +3979,33 @@
     {
       "n_distinct_values": 2,
       "phenotype_id": "tissue",
-      "sample_id": "GSM6365358",
+      "sample_id": "GSM7020785",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
       ],
       "values": [
-        "PR",
-        "colon"
+        "venous blood",
+        "mother_venous_blood"
       ]
     },
     {
       "n_distinct_values": 2,
       "phenotype_id": "tissue",
-      "sample_id": "GSM8591597",
+      "sample_id": "GSM7021226",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "venous blood",
+        "baby_venous_blood"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM8591782",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
@@ -4407,41 +4017,431 @@
     },
     {
       "n_distinct_values": 2,
-      "phenotype_id": "tissue",
-      "sample_id": "GSM8591688",
+      "phenotype_id": "disease",
+      "sample_id": "GSM4420681",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
       ],
       "values": [
-        "peripheral blood",
-        "Blood DNA"
+        "Case",
+        "schizophrenia"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "disease",
+      "sample_id": "GSM6765405",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "SARS-CoV-2",
+        "Control"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "age",
+      "sample_id": "GSM5927593",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "10.71321013",
+        "10.7132"
       ]
     },
     {
       "n_distinct_values": 2,
       "phenotype_id": "tissue",
-      "sample_id": "GSM8591985",
+      "sample_id": "GSM3877345",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
       ],
       "values": [
-        "peripheral blood",
-        "Blood DNA"
+        "Medulloblastoma",
+        "brain"
       ]
     },
     {
       "n_distinct_values": 2,
       "phenotype_id": "tissue",
-      "sample_id": "GSM8592114",
+      "sample_id": "GSM3877661",
       "source_families": [
         "ewas_datahub_repository",
         "geo_metadata_backfill"
       ],
       "values": [
-        "peripheral blood",
-        "Blood DNA"
+        "Medulloblastoma",
+        "brain"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM5625963",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "semen",
+        "sperm"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM7021174",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "baby_venous_blood",
+        "venous blood"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM4194384",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "Umbilical cord blood buffy coat",
+        "cord blood"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM4230797",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "peripheral blood sample",
+        "whole blood"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "disease",
+      "sample_id": "GSM3453297",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "Embryonal Tumor/Multilayered Rosettes (ETMR) patient",
+        "embryonal tumor multilayered rosettes"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM3024507",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "brain - frontal lobe",
+        "brain_whole"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM3490134",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "brain - glioblastoma tissue",
+        "glioblastoma"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM3877254",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "brain",
+        "Medulloblastoma"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM5627138",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "sperm",
+        "semen"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM7020784",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "venous blood",
+        "baby_venous_blood"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "age",
+      "sample_id": "GSM5927951",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "37.5342",
+        "37.53424658"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM5626379",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "semen",
+        "sperm"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM5627208",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "semen",
+        "sperm"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM7021060",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "venous blood",
+        "baby_venous_blood"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "age",
+      "sample_id": "GSM7021110",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "28.0",
+        "0.0"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM7021264",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "venous blood",
+        "baby_venous_blood"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "disease",
+      "sample_id": "GSM3562911",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "depression",
+        "case"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM5573995",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "white blood cell",
+        "White blood cell"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM5566293",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "meningioma tissue",
+        "meningioma"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM1593198",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "ependymal tumor",
+        "ependyma"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM4194217",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "cord blood",
+        "Umbilical cord blood buffy coat"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM4753727",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "peripheral blood leukocyte",
+        "leukocyte"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM4753910",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "peripheral blood leukocyte",
+        "leukocyte"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM4754144",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "peripheral blood leukocyte",
+        "leukocyte"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM3490013",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "glioblastoma",
+        "brain - glioblastoma tissue"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM3490172",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "glioblastoma",
+        "brain - glioblastoma tissue"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM3944867",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "brain",
+        "brain - cerebellum"
+      ]
+    },
+    {
+      "n_distinct_values": 2,
+      "phenotype_id": "tissue",
+      "sample_id": "GSM3945233",
+      "source_families": [
+        "ewas_datahub_repository",
+        "geo_metadata_backfill"
+      ],
+      "values": [
+        "brain",
+        "brain - middle temporal gyrus"
       ]
     }
   ],
@@ -4900,7 +4900,7 @@
     "n_local_studies": 1695,
     "refresh_is_idempotent": true,
     "remote_index_fetched": false,
-    "total_bytes": 1787374837994
+    "total_bytes": 1793230765292
   },
   "unique_gsm": 173076,
   "unique_vs_row_sum_note": "unique GSM must be compared to pack-row sum; overlap makes them unequal"

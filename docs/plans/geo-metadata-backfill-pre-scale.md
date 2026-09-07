@@ -1,8 +1,8 @@
 # GEO metadata backfill — fixes before scaling
 
-**Status:** repaired 15-GSE pilot re-validated; **batch-50 fetch+merge done**
-(2026-09-04). Next: eligibility-by-study deep audit → immutable geo-dev
-training release (**not** ATS).  
+**Status:** repaired 15-GSE pilot re-validated; **batch-50 fetch+merge done**;
+eligibility-by-study audit **done**; phenotype `deepmat-data-geo-dev-v1`
+**built**. Still gated: larger crawl + wiring GEO into training.  
 **Parent:** [`geo-metadata-backfill-ewas-db.md`](geo-metadata-backfill-ewas-db.md)
 · [`data-infrastructure-improvements.md`](data-infrastructure-improvements.md) §2  
 **Related:** [`DATA_CONTRACT.md`](../DATA_CONTRACT.md), [`EWAS_METADATA.md`](../EWAS_METADATA.md),
@@ -195,8 +195,12 @@ After QC on an expanded audited batch:
   → [`geo-enriched-training-release.md`](geo-enriched-training-release.md)
 - [x] Expand beyond 15 GSE — **batch-50 done** (fetch+merge 2026-09-04;
   `geo_backfill_batch/batch_summary.{json,md}`)
-- [ ] Eligibility-by-study deep audit (before training release)
-- [ ] Build immutable `deepmat-data-geo-dev-v1` (design only so far)
+- [x] Eligibility-by-study deep audit
+  (`geo_backfill_batch/eligibility_by_study.{json,md}` — 2026-09-07)
+- [x] Build immutable `deepmat-data-geo-dev-v1` **phenotype** release
+  (arms Hub/GEO/Hub+GEO/metadata-only; no ATS mutate; training still gated)
+- [ ] Larger GEO crawl beyond batch-50 (**gated**)
+- [ ] Wire eligible GEO into age/tissue training / seed-gene (**gated**)
 
 ## Code touchpoints (when implementing)
 

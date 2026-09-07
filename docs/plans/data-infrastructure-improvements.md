@@ -6,9 +6,9 @@ per [`TODO_PIPELINE.md`](../TODO_PIPELINE.md).
 
 **Snapshot:** 2026-09-07. Catalog `deepmat-data-v1`: **173 076** samples,
 **1 763** studies, **170 641** EWAS_db sample `.txt` (**1 695**/1 989 studies
-with files; ~**157 240** GSM + non-GSM TCGA/…; `mirror_complete=false`;
-**~1 723** GSM in retry). Hub nine-pack matrices and ATS union (**13 548** GSM)
-are training-ready. Gate: **7H** extended architecture campaign.
+with files; `mirror_complete=false` from empty dirs only; GSM failure retry
+**cleared** — **0** still missing). Hub nine-pack matrices and ATS union
+(**13 548** GSM) are training-ready. Gate: Milestone **10**.
 
 ## 1. Download reliability (EWAS_db)
 
@@ -21,8 +21,9 @@ artifacts from historical logs). See
 |--------|--------|--------|
 | Filter retry manifest + mirror crawl to `GSM[0-9]+.txt` only | Cuts false failures; faster retries | **Done** |
 | Resilient `wget` flags in `mirror_ewas_db` + study + retry scripts | Fewer transient CNCB drops | **Done** |
-| Run `make retry-ewas-db-failures` after mirror pass | Recovers real missing GSM without full re-crawl | **Ops** (background 2026-09-07; ~1 723 GSM) |
+| Run `make retry-ewas-db-failures` after mirror pass | Recovers real missing GSM without full re-crawl | **Done** (2026-09-07; **0** still missing) |
 | Post-download hook: summarize + Atlas seed + `make catalog-refresh-release` | Catalog stays aligned with disk | **Done** |
+| Fix post-hook shell bug (nested `( )` in `[[ ]]` after long mirror) | Avoid syntax error after last study | **Done** |
 | Non-GSM fallback in `mirror_ewas_db` (TCGA / ArrayExpress / …) | Fills dirs the GSM-only filter skipped | **Done** |
 | Trainer guard: disease/cancer heads require `trait_eligibility` core or aux | Prevents ineligible-head metric inflation | **Done** |
 | Optional: parallel wget per study (cap concurrency) | Faster mirror without hammering CNCB | Medium |
@@ -52,7 +53,8 @@ columns empty; EWAS_db-only samples lack Hub phenotype rows.
 | **Study-level Atlas enrichment** (`study_atlas_enrichment` + `study.metadata_json.atlas_enrichment`) | External stratification (tissue, cohort size, disease area); not sample labels | **Done** (auto `seed-atlas-gse-map` on `catalog-refresh-release`; **175**/1587 matched) |
 | Registry `sample_count` from matrix sample indexes | Honest N in `phenotype_registry.yaml` | **Done** (unique GSM / ATS matrix N; 2026-09-07) |
 | Normalize `450K` → `HM450` on catalog refresh | Fewer platform string splits | **Done** (DataHub census + platform aliases) |
-| Residual `platform_id` via GEO GPL (census-miss GSE) | Fill studies not in DataHub census | **Ops** — `configs/data/geo_platform_gap_priority_gse.txt` (≥50 GSM); fetch merges into existing GEO parquet |
+| Residual `platform_id` via GEO GPL (census-miss GSE) | Fill studies not in DataHub census | **Partial** — priority ≥50 GSM GEO fetch merged; **1 456/1 763** studies have `platform_id` (82.6%); residual **307** null (43 mixed-platform, 261 no census/GEO methyl GPL, 3 zero-sample inventory). Report: [`residual_gaps.md`](../../reports/inspection/deepmat_data_v1/residual_gaps.md) |
+| EWAS_db clean GSM retry + refresh | Recover logged missing betas | **Done** (2026-09-07) — failures audit `still_missing=0`; post-hook refreshed `deepmat-data-v1` |
 
 **Use now:** `trait_eligibility` + `v_sample_pack_overlap` to restrict heads
 (disease/cancer need cases+controls; tissue needs class support). Multitask flat
