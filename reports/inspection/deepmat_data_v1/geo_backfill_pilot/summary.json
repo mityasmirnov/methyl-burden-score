@@ -1,114 +1,114 @@
 {
   "census_after": {
-    "generated_at": "2026-09-04T15:17:01Z",
+    "generated_at": "2026-09-07T15:04:41Z",
     "geo_prevalence": [
       {
         "n_categorical_levels": 0,
-        "n_observed": 19233,
-        "n_rows": 19233,
-        "n_samples": 19233,
+        "n_observed": 21940,
+        "n_rows": 21940,
+        "n_samples": 21940,
         "phenotype_id": "age",
-        "source_family": "geo_metadata_backfill"
-      },
-      {
-        "n_categorical_levels": 5,
-        "n_observed": 1470,
-        "n_rows": 1470,
-        "n_samples": 1470,
-        "phenotype_id": "cancer",
         "source_family": "geo_metadata_backfill"
       },
       {
         "n_categorical_levels": 9,
-        "n_observed": 5216,
-        "n_rows": 5216,
-        "n_samples": 5216,
-        "phenotype_id": "disease",
-        "source_family": "geo_metadata_backfill"
-      },
-      {
-        "n_categorical_levels": 2,
-        "n_observed": 27931,
-        "n_rows": 27931,
-        "n_samples": 27931,
-        "phenotype_id": "sex",
-        "source_family": "geo_metadata_backfill"
-      },
-      {
-        "n_categorical_levels": 21,
-        "n_observed": 21121,
-        "n_rows": 21121,
-        "n_samples": 21121,
-        "phenotype_id": "tissue",
-        "source_family": "geo_metadata_backfill"
-      }
-    ],
-    "pack_row_sum": 47843,
-    "unique_gsm": 157993
-  },
-  "census_before": {
-    "generated_at": "2026-09-04T14:34:53Z",
-    "geo_prevalence": [
-      {
-        "n_categorical_levels": 0,
-        "n_observed": 7652,
-        "n_rows": 7652,
-        "n_samples": 7652,
-        "phenotype_id": "age",
-        "source_family": "geo_metadata_backfill"
-      },
-      {
-        "n_categorical_levels": 1,
-        "n_observed": 994,
-        "n_rows": 994,
-        "n_samples": 994,
+        "n_observed": 1687,
+        "n_rows": 1687,
+        "n_samples": 1687,
         "phenotype_id": "cancer",
         "source_family": "geo_metadata_backfill"
       },
       {
-        "n_categorical_levels": 2,
-        "n_observed": 2058,
-        "n_rows": 2058,
-        "n_samples": 2058,
+        "n_categorical_levels": 20,
+        "n_observed": 6065,
+        "n_rows": 6065,
+        "n_samples": 6065,
         "phenotype_id": "disease",
         "source_family": "geo_metadata_backfill"
       },
       {
         "n_categorical_levels": 2,
-        "n_observed": 12729,
-        "n_rows": 12729,
-        "n_samples": 12729,
+        "n_observed": 32083,
+        "n_rows": 32083,
+        "n_samples": 32083,
         "phenotype_id": "sex",
         "source_family": "geo_metadata_backfill"
       },
       {
-        "n_categorical_levels": 6,
-        "n_observed": 10528,
-        "n_rows": 10528,
-        "n_samples": 10528,
+        "n_categorical_levels": 27,
+        "n_observed": 36861,
+        "n_rows": 36861,
+        "n_samples": 36861,
         "phenotype_id": "tissue",
         "source_family": "geo_metadata_backfill"
       }
     ],
     "pack_row_sum": 47843,
-    "unique_gsm": 157941
+    "unique_gsm": 173076
+  },
+  "census_before": {
+    "generated_at": "2026-09-07T14:57:07Z",
+    "geo_prevalence": [
+      {
+        "n_categorical_levels": 0,
+        "n_observed": 21940,
+        "n_rows": 21940,
+        "n_samples": 21940,
+        "phenotype_id": "age",
+        "source_family": "geo_metadata_backfill"
+      },
+      {
+        "n_categorical_levels": 9,
+        "n_observed": 1687,
+        "n_rows": 1687,
+        "n_samples": 1687,
+        "phenotype_id": "cancer",
+        "source_family": "geo_metadata_backfill"
+      },
+      {
+        "n_categorical_levels": 20,
+        "n_observed": 6065,
+        "n_rows": 6065,
+        "n_samples": 6065,
+        "phenotype_id": "disease",
+        "source_family": "geo_metadata_backfill"
+      },
+      {
+        "n_categorical_levels": 2,
+        "n_observed": 32083,
+        "n_rows": 32083,
+        "n_samples": 32083,
+        "phenotype_id": "sex",
+        "source_family": "geo_metadata_backfill"
+      },
+      {
+        "n_categorical_levels": 200,
+        "n_observed": 48302,
+        "n_rows": 48302,
+        "n_samples": 48302,
+        "phenotype_id": "tissue",
+        "source_family": "geo_metadata_backfill"
+      }
+    ],
+    "pack_row_sum": 47843,
+    "unique_gsm": 173076
   },
   "census_delta": {
-    "authoritative_delta_rows": 74971,
+    "authoritative_delta_rows": 98636,
     "dirty_disk_census_baseline": true,
-    "geo_observed_rows_after": 74971,
-    "geo_observed_rows_before_disk_census": 33961,
+    "geo_observed_rows_after": 98636,
+    "geo_observed_rows_before_disk_census": 110077,
     "geo_phenotype_rows_before_merge": 0,
-    "n_geo_observed_samples": 36014,
+    "n_geo_observed_samples": 43853,
     "phenotypes_by_id": {
-      "age": 19233,
-      "cancer": 1470,
-      "disease": 5216,
-      "sex": 27931,
-      "tissue": 21121
+      "age": 21940,
+      "cancer": 1687,
+      "disease": 6065,
+      "sex": 32083,
+      "tissue": 36861
     },
-    "unique_gsm_after": 157993,
-    "unique_gsm_before": 157941
+    "unique_gsm_after": 173076,
+    "unique_gsm_before": 173076
   },
   "eligibility": [
     {
@@ -117,7 +117,7 @@
       "exclusion_reason": NaN,
       "n_cases": null,
       "n_controls": null,
-      "n_samples": 19233,
+      "n_samples": 21940,
       "n_unknown": 0,
       "phenotype_id": "age"
     },
@@ -125,9 +125,9 @@
       "eligible_auxiliary_task": true,
       "eligible_core_task": true,
       "exclusion_reason": NaN,
-      "n_cases": 1239,
-      "n_controls": 231,
-      "n_samples": 1470,
+      "n_cases": 1422,
+      "n_controls": 265,
+      "n_samples": 1687,
       "n_unknown": 0,
       "phenotype_id": "cancer"
     },
@@ -135,9 +135,9 @@
       "eligible_auxiliary_task": true,
       "eligible_core_task": true,
       "exclusion_reason": NaN,
-      "n_cases": 1456,
-      "n_controls": 3760,
-      "n_samples": 5216,
+      "n_cases": 1937,
+      "n_controls": 4128,
+      "n_samples": 6065,
       "n_unknown": 0,
       "phenotype_id": "disease"
     },
@@ -147,7 +147,7 @@
       "exclusion_reason": "sex is auxiliary biological / QC, not a core burden target",
       "n_cases": null,
       "n_controls": null,
-      "n_samples": 27931,
+      "n_samples": 32083,
       "n_unknown": 0,
       "phenotype_id": "sex"
     },
@@ -157,12 +157,12 @@
       "exclusion_reason": NaN,
       "n_cases": null,
       "n_controls": null,
-      "n_samples": 21121,
+      "n_samples": 36861,
       "n_unknown": 0,
       "phenotype_id": "tissue"
     }
   ],
-  "generated_at": "2026-09-04T15:17:01Z",
+  "generated_at": "2026-09-07T15:04:43Z",
   "geo_source_family": "geo_metadata_backfill",
   "invariants": {
     "atlas_enrichment_on_sample": 0,
@@ -172,66 +172,116 @@
   "label_status": [
     {
       "label_status": "observed",
-      "n": 19233,
+      "n": 21940,
       "phenotype_id": "age"
     },
     {
       "label_status": "case",
-      "n": 1239,
+      "n": 1422,
       "phenotype_id": "cancer"
     },
     {
       "label_status": "control",
-      "n": 231,
+      "n": 265,
       "phenotype_id": "cancer"
     },
     {
       "label_status": "case",
-      "n": 1456,
+      "n": 1937,
       "phenotype_id": "disease"
     },
     {
       "label_status": "control",
-      "n": 3760,
+      "n": 4128,
       "phenotype_id": "disease"
     },
     {
       "label_status": "observed",
-      "n": 27931,
+      "n": 32083,
       "phenotype_id": "sex"
     },
     {
       "label_status": "observed",
-      "n": 21121,
+      "n": 36861,
       "phenotype_id": "tissue"
     }
   ],
   "merge_stats": {
     "enabled": true,
     "n_geo_phenotype_rows_before_merge": 0,
-    "n_geo_rows_input": 45762,
+    "n_geo_rows_input": 56201,
     "n_multi_study_gsm": 0,
-    "n_phenotype_rows_added": 74971,
-    "n_samples_skipped_hub": 7077,
-    "n_samples_skipped_missing": 665,
-    "n_samples_touched": 38020,
+    "n_phenotype_rows_added": 98636,
+    "n_samples_hub_fill": 92,
+    "n_samples_quarantined_species": 0,
+    "n_samples_skipped_hub": 6985,
+    "n_samples_skipped_missing": 822,
+    "n_samples_touched": 48394,
     "parquet_path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/geo_sample_metadata.parquet",
     "per_study": {
+      "GSE103286": {
+        "phenotypes": 392,
+        "samples": 112
+      },
+      "GSE103332": {
+        "phenotypes": 396,
+        "samples": 116
+      },
       "GSE104210": {
-        "phenotypes": 1245,
+        "phenotypes": 1920,
         "samples": 675
       },
       "GSE105018": {
         "phenotypes": 1230,
         "samples": 1230
       },
+      "GSE107351": {
+        "phenotypes": 116,
+        "samples": 116
+      },
+      "GSE107352": {
+        "phenotypes": 51,
+        "samples": 51
+      },
+      "GSE108187": {
+        "phenotypes": 0,
+        "samples": 102
+      },
+      "GSE108576": {
+        "phenotypes": 141,
+        "samples": 89
+      },
       "GSE109379": {
         "phenotypes": 1104,
         "samples": 1104
       },
+      "GSE110184": {
+        "phenotypes": 0,
+        "samples": 70
+      },
+      "GSE110544": {
+        "phenotypes": 58,
+        "samples": 58
+      },
+      "GSE110697": {
+        "phenotypes": 78,
+        "samples": 78
+      },
+      "GSE111165": {
+        "phenotypes": 289,
+        "samples": 147
+      },
       "GSE111629": {
         "phenotypes": 1060,
         "samples": 316
+      },
+      "GSE114598": {
+        "phenotypes": 0,
+        "samples": 61
+      },
+      "GSE115278": {
+        "phenotypes": 1422,
+        "samples": 474
       },
       "GSE116339": {
         "phenotypes": 2037,
@@ -241,40 +291,124 @@
         "phenotypes": 1824,
         "samples": 608
       },
+      "GSE119144": {
+        "phenotypes": 60,
+        "samples": 60
+      },
+      "GSE122038": {
+        "phenotypes": 203,
+        "samples": 217
+      },
+      "GSE122126": {
+        "phenotypes": 165,
+        "samples": 101
+      },
+      "GSE122920": {
+        "phenotypes": 104,
+        "samples": 104
+      },
+      "GSE122994": {
+        "phenotypes": 760,
+        "samples": 380
+      },
+      "GSE123601": {
+        "phenotypes": 111,
+        "samples": 142
+      },
+      "GSE124617": {
+        "phenotypes": 5,
+        "samples": 94
+      },
       "GSE125105": {
         "phenotypes": 2796,
         "samples": 699
+      },
+      "GSE125895": {
+        "phenotypes": 793,
+        "samples": 269
       },
       "GSE130051": {
         "phenotypes": 1501,
         "samples": 1501
       },
+      "GSE131013": {
+        "phenotypes": 720,
+        "samples": 240
+      },
+      "GSE131482": {
+        "phenotypes": 219,
+        "samples": 153
+      },
       "GSE132203": {
-        "phenotypes": 1590,
+        "phenotypes": 2385,
         "samples": 795
+      },
+      "GSE132650": {
+        "phenotypes": 78,
+        "samples": 78
+      },
+      "GSE132804": {
+        "phenotypes": 668,
+        "samples": 334
       },
       "GSE134379": {
         "phenotypes": 2424,
         "samples": 808
       },
+      "GSE135205": {
+        "phenotypes": 0,
+        "samples": 51
+      },
+      "GSE136790": {
+        "phenotypes": 108,
+        "samples": 108
+      },
+      "GSE137845": {
+        "phenotypes": 0,
+        "samples": 54
+      },
       "GSE140686": {
-        "phenotypes": 1504,
+        "phenotypes": 0,
         "samples": 1504
+      },
+      "GSE141039": {
+        "phenotypes": 282,
+        "samples": 153
       },
       "GSE141065": {
         "phenotypes": 1114,
         "samples": 557
+      },
+      "GSE141254": {
+        "phenotypes": 202,
+        "samples": 84
+      },
+      "GSE142512": {
+        "phenotypes": 1185,
+        "samples": 395
+      },
+      "GSE143708": {
+        "phenotypes": 150,
+        "samples": 75
+      },
+      "GSE144977": {
+        "phenotypes": 89,
+        "samples": 89
       },
       "GSE145361": {
         "phenotypes": 4708,
         "samples": 1889
       },
       "GSE147221": {
-        "phenotypes": 2139,
+        "phenotypes": 2852,
         "samples": 720
       },
+      "GSE147430": {
+        "phenotypes": 0,
+        "samples": 132
+      },
       "GSE147740": {
-        "phenotypes": 3384,
+        "phenotypes": 4512,
         "samples": 1128
       },
       "GSE153712": {
@@ -284,6 +418,10 @@
       "GSE157131": {
         "phenotypes": 2436,
         "samples": 1218
+      },
+      "GSE157397": {
+        "phenotypes": 49,
+        "samples": 51
       },
       "GSE179325": {
         "phenotypes": 1148,
@@ -302,19 +440,19 @@
         "samples": 1471
       },
       "GSE197678": {
-        "phenotypes": 5844,
+        "phenotypes": 8766,
         "samples": 2922
       },
       "GSE208713": {
-        "phenotypes": 1664,
+        "phenotypes": 1096,
         "samples": 568
       },
       "GSE210255": {
-        "phenotypes": 1394,
+        "phenotypes": 2788,
         "samples": 1394
       },
       "GSE215240": {
-        "phenotypes": 0,
+        "phenotypes": 937,
         "samples": 937
       },
       "GSE219037": {
@@ -329,29 +467,61 @@
         "phenotypes": 1107,
         "samples": 1107
       },
+      "GSE224218": {
+        "phenotypes": 340,
+        "samples": 170
+      },
       "GSE224365": {
         "phenotypes": 2130,
         "samples": 712
       },
       "GSE225845": {
-        "phenotypes": 1050,
+        "phenotypes": 1645,
         "samples": 595
       },
       "GSE226569": {
         "phenotypes": 1388,
         "samples": 694
       },
+      "GSE237561": {
+        "phenotypes": 378,
+        "samples": 126
+      },
+      "GSE240482": {
+        "phenotypes": 0,
+        "samples": 58
+      },
+      "GSE267015": {
+        "phenotypes": 0,
+        "samples": 68
+      },
       "GSE270375": {
-        "phenotypes": 994,
+        "phenotypes": 1988,
         "samples": 994
       },
       "GSE280206": {
         "phenotypes": 1296,
         "samples": 648
       },
+      "GSE31848": {
+        "phenotypes": 153,
+        "samples": 153
+      },
+      "GSE34387": {
+        "phenotypes": 0,
+        "samples": 76
+      },
       "GSE40279": {
         "phenotypes": 276,
         "samples": 138
+      },
+      "GSE40699": {
+        "phenotypes": 0,
+        "samples": 62
+      },
+      "GSE41336": {
+        "phenotypes": 0,
+        "samples": 90
       },
       "GSE42861": {
         "phenotypes": 810,
@@ -359,86 +529,870 @@
       },
       "GSE43414": {
         "phenotypes": 61,
-        "samples": 50
+        "samples": 142
+      },
+      "GSE49177": {
+        "phenotypes": 51,
+        "samples": 61
       },
       "GSE51032": {
-        "phenotypes": 594,
+        "phenotypes": 891,
         "samples": 297
+      },
+      "GSE52025": {
+        "phenotypes": 62,
+        "samples": 62
       },
       "GSE55763": {
         "phenotypes": 5523,
         "samples": 1841
       },
       "GSE56046": {
-        "phenotypes": 290,
+        "phenotypes": 580,
         "samples": 290
       },
       "GSE56105": {
         "phenotypes": 504,
         "samples": 168
       },
+      "GSE57204": {
+        "phenotypes": 0,
+        "samples": 54
+      },
+      "GSE57342": {
+        "phenotypes": 210,
+        "samples": 338
+      },
+      "GSE57853": {
+        "phenotypes": 125,
+        "samples": 92
+      },
       "GSE59685": {
         "phenotypes": 22,
         "samples": 11
+      },
+      "GSE65183": {
+        "phenotypes": 0,
+        "samples": 144
       },
       "GSE65362": {
         "phenotypes": 562,
         "samples": 562
       },
+      "GSE66872": {
+        "phenotypes": 0,
+        "samples": 60
+      },
+      "GSE68060": {
+        "phenotypes": 0,
+        "samples": 120
+      },
       "GSE68379": {
         "phenotypes": 0,
         "samples": 1028
+      },
+      "GSE68825": {
+        "phenotypes": 533,
+        "samples": 144
+      },
+      "GSE70783": {
+        "phenotypes": 149,
+        "samples": 74
       },
       "GSE72680": {
         "phenotypes": 36,
         "samples": 12
       },
       "GSE73801": {
-        "phenotypes": 1093,
+        "phenotypes": 1416,
         "samples": 585
       },
       "GSE74193": {
-        "phenotypes": 30,
+        "phenotypes": 85,
         "samples": 55
       },
+      "GSE74738": {
+        "phenotypes": 63,
+        "samples": 79
+      },
+      "GSE77348": {
+        "phenotypes": 0,
+        "samples": 85
+      },
       "GSE77716": {
-        "phenotypes": 572,
+        "phenotypes": 1145,
         "samples": 573
       },
       "GSE78874": {
-        "phenotypes": 32,
+        "phenotypes": 48,
         "samples": 16
+      },
+      "GSE79185": {
+        "phenotypes": 12,
+        "samples": 61
       },
       "GSE80417": {
         "phenotypes": 1986,
         "samples": 675
+      },
+      "GSE81472": {
+        "phenotypes": 0,
+        "samples": 51
+      },
+      "GSE86078": {
+        "phenotypes": 149,
+        "samples": 149
+      },
+      "GSE86355": {
+        "phenotypes": 0,
+        "samples": 75
+      },
+      "GSE87177": {
+        "phenotypes": 86,
+        "samples": 119
+      },
+      "GSE90496": {
+        "phenotypes": 2801,
+        "samples": 2801
+      },
+      "GSE94943": {
+        "phenotypes": 24,
+        "samples": 72
       }
     },
     "phenotypes_by_id": {
-      "age": 19233,
-      "cancer": 1470,
-      "disease": 5216,
-      "sex": 27931,
-      "tissue": 21121
+      "age": 21940,
+      "cancer": 1687,
+      "disease": 6065,
+      "sex": 32083,
+      "tissue": 36861
+    },
+    "species_census": {
+      "human": 0,
+      "n_gsm": 56201,
+      "non_human": 0,
+      "per_study": {
+        "GSE103286": {
+          "human": 0,
+          "n_gsm": 112,
+          "non_human": 0,
+          "unknown": 112
+        },
+        "GSE103332": {
+          "human": 0,
+          "n_gsm": 116,
+          "non_human": 0,
+          "unknown": 116
+        },
+        "GSE104210": {
+          "human": 0,
+          "n_gsm": 675,
+          "non_human": 0,
+          "unknown": 675
+        },
+        "GSE105018": {
+          "human": 0,
+          "n_gsm": 1658,
+          "non_human": 0,
+          "unknown": 1658
+        },
+        "GSE107351": {
+          "human": 0,
+          "n_gsm": 116,
+          "non_human": 0,
+          "unknown": 116
+        },
+        "GSE107352": {
+          "human": 0,
+          "n_gsm": 51,
+          "non_human": 0,
+          "unknown": 51
+        },
+        "GSE108187": {
+          "human": 0,
+          "n_gsm": 102,
+          "non_human": 0,
+          "unknown": 102
+        },
+        "GSE108576": {
+          "human": 0,
+          "n_gsm": 89,
+          "non_human": 0,
+          "unknown": 89
+        },
+        "GSE109379": {
+          "human": 0,
+          "n_gsm": 1104,
+          "non_human": 0,
+          "unknown": 1104
+        },
+        "GSE110184": {
+          "human": 0,
+          "n_gsm": 70,
+          "non_human": 0,
+          "unknown": 70
+        },
+        "GSE110544": {
+          "human": 0,
+          "n_gsm": 58,
+          "non_human": 0,
+          "unknown": 58
+        },
+        "GSE110697": {
+          "human": 0,
+          "n_gsm": 78,
+          "non_human": 0,
+          "unknown": 78
+        },
+        "GSE111165": {
+          "human": 0,
+          "n_gsm": 147,
+          "non_human": 0,
+          "unknown": 147
+        },
+        "GSE111629": {
+          "human": 0,
+          "n_gsm": 572,
+          "non_human": 0,
+          "unknown": 572
+        },
+        "GSE114598": {
+          "human": 0,
+          "n_gsm": 61,
+          "non_human": 0,
+          "unknown": 61
+        },
+        "GSE115278": {
+          "human": 0,
+          "n_gsm": 474,
+          "non_human": 0,
+          "unknown": 474
+        },
+        "GSE116339": {
+          "human": 0,
+          "n_gsm": 679,
+          "non_human": 0,
+          "unknown": 679
+        },
+        "GSE117859": {
+          "human": 0,
+          "n_gsm": 608,
+          "non_human": 0,
+          "unknown": 608
+        },
+        "GSE119144": {
+          "human": 0,
+          "n_gsm": 60,
+          "non_human": 0,
+          "unknown": 60
+        },
+        "GSE122038": {
+          "human": 0,
+          "n_gsm": 217,
+          "non_human": 0,
+          "unknown": 217
+        },
+        "GSE122126": {
+          "human": 0,
+          "n_gsm": 101,
+          "non_human": 0,
+          "unknown": 101
+        },
+        "GSE122920": {
+          "human": 0,
+          "n_gsm": 104,
+          "non_human": 0,
+          "unknown": 104
+        },
+        "GSE122994": {
+          "human": 0,
+          "n_gsm": 380,
+          "non_human": 0,
+          "unknown": 380
+        },
+        "GSE123601": {
+          "human": 0,
+          "n_gsm": 142,
+          "non_human": 0,
+          "unknown": 142
+        },
+        "GSE124617": {
+          "human": 0,
+          "n_gsm": 94,
+          "non_human": 0,
+          "unknown": 94
+        },
+        "GSE125105": {
+          "human": 0,
+          "n_gsm": 699,
+          "non_human": 0,
+          "unknown": 699
+        },
+        "GSE125895": {
+          "human": 0,
+          "n_gsm": 269,
+          "non_human": 0,
+          "unknown": 269
+        },
+        "GSE130051": {
+          "human": 0,
+          "n_gsm": 1501,
+          "non_human": 0,
+          "unknown": 1501
+        },
+        "GSE131013": {
+          "human": 0,
+          "n_gsm": 240,
+          "non_human": 0,
+          "unknown": 240
+        },
+        "GSE131482": {
+          "human": 0,
+          "n_gsm": 153,
+          "non_human": 0,
+          "unknown": 153
+        },
+        "GSE132203": {
+          "human": 0,
+          "n_gsm": 795,
+          "non_human": 0,
+          "unknown": 795
+        },
+        "GSE132650": {
+          "human": 0,
+          "n_gsm": 78,
+          "non_human": 0,
+          "unknown": 78
+        },
+        "GSE132804": {
+          "human": 0,
+          "n_gsm": 334,
+          "non_human": 0,
+          "unknown": 334
+        },
+        "GSE134379": {
+          "human": 0,
+          "n_gsm": 808,
+          "non_human": 0,
+          "unknown": 808
+        },
+        "GSE135205": {
+          "human": 0,
+          "n_gsm": 51,
+          "non_human": 0,
+          "unknown": 51
+        },
+        "GSE136790": {
+          "human": 0,
+          "n_gsm": 108,
+          "non_human": 0,
+          "unknown": 108
+        },
+        "GSE137845": {
+          "human": 0,
+          "n_gsm": 54,
+          "non_human": 0,
+          "unknown": 54
+        },
+        "GSE140686": {
+          "human": 0,
+          "n_gsm": 1505,
+          "non_human": 0,
+          "unknown": 1505
+        },
+        "GSE141039": {
+          "human": 0,
+          "n_gsm": 153,
+          "non_human": 0,
+          "unknown": 153
+        },
+        "GSE141065": {
+          "human": 0,
+          "n_gsm": 557,
+          "non_human": 0,
+          "unknown": 557
+        },
+        "GSE141254": {
+          "human": 0,
+          "n_gsm": 84,
+          "non_human": 0,
+          "unknown": 84
+        },
+        "GSE142512": {
+          "human": 0,
+          "n_gsm": 395,
+          "non_human": 0,
+          "unknown": 395
+        },
+        "GSE143708": {
+          "human": 0,
+          "n_gsm": 77,
+          "non_human": 0,
+          "unknown": 77
+        },
+        "GSE144977": {
+          "human": 0,
+          "n_gsm": 89,
+          "non_human": 0,
+          "unknown": 89
+        },
+        "GSE145361": {
+          "human": 0,
+          "n_gsm": 1889,
+          "non_human": 0,
+          "unknown": 1889
+        },
+        "GSE147221": {
+          "human": 0,
+          "n_gsm": 720,
+          "non_human": 0,
+          "unknown": 720
+        },
+        "GSE147430": {
+          "human": 0,
+          "n_gsm": 132,
+          "non_human": 0,
+          "unknown": 132
+        },
+        "GSE147740": {
+          "human": 0,
+          "n_gsm": 1129,
+          "non_human": 0,
+          "unknown": 1129
+        },
+        "GSE153712": {
+          "human": 0,
+          "n_gsm": 726,
+          "non_human": 0,
+          "unknown": 726
+        },
+        "GSE157131": {
+          "human": 0,
+          "n_gsm": 1218,
+          "non_human": 0,
+          "unknown": 1218
+        },
+        "GSE157397": {
+          "human": 0,
+          "n_gsm": 51,
+          "non_human": 0,
+          "unknown": 51
+        },
+        "GSE179325": {
+          "human": 0,
+          "n_gsm": 574,
+          "non_human": 0,
+          "unknown": 574
+        },
+        "GSE183647": {
+          "human": 0,
+          "n_gsm": 565,
+          "non_human": 0,
+          "unknown": 565
+        },
+        "GSE183920": {
+          "human": 0,
+          "n_gsm": 603,
+          "non_human": 0,
+          "unknown": 603
+        },
+        "GSE185920": {
+          "human": 0,
+          "n_gsm": 1471,
+          "non_human": 0,
+          "unknown": 1471
+        },
+        "GSE197678": {
+          "human": 0,
+          "n_gsm": 2922,
+          "non_human": 0,
+          "unknown": 2922
+        },
+        "GSE208713": {
+          "human": 0,
+          "n_gsm": 568,
+          "non_human": 0,
+          "unknown": 568
+        },
+        "GSE210255": {
+          "human": 0,
+          "n_gsm": 1394,
+          "non_human": 0,
+          "unknown": 1394
+        },
+        "GSE215240": {
+          "human": 0,
+          "n_gsm": 1124,
+          "non_human": 0,
+          "unknown": 1124
+        },
+        "GSE219037": {
+          "human": 0,
+          "n_gsm": 553,
+          "non_human": 0,
+          "unknown": 553
+        },
+        "GSE223817": {
+          "human": 0,
+          "n_gsm": 984,
+          "non_human": 0,
+          "unknown": 984
+        },
+        "GSE224124": {
+          "human": 0,
+          "n_gsm": 1107,
+          "non_human": 0,
+          "unknown": 1107
+        },
+        "GSE224218": {
+          "human": 0,
+          "n_gsm": 170,
+          "non_human": 0,
+          "unknown": 170
+        },
+        "GSE224365": {
+          "human": 0,
+          "n_gsm": 712,
+          "non_human": 0,
+          "unknown": 712
+        },
+        "GSE225845": {
+          "human": 0,
+          "n_gsm": 595,
+          "non_human": 0,
+          "unknown": 595
+        },
+        "GSE226569": {
+          "human": 0,
+          "n_gsm": 694,
+          "non_human": 0,
+          "unknown": 694
+        },
+        "GSE237561": {
+          "human": 0,
+          "n_gsm": 126,
+          "non_human": 0,
+          "unknown": 126
+        },
+        "GSE240482": {
+          "human": 0,
+          "n_gsm": 64,
+          "non_human": 0,
+          "unknown": 64
+        },
+        "GSE267015": {
+          "human": 0,
+          "n_gsm": 70,
+          "non_human": 0,
+          "unknown": 70
+        },
+        "GSE270375": {
+          "human": 0,
+          "n_gsm": 1378,
+          "non_human": 0,
+          "unknown": 1378
+        },
+        "GSE280206": {
+          "human": 0,
+          "n_gsm": 648,
+          "non_human": 0,
+          "unknown": 648
+        },
+        "GSE31848": {
+          "human": 0,
+          "n_gsm": 153,
+          "non_human": 0,
+          "unknown": 153
+        },
+        "GSE34387": {
+          "human": 0,
+          "n_gsm": 220,
+          "non_human": 0,
+          "unknown": 220
+        },
+        "GSE40279": {
+          "human": 0,
+          "n_gsm": 656,
+          "non_human": 0,
+          "unknown": 656
+        },
+        "GSE40699": {
+          "human": 0,
+          "n_gsm": 62,
+          "non_human": 0,
+          "unknown": 62
+        },
+        "GSE41336": {
+          "human": 0,
+          "n_gsm": 90,
+          "non_human": 0,
+          "unknown": 90
+        },
+        "GSE42861": {
+          "human": 0,
+          "n_gsm": 689,
+          "non_human": 0,
+          "unknown": 689
+        },
+        "GSE43414": {
+          "human": 0,
+          "n_gsm": 696,
+          "non_human": 0,
+          "unknown": 696
+        },
+        "GSE49177": {
+          "human": 0,
+          "n_gsm": 61,
+          "non_human": 0,
+          "unknown": 61
+        },
+        "GSE51032": {
+          "human": 0,
+          "n_gsm": 845,
+          "non_human": 0,
+          "unknown": 845
+        },
+        "GSE52025": {
+          "human": 0,
+          "n_gsm": 62,
+          "non_human": 0,
+          "unknown": 62
+        },
+        "GSE55763": {
+          "human": 0,
+          "n_gsm": 2711,
+          "non_human": 0,
+          "unknown": 2711
+        },
+        "GSE56046": {
+          "human": 0,
+          "n_gsm": 1202,
+          "non_human": 0,
+          "unknown": 1202
+        },
+        "GSE56105": {
+          "human": 0,
+          "n_gsm": 614,
+          "non_human": 0,
+          "unknown": 614
+        },
+        "GSE57204": {
+          "human": 0,
+          "n_gsm": 54,
+          "non_human": 0,
+          "unknown": 54
+        },
+        "GSE57342": {
+          "human": 0,
+          "n_gsm": 338,
+          "non_human": 0,
+          "unknown": 338
+        },
+        "GSE57853": {
+          "human": 0,
+          "n_gsm": 92,
+          "non_human": 0,
+          "unknown": 92
+        },
+        "GSE59065": {
+          "human": 0,
+          "n_gsm": 296,
+          "non_human": 0,
+          "unknown": 296
+        },
+        "GSE59685": {
+          "human": 0,
+          "n_gsm": 531,
+          "non_human": 0,
+          "unknown": 531
+        },
+        "GSE65183": {
+          "human": 0,
+          "n_gsm": 144,
+          "non_human": 0,
+          "unknown": 144
+        },
+        "GSE65362": {
+          "human": 0,
+          "n_gsm": 562,
+          "non_human": 0,
+          "unknown": 562
+        },
+        "GSE66872": {
+          "human": 0,
+          "n_gsm": 60,
+          "non_human": 0,
+          "unknown": 60
+        },
+        "GSE68060": {
+          "human": 0,
+          "n_gsm": 120,
+          "non_human": 0,
+          "unknown": 120
+        },
+        "GSE68379": {
+          "human": 0,
+          "n_gsm": 1028,
+          "non_human": 0,
+          "unknown": 1028
+        },
+        "GSE68825": {
+          "human": 0,
+          "n_gsm": 144,
+          "non_human": 0,
+          "unknown": 144
+        },
+        "GSE70783": {
+          "human": 0,
+          "n_gsm": 77,
+          "non_human": 0,
+          "unknown": 77
+        },
+        "GSE72680": {
+          "human": 0,
+          "n_gsm": 422,
+          "non_human": 0,
+          "unknown": 422
+        },
+        "GSE73801": {
+          "human": 0,
+          "n_gsm": 593,
+          "non_human": 0,
+          "unknown": 593
+        },
+        "GSE74193": {
+          "human": 0,
+          "n_gsm": 675,
+          "non_human": 0,
+          "unknown": 675
+        },
+        "GSE74738": {
+          "human": 0,
+          "n_gsm": 79,
+          "non_human": 0,
+          "unknown": 79
+        },
+        "GSE77348": {
+          "human": 0,
+          "n_gsm": 85,
+          "non_human": 0,
+          "unknown": 85
+        },
+        "GSE77716": {
+          "human": 0,
+          "n_gsm": 573,
+          "non_human": 0,
+          "unknown": 573
+        },
+        "GSE78874": {
+          "human": 0,
+          "n_gsm": 259,
+          "non_human": 0,
+          "unknown": 259
+        },
+        "GSE79185": {
+          "human": 0,
+          "n_gsm": 61,
+          "non_human": 0,
+          "unknown": 61
+        },
+        "GSE80417": {
+          "human": 0,
+          "n_gsm": 675,
+          "non_human": 0,
+          "unknown": 675
+        },
+        "GSE81472": {
+          "human": 0,
+          "n_gsm": 51,
+          "non_human": 0,
+          "unknown": 51
+        },
+        "GSE86078": {
+          "human": 0,
+          "n_gsm": 149,
+          "non_human": 0,
+          "unknown": 149
+        },
+        "GSE86355": {
+          "human": 0,
+          "n_gsm": 75,
+          "non_human": 0,
+          "unknown": 75
+        },
+        "GSE87177": {
+          "human": 0,
+          "n_gsm": 119,
+          "non_human": 0,
+          "unknown": 119
+        },
+        "GSE90496": {
+          "human": 0,
+          "n_gsm": 2801,
+          "non_human": 0,
+          "unknown": 2801
+        },
+        "GSE94943": {
+          "human": 0,
+          "n_gsm": 72,
+          "non_human": 0,
+          "unknown": 72
+        }
+      },
+      "unknown": 56201
     },
     "studies_touched": [
+      "GSE103286",
+      "GSE103332",
       "GSE104210",
       "GSE105018",
+      "GSE107351",
+      "GSE107352",
+      "GSE108187",
+      "GSE108576",
       "GSE109379",
+      "GSE110184",
+      "GSE110544",
+      "GSE110697",
+      "GSE111165",
       "GSE111629",
+      "GSE114598",
+      "GSE115278",
       "GSE116339",
       "GSE117859",
+      "GSE119144",
+      "GSE122038",
+      "GSE122126",
+      "GSE122920",
+      "GSE122994",
+      "GSE123601",
+      "GSE124617",
       "GSE125105",
+      "GSE125895",
       "GSE130051",
+      "GSE131013",
+      "GSE131482",
       "GSE132203",
+      "GSE132650",
+      "GSE132804",
       "GSE134379",
+      "GSE135205",
+      "GSE136790",
+      "GSE137845",
       "GSE140686",
+      "GSE141039",
       "GSE141065",
+      "GSE141254",
+      "GSE142512",
+      "GSE143708",
+      "GSE144977",
       "GSE145361",
       "GSE147221",
+      "GSE147430",
       "GSE147740",
       "GSE153712",
       "GSE157131",
+      "GSE157397",
       "GSE179325",
       "GSE183647",
       "GSE183920",
@@ -450,57 +1404,107 @@
       "GSE219037",
       "GSE223817",
       "GSE224124",
+      "GSE224218",
       "GSE224365",
       "GSE225845",
       "GSE226569",
+      "GSE237561",
+      "GSE240482",
+      "GSE267015",
       "GSE270375",
       "GSE280206",
+      "GSE31848",
+      "GSE34387",
       "GSE40279",
+      "GSE40699",
+      "GSE41336",
       "GSE42861",
       "GSE43414",
+      "GSE49177",
       "GSE51032",
+      "GSE52025",
       "GSE55763",
       "GSE56046",
       "GSE56105",
+      "GSE57204",
+      "GSE57342",
+      "GSE57853",
       "GSE59685",
+      "GSE65183",
       "GSE65362",
+      "GSE66872",
+      "GSE68060",
       "GSE68379",
+      "GSE68825",
+      "GSE70783",
       "GSE72680",
       "GSE73801",
       "GSE74193",
+      "GSE74738",
+      "GSE77348",
       "GSE77716",
       "GSE78874",
-      "GSE80417"
+      "GSE79185",
+      "GSE80417",
+      "GSE81472",
+      "GSE86078",
+      "GSE86355",
+      "GSE87177",
+      "GSE90496",
+      "GSE94943"
     ],
     "tissue_map": {
       "ambiguous": 0,
-      "empty": 16899,
-      "mapped": 11670,
-      "unmapped": 9451
+      "empty": 0,
+      "mapped": 43263,
+      "unmapped": 12116
     },
     "tissue_ontology": "/data/projects/methyl-burden-score/data/canonical/phenotypes/tissue_ontology_hub_nine_pack_v1.yaml",
     "unmapped_tissue_examples": [
-      "sarcoma",
-      "Medulloblastoma",
-      "brain tumor",
-      "cerebellum",
-      "frontal cortex",
-      "PBL",
-      "peripheral blood lymphocytes",
-      "baby_venous_blood",
-      "mother_venous_blood",
-      "breast tumor",
-      "Blood DNA",
-      "White blood cell",
       "LM",
       "PR",
-      "meningioma",
-      "ependymal tumor",
-      "Umbilical cord blood buffy coat"
+      "sarcoma",
+      "colon cancer cell line",
+      "ovarian cancer cell line",
+      "embryonic stem cell, undifferentiated",
+      "embryonic stem cell, differentiated;spontaneous.day3",
+      "embryonic stem cell, differentiated;NeuralProgenitors.day22",
+      "embryonic stem cell, differentiated;OligodendrocyteProgenitors.day42",
+      "parthenogentic embryonic stem cell, undifferentiated",
+      "induced pluripotent stem cell, undifferentiated",
+      "induced pluripotent stem cell, differentiated;NeuralProgenitors.day22",
+      "induced pluripotent stem cell, differentiated;NeuralProgenitors.day23",
+      "induced pluripotent stem cell, differentiated;OligodendrocyteProgenitors.day42",
+      "Mole",
+      "Somatic.Primary",
+      "Somatic.Tissue",
+      "brain_whole",
+      "brain_neg",
+      "brain_pos",
+      "NOT SPECIFIED",
+      "melanoma",
+      "Soft_tissue",
+      "Upper_limb",
+      "Cervical",
+      "Retroperitoneal",
+      "Pelvis",
+      "Paraspinal",
+      "Intraabdominal",
+      "Vagina",
+      "Epidural",
+      "Face",
+      "Paratesticular",
+      "Skull_base",
+      "Thoracic_wall",
+      "Clavicle",
+      "Orbita",
+      "CD8 T cells",
+      "IVD",
+      "Tumor"
     ]
   },
-  "n_samples_with_geo_json": 38020,
-  "n_samples_with_geo_phenotype": 36014,
+  "n_samples_with_geo_json": 48394,
+  "n_samples_with_geo_phenotype": 43853,
   "notes": [
     "GEO rows are omitted for Hub GSM (Hub wins).",
     "Atlas enrichment stays on study.metadata_json only.",
@@ -512,37 +1516,37 @@
   ],
   "prevalence": [
     {
-      "n_observed": 19233,
-      "n_rows": 19233,
-      "n_samples": 19233,
+      "n_observed": 21940,
+      "n_rows": 21940,
+      "n_samples": 21940,
       "phenotype_id": "age",
       "source_family": "geo_metadata_backfill"
     },
     {
-      "n_observed": 1470,
-      "n_rows": 1470,
-      "n_samples": 1470,
+      "n_observed": 1687,
+      "n_rows": 1687,
+      "n_samples": 1687,
       "phenotype_id": "cancer",
       "source_family": "geo_metadata_backfill"
     },
     {
-      "n_observed": 5216,
-      "n_rows": 5216,
-      "n_samples": 5216,
+      "n_observed": 6065,
+      "n_rows": 6065,
+      "n_samples": 6065,
       "phenotype_id": "disease",
       "source_family": "geo_metadata_backfill"
     },
     {
-      "n_observed": 27931,
-      "n_rows": 27931,
-      "n_samples": 27931,
+      "n_observed": 32083,
+      "n_rows": 32083,
+      "n_samples": 32083,
       "phenotype_id": "sex",
       "source_family": "geo_metadata_backfill"
     },
     {
-      "n_observed": 21121,
-      "n_rows": 21121,
-      "n_samples": 21121,
+      "n_observed": 36861,
+      "n_rows": 36861,
+      "n_samples": 36861,
       "phenotype_id": "tissue",
       "source_family": "geo_metadata_backfill"
     }

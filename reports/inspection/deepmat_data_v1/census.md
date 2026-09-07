@@ -1,6 +1,6 @@
 # Phenotype census (deepmat-data-v1)
 
-- Generated: `2026-09-07T14:29:07Z`
+- Generated: `2026-09-07T15:04:55Z`
 - Unique GSM (`sample`): **173076**
 - Pack membership row sum: **47843**
 - Pack row sum counts Hub membership only; unique GSM also includes EWAS_db-only samples. Pack row sum can exceed unique Hub GSMs when samples appear in multiple packs.

@@ -1,0 +1,158 @@
+{
+  "generated_at": "2026-09-07T14:33:25Z",
+  "catalog": {
+    "n_samples": 173076,
+    "n_studies": 1763,
+    "n_studies_with_platform_id": 1456,
+    "pct_studies_with_platform_id": 82.6,
+    "platform_id_counts": {
+      "HM450": 908,
+      "EPIC": 530,
+      "nan": 307,
+      "EPICv2": 18
+    }
+  },
+  "lane_flags": {
+    "hub_only": 3900,
+    "ewas_db_only": 138842,
+    "both": 30334
+  },
+  "vs_datahub_census": {
+    "official_n_samples": 180317,
+    "local_census_n": 180317,
+    "overlap": 157402,
+    "census_not_in_catalog_missing_betas": 22915,
+    "catalog_not_in_census": 15674
+  },
+  "platform_null_studies": {
+    "n": 307,
+    "n_samples_in_null_studies": 13321,
+    "by_kind": {
+      "GSE": 304,
+      "ArrayExpress": 2,
+      "TCGA/CPTAC": 1
+    },
+    "reasons": {
+      "mixed_census_or_geo": 43,
+      "single_unapplied_zero_samples": 3,
+      "not_in_census_or_geo": 261
+    },
+    "top_by_n_samples": [
+      {
+        "study_id": "CPTAC-3",
+        "n_samples": 1998,
+        "kind": "TCGA/CPTAC"
+      },
+      {
+        "study_id": "GSE140686",
+        "n_samples": 1504,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE157131",
+        "n_samples": 1218,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE104210",
+        "n_samples": 675,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE280206",
+        "n_samples": 648,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE115278",
+        "n_samples": 474,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE142512",
+        "n_samples": 395,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE122994",
+        "n_samples": 380,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE132804",
+        "n_samples": 334,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE122038",
+        "n_samples": 217,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE224218",
+        "n_samples": 170,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE131482",
+        "n_samples": 153,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE141039",
+        "n_samples": 153,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE111165",
+        "n_samples": 147,
+        "kind": "GSE"
+      },
+      {
+        "study_id": "GSE123601",
+        "n_samples": 142,
+        "kind": "GSE"
+      }
+    ]
+  },
+  "ewas_db_retry": {
+    "manifest_rows": 0,
+    "on_disk": 0,
+    "missing": 0,
+    "missing_paths": [],
+    "failures_report_still_missing": 0,
+    "note": "Post-retry summarize: still_missing=0 (WARN lines remain historical; HTML parse artifacts filtered)."
+  },
+  "release_ewas_db": {
+    "advertised_n": 1989,
+    "mirror_complete": false,
+    "n_local_gsm": 170641,
+    "n_local_studies": 1695,
+    "refresh_is_idempotent": true,
+    "remote_index_fetched": false,
+    "total_bytes": 1793230765292
+  },
+  "release_datahub_census": {
+    "enabled": true,
+    "n_census_rows": 180317,
+    "n_phenotype_rows_added": 250491,
+    "n_platform_filled": 157402,
+    "n_sample_type_filled": 143774,
+    "n_samples_matched": 157402,
+    "n_studies_platform_set": 942,
+    "n_tissue_filled": 122712,
+    "parquet_path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/ewas_datahub_sample_census.parquet"
+  },
+  "registry_sample_count_nulls": 0,
+  "notes": [
+    "Hub pack phenotypes remain training SoT.",
+    "Mixed-platform studies correctly keep study.platform_id null.",
+    "single_unapplied_zero_samples = inventory studies with no catalog samples but a single census/GEO platform.",
+    "GEO priority gap list filled platforms where SOFT had a single methylation GPL."
+  ],
+  "disk_ewas_db": {
+    "studies_with_txt": 1695,
+    "txt": 170641,
+    "gsm_named": 157240
+  }
+}

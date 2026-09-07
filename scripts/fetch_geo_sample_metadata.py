@@ -18,6 +18,7 @@ from mbs.geo_metadata import (
     load_geo_tissue_aliases,
     read_cached_soft,
     resolve_tissue_ontology_path,
+    species_census,
     write_geo_parquet,
 )
 from mbs.paths import DataPaths
@@ -116,6 +117,7 @@ def main() -> None:
                 aliases=aliases,
             )
             tissue_stats = dict(frame.attrs.get("tissue_map_stats") or {})
+            species_stats = dict(frame.attrs.get("species_census") or {})
             pheno_counts = {
                 "age": int(frame["age"].notna().sum()) if "age" in frame.columns else 0,
                 "sex": int(frame["sex"].notna().sum()) if "sex" in frame.columns else 0,
@@ -137,6 +139,11 @@ def main() -> None:
                     "soft_sha256": digest,
                     "n_geo_gsm": len(frame),
                     "tissue_map": tissue_stats,
+                    "species": {
+                        "human": int(species_stats.get("human") or 0),
+                        "non_human": int(species_stats.get("non_human") or 0),
+                        "unknown": int(species_stats.get("unknown") or 0),
+                    },
                     "phenotype_counts": pheno_counts,
                 }
             )
@@ -162,6 +169,7 @@ def main() -> None:
 
     combined = pd.concat(frames, ignore_index=True)
     combined, conflict_stats = consolidate_geo_sample_rows(combined)
+    species_summary = species_census(combined)
     all_study_ids = sorted(
         {
             str(s).strip().upper()
@@ -186,6 +194,7 @@ def main() -> None:
             "generated_at": fetched_at,
             "n_samples": len(combined),
             "tissue_ontology": str(ont_path) if ont_path else None,
+            "species_census": species_summary,
             "conflict_stats": {
                 k: v for k, v in conflict_stats.items() if k != "conflicts"
             },
@@ -197,7 +206,10 @@ def main() -> None:
     sys.stdout.write(
         f"wrote {out} n_samples={len(combined)} "
         f"conflicts={conflict_stats.get('n_conflict_samples', 0)} "
-        f"failures={len(failures)}\n"
+        f"failures={len(failures)} "
+        f"species_human={species_summary.get('human', 0)} "
+        f"non_human={species_summary.get('non_human', 0)} "
+        f"unknown={species_summary.get('unknown', 0)}\n"
     )
     if failures:
         for item in failures:

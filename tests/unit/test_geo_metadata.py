@@ -12,6 +12,7 @@ from mbs.geo_metadata import (
     build_geo_frame_from_soft,
     catalog_platform_from_gpl,
     characteristics_to_phenotypes,
+    classify_species,
     consolidate_geo_sample_rows,
     family_soft_url,
     map_geo_tissue,
@@ -147,7 +148,7 @@ def test_parse_family_soft_samples() -> None:
     assert series["study_id"] == "GSE_FIXTURE"
     assert series["pubmed_ids"] == ["12345678"]
     by_id = {s["sample_id"]: s for s in samples}
-    assert set(by_id) == {"GSM_HUB", "GSM001", "GSM002"}
+    assert set(by_id) == {"GSM_HUB", "GSM001", "GSM002", "GSM_MOUSE"}
     assert by_id["GSM001"]["age"] == 45.0
     assert by_id["GSM001"]["age_raw"] == "45"
     assert by_id["GSM001"]["sex"] == "Female"
@@ -155,6 +156,59 @@ def test_parse_family_soft_samples() -> None:
     assert by_id["GSM001"]["disease_label_status"] == "control"
     assert "disease" not in by_id["GSM002"] or by_id["GSM002"].get("disease") is None
     assert by_id["GSM002"].get("age") is None
+    assert by_id["GSM001"]["species_status"] == "human"
+    assert by_id["GSM001"]["taxon_id"] == 9606
+    assert by_id["GSM_MOUSE"]["species_status"] == "non_human"
+    assert by_id["GSM_MOUSE"]["taxon_id"] == 10090
+
+
+def test_classify_species() -> None:
+    sp, tax, st = classify_species("Homo sapiens", 9606)
+    assert st == "human" and tax == 9606 and sp == "Homo sapiens"
+    _, tax2, st2 = classify_species("Mus musculus", 10090)
+    assert st2 == "non_human" and tax2 == 10090
+    _, _, st3 = classify_species(None, None)
+    assert st3 == "unknown"
+    _, _, st4 = classify_species("human", None)
+    assert st4 == "human"
+
+
+def test_merge_quarantines_non_human() -> None:
+    samples = pd.DataFrame(
+        [
+            {
+                "sample_id": "GSM001",
+                "study_id": "GSE_FIXTURE",
+                "platform_id": None,
+                "metadata_json": json.dumps({"source": "ewas_db"}),
+            },
+            {
+                "sample_id": "GSM_MOUSE",
+                "study_id": "GSE_FIXTURE",
+                "platform_id": None,
+                "metadata_json": json.dumps({"source": "ewas_db"}),
+            },
+        ]
+    )
+    studies = pd.DataFrame([{"study_id": "GSE_FIXTURE", "platform_id": None}])
+    geo = build_geo_frame_from_soft(
+        _fixture_soft(),
+        fetched_at="2026-01-01T00:00:00Z",
+        soft_sha256="abc",
+        ontology=_mini_ontology(),
+        aliases={"whole blood": "whole blood", "blood": "whole blood"},
+    )
+    _, pheno, _, stats = merge_geo_sample_metadata(
+        samples=samples,
+        phenotypes=pd.DataFrame(),
+        studies=studies,
+        geo_frame=geo,
+    )
+    assert stats["n_samples_quarantined_species"] >= 1
+    assert stats["species_census"]["non_human"] >= 1
+    sids = set(pheno["sample_id"].astype(str)) if not pheno.empty else set()
+    assert "GSM_MOUSE" not in sids
+    assert "GSM001" in sids
 
 
 def test_characteristics_to_phenotypes_eligibility() -> None:
@@ -261,6 +315,93 @@ def test_consolidate_geo_agrees_and_conflicts() -> None:
     assert row["tissue"] == "whole blood"
 
 
+def test_merge_hub_fill_missing_age() -> None:
+    """Hub GSM with blank age gets GEO age; existing sex is not overwritten."""
+    samples = pd.DataFrame(
+        [
+            {
+                "sample_id": "GSM_HUB",
+                "study_id": "GSE_FIXTURE",
+                "source_sample_id": "GSM_HUB",
+                "donor_id": None,
+                "replicate_group": None,
+                "age": None,
+                "sex": "Male",
+                "tissue_raw": None,
+                "tissue_ontology_id": None,
+                "case_control": None,
+                "metadata_json": None,
+            }
+        ]
+    )
+    studies = pd.DataFrame(
+        [
+            {
+                "study_id": "GSE_FIXTURE",
+                "source_release_id": "hub",
+                "gse_id": "GSE_FIXTURE",
+                "cohort_id": None,
+                "platform_id": None,
+                "processing_level": None,
+                "genome_build": "GRCh38",
+                "retrieved_at": "2026-01-01T00:00:00Z",
+                "metadata_json": None,
+            }
+        ]
+    )
+    # Pre-existing Hub sex observation in long-form.
+    phenotypes = pd.DataFrame(
+        [
+            {
+                "sample_id": "GSM_HUB",
+                "phenotype_id": "sex",
+                "numeric_value": None,
+                "categorical_value": "Male",
+                "label_status": "observed",
+                "is_observed": True,
+                "source_family": "sex",
+                "source_record_id": "hub:0",
+                "ontology_id": None,
+            }
+        ]
+    )
+    geo_frame = build_geo_frame_from_soft(
+        _fixture_soft(),
+        fetched_at="2026-01-01T00:00:00Z",
+        soft_sha256="abc",
+        ontology=_mini_ontology(),
+        aliases={"blood": "whole blood", "whole blood": "whole blood"},
+    )
+    geo_frame = geo_frame.loc[geo_frame["sample_id"] == "GSM_HUB"].reset_index(drop=True)
+    out_samples, out_pheno, _, stats = merge_geo_sample_metadata(
+        samples=samples,
+        phenotypes=phenotypes,
+        studies=studies,
+        geo_frame=geo_frame,
+        ontology=_mini_ontology(),
+        aliases={"blood": "whole blood", "whole blood": "whole blood"},
+    )
+    assert stats["n_samples_hub_fill"] == 1
+    assert float(out_samples.iloc[0]["age"]) == 40.0
+    assert out_samples.iloc[0]["sex"] == "Male"
+    geo_age = out_pheno.loc[
+        (out_pheno["sample_id"] == "GSM_HUB")
+        & (out_pheno["phenotype_id"] == "age")
+        & (out_pheno["source_family"] == GEO_SOURCE_FAMILY)
+    ]
+    assert len(geo_age) == 1
+    # Sex already observed on Hub — no GEO sex row.
+    geo_sex = out_pheno.loc[
+        (out_pheno["sample_id"] == "GSM_HUB")
+        & (out_pheno["phenotype_id"] == "sex")
+        & (out_pheno["source_family"] == GEO_SOURCE_FAMILY)
+    ]
+    assert geo_sex.empty
+    hub_meta = json.loads(out_samples.iloc[0]["metadata_json"])
+    assert "geo" in hub_meta
+    assert hub_meta.get("source") != "ewas_db"
+
+
 def test_merge_geo_skips_hub_gsm() -> None:
     samples = pd.DataFrame(
         [
@@ -348,6 +489,7 @@ def test_merge_geo_skips_hub_gsm() -> None:
         aliases={"blood": "whole blood", "whole blood": "whole blood"},
     )
     assert stats["n_samples_skipped_hub"] == 1
+    assert stats["n_samples_hub_fill"] == 0
     assert stats["n_samples_touched"] == 1
     assert stats["n_geo_phenotype_rows_before_merge"] == 0
     assert set(out_pheno["sample_id"].tolist()) == {"GSM001"}
@@ -355,6 +497,7 @@ def test_merge_geo_skips_hub_gsm() -> None:
     tissue_row = out_pheno.loc[out_pheno["phenotype_id"] == "tissue"].iloc[0]
     assert tissue_row["categorical_value"] == "whole blood"
     assert tissue_row["ontology_id"] == "1"
+    # Hub metadata_json stays null when no fill was needed (no GEO provenance write).
     hub_meta = out_samples.loc[out_samples["sample_id"] == "GSM_HUB", "metadata_json"].iloc[0]
     assert hub_meta is None or (isinstance(hub_meta, float) and pd.isna(hub_meta))
     ewas_meta = json.loads(

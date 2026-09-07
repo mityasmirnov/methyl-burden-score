@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-07T14:29:09Z",
+  "generated_at": "2026-09-07T15:04:58Z",
   "rows": [
     {
       "eligible_auxiliary_task": true,
@@ -617,8 +617,8 @@
       "n_cases": null,
       "n_controls": null,
       "n_platforms": 3,
-      "n_samples": 25303,
-      "n_studies": 63,
+      "n_samples": 36861,
+      "n_studies": 68,
       "n_unknown": 0,
       "phenotype_family": "geo_metadata_backfill",
       "phenotype_id": "tissue",

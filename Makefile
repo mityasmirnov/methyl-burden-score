@@ -8,7 +8,7 @@ SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
 CACHE_ROOT ?= $(PROJECT_ROOT)/cache
 ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
-.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build seed-atlas-gse-map fetch-geo-sample-metadata fetch-geo-sample-metadata-batch fetch-ewas-datahub-census catalog-refresh-release summarize-ewas-db-failures retry-ewas-db-failures agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info 7b-status 7b-convert-bg
+.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build seed-atlas-gse-map fetch-geo-sample-metadata fetch-geo-sample-metadata-batch remap-geo-tissue enrich-geo-series-metadata fetch-ewas-datahub-census catalog-refresh-release summarize-ewas-db-failures retry-ewas-db-failures write-geo-next-gse-list agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info 7b-status 7b-convert-bg
 
 help:
 	@printf '%s\n' \
@@ -26,6 +26,9 @@ help:
 	  'seed-atlas-gse-map  Refresh GSE↔Atlas map from NCBI GEO PubMed IDs' \
 	  'fetch-geo-sample-metadata  Fetch pilot GEO SOFT → geo_sample_metadata.parquet' \
 	  'fetch-geo-sample-metadata-batch  Fetch batch-50 GEO SOFT list' \
+	  'remap-geo-tissue  Remap GEO tissue from source_name + aliases (no SOFT reparse)' \
+	  'enrich-geo-series-metadata  GEO series title/summary/design → study.metadata_json' \
+	  'write-geo-next-gse-list  Rank next GEO crawl GSEs from EWAS_db' \
 	  'fetch-ewas-datahub-census  Paginate CNCB repository API → sample census Parquet' \
 	  'catalog-refresh-release  Seed Atlas map + deepmat-data-v1 + phenotype census' \
 	  '7b-status      Refresh + print Milestone 7B Hub matrix convert progress' \
@@ -100,6 +103,15 @@ fetch-geo-sample-metadata:
 fetch-geo-sample-metadata-batch:
 	uv run python scripts/fetch_geo_sample_metadata.py \
 	  --studies-file configs/data/geo_backfill_batch50_gse.txt
+
+remap-geo-tissue:
+	uv run python scripts/remap_geo_tissue.py --force
+
+enrich-geo-series-metadata:
+	uv run python scripts/enrich_study_geo_series_metadata.py
+
+write-geo-next-gse-list:
+	uv run python scripts/write_geo_next_gse_list.py
 
 fetch-ewas-datahub-census:
 	uv run python scripts/fetch_ewas_datahub_repository_census.py

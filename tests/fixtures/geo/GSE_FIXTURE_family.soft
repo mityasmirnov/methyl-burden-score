@@ -4,6 +4,8 @@
 !Series_title = Pilot fixture series
 ^SAMPLE = GSM_HUB
 !Sample_geo_accession = GSM_HUB
+!Sample_organism_ch1 = Homo sapiens
+!Sample_taxid_ch1 = 9606
 !Sample_source_name_ch1 = hub overlap sample
 !Sample_characteristics_ch1 = age: 40
 !Sample_characteristics_ch1 = Sex: Male
@@ -11,6 +13,8 @@
 !Sample_platform_id = GPL21145
 ^SAMPLE = GSM001
 !Sample_geo_accession = GSM001
+!Sample_organism_ch1 = Homo sapiens
+!Sample_taxid_ch1 = 9606
 !Sample_source_name_ch1 = peripheral blood
 !Sample_characteristics_ch1 = age: 45
 !Sample_characteristics_ch1 = Sex: F
@@ -20,6 +24,8 @@
 !Sample_platform_id = GPL21145
 ^SAMPLE = GSM002
 !Sample_geo_accession = GSM002
+!Sample_organism_ch1 = Homo sapiens
+!Sample_taxid_ch1 = 9606
 !Sample_source_name_ch1 = tumor tissue
 !Sample_characteristics_ch1 = age: 10002
 !Sample_characteristics_ch1 = Sex: ambiguous
@@ -27,3 +33,11 @@
 !Sample_characteristics_ch1 = disease status: Crohn's disease
 !Sample_characteristics_ch1 = treatment: drug A
 !Sample_platform_id = GPL6883
+^SAMPLE = GSM_MOUSE
+!Sample_geo_accession = GSM_MOUSE
+!Sample_organism_ch1 = Mus musculus
+!Sample_taxid_ch1 = 10090
+!Sample_source_name_ch1 = mouse liver
+!Sample_characteristics_ch1 = age: 12 weeks
+!Sample_characteristics_ch1 = tissue: liver
+!Sample_platform_id = GPL21145

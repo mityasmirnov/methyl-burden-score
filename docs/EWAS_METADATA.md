@@ -107,6 +107,8 @@ GSM. Operator brief, join keys, GPL map, and audit:
 [`plans/geo-metadata-backfill-ewas-db.md`](plans/geo-metadata-backfill-ewas-db.md).
 Pre-scale / batch-50:
 [`plans/geo-metadata-backfill-pre-scale.md`](plans/geo-metadata-backfill-pre-scale.md).
+Label quality beyond Hub (tissue remap, Atlas ceiling):
+[`plans/improve-labels-study-context.md`](plans/improve-labels-study-context.md).
 Training release design (not built; do not mutate ATS):
 [`plans/geo-enriched-training-release.md`](plans/geo-enriched-training-release.md).
 
@@ -114,6 +116,8 @@ Training release design (not built; do not mutate ATS):
 source scripts/activate_data_environment.sh
 make fetch-geo-sample-metadata          # pilot 15
 make fetch-geo-sample-metadata-batch    # audited 50 (done 2026-09-04)
+# Remap tissue from source_name + aliases without re-parsing SOFT:
+uv run python scripts/remap_geo_tissue.py --force
 MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
 # Clean Δ recipe: MBS_SKIP_GEO_BACKFILL=1 refresh → assert 0 GEO rows → merge
 ```

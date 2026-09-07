@@ -199,7 +199,14 @@ After QC on an expanded audited batch:
   (`geo_backfill_batch/eligibility_by_study.{json,md}` — 2026-09-07)
 - [x] Build immutable `deepmat-data-geo-dev-v1` **phenotype** release
   (arms Hub/GEO/Hub+GEO/metadata-only; no ATS mutate; training still gated)
-- [ ] Larger GEO crawl beyond batch-50 (**gated**)
+- [x] Species gate: parse `!Sample_organism` / taxid; quarantine non-human
+  before merge; per-GSE census (`species_status`)
+- [x] Next GSE list from EWAS_db − fetched (`configs/data/geo_backfill_next_gse.txt`,
+  top 100 by assay N; `make write-geo-next-gse-list`)
+- [x] Hub∩GEO phenotype fill (fill-missing only; no Hub overwrite)
+- [ ] Fetch next GSE list + rebuild parquet species columns from cache
+  (`scripts/run_geo_crawl_chain.sh` background)
+- [ ] Larger GEO crawl merge / eligibility refresh (**gated for training**)
 - [ ] Wire eligible GEO into age/tissue training / seed-gene (**gated**)
 
 ## Code touchpoints (when implementing)
