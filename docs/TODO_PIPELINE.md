@@ -70,11 +70,11 @@ Report:
 | 7G″ expression plan | **done** (deferred; no training code) |
 | Stage A required GPU arms (P2/P4/P5-max/`C-*-G`) | **done** (P5 inactive thereafter) |
 | Screen policy: `mbs_enet`/`rbs_enet` post-hoc | **done** (`stage_a_include_mbs_enet: false`; `eval_mbs_enet_from_scores.py`) |
-| Scalar mixed-pooling arms (`mean-max`, `max-mean`) | **done** 3/3 at 5 ep; **16-ep: mean-max in progress; max-mean queued** |
-| Vector cascade arms (`vector-mean-max`, `vector-max-max`) | **done** 3/3 at 5 ep — vector-max-max not promoted; **mean-max 16-ep queued** |
-| `N-light-gene-max` / `N-light-gene-mean` one-hop | **max 16-ep done** (below P2) / **mean 16-ep done** (~0.378 tissue; near P2) |
-| Annotation ablation grid (A0–A7, N0–N3) | **done** fold 0 — **`m_only` best** under raw concat; not proof annotations uninformative |
-| Post-hoc `mbs_enet` / `rbs_enet` on screen arms | **pending** (fixed enet diagnostic; nested enet required) |
+| Scalar mixed-pooling arms (`mean-max`, `max-mean`) | **done** matched 16-ep (3/3 each); retain 2×2, no pooling lock |
+| Vector cascade arms (`vector-mean-max`, `vector-max-max`) | **done** matched 16-ep for mean→max; vector-max-max not promoted |
+| `N-light-gene-max` / `N-light-gene-mean` one-hop | **done** matched 16-ep — mean near P2 tissue (~0.378); max below P2 |
+| Annotation ablation grid (A0–A7, N0–N3) | **done** fold 0 + **matched 16-ep m_only vs full** — `m_only` still preferred |
+| Post-hoc `mbs_enet` / `rbs_enet` on screen arms | **done** for promotion screen arms (nested where valid) |
 | Stage A DeepRVAT screen (Tier-1) | **done** — no architecture lock |
 | Matched 16-epoch promotion screen | **done** — `next_gate: retain_pooling_2x2` |
 | CPU typed-RBS R0–R5 | **done** (R1–R3 age↑; shuffle Δ≪1 y; neural typed **not** promoted) |
@@ -151,23 +151,19 @@ unlock) · Stage B
 
 ### Next steps (ordered)
 
-1. **Finish 16-ep queue on GPU 0** — do not kill PIDs; let
-   `run_7g_16ep_promotion_resume.sh` complete scalar `mean→max`, then
-   scalar `max→mean`, then vector `mean→max` (3 folds each).
-2. **Refresh decision artifacts** —
-   `scripts/write_7g_gene_only_probe_report.py` then
-   `scripts/apply_7g_16ep_decision.py`; confirm
-   `promotion_decision.json` (`screen_complete`, `next_gate`, fired rules).
-   Note: one-hop **mean** 16-ep is already near P2 tissue (~0.378) — include
-   it in the decision write-up before unlocking seed-mask.
-3. **Optional CPU (parallel, non-blocking)** — nested/post-hoc
-   `eval_mbs_enet_from_scores.py` on finished 16-ep runs; do **not** stall
-   the GPU queue for enet.
-4. **When unlocked:** age-primary seed-mask CUDA —
-   `run_7g_prime_seed_mask.py --device cuda --reuse-panels` using fold-0
-   panel `ef6cd307…` / `graph_content_hash` `7ee70c55…`
-   (`panel_audit.md` must stay `ok_for_seed_mask_gpu: true`).
-5. **Still blocked:** Stage B `run_7g_prime_stage_b.py`, Milestone **7** OOF.
+1. **Continue 7H on GPU 0** — follow
+   [`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md).
+   Matched 16-ep promotion + age-primary seed-mask are **done** (seed-masking
+   not adopted). Prefer one-hop **`m_only`** and retain the cascade **2×2**
+   pooling grid (no pooling lock); `P2-G` / one-hop mean remain references.
+2. **Phase 3 nine-pack** — split `hub-nine-pack-3fold-v1` is frozen via
+   `scripts/build_hub_nine_pack_split.py` (34 234 samples / 470 studies).
+   Next: smoke + reference arms on that split before trait expansion.
+   All nine-pack samples are **HM450** today — no cross-platform claim yet.
+3. **Optional CPU (non-blocking)** — finish any remaining nested/post-hoc
+   `eval_mbs_enet_from_scores.py` / typed-RBS diagnostics; do **not** stall GPU.
+4. **Still blocked:** Stage B `run_7g_prime_stage_b.py`, Milestone **7** OOF,
+   GEO-enriched GPU training, ONT/PacBio ingestion.
 
 **7G** methylation eval and **tissue probe P0–P3** are done (historical evidence
 only — P2 ~0.38 used late fusion, not MBS-only). Plan:

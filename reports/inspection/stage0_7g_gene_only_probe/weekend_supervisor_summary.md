@@ -1,0 +1,113 @@
+# 7G′ weekend supervisor summary
+
+Generated: `2026-09-04T19:01:54.233863+00:00`
+
+```json
+{
+  "started_head": "87b22c3c7a3795faf74598ed81ca0e08a76666fe",
+  "discovered_missing_at_start": [],
+  "completed": [],
+  "skipped_already_valid": [],
+  "failures": [],
+  "retries": {},
+  "seed_status": "seed_failed_rc=1",
+  "promotion_decision": {
+    "arms": {
+      "P2-G": {
+        "n_folds": 3,
+        "ceiling": 15,
+        "tissue_f1_mean": 0.3731132977135239,
+        "age_mae_mean": 15.637033478743016,
+        "sex_auroc_mean": null,
+        "matched_16ep": true
+      },
+      "N-light-gene-max": {
+        "n_folds": 3,
+        "ceiling": 21,
+        "tissue_f1_mean": 0.33645482665941434,
+        "age_mae_mean": 21.593242204862786,
+        "sex_auroc_mean": 0.6244532821811447,
+        "matched_16ep": true
+      },
+      "N-light-gene-mean": {
+        "n_folds": 3,
+        "ceiling": 16,
+        "tissue_f1_mean": 0.37771389402868943,
+        "age_mae_mean": 17.09513270506246,
+        "sex_auroc_mean": 0.6554507792646279,
+        "matched_16ep": true
+      },
+      "N-cascade-scalar-mean-max": {
+        "n_folds": 3,
+        "ceiling": 16,
+        "tissue_f1_mean": 0.3461944596198232,
+        "age_mae_mean": 20.411444626739033,
+        "sex_auroc_mean": 0.6833609825264101,
+        "matched_16ep": true
+      },
+      "N-cascade-scalar-max-mean": {
+        "n_folds": 3,
+        "ceiling": 16,
+        "tissue_f1_mean": 0.3690852116620967,
+        "age_mae_mean": 20.7955336883965,
+        "sex_auroc_mean": 0.72657439805857,
+        "matched_16ep": true
+      },
+      "N-cascade-vector-mean-max": {
+        "n_folds": 3,
+        "ceiling": 16,
+        "tissue_f1_mean": 0.35981336502819183,
+        "age_mae_mean": 21.936888905463235,
+        "sex_auroc_mean": 0.6674813013977813,
+        "matched_16ep": true
+      }
+    },
+    "rules": {
+      "one_hop_max_near_p2": {
+        "fired": false,
+        "detail": "Prefer smaller DeepRVAT-like one-hop max if within 0.03 tissue F1 of P2-G.",
+        "light_f1": 0.33645482665941434,
+        "p2_f1": 0.3731132977135239
+      },
+      "one_hop_mean_near_p2": {
+        "fired": true,
+        "detail": "Document one-hop mean as a viable smaller topology candidate if within 0.03 tissue F1 of P2-G; do not skip remaining cascade 16-ep jobs.",
+        "light_mean_f1": 0.37771389402868943,
+        "p2_f1": 0.3731132977135239
+      },
+      "vector_age_improves_but_gene_pool_loses": {
+        "fired": false,
+        "detail": "Proceed with typed-RBS aggregation, not scalar MBS.",
+        "vector_age_mae": 21.936888905463235,
+        "vector_tissue_f1": 0.35981336502819183
+      },
+      "scalar_mixed_closes_gap": {
+        "fired": true,
+        "detail": "Retain full 2\u00d72 pooling; max/max is not locked.",
+        "mean_max_f1": 0.3461944596198232,
+        "max_mean_f1": 0.3690852116620967,
+        "mean_max_matched_16ep": true,
+        "max_mean_matched_16ep": true
+      },
+      "nothing_beats_p2_or_classical": {
+        "fired": false,
+        "detail": "Stop architecture sweeps; start age-primary seed-gene experiment.",
+        "best_promoted_f1": 0.3690852116620967
+      }
+    },
+    "next_gate": "retain_pooling_2x2",
+    "screen_complete": true,
+    "recommendation": "Retain full 2\u00d72 pooling result; no pooling lock. Proceed to age-primary seed-mask."
+  },
+  "report_paths": {
+    "analysis": "/data/projects/methyl-burden-score/reports/inspection/stage0_7g_gene_only_probe/analysis.md",
+    "decision": "/data/projects/methyl-burden-score/reports/inspection/stage0_7g_gene_only_probe/promotion_decision.json",
+    "weekend_summary": "/data/projects/methyl-burden-score/reports/inspection/stage0_7g_gene_only_probe/weekend_supervisor_summary.md"
+  },
+  "pushed_shas": [
+    "87b22c3c7a3795faf74598ed81ca0e08a76666fe"
+  ],
+  "hard_stop": true,
+  "recommended_next_command": "Review reports/inspection/stage0_7g_gene_only_probe/analysis.md and promotion_decision.json; do not launch Stage B automatically."
+}
+```
