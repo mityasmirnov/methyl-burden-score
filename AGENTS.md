@@ -9,7 +9,9 @@ study-grouped, cross-fitted pipeline that maps variable sets of observed CpGs to
 typed regulatory regions and then to gene-level **MBS** scores (plus, from
 Milestone 7C, optional non-gene **RBS**, intergenic **TBS**, and direct CpG
 contributions) for association and prediction. Current gate and ordering:
-[`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
+[`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md)
+(numbers: [`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md);
+**now = Milestone 10**).
 
 ## Filesystem policy
 

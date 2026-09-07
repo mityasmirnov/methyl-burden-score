@@ -1,6 +1,10 @@
 # Plan: Pretrained MBS/RBS framework — extended architecture campaign
 
-Status (2026-09-07): **active.** Track A nine-pack unblocked; full 3-fold refs
+> **Canonical milestone number: 10** (alias **7H**). See
+> [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md) and
+> [`milestone-10-pretrained-mbs-rbs.md`](milestone-10-pretrained-mbs-rbs.md).
+
+Status (2026-09-07): **active (Milestone 10).** Track A nine-pack unblocked; full 3-fold refs
 **running** on GPU 0; Track B.5 trait census done; Track B.4 queued after full.
 User mandate (verbatim intent, condensed): dig into the `SeedMaskedLinearHead`
 init/weight-decay collapse, then use GPU 0 freely to find/train the best

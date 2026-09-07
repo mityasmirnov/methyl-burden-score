@@ -1,5 +1,8 @@
 # Plan: Milestone 7G — Methylation-only full evaluation
 
+> **Canonical milestone: 8** (this file is the historical **7G** plan). See [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
+
+
 Status: **done** (closed 2026-08-27). Follow-up:
 [`milestone-7g-cascade-tissue-investigation.md`](milestone-7g-cascade-tissue-investigation.md).
 Report target: [`reports/inspection/stage0_7g_methylation_eval/`](../../reports/inspection/stage0_7g_methylation_eval/).

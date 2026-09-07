@@ -1,5 +1,8 @@
 # Plan: 7G′ pre–Stage-B reporting + typed RBS + seed-gene Stage A gate
 
+> **Canonical milestones: 9d** (typed-RBS) / gate notes for **11**. Historical 7G′ pre–Stage-B. See [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
+
+
 Status: **reporting + R0–R5 done** — **no P2-G architecture lock**. Current
 GPU gate is the **matched 16-epoch promotion screen**
 ([`milestone-7g-prime-16ep-promotion.md`](milestone-7g-prime-16ep-promotion.md)).

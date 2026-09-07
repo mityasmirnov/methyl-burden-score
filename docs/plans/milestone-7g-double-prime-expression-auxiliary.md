@@ -1,5 +1,8 @@
 # Plan: 7G″ expression-auxiliary pilot (deferred)
 
+> **Canonical milestone: 12** (deferred). Historical **7G″**. See [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
+
+
 Status: **deferred** — not a gate for 7G′ Stage A/B or Milestone **7** OOF.
 Parent: [`milestone-7g-prime-matched-probe-lightweight.md`](milestone-7g-prime-matched-probe-lightweight.md).
 

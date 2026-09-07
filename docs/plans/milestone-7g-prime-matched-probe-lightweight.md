@@ -1,5 +1,8 @@
 # Plan: 7G′ gene-only architecture selection + matched-panel benchmark
 
+> **Canonical milestones: 9** (Stage A / gene-only) and **11** (Stage B / fold panel). Historical **7G′**. See [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
+
+
 Status: **in progress** — required Stage A GPU arms (`P2-G` / `P4-G` /
 `P5-G-max` / `C-mvalue-*-G`) **landed** with test-only `mbs_e2e` on
 `explicit_only`. ATS screen is evidence only — **no retained P2-G lock**

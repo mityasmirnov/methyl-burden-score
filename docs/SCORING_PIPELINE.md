@@ -4,6 +4,8 @@ Stage 0 schema sketch for **deepMAT** (package/CLI: `mbs`). Normative contracts:
 [`ARCHITECTURE.md`](ARCHITECTURE.md) (encoder family, gene-only vs full),
 [`ANNOTATION_GRAPH.md`](ANNOTATION_GRAPH.md).
 Implementation brief: [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+Milestone numbers: [`plans/MILESTONE_INDEX.md`](plans/MILESTONE_INDEX.md)
+(gene-only = **9**, fold panel = **11**, OOF = **13**).
 
 Phenotype heads train the shared encoder; they are **not** part of the exported
 MBS scoring function.
@@ -14,14 +16,14 @@ MBS scoring function.
 |-------|--------|
 | End-to-end mermaid + stage table | Present |
 | Four neural encoders (flat / flat+region / hier / cascade) | Present |
-| Gene-only vs full CpG scope (7G′) | Present |
+| Gene-only vs full CpG scope (M9 / M11) | Present |
 | GPU policy for real training | Present |
 | Flat vs hierarchical aggregation | Present (+ unassigned semantics) |
 | Phenotype masking / shared encoder | Present |
-| Today vs Milestone 7 OOF MBS | Present; 7 blocked until 7G′ |
-| Current 7F cascade (MBS/orphan RBS/direct; no TBS) | Implemented; `direct_cpg.zarr` is a 7G′ Stage B gap |
+| Today vs Milestone 13 OOF MBS | Present; 13 blocked until M11 |
+| Current 7F cascade (MBS/orphan RBS/direct; no TBS) | Implemented; `direct_cpg.zarr` is a Milestone **11** gap |
 | Numeric train metrics / loss curves | Out of scope here → `stage0_5d_max_n/`, TB |
-| Cross-fitting fold diagram | Deferred with §7 |
+| Cross-fitting fold diagram | Deferred with M13 |
 
 ## End-to-end flow
 
@@ -75,12 +77,12 @@ flowchart TB
 | **HierarchicalDeepSet** | `mbs train hierarchical` | CpG → **region** → **gene**; unmapped → **residual** scalar | Region-type embedding at region pool |
 | **CascadeDeepSet** | `mbs train cascade` | CpG → **region** → **RBS** → **gene** MBS; orphan RBS separate | Region-type embedding; orphan never pooled by type |
 
-### Gene-only vs full input (7G′)
+### Gene-only vs full input (Milestones 9 / 11)
 
 | Mode | When | CpGs in encoder | Comparator |
 |------|------|-----------------|------------|
-| **Gene-only** | 7G′ Stage A architecture selection | `gene_cols` only (typed edges allocated to a gene) | `C-mvalue-ridge-G`, `-enet-G`, `-hgb-G`, `-sva-G` on same columns |
-| **Full** | 7G′ Stage B + Milestone 7 OOF | Fold-selected panel + qualified orphan regions + direct loci | `C-mvalue-enetS`, `N-cascade-S`, fusion ablations |
+| **Gene-only** | Milestone **9** architecture selection | `gene_cols` only (typed edges allocated to a gene) | `C-mvalue-ridge-G`, `-enet-G`, `-hgb-G`, `-sva-G` on same columns |
+| **Full** | Milestone **11** + **13** OOF | Fold-selected panel + qualified orphan regions + direct loci | `C-mvalue-enetS`, `N-cascade-S`, fusion ablations |
 
 Cascade config keys: `training.gene_linked_only`, `training.primary_evaluation`
 (`mbs_e2e` vs `late_fusion`), `training.extra_fusion_modes` (orphan ablation:
@@ -134,7 +136,7 @@ Regions are collapsed when building the locus→gene index (`training/locus_gene
 This is the DeepRVAT-style reference retained for every comparison. Trains on
 the full locus prefix or a **gene-only** column subset via the packed index.
 
-### Flat with region annotations (`FlatDeepSetRegion` — 7G′ Stage A / B)
+### Flat with region annotations (`FlatDeepSetRegion` — Milestones 9 / 11)
 
 ```text
 [M-value, gene-role one-hot, CGI context, regulatory multi-hot, presence flags]
@@ -224,7 +226,7 @@ flowchart TD
 
 The diagram records the 7C experiment. ADR 0009 subsequently removed TBS from
 the product. The current cascade exports MBS, separate orphan-region scores and
-a direct phenotype contribution. Before final OOF, 7G′ Stage B must add
+a direct phenotype contribution. Before final OOF, Milestone **11** must add
 `direct_cpg.zarr` (sample×locus); `direct_contrib.zarr` is diagnostic only.
 Replace unrestricted nearest-gene RBS allocation with evidence-backed edges.
 
@@ -270,21 +272,21 @@ Contracts: [`EWAS_METADATA.md`](EWAS_METADATA.md),
 - Study-grouped train / validation / external_test splits exist
   (`evaluation/splits.py`); hierarchical runs can reuse a flat `split.json`.
 
-**Deferred (Milestone 7 — blocked until 7G′ Stage A and B)**
+**Deferred (Milestone 13 — blocked until Milestones 9 and 11)**
 
 - Full **out-of-fold** score matrix: every training sample scored only by models
   that never saw its study group; persisted OOF MBS, qualified per-region orphan
   RBS, indexed direct CpGs, and optional phenotype predictions. No TBS.
 - Protocol: [`EXPERIMENT_PROTOCOL.md`](EXPERIMENT_PROTOCOL.md) § out-of-fold;
-  gates: [`TODO_PIPELINE.md`](TODO_PIPELINE.md) §7A–7E then §7;
+  gates: [`TODO_PIPELINE.md`](TODO_PIPELINE.md) Milestones **8–11** then **13**;
   [ADR 0007](adr/0007-crossfit-prerequisites.md).
 
 ## Proposed improvements (not blocking)
 
 1. Link TensorBoard / epoch curves from `stage0_5d_max_n` when documenting
    performance (keep this doc topology-focused).
-2. When §7 lands, add a cross-fitting fold mermaid and concrete export schema
-   including RBS/TBS if selected in 7E.
+2. When Milestone **13** lands, add a cross-fitting fold mermaid and concrete export schema
+   (RBS/direct; no TBS — ADR 0009).
 
 ## Related commands
 

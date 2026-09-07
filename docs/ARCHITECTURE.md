@@ -3,6 +3,10 @@
 Post–Stage 0 modules (epimutation AE, ComBat-met) are outlined in
 [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md); they are not Stage 0 prerequisites.
 
+**Milestone numbers:** gene-only selection = **9** (was 7G′ Stage A); fold panel
+= **11** (was 7G′ Stage B); final OOF = **13** (was “Milestone 7”). Index:
+[`plans/MILESTONE_INDEX.md`](plans/MILESTONE_INDEX.md).
+
 ## Objective
 
 Learn one scalar methylation burden score for every observed sample–gene pair while sharing the scoring function across genes and training traits.
@@ -52,9 +56,9 @@ phenotype heads are separate linear modules on centered MBS
 | Encoder | Aggregation path | Region / annotation features | CLI / trainer | Milestone |
 |---------|------------------|------------------------------|---------------|-----------|
 | **`FlatDeepSet`** | CpG → pool by **gene** → ρ → sigmoid MBS | Locus→gene index only (regions collapsed upstream) | `mbs train flat` · `training/loop.py` | 5, 5c, 5d, 7E |
-| **`FlatDeepSetRegion`** | CpG **(+ gene-role / CGI / regulatory features)** → pool by **gene** → MBS | Per-CpG annotated channels + presence flags (no RBS hop) | Stage A **`N-light-gene-*`**; Stage B **`N-light-type`** | 7G′ Stage A/B |
+| **`FlatDeepSetRegion`** | CpG **(+ gene-role / CGI / regulatory features)** → pool by **gene** → MBS | Per-CpG annotated channels + presence flags (no RBS hop) | Stage A **`N-light-gene-*`**; Stage B **`N-light-type`** | M9 / M11 (was 7G′ A/B) |
 | **`HierarchicalDeepSet`** | CpG → pool by **typed region** → φ_region(+ type emb) → pool by **gene** → MBS; **residual** path for unmapped CpGs | Region-type embedding at the region stage | `mbs train hierarchical` · `training/hier_loop.py` | 6, 7E |
-| **`CascadeDeepSet`** | CpG → pool by **typed region** → RBS → pool by **gene** → MBS; **orphan RBS** and **direct** scored outside the module | Region-type embedding at RBS; orphan columns never pooled by type | `mbs train cascade` · `training/cascade_loop.py` | 7F, 7G, 7G′ |
+| **`CascadeDeepSet`** | CpG → pool by **typed region** → RBS → pool by **gene** → MBS; **orphan RBS** and **direct** scored outside the module | Region-type embedding at RBS; orphan columns never pooled by type | `mbs train cascade` · `training/cascade_loop.py` | 7F, M8–M11 (was 7G/7G′) |
 
 ```mermaid
 flowchart TB
@@ -102,8 +106,8 @@ which architecture wins):
 
 | Scope | CpG set | Direct / orphan | Primary use |
 |-------|---------|-----------------|-------------|
-| **Gene-only (7G′ Stage A)** | `gene_cols` = unique columns on edges with `region_to_gene ≥ 0` | Excluded from encoder input and primary metrics | Fair architecture selection vs `C-mvalue-*-G` |
-| **Full model (7G′ Stage B → Milestone 7)** | Typed gene + qualified orphan regions + selected direct loci | Orphan RBS (one column per `region_id`), `direct_cpg.zarr` / fold-fitted direct | Product score export + phenotype fusion |
+| **Gene-only (Milestone 9 / was 7G′ Stage A)** | `gene_cols` = unique columns on edges with `region_to_gene ≥ 0` | Excluded from encoder input and primary metrics | Fair architecture selection vs `C-mvalue-*-G` |
+| **Full model (Milestone 11 → 13 OOF)** | Typed gene + qualified orphan regions + selected direct loci | Orphan RBS (one column per `region_id`), `direct_cpg.zarr` / fold-fitted direct | Product score export + phenotype fusion |
 
 Cascade trainer flags (`training/cascade_loop.py`, experiment YAML):
 
@@ -547,18 +551,18 @@ Minimum independently trained arms: transparent gene/region mean and
 elastic-net; **FlatDeepSet** (parameter-matched flat gene-only); **HierarchicalDeepSet**
 (mapped gene-only + residual); **CascadeDeepSet** (gene-only and full); gene +
 direct; gene + orphan RBS + direct; each neural arm with and without Level-1
-robust-z; CpGPT inclusion as a separate ablation. **7G′ Stage A** adds matched
+robust-z; CpGPT inclusion as a separate ablation. **Milestone 9** adds matched
 **`C-mvalue-*-G`** on `gene_cols`.
 
-Final Stage 0 protocol (Milestone **7**, after 7G′):
+Final Stage 0 protocol (Milestone **13**, after Milestones **9–11**):
 
-```text
-5 study-grouped outer folds
-up to 6 random restarts per fold
-```
+- 5 study-grouped outer folds × up to 6 random restarts
+- orientation-aligned OOF scores (ADR 0008); no TBS (ADR 0009)
 
-Do not launch the final 5×6 protocol until **7G′ Stage A and B** complete
-([ADR 0007](adr/0007-crossfit-prerequisites.md)).
+Do not launch the final 5×6 protocol until **Milestones 9 and 11** complete
+(and Milestone **10** scale decisions are honest). See
+[`plans/milestone-13-final-oof.md`](plans/milestone-13-final-oof.md)
+and [ADR 0007](adr/0007-crossfit-prerequisites.md).
 
 Every stored training-sample MBS value is out-of-fold. Technical replicates and
 repeated donor measurements remain in one fold.

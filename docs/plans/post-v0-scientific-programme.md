@@ -1,4 +1,9 @@
-# Plan: Post-v0 scientific programme (Milestones 7A–7G → 7)
+# Plan: Post-v0 scientific programme (Milestones 7A–7F → 8–13)
+
+> **Numbering update (2026-09-07):** after 7F, use integers **8–14**. Historical
+> `7G`/`7G′`/`7H`/“Milestone 7 OOF” are aliases — see
+> [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md). Prefer
+> [`TODO_PIPELINE.md`](../TODO_PIPELINE.md) for live status.
 
 Status: implementation brief for Stage 0 after Milestone 6.
 Normative ADRs: [0005](../adr/0005-catalog-matrix-independence.md),
@@ -7,16 +12,17 @@ Normative ADRs: [0005](../adr/0005-catalog-matrix-independence.md),
 [0008](../adr/0008-score-identifiability.md).
 Checklist: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md).
 
-**Do not retrain v0.1.** Freeze those runs. **7A**, **7B**, **7C** (fixture
-acceptance), **7D**, **7E** (development CV), and **7E′** (Hub multitask +
-hygiene) are closed. **7F** (RBS→gene + direct leftover, no TBS scores) is
-**done**. **7G** (methylation-only full eval) is **done**. **Milestone 7**
-(final OOF) is the **current coding gate**. Cascade tissue gap: see
+**Do not retrain v0.1.** Freeze those runs. **7A–7F** and **7E′** are closed.
+**8** (methylation eval / was 7G) and **9** (gene-only / was 7G′) are **done**.
+**Current gate: Milestone 10** (pretrained / nine-pack; was 7H). Fold panel =
+**11**; final OOF = **13** (historical “Milestone 7”) — both blocked. Cascade
+tissue history: see
 [`milestone-7g-cascade-tissue-investigation.md`](milestone-7g-cascade-tissue-investigation.md).
-The incomplete `EWAS_db` mirror must not block Milestone 7.
+The incomplete `EWAS_db` mirror must not block Milestones 10/13.
 
-This document is the coding brief for **7A–7G**. The expensive Milestone **7**
-OOF cross-fit is unblocked now that **7F and 7G** passed.
+This document remains the coding brief for **7A–7G** historical design; live
+ordering is in `TODO_PIPELINE.md`.
+
 
 ## Glossary and training model
 

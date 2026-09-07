@@ -10,20 +10,23 @@ Deep Set family). The Python package remains `methyl-burden-score` with the
 Primary open data source: CNCB **EWAS Data Hub** (EWAS Atlas for association
 checks). Authoritative progress:
 [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
+Milestone numbers (8, 9, 10, …):
+[`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md).
 
-**Current gate (2026-09-04):** **7G′ Stage B GPU** — fold-selected panel + full
-model on the locked Stage A gene encoder. Stage A DeepRVAT Tier-1 screen is
-**done**; provisional lock is **`P2-G`** (CascadeDeepSet, max/max pooling, 15
-epochs) on the `explicit_only` gene-linked panel (51 375 CpGs). Cascade is
-**not** ≥0.03 tissue F1 ahead of classical `C-mvalue-enet-G` (0.388 vs 0.373
-`mbs_e2e`). Final Milestone **7** 5×6 OOF remains blocked until Stage B lands.
+**Current gate (2026-09-07):** **Milestone 10** — pretrained MBS/RBS scale
+campaign (nine-pack virtual multi-store + ATS follow-ups). Gene-only ATS
+selection (**Milestone 9**, was 7G′) is **done**: best landed cascade is
+**`P2-G`** (max/max, 15 ep) on `explicit_only` (51 375 CpGs); classical
+`C-mvalue-enet-G` still leads tissue (0.388 vs 0.373 `mbs_e2e`); seed-masking
+**not** adopted. Fold-selected panel (**Milestone 11**) and final 5×6 OOF
+(**Milestone 13**, historical “Milestone 7”) stay **blocked**.
 
 Programme docs: [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md),
 [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md),
-[`docs/plans/milestone-7g-prime-matched-probe-lightweight.md`](docs/plans/milestone-7g-prime-matched-probe-lightweight.md),
-[`docs/plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](docs/plans/milestone-7g-prime-stage-a-deeprvat-screen.md).
+[`docs/plans/milestone-10-pretrained-mbs-rbs.md`](docs/plans/milestone-10-pretrained-mbs-rbs.md),
+[`docs/plans/milestone-9-gene-only-architecture.md`](docs/plans/milestone-9-gene-only-architecture.md).
 ADRs: [0002](docs/adr/0002-ewas-datahub-primary-source.md) (Hub primary),
-[0007](docs/adr/0007-crossfit-prerequisites.md) (OOF),
+[0007](docs/adr/0007-crossfit-prerequisites.md) (OOF = Milestone **13**),
 [0008](docs/adr/0008-score-identifiability.md) (orientation),
 [0009](docs/adr/0009-drop-tbs-scores.md) (no TBS),
 [0010](docs/adr/0010-gene-allocation-policy.md) (`explicit_only`).
@@ -38,7 +41,7 @@ Do **not** retrain frozen **deepMAT-flat-v0.1** / **hierarchical-v0.1**.
 3. CpGs are organized into biologically typed regions before gene-level
    aggregation (**RBS → gene MBS**); leftover CpGs stay **direct** ([ADR 0009](docs/adr/0009-drop-tbs-scores.md) — **no tile/TBS scores**).
 4. Every reported training-sample score is obtained by study-grouped
-   cross-fitting (Milestone **7**, after 7G′).
+   cross-fitting (Milestone **13**, after Milestones **9–11**).
 
 ## Stage 0 scope
 
@@ -46,15 +49,17 @@ Stage 0 implements:
 
 - canonical GRCh38 locus, probe, region, and gene registries (graph-v2 on disk);
 - DuckDB/Parquet metadata catalogs (populated release = Milestone **7A**);
-- Zarr matrix-store interfaces for Hub nine packs (**7B**);
+- Zarr matrix-store interfaces for Hub nine packs (**7B**), including virtual
+  multi-store nine-pack (**Milestone 10**);
 - flat CpG-to-gene Deep Set and hierarchical residual-path baselines (v0.1 freezes);
 - **RBS → gene cascade + direct leftover** topology (**7F**; no TBS);
-- gene-only architecture selection on `explicit_only` (**7G′ Stage A** — done);
-- fold-selected panel + full-model Stage B (**7G′** — GPU pending);
+- gene-only architecture selection on `explicit_only` (**Milestone 9** — done);
+- pretrained / nine-pack scale campaign (**Milestone 10** — current);
+- fold-selected panel + full model (**Milestone 11** — blocked);
 - static CpGPT sequence-adapter features exported offline;
 - optional MethylGPT CpG-token priors as an ablation;
 - masked age / tissue / sex (and Hub disease/cancer hygiene in **7E′**) heads;
-- study-grouped OOF cross-fitting after 7G′ (Milestone **7**);
+- study-grouped OOF cross-fitting (**Milestone 13**);
 - array missingness and manifest-downsampling tests.
 
 Stage 0 deliberately excludes dynamic foundation-model token extraction, LoRA,

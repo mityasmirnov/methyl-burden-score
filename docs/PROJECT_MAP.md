@@ -6,6 +6,7 @@
 README.md                    project scope and quick start
 AGENTS.md                    authoritative coding-agent rules
 docs/TODO_PIPELINE.md        Stage 0 scientific milestone checklist (agents update)
+docs/plans/MILESTONE_INDEX.md post-7F numbering map (8, 9, 10, … aliases)
 docs/STRATEGIC_PLAN.md       long-term data + multimodal vision
 docs/WORKSPACE.md            server and /data layout
 docs/adr/                    architecture decision records (0001 workspace, 0002 EWAS Hub, 0003 Milestone 5b, 0004 unmapped retention, 0005 catalog/storage, 0006 multi-path scores, 0007 cross-fit prerequisites, 0008 score identifiability)
@@ -46,13 +47,12 @@ src/mbs/registry/        phenotype / source dataset registry (Milestone 5b)
 src/mbs/evaluation/      metrics + study-grouped split helpers (Milestone 5b)
 ```
 
-Milestones **1–6**, **7A**, and **7C** (fixture acceptance) are done.
-**Current gate: 7B** (convert remaining Hub packs to canonical matrices +
-inspection report). **7C** trainer/graph-v2/direct/branch fixtures are closed;
-residual wiring listed in
-[`plans/milestone-7c-supervised-architecture.md`](plans/milestone-7c-supervised-architecture.md).
-Final OOF cross-fitting is Milestone **7**, blocked until 7A–7E — see
+Milestones **1–7F** (and **7E′**) are done. **Current gate: Milestone 10**
+(pretrained MBS/RBS / nine-pack campaign; alias **7H**). Gene-only ATS
+selection is **Milestone 9** (done). Fold-selected panel is **11** (blocked).
+Final OOF is **Milestone 13** (historical “Milestone 7”, blocked) — see
 [`TODO_PIPELINE.md`](TODO_PIPELINE.md),
+[`plans/MILESTONE_INDEX.md`](plans/MILESTONE_INDEX.md),
 [ADR 0007](adr/0007-crossfit-prerequisites.md),
 [ADR 0008](adr/0008-score-identifiability.md), and
 [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).

@@ -1,5 +1,8 @@
 # Plan: Age-first seed-mask screen (7G′ Stage B blocker)
 
+> **Canonical milestone: 9c**. Historical 7G′ age-primary seed-mask. See [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
+
+
 Status (2026-09-05): **unblocked, GPU screen running.** The matched 16-ep
 promotion screen finished (`87b22c3`, provenance landed `e644ed4`) with
 `next_gate: retain_pooling_2x2` and `recommendation: "Retain full 2×2

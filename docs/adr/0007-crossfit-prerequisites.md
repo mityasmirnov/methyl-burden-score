@@ -37,7 +37,11 @@ Launching that expensive protocol on the current architecture would lock in:
    8 optional layers
    ```
 
-2. Milestone **7** remains the OOF score-matrix deliverable. Its status stays
+2. Milestone **7** remains the OOF score-matrix deliverable in *this ADR's*
+   original numbering. **Docs renumber (2026-09-07):** that OOF gate is now
+   **Milestone 13** in [`TODO_PIPELINE.md`](../TODO_PIPELINE.md) /
+   [`plans/MILESTONE_INDEX.md`](../plans/MILESTONE_INDEX.md); “Milestone 7
+   OOF” in older text is an alias. Its status stays
    `pending` and is **blocked until 7A–7E** acceptance criteria are met.
 3. A small 3-fold / 1-restart smoke of *existing* train machinery is allowed
    for plumbing; it does **not** complete Milestone 7, must not overwrite

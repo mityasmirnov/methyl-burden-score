@@ -1,5 +1,8 @@
 # Plan: 7G′ Stage A DeepRVAT-style architecture screen
 
+> **Canonical milestone: 9a**. Historical **7G′ Stage A** screen. See [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
+
+
 Status: **screen Tier-1 + ablations complete** — **no architecture lock**.
 Best landed ATS cascade row is P2-G max/max 15 ep; cascade is **not** ≥0.03
 ahead of `C-mvalue-enet-G`. **P5 inactive.** Next real gate:

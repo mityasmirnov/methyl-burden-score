@@ -9,13 +9,14 @@ alwaysApply: true
 
 Read and update [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md) for Stage 0
 scientific milestones. Session TodoWrite items must mirror that file when the
-task is pipeline work.
+task is pipeline work. Numbering index:
+[`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md).
 
 ## At session start (and before new pipeline work)
 
 1. Open `docs/TODO_PIPELINE.md`.
 2. Identify the first milestone that is `in_progress` or the first `pending`
-   after the last `done`.
+   after the last `done` (today: **Milestone 10**).
 3. Work that milestone; do not jump to optional / deferred layers early.
 
 ## When marking complete
@@ -29,39 +30,31 @@ Keep Cursor session todos in sync (complete / cancel / start next).
 
 ## Ordering (do not reorder without an ADR)
 
-1. Inspect one small real source
-2. Canonical annotation graph (simple regions)
-3. Static locus features (CpGPT default)
-4. One pilot canonical matrix
-5. Flat DeepRVAT-style baseline
-5b. Phenotype registry + multi-pack eval
-5b′. Hub/Atlas metadata structure (required before 5c)
-5c. Multitask shared encoder
-5d. Max-N flat age/tissue/sex
-6. Hierarchical region model
-7A. Harmonized data release + phenotype census (**done**)
-7B. Complete nine-pack canonical matrices (**done**)
-7C. Supervised architecture corrections (multi-path scores, splits, heads) (**done**, fixture + Hub smoke)
-7D. Fold-fitted Level-1 normalization (**done**)
-7E. Development CV (architecture selection) (**done**)
-7E′. Hub multitask (age/tissue/sex/disease/cancer, masked) + analysis hygiene (**done**)
-7F. RBS→gene cascade + direct leftover, no TBS scores (**done**)
-7G. Methylation-only full evaluation (close 7E gaps) (**current gate**)
-7. Final study-grouped OOF cross-fitting (blocked until 7G)
-8. Optional layers only after 1–7
+```text
+1–6        bootstrap → flat → hierarchical v0.1
+7A–7F,7E′  release → matrices → architecture → CV → cascade (done)
+8          methylation-only eval (was 7G) — done
+9          gene-only architecture on ATS (was 7G′) — done
+10         pretrained MBS/RBS / nine-pack campaign (was 7H) — current
+11         fold-selected panel + full model (was 7G′ Stage B) — blocked
+12         expression auxiliary (was 7G″) — deferred
+13         final 5×6 OOF (was “Milestone 7”) — blocked
+14         optional Stage 1+ layers — deferred
+```
+
+Historical aliases `7G` / `7G′` / `7H` / “Milestone 7 OOF” appear in older
+plans and `stage0_7g_*` artifact paths — prefer new numbers in new writing.
 
 Ordering after Milestone 6 is locked by
 [`docs/adr/0007-crossfit-prerequisites.md`](docs/adr/0007-crossfit-prerequisites.md)
 and [`docs/adr/0008-score-identifiability.md`](docs/adr/0008-score-identifiability.md).
 Programme brief:
 [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md).
-Do not retrain v0.1. 7A–7F and **7E′** are done. Do not start Milestone **7**
-before **7G**. Architecture ranking uses methylation-input methods only
-(not metadata-only).
+Do not retrain v0.1. Do not start Milestone **13** before **11**. Architecture
+ranking uses methylation-input methods only (not metadata-only).
 
 Before starting **5c**, read `docs/EWAS_METADATA.md` and
 `reports/inspection/ewas_metadata_structure/summary.md`.
-Before starting **7G**, read ADRs 0005–0009, the 7F report
-`reports/inspection/stage0_7f_rbs_gene_direct/analysis.md`,
-[`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md)
-(§7G), and [`docs/plans/milestone-7f-rbs-gene-direct.md`](docs/plans/milestone-7f-rbs-gene-direct.md).
+Before Milestone **10** work, read the campaign log
+[`docs/plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](docs/plans/milestone-7h-pretrained-mbs-rbs-campaign.md)
+and stub [`docs/plans/milestone-10-pretrained-mbs-rbs.md`](docs/plans/milestone-10-pretrained-mbs-rbs.md).

@@ -1,5 +1,8 @@
 # Plan: Matched 16-epoch promotion screen (7G′ Stage A)
 
+> **Canonical milestone: 9b**. Historical 7G′ matched 16-ep promotion. See [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
+
+
 Status: **complete** (2026-09-04, `87b22c3`; per-arm provenance landed
 `e644ed4` on 2026-09-05). `promotion_decision.json`: `next_gate:
 retain_pooling_2x2`, `recommendation: "Retain full 2×2 pooling result; no

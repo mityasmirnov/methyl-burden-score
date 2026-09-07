@@ -5,242 +5,76 @@ milestone is **truly done** (acceptance criteria met), not when scaffolding
 exists. Cursor agents must read this file at session start and after finishing
 work; see `.cursor/rules/pipeline-todo.mdc`.
 
-Status values: `done` | `in_progress` | `pending` | `deferred`
+Status values: `done` | `in_progress` | `pending` | `blocked` | `deferred`
 
-True next milestone after bootstrap:
+**Numbering:** after **7F**, use integers **8, 9, 10, …** (optional `a/b/c`
+sub-tracks). Historical names `7G` / `7G′` / `7H` / “Milestone 7 OOF” are
+**aliases only** — see [`plans/MILESTONE_INDEX.md`](plans/MILESTONE_INDEX.md).
+On-disk `stage0_7g_*` / `run_7g_*` / `stage0_7h_*` IDs stay unchanged.
 
-> … → max-N flat age/tissue/sex (5d — **done**) → hierarchical residual
-> baseline (6 — **done**) → harmonized release + phenotype census (7A — **done**) →
-> nine-pack matrices (7B — **done**) → architecture corrections (7C —
-> **done**, fixture + Hub DeepRVAT A/B) → development CV (7E — **done**) →
-> Hub multitask + hygiene (**7E′** — **done**) → **RBS→gene + direct topology
-> (7F — done)** → **methylation-only full eval (7G — done)** →
-> **Phase-2 gene-only cascade grid (7G′ Stage A — DeepRVAT Tier-1 screen
-> done; no architecture lock)** → **matched 16-epoch promotion screen
-> (done; full 2×2 pooling grid retained)** → **age-primary seed-mask screen
-> (done — seed-masking does not beat all-gene control)** →
-> **7H extended architecture campaign (← current; GPU 0, ~40h user-granted
-> budget)** →
-> **fold-selected panel Stage B (blocked)** →
-> **final OOF cross-fitting (7)** → one score matrix.
+## Roadmap (one screen)
 
-**7H campaign (2026-09-05, user-directed, ~40h autonomous GPU-0 budget):**
-find/train the best gene-level (MBS) and region-level (RBS) architecture(s)
-for a pretrained methylation-scoring framework (feature aggregation +
-interpretation, normalization, multi-trait association testing with
-reduced multiple-testing burden, cross-platform target). Phased plan,
-running log, and scope boundaries (e.g. ONT/PacBio ingestion is out of
-scope — no ingestion path exists) in
-[`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md).
-Phase 0 (fix `SeedMaskedLinearHead` collapse) and Phase 1 (age-primary
-seed-mask decision) are **done**; current work is Phase 2 (resolve
-remaining Stage A pooling/one-hop questions with larger budgets) and
-Phase 3 (scale to the nine-pack cohort).
+```text
+1–6          done     bootstrap → flat/hierarchical v0.1 freezes
+7A–7F, 7E′   done     release → nine-pack → architecture → CV → cascade (no TBS)
+8            done     methylation-only full eval + tissue probe          (was 7G)
+9            done     gene-only architecture on ATS (9a–9d screens)      (was 7G′)
+10           ← NOW    pretrained MBS/RBS scale / nine-pack campaign      (was 7H)
+  10a        running  virtual multi-store + 3-fold P2-G / m-only refs
+  10b        partial  ATS seed-43 pooling (queued) + trait census (done)
+  10c        pending  trait hygiene (disease/cancer case≠control; blood/brain)
+  10d        pending  reference checkpoint(s) + association how-to
+11           blocked  fold-selected panel + full model                   (was 7G′ Stage B)
+12           deferred expression auxiliary                               (was 7G″)
+13           blocked  final 5×6 study-grouped OOF                        (was “Milestone 7”)
+14           deferred optional Stage 1+ layers
+```
 
-**Age-primary seed-mask screen: done (2026-09-06).** Two real bugs found
-and fixed along the way (full trail in
-[`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md)):
-a `KeyError: 'tissues'` crash in classical arms (`_phenotype_arrays()`
-never populated a string tissue-name array `fit_eval_mvalue_fold` needed),
-and a silent `learning_rate` threading bug that left every cascade run
-training at `lr=1e-2` (10x the intended `0.001`) — combined with sparse
-seed-masked heads, this caused near-total training collapse (sigmoid
-saturation within ~2-3 epochs). Fixed both, added gradient clipping, and
-raised the epoch budget 15→40 (several arms only escaped the bad regime
-after epoch 20-30). **Result:** `G0` (dense, unmasked) clearly beats every
-seed-masked variant (age MAE 16-18 vs 21-25; tissue F1 0.23 vs 0.06-0.10;
-sex AUROC 0.79 vs 0.51-0.72); `G1`/`G2`/`G3` don't meaningfully separate
-from each other — no evidence discovered seed genes carry more age signal
-than a same-sized random gene set. Classical `C0` (age MAE 8.94) still
-beats every cascade arm. **Seed-gene masking is not adopted** for the
-pretrained MBS/RBS framework on this evidence. CPU typed-RBS R0–R5 is
-**done** (neural typed aggregator **not** promoted). Stage B CpG-panel GPU
-stays **blocked**. Plans:
-[`plans/milestone-7g-prime-16ep-promotion.md`](plans/milestone-7g-prime-16ep-promotion.md),
-[`plans/milestone-7g-prime-age-seed-mask.md`](plans/milestone-7g-prime-age-seed-mask.md),
-[`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md).
-Report:
-[`reports/inspection/stage0_7g_gene_only_probe/analysis.md`](../reports/inspection/stage0_7g_gene_only_probe/analysis.md).
+Live board for **10**: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pretrained-mbs-rbs.md)
+→ running log [`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md).
 
-| Layer | Status |
-|-------|--------|
-| Test-only `mbs_e2e` + lock refusal | **done** (code + unit tests) |
-| `explicit_only` allocation + manifest | **done** (ADR 0010; YAML `*-explicit` run IDs) |
-| Stage B selector / panel artifact / honest fusion names | **done** (code only) |
-| 7G″ expression plan | **done** (deferred; no training code) |
-| Stage A required GPU arms (P2/P4/P5-max/`C-*-G`) | **done** (P5 inactive thereafter) |
-| Screen policy: `mbs_enet`/`rbs_enet` post-hoc | **done** (`stage_a_include_mbs_enet: false`; `eval_mbs_enet_from_scores.py`) |
-| Scalar mixed-pooling arms (`mean-max`, `max-mean`) | **done** matched 16-ep (3/3 each); retain 2×2, no pooling lock |
-| Vector cascade arms (`vector-mean-max`, `vector-max-max`) | **done** matched 16-ep for mean→max; vector-max-max not promoted |
-| `N-light-gene-max` / `N-light-gene-mean` one-hop | **done** matched 16-ep — mean near P2 tissue (~0.378); max below P2 |
-| Annotation ablation grid (A0–A7, N0–N3) | **done** fold 0 + **matched 16-ep m_only vs full** — `m_only` still preferred |
-| Post-hoc `mbs_enet` / `rbs_enet` on screen arms | **done** for promotion screen arms (nested where valid) |
-| Stage A DeepRVAT screen (Tier-1) | **done** — no architecture lock |
-| Matched 16-epoch promotion screen | **done** — `next_gate: retain_pooling_2x2` |
-| CPU typed-RBS R0–R5 | **done** (R1–R3 age↑; shuffle Δ≪1 y; neural typed **not** promoted) |
-| Neural typed aggregator | **deferred** (needs clear shuffle collapse; not Stage B go/no-go) |
-| Seed-mask scaffolding + fold-0 audit | **done** (hash, diagnostics, `sex_autosome`, overlap/G3; panel `ef6cd307…`) |
-| Age-primary seed-mask GPU (G0–G3/C0/C2) | **done** — `G0` beats all masked variants; seed-masking not adopted |
-| Atlas association catalog | **done** (SQL 013 + constructors; non-blocking for GPU) |
-| Stage B GPU run (fold-panel) | **blocked** (7H Phase 2/3 in progress; see campaign plan) |
-| Milestone **7** 5×6 OOF | **blocked** |
+### Next steps (ordered)
 
-**Trustworthy numbers (`explicit_only` panel, 51 375 gene-linked CpGs, test split):**
+1. **10a full (RUNNING on GPU 0)** — 3-fold nine-pack P2-G then m-only.
+   PID `scratch/logs/7h_nine_pack_full.pid`. **Do not duplicate.** Smoke done.
+   Report: [`reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
+2. **10b B.4 queued** — `scripts/run_7h_next_queue.sh` waits for (1), refreshes
+   report, runs ATS seed-43 2×2 pooling. **B.5 trait census DONE**
+   (`trait_adequacy.md`).
+3. **Hard stop after 10b.** Then **10c** (manual): interpret full refs; fix
+   disease/cancer case/control; repair blood/brain labels before trait GPU.
+4. **10d** after 10c — pretrained checkpoint contract.
+5. **Still blocked:** Milestone **11** (`run_7g_prime_stage_b.py`), Milestone
+   **13** OOF, GEO-enriched GPU training, ONT/PacBio ingestion.
+
+### Trustworthy ATS numbers (`explicit_only`, 51 375 gene-linked CpGs, test)
 
 | Question | Best arm | Tissue macro-F1 | Caveat |
 |----------|----------|----------------:|--------|
 | Classical on gene panel | `C-mvalue-enet-G` | **0.388** (±0.018) | Still the tissue leader |
 | Best MBS readout | `P2-G` **`mbs_enet`** | 0.385 (±0.053) | Same encoder as e2e; elastic-net heads |
 | Best cascade product path | `P2-G` **`mbs_e2e`** | 0.373 (±0.038) | max/max, 15 epochs; P4 mean 0.370 |
-| P4 mean/mean e2e | `P4-G` | 0.370 (±0.059) | Tied with P2 within noise |
-| Screen leader (Tier-1, 5ep) | `N-cascade-scalar-max-mean` **`mbs_e2e`** | ~0.359 (3 folds) | best *new* arm; still < P2; worse age — **no promote** |
-| P5 longer max train | `P5-G-max` | 0.356 (±0.042) | Did not help |
-| Screen — vector cascade | `N-cascade-vector-*` | 0.337–0.343 | **reject vs scalar P2** |
-| Screen — scalar-mean-max | `N-cascade-scalar-mean-max` | ~0.331 (3 folds @5ep) | **16-ep in progress** |
-| Screen — one-hop max 16-ep | `N-light-gene-max` | **0.336** e2e / **0.375** linear | 3/3 folds; still < P2; do **not** rerun |
-| Screen — one-hop mean 16-ep | `N-light-gene-mean` | **~0.378** e2e | 3/3; near P2 tissue; age MAE ~17; refresh decision after queue |
-| Ablation best | A0 `m_only` (fold 0) | 0.276 e2e / 0.350 linear | raw concat hurts short run; not “annotations uninformative” |
+| One-hop mean (16-ep) | `N-light-gene-mean` | **~0.378** e2e | Near P2; age MAE ~17 |
+| Ablation | `m_only` preferred vs `full` | — | Matched 16-ep confirmed |
+| Seed-mask | `G0` beats G1–G3 | — | **Not adopted** |
 | Invalid (do not cite) | pre-fix `mbs_e2e` on P*-G | ~0.67–0.70 | train+val+test leak |
-| Invalid (do not cite) | pre-fix `N-light-gene-*` **`mbs_e2e`** | ~0.000–0.001 | orientation anchor + head/score mismatch; **linear/enet probes valid** |
 
-**N-light repair (2026-09-03, commit `fc8cd6f`):**
-- Orientation contract **v2**: `evaluate_flat_mbs_e2e` always passes **raw** encoder
-  MBS to phenotype heads; `orient_mbs_array` affects only exported association
-  artifacts. Legacy checkpoints with negated weights use repair path
-  (`legacy_negated_heads=True`). See
-  [`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md)
-  § *N-light one-hop status and repair*.
-- Re-eval legacy checkpoints without retrain: `scripts/reeval_7g_light_stage_a.py`.
-- One-hop **not** rejected — frozen MBS probes (linear/enet) showed valid
-  representation signal throughout.
-- Unit tests: `tests/unit/test_orientation_eval.py` (3 new contract tests).
+**Refs:** P2-G primary cascade; one-hop `m_only` lightweight alternative.
+**Platform (nine-pack):** HM450 only — no cross-platform claim.
 
-**Training configs (2026-09-03):**
-- `light_mean_l1.yaml` — DeepRVAT-like single LR `1e-3`, M-only, mean pool,
-  fold 0; `early_stopping_start_epoch: 5`. **Run first.**
-- `light_mean_l5.yaml` — head LR 5× diagnostic; run only if L1 diagnostics justify.
-- `light_mean_diag.yaml` — quick diagnostic (no `head_lr_multiplier`).
-- `early_stopping_start_epoch` key added to `loop.py` (default 0).
+Frozen freezes (do not overwrite): **deepMAT-flat-v0.1** /
+**deepMAT-hierarchical-v0.1** / **deepmat-data-age-tissue-sex-v1**.
 
-**Static annotation channels (2026-09):** `cpg_context` (UCSC CGI, Milestone 3
-artifact at `data/canonical/annotations/loci.parquet`) is wired into
-`build_gene_cols()` and `build_flat_region_gene_index()`. Gene-role one-hot
-populated. Regulatory channels (cCRE/DHS/ChromHMM) reserved as zero slots —
-sources not on disk (Stage A non-goal).
-Ablation grid (fold 0, `early_stopping_start_epoch: 5`, two seeds, no `head_lr_multiplier`):
-A0 `m_only` | A1 `m_role` | A2 `m_context` | A3 `m_role_context` | A4/A7 `full` |
-N0 `obs_only` | N1 `anno_only` | N2 reg-permuted | N3 reg-zero.
-Run after L1 baseline: `run_7g_gene_only_probe.py --fold 0 --device cuda`.
+Hub census (refresh 2026-09-07): **173 076** samples, **1 763** studies,
+**21** matrix artifacts including nine Hub full packs — see
+`reports/inspection/deepmat_data_v1/`. EWAS_db ingest incomplete
+(`mirror_complete=false`) and **not** a Milestone 10/13 gate.
 
-**Best landed ATS cascade (not a lock):** `P2-G` max/max, 15 epochs
-(`lock_recommendation.json` has `architecture_locked: false`);
-cascade is **not** clearly ahead of classical. Next gate:
-**matched 16-epoch promotion screen**
-([`plans/milestone-7g-prime-16ep-promotion.md`](plans/milestone-7g-prime-16ep-promotion.md)).
-Seed-mask CUDA stays blocked until those decision rules fire; fold-0 panel
-audit is already green
-([`plans/milestone-7g-prime-age-seed-mask.md`](plans/milestone-7g-prime-age-seed-mask.md)).
-**7G″** expression pilot is **deferred**. Final Milestone **7** OOF remains
-blocked. Stage B CpG-panel runner stays in tree; do **not** launch it yet.
+Programme: [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
+ADRs: [0007](adr/0007-crossfit-prerequisites.md) (OOF prerequisites; OOF =
+Milestone **13**), [0008](adr/0008-score-identifiability.md),
+[0009](adr/0009-drop-tbs-scores.md), [0010](adr/0010-gene-allocation-policy.md).
 
-Runners: Stage A `scripts/run_7g_gene_only_probe.py` · 16-ep queue
-`scripts/run_7g_16ep_promotion_resume.sh` · seed-mask
-`scripts/run_7g_prime_seed_mask.py` (CUDA blocked; `--reuse-panels` OK after
-unlock) · Stage B
-`scripts/run_7g_prime_stage_b.py` (blocked; `--device cuda` on GPU hosts).
-
-### Next steps (ordered)
-
-Live board: [`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md)
-§ Operational schedule (A→B→C→D).
-
-1. **A.4 full (RUNNING on GPU 0)** — 3-fold nine-pack P2-G then m-only.
-   PID `scratch/logs/7h_nine_pack_full.pid`; log `7h_nine_pack_full.log`.
-   **Do not duplicate.** Smoke already done (3 ep fold-0). Report:
-   [`reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
-2. **B.4 queued** via `scripts/run_7h_next_queue.sh` (pid
-   `scratch/logs/7h_next_queue.pid`) — waits for (1), refreshes report, then
-   ATS seed-43 2×2 cascade pooling (`run_7h_ats_pooling_s2.sh`). **B.5 DONE**
-   (`trait_adequacy.md`: age/sex PASS; tissue 1/64 ≥1k; blood/brain empty;
-   disease/cancer false≠control).
-3. **Hard stop after B.4.** Track **C** (manual): interpret full refs; fix
-   disease/cancer case/control; repair blood/brain labels before any trait
-   GPU. Track **D** = Phase 4 checkpoint contract after C.
-4. **Still blocked:** Stage B `run_7g_prime_stage_b.py`, Milestone **7** OOF,
-   GEO-enriched GPU training, ONT/PacBio ingestion.
-
-**7G** methylation eval and **tissue probe P0–P3** are done (historical evidence
-only — P2 ~0.38 used late fusion, not MBS-only). Plan:
-[`plans/milestone-7g-cascade-tissue-investigation.md`](plans/milestone-7g-cascade-tissue-investigation.md).
-Master brief:
-[`plans/milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md).
-
-**7F** (RBS→gene + direct leftover, no TBS) is **done**
-(`reports/inspection/stage0_7f_rbs_gene_direct/`; [ADR 0009](adr/0009-drop-tbs-scores.md)).
-Product scores remain gene-aggregated RBS (MBS), qualified per-region orphan
-RBS, and indexed direct CpGs — **no TBS**. The present 7F
-`direct_contrib.zarr` is a phenotype diagnostic (one task prediction per sample).
-Association export requires `direct_cpg.zarr` (7G′ Stage B).
-
-**ATS** = Age/Tissue/Sex frozen Hub GSM-union
-`matrix-hub-age-tissue-sex-full-v1` (13 548). Graph-v2 is **on disk**
-(`graph-grch38-gencode38-cgi-tile-v2`; inspection
-`reports/inspection/annotation_graph_cgi_tile_v2/`; plan
-[`plans/milestone-7c-graph-v2-topology.md`](plans/milestone-7c-graph-v2-topology.md)).
-7E selected `N-multipath-l1a` under a 2-epoch / 8 192-locus budget and
-linear fusion of **region means**, not neural scores — that is evidence, not
-the shipped topology (7F replaces it). 7E′ hygiene is **done**. Readiness:
-[`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
-(§7G); 7F report
-[`reports/inspection/stage0_7f_rbs_gene_direct/analysis.md`](../reports/inspection/stage0_7f_rbs_gene_direct/analysis.md).
-
-**7A–7D** are `done` (7C = fixture + Hub smoke). Hub nine packs and 7B full
-matrices are in the live DuckDB release (refresh 2026-09-07:
-**173 076** samples, **1 763** studies, **291 447** phenotype rows, **21**
-matrix artifacts including all nine Hub full packs). EWAS_db study walk is
-complete (**1 989**/1 989 dirs visited) but ingest is incomplete
-(**1 695** studies with sample `.txt`, **170 641** assay files of which
-**~157 240** are GSM; `mirror_complete=false`) and **not** a gate. Authoritative
-census: `reports/inspection/deepmat_data_v1/` (underscore; matches this
-refresh). Ignore `reports/inspection/deepmat-data-v1/` if it shows ~5 GSM
-(fixture leak into the CLI default hyphen path).
-**Do not retrain v0.1** or start Milestone **7** until **7G′ Stage A and B** land
-(7A–7E′ are already `done`; [ADR 0007](adr/0007-crossfit-prerequisites.md),
-[ADR 0008](adr/0008-score-identifiability.md)). Programme brief:
-[`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
-(glossary: ADR / MBS / RBS / leftover-direct / Level-1 MAD / 3×2 / 5×6 OOF;
-when training runs; DeepRVAT-style joint aggregation + linear heads).
-
-**Training schedule:** 7A–7B data only; 7C–7D code/fixtures/smokes; **7E** =
-architecture selection on frozen ATS (3×2, **done**); **7E′** = Hub multitask
-+ hygiene (**done**); **7F** = RBS→gene cascade + direct leftover (no TBS
-scores); **7G** = methylation-only re-eval that closes 7E evaluation gaps;
-**7G′** = gene-only architecture selection + fold-selected panel / full model;
-**7** = final 5×6 OOF after 7G′. Neural arms train shared score aggregation
-**and** linear phenotype heads end-to-end (DeepRVAT pattern).
-Architecture comparison tables use **methylation-input methods only**.
-Metadata-only (study + platform IDs, no betas) is a leakage alarm from 7E′,
-not a competitor.
-
-Frozen references (do not overwrite): **deepMAT-flat-v0.1** /
-**deepMAT-hierarchical-v0.1** / **deepmat-data-age-tissue-sex-v1**. Hierarchical
-v0.1 is a valid baseline, not the preferred phenotype model. Residual-only
-near-chance on an ordered 512-sample prefix is **not** evidence that noncoding
-CpGs lack signal.
-
-Hub **disease** profile zip is complete (2026-08-11). `EWAS_db` All-Data
-study walk finished 2026-09-07 (**1 989**/1 989); local ingest
-**1 695** studies / **170 641** sample `.txt` (**~157 240** GSM + non-GSM
-TCGA/ArrayExpress/…); **~1 723** GSM still in retry manifest — see
-[`EWAS_DATA.md`](EWAS_DATA.md) and
-[`ewas_db_empty_studies.md`](../reports/inspection/deepmat_data_v1/ewas_db_empty_studies.md).
-Not a gate for 7H / Milestone 7; `make retry-ewas-db-failures` then
-`make catalog-refresh-release` recover gaps.
-
-Primary open data source going forward: **EWAS Data Hub**
-([ADR 0002](adr/0002-ewas-datahub-primary-source.md);
-[strategic plan](STRATEGIC_PLAN.md)). Milestone 1 evidence remains the
-historical CpGCorpus inspection and is not re-opened.
 
 ---
 
@@ -822,7 +656,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   **parameter-matched** flat gene-only; **parameter-matched** hierarchical
   gene-only; gene + direct CpG; gene + RBS + TBS + direct; each neural arm
   with/without Level-1 robust-z; **CpGPT inclusion as a separate ablation**.
-  Report selects architecture for Milestone 7. Eval-time branch masking and
+  Report selects architecture for later milestones (now **9→13**). Eval-time branch masking and
   ordered-prefix holdout eval are not sufficient. Encoder width/GELU/dropout/LN
   must match for flat vs hier.
 - **Depends on:** (7C), (7D Level-1); graph-v2 on disk for multi-path arms.
@@ -912,164 +746,156 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Depends on:** (7E) folds + report; (7C) graph-v2; (7D) Level-1.
 - **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
   (§7F).
+- **Next:** Milestone **8** (historical 7G).
 
 ---
 
-## 7G. Methylation-only full evaluation (close 7E gaps)
+## 8. Methylation-only full evaluation (alias: 7G)
 
 - **Status:** `done`
-- **Impl plan:** [`plans/milestone-7g-methylation-eval.md`](plans/milestone-7g-methylation-eval.md).
-- **Why:** The 90-cell 7E bake-off **finished**. Gaps were evaluation quality,
-  not a crashed trainer: 2 epochs and 8 192 / 482 379 loci; late fusion was
-  not neural MBS; T-mean-region was not a named cell; HGB stood in for
-  LightGBM; neural AUROC was a binary helper; PCA-SVA not Bioconductor sva;
-  sex incomplete in the merged dump. Do **not** conclude “trees beat Deep
-  Sets” from that table.
-- **Comparators (methylation input only):** M-value ridge, penalised
-  (elastic-net / SGD), histogram gradient boosting or LightGBM, optional
-  train-fold PCA-SVA then linear. Same frozen 7E studies/folds. **Do not**
-  put metadata-only (study + platform, no methylation) in architecture
-  ranking tables. That control remains a 7E′ leakage alarm only.
-- **Done when:**
-  - 7F cascade retrained on the **same** frozen ATS folds with a documented
-    budget above 7E’s 2-epoch / 8 192-locus ceiling (or an explicit remaining
-    ceiling in the report)
-  - Classical M-value models use methylation matrices only; ROC for **sex**
-    and **tissue one-vs-rest** from the neural fusion scores (age stays MAE /
-    R², no ROC)
-  - Sex metrics present in the summary dump; region-mean transparent arm
-    named if kept
-  - Report under `reports/inspection/stage0_7g_methylation_eval/` names the
-    Milestone 7 topology from methylation-input methods only
+- **Plan:** [`plans/milestone-8-methylation-eval.md`](plans/milestone-8-methylation-eval.md)
+  → detail [`plans/milestone-7g-methylation-eval.md`](plans/milestone-7g-methylation-eval.md)
+- **Why:** Close 7E evaluation gaps (budget, classical methylation-only
+  comparators, sex metrics). Do **not** conclude “trees beat Deep Sets” from
+  the 7E 2-epoch / 8 192-locus table.
+- **Evidence:** `reports/inspection/stage0_7g_methylation_eval/` — ranking
+  winner **`C-mvalue-enet`**; cascade weak at first budget. Tissue probe
+  P0–P3 historical in `stage0_7g_cascade_tissue_probe/` (P2 late-fusion ~0.38
+  — not a clean MBS-only lock).
 - **Depends on:** (7F).
-- **Plan:** [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)
-  (§7G).
-- **Report:** [`reports/inspection/stage0_7g_methylation_eval/analysis.md`](../reports/inspection/stage0_7g_methylation_eval/analysis.md)
-  — ranking winner **`C-mvalue-enet`** (tissue macro-F1); **7F cascade** weak on
-  tissue (~0.09 F1) at 65k/15ep. Follow-up:
-  [`plans/milestone-7g-cascade-tissue-investigation.md`](plans/milestone-7g-cascade-tissue-investigation.md).
-- **Tissue probe (P0–P3):** `done` (historical) — report
-  [`reports/inspection/stage0_7g_cascade_tissue_probe/`](../reports/inspection/stage0_7g_cascade_tissue_probe/analysis.md).
-  P0 ~0.09 F1 (late fusion); P2 ~0.38 F1 (**MBS train, late-fusion test** — not
-  a clean MBS-only vs enet comparison). **Corrected gene-only grid (P2-G …
-  P5-G, `C-mvalue-enet-G`)** scaffolding is **done**; honest GPU rerun on
-  **`explicit_only`** is **7G′ Stage A** (**done** for required arms). Then
-  **7G′ Stage B** before Milestone **7** OOF.
+- **Next:** Milestone **9**.
 
 ---
 
-## 7G′. Gene-only architecture selection + matched-panel benchmark
+## 9. Gene-only architecture selection on ATS (alias: 7G′ Stage A)
 
-- **Status:** scaffolding **`done`** · required Stage A GPU arms **`done`** ·
-  DeepRVAT Tier-1 screen **`done`** (**no architecture lock**) · Stage B code
-  **`done`** / GPU **later** · **current gate:** trait/seed-gene Stage A repeat
-  ([`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md))
-- **Plan:** [`plans/milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md)
-- **Screen:** [`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md)
-- **Pre–Stage-B:** [`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md)
-- **Runner (Stage A):** `scripts/run_7g_gene_only_probe.py` · background:
-  `scripts/train_7g_gene_only_probe_background.sh`
-- **Runner (Stage B):** `scripts/run_7g_prime_stage_b.py` · background:
-  `scripts/train_7g_prime_stage_b_background.sh`
+- **Status:** `done` (no architecture lock; 2×2 pooling retained; seed-mask
+  not adopted)
+- **Plan:** [`plans/milestone-9-gene-only-architecture.md`](plans/milestone-9-gene-only-architecture.md)
+- **Master brief:** [`plans/milestone-7g-prime-matched-probe-lightweight.md`](plans/milestone-7g-prime-matched-probe-lightweight.md)
+- **Runners (historical names):** `scripts/run_7g_gene_only_probe.py`,
+  `scripts/run_7g_16ep_promotion_resume.sh`, `scripts/run_7g_prime_seed_mask.py`
 
-### Finished (code + docs — `4f5e022`)
+### 9a — DeepRVAT Tier-1 / gene-only probe grid
 
-- Test-only **`mbs_e2e`** (`eval_split=test`, `n_eval_samples`); regression tests
-- Report writers refuse lock without valid e2e + completed **`C-mvalue-*-G`**
-- [ADR 0010](adr/0010-gene-allocation-policy.md): **`explicit_only`** /
-  `bounded_nearest` / `legacy_nearest`
-- Stage B: study-grouped multitask panel selector, `fold_panels/fold_*_panel.json`,
-  Stage A lock → training params, post-hoc fusion arm renames
-- [7G″ plan](plans/milestone-7g-double-prime-expression-auxiliary.md) (deferred)
+- **Status:** `done`
+- **Plan:** [`plans/milestone-7g-prime-stage-a-deeprvat-screen.md`](plans/milestone-7g-prime-stage-a-deeprvat-screen.md)
+- **Evidence:** `P2-G` best cascade `mbs_e2e` **0.373**; classical enet-G
+  **0.388**; vector ≤ scalar; `m_only` best annotation under short budget.
+  Report: `reports/inspection/stage0_7g_gene_only_probe/`.
 
-### Stage A — gene-only MBS architecture selection
+### 9b — Matched 16-epoch promotion
 
-- **Required arms done when:** Report under
-  `reports/inspection/stage0_7g_gene_only_probe/` with per-fold tables,
-  **test-only** **`mbs_e2e`** (`eval_split=test`), provisional lock, orphan
-  fusion decision; arms `P2-G`, `P4-G`, `P5-G-max` (**inactive thereafter**),
-  `C-mvalue-*-G`, optional `P2-orphan-ablation` on **`explicit_only`** panel.
-- **Evidence (required arms):**
-  - **`P2-G-explicit` / `P4-G-explicit` / `P5-G-max-explicit`:** 3/3 folds,
-    `eval_split=test`. Best cascade **`mbs_e2e`:** P2-G **0.373**; P4-G 0.370;
-    P5-G-max 0.356 (**P5 inactive** — do not extend).
-  - **`mbs_enet`** on frozen P2/P4 MBS: P2 **0.385** (closest neural readout to classical).
-  - **`C-mvalue-classical-G`** on **`explicit_only`** (51 375 cols): enet-G **0.388**
-    still leads tissue F1; cascade not ≥0.03 ahead.
-  - **`P2-orphan-ablation`:** orphan RBS negligible (Δ F1 ≈ 0)
-  - **Best landed (not a lock):** `P2-G` max/max, 15 epochs
-    (`lock_recommendation.json` → `architecture_locked: false`)
-- **DeepRVAT screen (done 2026-09-04):** mixed scalar / vector / one-hop Tier-1 +
-  fold-0 annotation ablations. **No arm beat `P2-G` on tissue**; vector ≤ scalar;
-  one-hop weak on e2e; **`m_only` best among raw-concat annotations**. **Do not
-  retain a P2-G lock.** Next gate: trait/seed-gene Stage A repeat.
-  CPU R0–R5 **done** (typed arms improve age vs R0; **shuffle control did not
-  collapse** → neural typed pool not promoted). See pre-stage-b plan + report
-  § Interpretation + `typed_rbs_pooling/`.
+- **Status:** `done` — `next_gate: retain_pooling_2x2` (no pooling lock)
+- **Plan:** [`plans/milestone-7g-prime-16ep-promotion.md`](plans/milestone-7g-prime-16ep-promotion.md)
+- **Evidence:** full 2×2 cascade pooling within noise; one-hop
+  `N-light-gene-mean` near P2 tissue (~0.378); `m_only` still beats `full`
+  at matched 16 ep.
 
-### Stage B — fold-selected panel + full model
+### 9c — Age-primary seed-mask
 
-- **Status:** plumbing **done**; GPU **blocked** until after the
-  **trait/seed-gene Stage A repeat** (separate decision). R0–R5 does **not**
-  unblock Stage B.
-- **Done when:** Report under
-  `reports/inspection/stage0_7g_prime_matched_probe/` with fold-safe
-  `C-mvalue-enetS`, `N-cascade-S`, **`N-light-type`**, post-hoc
-  **`N-mbs-posthoc-full-fusion`** / **`N-mbs-posthoc-mbs-direct`**, canonical
-  `fold_panels/fold_*_panel.json`, and **`direct_cpg.zarr`** when direct loci exist.
-- **Evidence:** selector + runner plumbing landed; **do not launch** from a free
-  GPU or from R0–R5 completion.
+- **Status:** `done` — **seed-masking not adopted** (`G0` beats G1–G3)
+- **Plan:** [`plans/milestone-7g-prime-age-seed-mask.md`](plans/milestone-7g-prime-age-seed-mask.md)
+- **Bugs fixed en route:** `learning_rate` threading, seed-offset/`-s2`,
+  classical tissue array KeyError; gradient clipping; epoch budget raised.
+- **Report:** `reports/inspection/stage0_7g_prime_seed_mask/`.
 
-### Trait/seed-gene Stage A repeat + age-primary seed-mask
+### 9d — Typed-RBS R0–R5 (CPU)
 
-- **Plans:** [`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md)
-  § Seed-gene Stage A repeat;
-  [`plans/milestone-7g-prime-age-seed-mask.md`](plans/milestone-7g-prime-age-seed-mask.md)
-  (ATS age-primary G0–G3/C0/C2 screen).
-- **ADR:** [0011](adr/0011-seed-gene-sources.md) — `external_clean` /
-  `internal_fold` / `hybrid_fold`; [0012](adr/0012-seed-gene-discovery-vs-deployment-input.md)
-  — discovery CpGs rank genes; G2/C2 and deployment use expanded / observed
-  gene-linked CpGs; seed-panel traits are config-driven (ATS age/tissue/sex).
-- **Done (scaffolding / audit, 2026-09-04):** fold-0 `internal_fold` panel
-  with non-null `graph_content_hash`, stability vs prefilter diagnostics,
-  `sex_autosome` control, overlap + G3 match quality;
-  `reports/inspection/stage0_7g_prime_seed_mask/panel_audit.md` is green.
-  CUDA still **blocked** on the matched 16-ep promotion decision.
-- **After unlock:** run seed-mask GPU with `--reuse-panels`; then Stage B
-  fold-panel remains a separate gate.
+- **Status:** `done` — neural typed aggregator **not** promoted (shuffle Δ≪1 y)
+- **Plan:** [`plans/milestone-7g-prime-pre-stage-b.md`](plans/milestone-7g-prime-pre-stage-b.md)
 
-### 7G″ — expression auxiliary (deferred)
-
-- **Plan:** [`plans/milestone-7g-double-prime-expression-auxiliary.md`](plans/milestone-7g-double-prime-expression-auxiliary.md)
-- **Not a gate** for 7G′ or Milestone **7**; run after Stage B if pursued.
-
-- **Depends on:** (7G); Stage A lock for pooling/epochs.
-- **Blocks:** Milestone **7** 5×6 OOF.
+**Note:** Fold-selected panel GPU is **Milestone 11**, not part of 9.
 
 ---
 
-## 7. Run study-grouped cross-fitting (final OOF)
+## 10. Pretrained MBS/RBS scale campaign (alias: 7H)
 
-- **Status:** `pending` (**blocked until 7G′ Stage A and B**)
-- **Done when:** Out-of-fold gene-aggregated RBS (and genome-wide RBS + direct
-  contributions), age predictions, and tissue predictions are generated with
-  leakage controls (no sample/donor/replicate/held-out study scored by a
-  model that saw it). **No TBS scores.** Scores are **orientation-aligned**
-  (ADR 0008) before averaging. Persist fold-specific normalization,
-  presence/count/`norm_present` masks, complete model lineage. Protocol: 5
-  outer folds × up to 6 restarts.
-- **Depends on:** (7A)–(7E′), **7F**, **7G**, **7G′**; Hub multitask hygiene in 7E′.
-- **Note:** A 3-fold / 1-restart smoke of *existing* machinery is allowed for
-  plumbing; it does not complete this milestone and must not overwrite v0.1
+- **Status:** `in_progress` ← **current gate**
+- **Plan:** [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pretrained-mbs-rbs.md)
+- **Running log / A→B→C→D board:**
+  [`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md)
+- **Goal:** best gene-level (MBS) and region-level (RBS) architecture(s) for a
+  pretrained scoring framework; scale from ATS (13 548) to nine-pack
+  (`matrix-hub-nine-pack-virtual-v1`, 34 234) when loader/refs are honest.
+- **Depends on:** (9) reference arms; (7B) matrices; virtual store wiring.
+
+### 10a — Nine-pack virtual loader + reference arms
+
+- **Status:** `in_progress` (smoke **done**; full 3-fold **running**)
+- **Done so far:** `RoutedBetas` dense `[:, :n]`; cascade/classical/flat
+  openers; alignment tests; split `hub-nine-pack-3fold-v1`; fold-0 smoke
+  (3 ep): P2-G tissue F1 **0.343** / age MAE **15.0** / sex AUROC **0.891**.
+- **Running:** `scripts/run_7h_nine_pack_smoke.py --phase full`
+  (log `scratch/logs/7h_nine_pack_full.log`).
+- **Done when:** 3/3 folds for P2-G (15 ep) and m-only (16 ep); compact
+  `analysis.md` / `summary.json` refreshed; HM450-only claim documented.
+
+### 10b — ATS cheap wins (pooling seed-43 + trait census)
+
+- **Status:** trait census **`done`**; seed-43 pooling **`queued`** after 10a
+- **Census:** `trait_adequacy.md` — age/sex PASS; tissue 1/64 ≥1k; blood/brain
+  masks empty; disease/cancer `false≠control`.
+- **Queue:** `scripts/run_7h_next_queue.sh` → `run_7h_ats_pooling_s2.sh`.
+
+### 10c — Trait expansion hygiene
+
+- **Status:** `pending` (manual; after 10a+10b review)
+- **Done when:** disease/cancer case/control defined; blood/brain labels
+  repaired or explicitly deferred; tissue collapse policy if expanding heads;
+  no GPU trait arm without ≥1k-per-arm bar.
+
+### 10d — Reference checkpoint deliverable
+
+- **Status:** `pending`
+- **Done when:** documented pretrained checkpoint(s) (MBS ± RBS), input/score
+  contract, short association-testing note (CpG→gene multiple-testing
+  reduction). See campaign Phase 4.
+
+**Hard stop:** do not auto-launch Milestone **11** or **13** from this campaign.
+
+---
+
+## 11. Fold-selected panel + full model (alias: 7G′ Stage B)
+
+- **Status:** `blocked` (code done; GPU not launched)
+- **Plan:** [`plans/milestone-11-fold-selected-panel.md`](plans/milestone-11-fold-selected-panel.md)
+- **Runner:** `scripts/run_7g_prime_stage_b.py`
+- **Done when:** fold-safe panels, matched `C-mvalue-enetS` / `N-cascade-S` /
+  fusion ablations, `direct_cpg.zarr` when direct loci exist; report under
+  `reports/inspection/stage0_7g_prime_matched_probe/`.
+- **Depends on:** honest **10** scale/architecture decisions (and prior **9**
+  gene encoder).
+- **Blocks:** Milestone **13**.
+
+---
+
+## 12. Expression auxiliary (alias: 7G″)
+
+- **Status:** `deferred`
+- **Plan:** [`plans/milestone-12-expression-auxiliary.md`](plans/milestone-12-expression-auxiliary.md)
+- **Not a gate** for 10, 11, or 13.
+
+---
+
+## 13. Final study-grouped OOF (alias: historical Milestone 7)
+
+- **Status:** `blocked` until **11** (and sufficient **10**) complete
+- **Plan:** [`plans/milestone-13-final-oof.md`](plans/milestone-13-final-oof.md)
+- **Done when:** OOF gene-aggregated RBS / MBS (+ orphan RBS + direct), age and
+  tissue predictions, leakage controls, orientation-aligned scores (ADR 0008),
+  no TBS (ADR 0009). Protocol: **5** outer folds × up to **6** restarts.
+- **Depends on:** (7A)–(7F), **8**, **9**, **10** decisions, **11**.
+- **Note:** 3-fold / 1-restart plumbing smoke allowed; must not overwrite v0.1
   freezes ([ADR 0007](adr/0007-crossfit-prerequisites.md)).
 
 ---
 
-## 8. Optional layers (after core pipeline is stable)
+## 14. Optional layers (after core OOF is stable)
 
 - **Status:** `deferred`
-- **Rule:** Do not start these until milestones 1–7 produce a real OOF model
-  pipeline (7A–7G then 7). Full vision: [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md).
+- **Rule:** Do not start until milestones **1–13** produce a real OOF model
+  pipeline. Full vision: [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md).
   Graph-layer cCRE for scoring is **7C/7F**, not this section. Tile **scores**
   are out (7F); leftover CpGs are direct.
 
@@ -1085,8 +911,9 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 | EWAS Atlas enrichment | Compare significant gene–trait hits to Atlas curated associations / pathway enrichment |
 | MethylGPT priors / richer FM fusion | Ablation after multi-path scores stable |
 | Epivariants / episignatures | Explicit epivariant calling and clinical episignature work |
+| ONT/PacBio long-read methylation | Needs new ingestion path — out of Milestone 10 scope |
+| GEO-enriched training release | Catalog-only until immutable `deepmat-data-geo-dev-v1` |
 
----
 
 ## Agent checklist
 
