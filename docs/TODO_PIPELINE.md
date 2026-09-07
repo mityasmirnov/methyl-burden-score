@@ -868,13 +868,16 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ### 10c — Trait expansion hygiene
 
-- **Status:** `pending` (policy census done; table rewrite + GPU still blocked)
+- **Status:** `partial` — `label_status` sidecar written
+  (`sample_phenotype_table_hub_nine_pack_v1.label_status.parquet` +
+  [`label_status_census.md`](../reports/inspection/stage0_7h_nine_pack_smoke/label_status_census.md));
+  disease/cancer GPU configs not wired yet; blood/brain deferred;
+  bmi/ancestry not joined into nine-pack table.
 - **CPU report:**
   [`reports/inspection/stage0_7h_nine_pack_smoke/trait_hygiene.md`](../reports/inspection/stage0_7h_nine_pack_smoke/trait_hygiene.md)
-- **Done when:** disease/cancer case/control defined **and** implemented in
-  phenotype artifacts; blood/brain labels repaired or explicitly deferred;
-  tissue collapse policy if expanding heads; no GPU trait arm without
-  ≥1k-per-arm bar.
+- **Done when:** disease/cancer heads train from `label_status` (not pack masks);
+  blood/brain repaired or deferred; tissue collapse policy if expanding heads;
+  no GPU trait arm without ≥1k-per-arm bar.
 
 ### 10d — Reference checkpoint deliverable
 
