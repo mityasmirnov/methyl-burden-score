@@ -15,10 +15,11 @@ Checklist: [`TODO_PIPELINE.md`](../TODO_PIPELINE.md).
 **Do not retrain v0.1.** Freeze those runs. **7A–7F** and **7E′** are closed.
 **8** (methylation eval / was 7G) and **9** (gene-only / was 7G′) are **done**.
 **Current gate: Milestone 10** (pretrained / nine-pack; was 7H). Fold panel =
-**11**; final OOF = **13** (historical “Milestone 7”) — both blocked. Cascade
-tissue history: see
+**11**; final OOF = **12** (historical “Milestone 7”); expression
+continue/finetune = **13** (after OOF; download first) — **11/12** blocked.
+Cascade tissue history: see
 [`milestone-7g-cascade-tissue-investigation.md`](milestone-7g-cascade-tissue-investigation.md).
-The incomplete `EWAS_db` mirror must not block Milestones 10/13.
+The incomplete `EWAS_db` mirror must not block Milestones 10/12.
 
 This document remains the coding brief for **7A–7G** historical design; live
 ordering is in `TODO_PIPELINE.md`.

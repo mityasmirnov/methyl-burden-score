@@ -77,7 +77,7 @@ model.
 
 ## Post–Stage 0 multimodal stack
 
-After Milestone **13** (historical Milestone 7) produces OOF scores, the longer-term vision adds further
+After Milestone **12** (historical Milestone 7) produces OOF scores, the longer-term vision adds further
 layers. Do not start these while 7A–7E′ / 7 are open (see
 `.cursor/rules/pipeline-todo.mdc`).
 

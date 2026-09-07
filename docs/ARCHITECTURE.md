@@ -4,7 +4,8 @@ Post–Stage 0 modules (epimutation AE, ComBat-met) are outlined in
 [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md); they are not Stage 0 prerequisites.
 
 **Milestone numbers:** gene-only selection = **9** (was 7G′ Stage A); fold panel
-= **11** (was 7G′ Stage B); final OOF = **13** (was “Milestone 7”). Index:
+= **11** (was 7G′ Stage B); final OOF = **12** (was “Milestone 7”); expression
+continue/finetune = **13** (was 7G″, after OOF). Index:
 [`plans/MILESTONE_INDEX.md`](plans/MILESTONE_INDEX.md).
 
 ## Objective
@@ -107,7 +108,7 @@ which architecture wins):
 | Scope | CpG set | Direct / orphan | Primary use |
 |-------|---------|-----------------|-------------|
 | **Gene-only (Milestone 9 / was 7G′ Stage A)** | `gene_cols` = unique columns on edges with `region_to_gene ≥ 0` | Excluded from encoder input and primary metrics | Fair architecture selection vs `C-mvalue-*-G` |
-| **Full model (Milestone 11 → 13 OOF)** | Typed gene + qualified orphan regions + selected direct loci | Orphan RBS (one column per `region_id`), `direct_cpg.zarr` / fold-fitted direct | Product score export + phenotype fusion |
+| **Full model (Milestone 11 → 12 OOF)** | Typed gene + qualified orphan regions + selected direct loci | Orphan RBS (one column per `region_id`), `direct_cpg.zarr` / fold-fitted direct | Product score export + phenotype fusion |
 
 Cascade trainer flags (`training/cascade_loop.py`, experiment YAML):
 
@@ -554,14 +555,14 @@ direct; gene + orphan RBS + direct; each neural arm with and without Level-1
 robust-z; CpGPT inclusion as a separate ablation. **Milestone 9** adds matched
 **`C-mvalue-*-G`** on `gene_cols`.
 
-Final Stage 0 protocol (Milestone **13**, after Milestones **9–11**):
+Final Stage 0 protocol (Milestone **12**, after Milestones **9–11**):
 
 - 5 study-grouped outer folds × up to 6 random restarts
 - orientation-aligned OOF scores (ADR 0008); no TBS (ADR 0009)
 
 Do not launch the final 5×6 protocol until **Milestones 9 and 11** complete
 (and Milestone **10** scale decisions are honest). See
-[`plans/milestone-13-final-oof.md`](plans/milestone-13-final-oof.md)
+[`plans/milestone-12-final-oof.md`](plans/milestone-12-final-oof.md)
 and [ADR 0007](adr/0007-crossfit-prerequisites.md).
 
 Every stored training-sample MBS value is out-of-fold. Technical replicates and

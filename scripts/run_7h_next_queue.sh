@@ -7,7 +7,7 @@
 #   2) refresh nine-pack report
 #   3) Track B.4 ATS seed-43 2×2 pooling (4 arms)
 #   4) ATS one-hop light-mean seed-43 (extra keep-busy)
-# Soft-stop before Milestone 11 Stage B / 13 OOF / disease GPU.
+# Soft-stop before Milestone 11 Stage B / 12 OOF / disease GPU.
 #
 # Policy: prefer continuous GPU-0 occupancy; poll frequently on handoff.
 #
@@ -159,7 +159,7 @@ bash scripts/run_7h_ats_pooling_s2.sh
 train_ats_light_mean_s2
 
 log "=== SOFT STOP (GPU 0 may go idle) ==="
-log "Auto-queue will not launch Milestone 11 Stage B / 13 OOF / disease GPU."
+log "Auto-queue will not launch Milestone 11 Stage B / 12 OOF / disease GPU."
 log "To keep GPU 0 busy next: review 10a/10b reports, then manually start Stage B"
 log "  or 10c-gated trait arms. Prefer CUDA_VISIBLE_DEVICES=0."
 log "Reports:"

@@ -1,17 +1,29 @@
 # Plan: 7G″ expression-auxiliary pilot (deferred)
 
-> **Canonical milestone: 12** (deferred). Historical **7G″**. See [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
+> **Canonical milestone: 13** (deferred; **after** Milestone **12** OOF).
+> Historical **7G″**. See [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md) and
+> [`milestone-13-expression-auxiliary.md`](milestone-13-expression-auxiliary.md).
 
 
-Status: **deferred** — not a gate for 7G′ Stage A/B or Milestone **7** OOF.
+Status: **deferred** — not a gate for Milestones **10** / **11** / **12** OOF.
+Runs **after** final OOF (or an explicit interim pretrained checkpoint).
 Parent: [`milestone-7g-prime-matched-probe-lightweight.md`](milestone-7g-prime-matched-probe-lightweight.md).
 
 ## Scope
 
-Test whether **gene-expression auxiliary supervision** teaches more biologically
-interpretable promoter/body aggregation than phenotype supervision alone. Inspired
-by RSMethy-Net (CSBJ 0138), treated as a **hypothesis generator only** — not an
+Test whether **gene-expression auxiliary supervision** (continue-training or
+finetuning the methylation encoder) teaches more biologically interpretable
+promoter/body aggregation than phenotype supervision alone. Inspired by
+RSMethy-Net (CSBJ 0138), treated as a **hypothesis generator only** — not an
 architecture to copy.
+
+## Data download (required before GPU)
+
+1. Download matched expression matrices (RNA-seq and/or expression arrays) for
+   cohorts that overlap canonical Hub / TCGA methylation samples.
+2. Store under `$MBS_DATA_ROOT` with manifests, checksums, and study/sample IDs.
+3. Publish an overlap census (n samples, n genes, platforms) under
+   `reports/inspection/` before any expression train/finetune job.
 
 ## Why not copy RSMethy-Net directly
 
@@ -62,18 +74,24 @@ Never impute missing expression targets; mask unknown RNA.
 
 ## Sequencing
 
-1. Complete honest **7G′ Stage A** lock (test-only `mbs_e2e`, `explicit_only`, matched `-G`).
-2. Complete **7G′ Stage B** on fold-selected panels.
-3. Run 7G″ pilot on a **bounded** RNA-overlap subset (not full Hub OOF).
-4. If arm C amends the encoder, update Stage A lock **before** Milestone **7** OOF.
+1. Complete Milestones **9–11** (gene-only selection, scale, fold panel).
+2. Complete Milestone **12** final OOF (or document an interim **10d**
+   checkpoint if OOF is postponed by ADR).
+3. **Download + catalog expression** (see above) and overlap census.
+4. Run 7G″ / Milestone **13** continue-train and/or finetune on a **bounded**
+   RNA-overlap subset (not full Hub OOF).
+5. If expression amends the encoder for product use, document the new
+   checkpoint contract — do **not** silently replace OOF scores.
 
 ## Non-goals
 
 - Replace CascadeDeepSet with RSMethy-Net per-gene encoders.
-- Block 7G′ or Milestone **7** on 7G″ completion.
-- Ingest TCGA RNA in this scaffolding change set.
+- Block **10** / **11** / **12** on 7G″ completion.
+- Start expression GPU before download + overlap census.
 
 ## Done when (future)
 
-- Report under `reports/inspection/stage0_7g_double_prime_expression/` with arms A–F,
-  residualization ablation, and phenotype + expression metrics on study-held-out folds.
+- Expression download + manifests on disk; overlap census reported.
+- Report under `reports/inspection/stage0_7g_double_prime_expression/` with
+  continue-train / finetune arms, residualization ablation, and phenotype +
+  expression metrics on study-held-out folds.

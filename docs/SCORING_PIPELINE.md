@@ -5,7 +5,7 @@ Stage 0 schema sketch for **deepMAT** (package/CLI: `mbs`). Normative contracts:
 [`ANNOTATION_GRAPH.md`](ANNOTATION_GRAPH.md).
 Implementation brief: [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 Milestone numbers: [`plans/MILESTONE_INDEX.md`](plans/MILESTONE_INDEX.md)
-(gene-only = **9**, fold panel = **11**, OOF = **13**).
+(gene-only = **9**, fold panel = **11**, OOF = **12**, expression = **13**).
 
 Phenotype heads train the shared encoder; they are **not** part of the exported
 MBS scoring function.
@@ -20,10 +20,10 @@ MBS scoring function.
 | GPU policy for real training | Present |
 | Flat vs hierarchical aggregation | Present (+ unassigned semantics) |
 | Phenotype masking / shared encoder | Present |
-| Today vs Milestone 13 OOF MBS | Present; 13 blocked until M11 |
+| Today vs Milestone 12 OOF MBS | Present; 12 blocked until M11 |
 | Current 7F cascade (MBS/orphan RBS/direct; no TBS) | Implemented; `direct_cpg.zarr` is a Milestone **11** gap |
 | Numeric train metrics / loss curves | Out of scope here → `stage0_5d_max_n/`, TB |
-| Cross-fitting fold diagram | Deferred with M13 |
+| Cross-fitting fold diagram | Deferred with M12 |
 
 ## End-to-end flow
 
@@ -82,7 +82,7 @@ flowchart TB
 | Mode | When | CpGs in encoder | Comparator |
 |------|------|-----------------|------------|
 | **Gene-only** | Milestone **9** architecture selection | `gene_cols` only (typed edges allocated to a gene) | `C-mvalue-ridge-G`, `-enet-G`, `-hgb-G`, `-sva-G` on same columns |
-| **Full** | Milestone **11** + **13** OOF | Fold-selected panel + qualified orphan regions + direct loci | `C-mvalue-enetS`, `N-cascade-S`, fusion ablations |
+| **Full** | Milestone **11** + **12** OOF | Fold-selected panel + qualified orphan regions + direct loci | `C-mvalue-enetS`, `N-cascade-S`, fusion ablations |
 
 Cascade config keys: `training.gene_linked_only`, `training.primary_evaluation`
 (`mbs_e2e` vs `late_fusion`), `training.extra_fusion_modes` (orphan ablation:
@@ -272,20 +272,20 @@ Contracts: [`EWAS_METADATA.md`](EWAS_METADATA.md),
 - Study-grouped train / validation / external_test splits exist
   (`evaluation/splits.py`); hierarchical runs can reuse a flat `split.json`.
 
-**Deferred (Milestone 13 — blocked until Milestones 9 and 11)**
+**Deferred (Milestone 12 — blocked until Milestones 9 and 11)**
 
 - Full **out-of-fold** score matrix: every training sample scored only by models
   that never saw its study group; persisted OOF MBS, qualified per-region orphan
   RBS, indexed direct CpGs, and optional phenotype predictions. No TBS.
 - Protocol: [`EXPERIMENT_PROTOCOL.md`](EXPERIMENT_PROTOCOL.md) § out-of-fold;
-  gates: [`TODO_PIPELINE.md`](TODO_PIPELINE.md) Milestones **8–11** then **13**;
+  gates: [`TODO_PIPELINE.md`](TODO_PIPELINE.md) Milestones **8–11** then **12**;
   [ADR 0007](adr/0007-crossfit-prerequisites.md).
 
 ## Proposed improvements (not blocking)
 
 1. Link TensorBoard / epoch curves from `stage0_5d_max_n` when documenting
    performance (keep this doc topology-focused).
-2. When Milestone **13** lands, add a cross-fitting fold mermaid and concrete export schema
+2. When Milestone **12** lands, add a cross-fitting fold mermaid and concrete export schema
    (RBS/direct; no TBS — ADR 0009).
 
 ## Related commands

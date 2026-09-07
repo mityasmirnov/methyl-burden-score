@@ -26,9 +26,9 @@ are **historical aliases** — do not rename on-disk run trees.
 | **10c** | pending | Trait expansion hygiene (case/control, blood/brain) | 7H Track C |
 | **10d** | pending | Reference checkpoint(s) + association how-to | 7H Track D / Phase 4 |
 | **11** | blocked | Fold-selected panel + full model | **7G′ Stage B** |
-| **12** | deferred | Expression auxiliary | **7G″** |
-| **13** | blocked | Final study-grouped OOF (5×6) | historical **Milestone 7** |
-| **14** | deferred | Optional Stage 1+ layers | historical **§8 Optional** |
+| **12** | blocked | Final study-grouped OOF (5×6) | historical **Milestone 7** |
+| **13** | deferred | Expression aux (continue/finetune **after** OOF; download first) | **7G″** |
+| **14** | deferred | Optional Stage 1+ layers (a–f only) | historical **§8 Optional** |
 
 ## Plan file aliases
 
@@ -38,8 +38,12 @@ are **historical aliases** — do not rename on-disk run trees.
 | [`milestone-9-gene-only-architecture.md`](milestone-9-gene-only-architecture.md) | `milestone-7g-prime-*.md` family |
 | [`milestone-10-pretrained-mbs-rbs.md`](milestone-10-pretrained-mbs-rbs.md) | `milestone-7h-pretrained-mbs-rbs-campaign.md` |
 | [`milestone-11-fold-selected-panel.md`](milestone-11-fold-selected-panel.md) | Stage B sections of `milestone-7g-prime-matched-probe-lightweight.md` |
-| [`milestone-12-expression-auxiliary.md`](milestone-12-expression-auxiliary.md) | `milestone-7g-double-prime-expression-auxiliary.md` |
-| [`milestone-13-final-oof.md`](milestone-13-final-oof.md) | ADR 0007 + programme § final OOF |
+| [`milestone-12-final-oof.md`](milestone-12-final-oof.md) | ADR 0007 + programme § final OOF |
+| [`milestone-13-expression-auxiliary.md`](milestone-13-expression-auxiliary.md) | `milestone-7g-double-prime-expression-auxiliary.md` (+ download) |
+
+Legacy redirects (old numbers):
+[`milestone-12-expression-auxiliary.md`](milestone-12-expression-auxiliary.md) → **13**;
+[`milestone-13-final-oof.md`](milestone-13-final-oof.md) → **12**.
 
 ## Agent rule
 

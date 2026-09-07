@@ -25,9 +25,9 @@ On-disk `stage0_7g_*` / `run_7g_*` / `stage0_7h_*` IDs stay unchanged.
   10c        pending  trait hygiene (disease/cancer case≠control; blood/brain)
   10d        pending  reference checkpoint(s) + association how-to
 11           blocked  fold-selected panel + full model                   (was 7G′ Stage B)
-12           deferred expression auxiliary                               (was 7G″)
-13           blocked  final 5×6 study-grouped OOF                        (was “Milestone 7”)
-14           deferred optional Stage 1+ layers
+12           blocked  final 5×6 study-grouped OOF                        (was “Milestone 7”)
+13           deferred expression aux (continue/finetune after OOF)       (was 7G″)
+14           deferred optional Stage 1+ layers (trimmed)
 ```
 
 Live board for **10**: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pretrained-mbs-rbs.md)
@@ -37,7 +37,7 @@ Live board for **10**: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milest
 
 **GPU-0 policy:** keep device 0 occupied with chained Milestone **10** jobs
 (`CUDA_VISIBLE_DEVICES=0`). Handoff poll ~30s. Soft-stop before Milestone **11**
-/ **13** / disease GPU.
+/ **12** / disease GPU.
 
 1. **10a full (RUNNING on GPU 0)** — 3-fold nine-pack P2-G then m-only.
    PID `scratch/logs/7h_nine_pack_full.pid`. **Do not duplicate.** Smoke done.
@@ -53,7 +53,7 @@ Live board for **10**: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milest
    fix disease/cancer case/control; repair blood/brain labels before trait GPU.
 4. **10d** after 10c — pretrained checkpoint contract.
 5. **Still blocked auto:** Milestone **11** (`run_7g_prime_stage_b.py`), Milestone
-   **13** OOF, GEO-enriched GPU training, ONT/PacBio ingestion. Launch these
+   **12** OOF, GEO-enriched GPU training, ONT/PacBio ingestion. Launch these
    on GPU 0 only after review (still prefer device 0).
 
 ### Trustworthy ATS numbers (`explicit_only`, 51 375 gene-linked CpGs, test)
@@ -81,7 +81,7 @@ Hub census (refresh 2026-09-07): **173 076** samples, **1 763** studies,
 
 Programme: [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md).
 ADRs: [0007](adr/0007-crossfit-prerequisites.md) (OOF prerequisites; OOF =
-Milestone **13**), [0008](adr/0008-score-identifiability.md),
+Milestone **12**), [0008](adr/0008-score-identifiability.md),
 [0009](adr/0009-drop-tbs-scores.md), [0010](adr/0010-gene-allocation-policy.md).
 
 
@@ -864,7 +864,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   contract, short association-testing note (CpG→gene multiple-testing
   reduction). See campaign Phase 4.
 
-**Hard stop:** do not auto-launch Milestone **11** or **13** from this campaign.
+**Hard stop:** do not auto-launch Milestone **11** or **12** from this campaign.
 
 ---
 
@@ -881,54 +881,68 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   `reports/inspection/stage0_7g_prime_matched_probe/`.
 - **Depends on:** honest **10** scale/architecture decisions (and prior **9**
   gene encoder). Seed-gene / seed-mask gate **cleared** (9c; not adopted).
-- **Blocks:** Milestone **13**.
+- **Blocks:** Milestone **12** (final OOF).
 - **Hard stop:** do not launch full Stage B GPU until 10a+10b review.
 
 ---
 
-## 12. Expression auxiliary (alias: 7G″)
-
-- **Status:** `deferred`
-- **Plan:** [`plans/milestone-12-expression-auxiliary.md`](plans/milestone-12-expression-auxiliary.md)
-- **Not a gate** for 10, 11, or 13.
-
----
-
-## 13. Final study-grouped OOF (alias: historical Milestone 7)
+## 12. Final study-grouped OOF (alias: historical Milestone 7)
 
 - **Status:** `blocked` until **11** (and sufficient **10**) complete
-- **Plan:** [`plans/milestone-13-final-oof.md`](plans/milestone-13-final-oof.md)
+- **Plan:** [`plans/milestone-12-final-oof.md`](plans/milestone-12-final-oof.md)
+  (alias stub: [`milestone-13-final-oof.md`](plans/milestone-13-final-oof.md))
 - **Done when:** OOF gene-aggregated RBS / MBS (+ orphan RBS + direct), age and
   tissue predictions, leakage controls, orientation-aligned scores (ADR 0008),
   no TBS (ADR 0009). Protocol: **5** outer folds × up to **6** restarts.
 - **Depends on:** (7A)–(7F), **8**, **9**, **10** decisions, **11**.
 - **Note:** 3-fold / 1-restart plumbing smoke allowed; must not overwrite v0.1
   freezes ([ADR 0007](adr/0007-crossfit-prerequisites.md)).
+- **Next:** Milestone **13** expression continue/finetune (optional path after
+  OOF scores exist).
+
+---
+
+## 13. Expression auxiliary (alias: 7G″)
+
+- **Status:** `deferred` — runs **after** Milestone **12** OOF
+- **Plan:** [`plans/milestone-13-expression-auxiliary.md`](plans/milestone-13-expression-auxiliary.md)
+  → detail [`plans/milestone-7g-double-prime-expression-auxiliary.md`](plans/milestone-7g-double-prime-expression-auxiliary.md)
+- **Intent:** either **continue training** the OOF / pretrained methylation
+  encoder or **finetune** it with gene-expression prediction as auxiliary (or
+  primary) supervision — not a random-split TCGA copy of RSMethy-Net.
+- **Data prerequisite (in plan):** download and catalog matched
+  methylation–expression cohorts (RNA-seq / microarray) with study-grouped
+  sample overlap; persist under `$MBS_DATA_ROOT` with manifests — **do not**
+  start expression GPU work until download + overlap census land.
+- **Depends on:** Milestone **12** OOF checkpoint(s) (or an explicit interim
+  pretrained checkpoint from **10d** if OOF is postponed by ADR).
+- **Not a gate** for **10** / **11** / **12**.
 
 ---
 
 ## 14. Optional layers (after core OOF is stable)
 
 - **Status:** `deferred`
-- **Rule:** Do not start until milestones **1–13** produce a real OOF model
-  pipeline. Full vision: [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md).
-  Graph-layer cCRE for scoring is **7C/7F**, not this section. Tile **scores**
-  are out (7F); leftover CpGs are direct.
+- **Rule:** Do not start until Milestone **12** OOF produces a real score
+  pipeline (milestones **1–12**). Expression continue/finetune is **13**, not
+  this section. Graph-layer cCRE for scoring is **7C/7F**. Tile **scores** are
+  out (7F); leftover CpGs are direct. Full vision context:
+  [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md).
 
-### Stage 1+ roadmap (deferred candidates)
+### Deferred candidates (only these)
 
-| Candidate | Intent / acceptance hint |
-|-----------|--------------------------|
-| PROTRIDER-style / masked AE (Level 3) | Only if 7D/7E show Level-1 insufficient; Student-t or masked recon + phenotype; not default |
-| Learned ProbeNormalizer (Level 2) | Bounded residual adapter; fold-fitted; after Level-1 |
-| ComBat-met (rpy2) | Beta-regression batch correction for user/custom IDAT or uncorrected cohorts; assert corrected betas stay in `[0, 1]`. Not required for Data Hub GMQN baselines |
-| TileDB sparse / Zarr v3 WGBS benchmark | First representative WGBS cohort; catalog stays on DuckDB+Parquet ([ADR 0005](adr/0005-catalog-matrix-independence.md)) |
-| ClickHouse | Only if multi-user OLAP portal needed; not training I/O |
-| EWAS Atlas enrichment | Compare significant gene–trait hits to Atlas curated associations / pathway enrichment |
-| MethylGPT priors / richer FM fusion | Ablation after multi-path scores stable |
-| Epivariants / episignatures | Explicit epivariant calling and clinical episignature work |
-| ONT/PacBio long-read methylation | Needs new ingestion path — out of Milestone 10 scope |
-| GEO-enriched training release | Catalog-only until immutable `deepmat-data-geo-dev-v1` |
+| ID | Candidate | Intent / acceptance hint |
+|----|-----------|--------------------------|
+| **a** | EWAS Atlas enrichment | Compare significant gene–trait hits to Atlas curated associations / pathway enrichment |
+| **b** | GEO-enriched training release | Immutable `deepmat-data-geo-dev-v1` (or successor); catalog-only until freeze |
+| **c** | Epivariants / episignatures | Explicit epivariant calling and clinical episignature work |
+| **d** | Learned ProbeNormalizer (Level 2) | Bounded residual adapter; fold-fitted; after Level-1 |
+| **e** | PROTRIDER-style / masked AE (Level 3) | Only if 7D/7E show Level-1 insufficient; Student-t or masked recon + phenotype; not default |
+| **f** | ONT/PacBio long-read methylation | Needs new ingestion path — out of Milestone 10 scope |
+
+Removed from this list (not Stage 0 optional gates here): ComBat-met, TileDB/Zarr
+WGBS benchmark, ClickHouse, MethylGPT priors / richer FM fusion.
+
 
 
 ## Agent checklist

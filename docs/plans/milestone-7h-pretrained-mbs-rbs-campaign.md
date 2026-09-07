@@ -76,7 +76,7 @@ then **C**, then **D**. Map onto this campaign:
    — waits for (1), repairs smoke-poisoned m-only fold-0, refreshes report,
    runs Track **B.4** (ATS seed-43 2×2), then ATS light-mean seed-43.
    Poll ~30s; `CUDA_VISIBLE_DEVICES=0`.
-3. **Soft stop after keeper.** Do **not** auto-launch Stage B / Milestone 13 OOF /
+3. **Soft stop after keeper.** Do **not** auto-launch Stage B / Milestone 12 OOF /
    disease-cancer GPU / blood-brain GPU — but prefer GPU 0 when those are
    manually approved.
 4. **Track C (manual, after reviewing A.4 + B.4 reports):**

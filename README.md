@@ -19,14 +19,16 @@ selection (**Milestone 9**, was 7G′) is **done**: best landed cascade is
 **`P2-G`** (max/max, 15 ep) on `explicit_only` (51 375 CpGs); classical
 `C-mvalue-enet-G` still leads tissue (0.388 vs 0.373 `mbs_e2e`); seed-masking
 **not** adopted. Fold-selected panel (**Milestone 11**) and final 5×6 OOF
-(**Milestone 13**, historical “Milestone 7”) stay **blocked**.
+(**Milestone 12**, historical “Milestone 7”) stay **blocked**. Expression
+continue/finetune is **Milestone 13** (after OOF; download expression data
+first).
 
 Programme docs: [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md),
 [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md),
 [`docs/plans/milestone-10-pretrained-mbs-rbs.md`](docs/plans/milestone-10-pretrained-mbs-rbs.md),
 [`docs/plans/milestone-9-gene-only-architecture.md`](docs/plans/milestone-9-gene-only-architecture.md).
 ADRs: [0002](docs/adr/0002-ewas-datahub-primary-source.md) (Hub primary),
-[0007](docs/adr/0007-crossfit-prerequisites.md) (OOF = Milestone **13**),
+[0007](docs/adr/0007-crossfit-prerequisites.md) (OOF = Milestone **12**),
 [0008](docs/adr/0008-score-identifiability.md) (orientation),
 [0009](docs/adr/0009-drop-tbs-scores.md) (no TBS),
 [0010](docs/adr/0010-gene-allocation-policy.md) (`explicit_only`).
@@ -41,7 +43,7 @@ Do **not** retrain frozen **deepMAT-flat-v0.1** / **hierarchical-v0.1**.
 3. CpGs are organized into biologically typed regions before gene-level
    aggregation (**RBS → gene MBS**); leftover CpGs stay **direct** ([ADR 0009](docs/adr/0009-drop-tbs-scores.md) — **no tile/TBS scores**).
 4. Every reported training-sample score is obtained by study-grouped
-   cross-fitting (Milestone **13**, after Milestones **9–11**).
+   cross-fitting (Milestone **12**, after Milestones **9–11**).
 
 ## Stage 0 scope
 
@@ -56,15 +58,18 @@ Stage 0 implements:
 - gene-only architecture selection on `explicit_only` (**Milestone 9** — done);
 - pretrained / nine-pack scale campaign (**Milestone 10** — current);
 - fold-selected panel + full model (**Milestone 11** — blocked);
+- study-grouped OOF cross-fitting (**Milestone 12**);
+- expression continue-train / finetune after OOF (**Milestone 13** — deferred;
+  download expression data first);
 - static CpGPT sequence-adapter features exported offline;
 - optional MethylGPT CpG-token priors as an ablation;
 - masked age / tissue / sex (and Hub disease/cancer hygiene in **7E′**) heads;
-- study-grouped OOF cross-fitting (**Milestone 13**);
 - array missingness and manifest-downsampling tests.
 
 Stage 0 deliberately excludes dynamic foundation-model token extraction, LoRA,
-imputation during training, episignature classifiers, epivariant calling,
-production long-read training, ClickHouse, and default TileDB migration.
+imputation during training, and default production long-read training until
+Milestone **14f**. Epivariants / episignatures are Milestone **14c** (deferred).
+ClickHouse / TileDB are not Stage 0 optional gates.
 
 ## Server layout
 

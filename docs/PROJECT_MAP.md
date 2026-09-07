@@ -50,7 +50,8 @@ src/mbs/evaluation/      metrics + study-grouped split helpers (Milestone 5b)
 Milestones **1–7F** (and **7E′**) are done. **Current gate: Milestone 10**
 (pretrained MBS/RBS / nine-pack campaign; alias **7H**). Gene-only ATS
 selection is **Milestone 9** (done). Fold-selected panel is **11** (blocked).
-Final OOF is **Milestone 13** (historical “Milestone 7”, blocked) — see
+Final OOF is **Milestone 12** (historical “Milestone 7”, blocked). Expression
+continue/finetune is **13** (after OOF) — see
 [`TODO_PIPELINE.md`](TODO_PIPELINE.md),
 [`plans/MILESTONE_INDEX.md`](plans/MILESTONE_INDEX.md),
 [ADR 0007](adr/0007-crossfit-prerequisites.md),
