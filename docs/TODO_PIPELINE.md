@@ -35,17 +35,26 @@ Live board for **10**: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milest
 
 ### Next steps (ordered)
 
+**GPU-0 policy:** keep device 0 occupied with chained Milestone **10** jobs
+(`CUDA_VISIBLE_DEVICES=0`). Handoff poll ~30s. Soft-stop before Milestone **11**
+/ **13** / disease GPU.
+
 1. **10a full (RUNNING on GPU 0)** — 3-fold nine-pack P2-G then m-only.
    PID `scratch/logs/7h_nine_pack_full.pid`. **Do not duplicate.** Smoke done.
    Report: [`reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
-2. **10b B.4 queued** — `scripts/run_7h_next_queue.sh` waits for (1), refreshes
-   report, runs ATS seed-43 2×2 pooling. **B.5 trait census DONE**
-   (`trait_adequacy.md`).
-3. **Hard stop after 10b.** Then **10c** (manual): interpret full refs; fix
-   disease/cancer case/control; repair blood/brain labels before trait GPU.
+2. **GPU-0 keeper queued** — `scripts/run_7h_next_queue.sh` (pid
+   `scratch/logs/7h_next_queue.pid`) after (1):
+   - repair m-only fold-0 if smoke poisoned `skip-if-done`
+   - refresh report
+   - **10b** ATS seed-43 2×2 pooling
+   - ATS one-hop light-mean seed-43 (extra keep-busy)
+   **B.5 trait census DONE** (`trait_adequacy.md`).
+3. **Soft stop after keeper queue.** Then **10c** (manual): interpret full refs;
+   fix disease/cancer case/control; repair blood/brain labels before trait GPU.
 4. **10d** after 10c — pretrained checkpoint contract.
-5. **Still blocked:** Milestone **11** (`run_7g_prime_stage_b.py`), Milestone
-   **13** OOF, GEO-enriched GPU training, ONT/PacBio ingestion.
+5. **Still blocked auto:** Milestone **11** (`run_7g_prime_stage_b.py`), Milestone
+   **13** OOF, GEO-enriched GPU training, ONT/PacBio ingestion. Launch these
+   on GPU 0 only after review (still prefer device 0).
 
 ### Trustworthy ATS numbers (`explicit_only`, 51 375 gene-linked CpGs, test)
 
@@ -840,10 +849,13 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ### 10c — Trait expansion hygiene
 
-- **Status:** `pending` (manual; after 10a+10b review)
-- **Done when:** disease/cancer case/control defined; blood/brain labels
-  repaired or explicitly deferred; tissue collapse policy if expanding heads;
-  no GPU trait arm without ≥1k-per-arm bar.
+- **Status:** `pending` (policy census done; table rewrite + GPU still blocked)
+- **CPU report:**
+  [`reports/inspection/stage0_7h_nine_pack_smoke/trait_hygiene.md`](../reports/inspection/stage0_7h_nine_pack_smoke/trait_hygiene.md)
+- **Done when:** disease/cancer case/control defined **and** implemented in
+  phenotype artifacts; blood/brain labels repaired or explicitly deferred;
+  tissue collapse policy if expanding heads; no GPU trait arm without
+  ≥1k-per-arm bar.
 
 ### 10d — Reference checkpoint deliverable
 
@@ -858,15 +870,19 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ## 11. Fold-selected panel + full model (alias: 7G′ Stage B)
 
-- **Status:** `blocked` (code done; GPU not launched)
+- **Status:** `blocked` (CPU prep underway; GPU not launched)
 - **Plan:** [`plans/milestone-11-fold-selected-panel.md`](plans/milestone-11-fold-selected-panel.md)
 - **Runner:** `scripts/run_7g_prime_stage_b.py`
+- **CPU prep:** `--panels-only` / `--classical-only` / `--folds`; lock refreshed
+  (`next_gate: milestone_10_scale_review`); orphan census under
+  `reports/inspection/stage0_7g_prime_matched_probe/orphan_rbs_census.md`.
 - **Done when:** fold-safe panels, matched `C-mvalue-enetS` / `N-cascade-S` /
   fusion ablations, `direct_cpg.zarr` when direct loci exist; report under
   `reports/inspection/stage0_7g_prime_matched_probe/`.
 - **Depends on:** honest **10** scale/architecture decisions (and prior **9**
-  gene encoder).
+  gene encoder). Seed-gene / seed-mask gate **cleared** (9c; not adopted).
 - **Blocks:** Milestone **13**.
+- **Hard stop:** do not launch full Stage B GPU until 10a+10b review.
 
 ---
 

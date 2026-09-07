@@ -65,28 +65,38 @@ then **C**, then **D**. Map onto this campaign:
 | **A.4 full** | 3-fold P2-G (15 ep) then m-only (16 ep) | **RUNNING** | PID `scratch/logs/7h_nine_pack_full.pid`; log `7h_nine_pack_full.log` |
 | **B.5** | Trait adequacy ≥1k-per-arm census | **DONE** | `trait_adequacy.md` |
 | **B.4** | Genuine seed-43 ATS 2×2 cascade pooling | **QUEUED** | after A.4 full frees GPU 0 |
-| **C** | Nine-pack scale decisions + trait expansion hygiene | **BLOCKED** on A.4 full results + disease/cancer case≠control | manual |
+| **C** | Nine-pack scale decisions + trait expansion hygiene | **PARTIAL** — 10c policy census done; GPU still blocked on A.4 + B.4 review + table rewrite | manual |
 | **D** | Phase 4 reference checkpoint(s) + how-to note | **BLOCKED** on C | later |
 
 ### Job queue (do not duplicate A.4 full)
 
 1. **Now (already launched):** `uv run python -u scripts/run_7h_nine_pack_smoke.py --phase full`
    — owns GPU 0. **Do not kill / do not start a second fold.**
-2. **Auto-chained next:** `scripts/run_7h_next_queue.sh`
-   — waits for (1), refreshes `--phase report`, then runs Track **B.4**
-   (`scripts/run_7h_ats_pooling_s2.sh`: four ATS cascade arms, seed=43).
-3. **Hard stop after B.4.** Do **not** auto-launch Stage B / Milestone 7 OOF /
-   disease-cancer GPU / blood-brain GPU.
+2. **Auto-chained next (GPU-0 keeper):** `scripts/run_7h_next_queue.sh`
+   — waits for (1), repairs smoke-poisoned m-only fold-0, refreshes report,
+   runs Track **B.4** (ATS seed-43 2×2), then ATS light-mean seed-43.
+   Poll ~30s; `CUDA_VISIBLE_DEVICES=0`.
+3. **Soft stop after keeper.** Do **not** auto-launch Stage B / Milestone 13 OOF /
+   disease-cancer GPU / blood-brain GPU — but prefer GPU 0 when those are
+   manually approved.
 4. **Track C (manual, after reviewing A.4 + B.4 reports):**
    - Interpret nine-pack 3-fold P2-G vs m-only vs ATS refs.
-   - Define proper disease/cancer case/control (mask `false` ≠ control).
-   - Repair blood/brain phenotype labels (masks empty today; pack ≠ trait).
+   - Disease/cancer case/control **policy defined** (CPU):
+     [`trait_hygiene.md`](../../reports/inspection/stage0_7h_nine_pack_smoke/trait_hygiene.md)
+     — `sample_type` via `SAMPLE_TYPE_CASE_CONTROL`; pack-mask false ≠ control;
+     table rewrite still required before GPU.
+   - Blood/brain trait heads **deferred** (masks empty; pack ≠ trait).
    - Tissue: only `whole blood` ≥1k among 64 labels — do not expand tissue head
      without collapsing labels.
    - Platform: all HM450 — no cross-platform claim.
 5. **Track D (after C):** pretrained MBS/RBS checkpoint contract + association-
    testing note (Phase 4 below). Stage B / OOF remain blocked until architecture
    refs are honest.
+
+**Milestone 11 CPU prep (parallel, no GPU):** honest Stage A lock refresh;
+`--panels-only` / `--classical-only` on
+`scripts/run_7g_prime_stage_b.py`; orphan RBS census. See
+[`milestone-11-fold-selected-panel.md`](milestone-11-fold-selected-panel.md).
 
 Launch chain (once):
 ```bash
@@ -383,3 +393,13 @@ bypass it.
   pid `scratch/logs/7h_next_queue.pid`) — waits for nine-pack full, refreshes
   report, then Track B.4 ATS seed-43 2×2 pooling; hard-stops before Stage B /
   OOF / disease GPU. Live board: § Operational schedule above.
+- 2026-09-07: **10c trait hygiene policy census (CPU)** —
+  `reports/inspection/stage0_7h_nine_pack_smoke/trait_hygiene.md`. Disease/
+  cancer: map Hub `sample_type` via `SAMPLE_TYPE_CASE_CONTROL` (both clear ≥1k
+  case+control); pack-mask false ≠ control. Blood/brain heads deferred. Tissue
+  CE not expanded (only `whole blood` ≥1k). No parquet rewrite.
+- 2026-09-07: **Milestone 11 CPU prep** — honest Stage A lock
+  (`next_gate: milestone_10_scale_review`); Stage B `--panels-only` /
+  `--classical-only` / `--folds`; orphan RBS census (861 singleton / 1092
+  multi-CpG orphans @ max_loci=65536). See
+  `docs/plans/milestone-11-fold-selected-panel.md`.

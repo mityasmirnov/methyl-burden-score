@@ -97,7 +97,12 @@ def cascade_train(
     _run(cmd)
 
 
-def flat_train(*, fold_filter: int | None, max_epochs: int | None) -> None:
+def flat_train(
+    *,
+    fold_filter: int | None,
+    max_epochs: int | None,
+    run_prefix: str | None = None,
+) -> None:
     sys.path.insert(0, str(ROOT / "scripts"))
     from run_7g_gene_only_probe import train_flat_region_arm  # type: ignore
     from mbs.paths import DataPaths
@@ -105,6 +110,7 @@ def flat_train(*, fold_filter: int | None, max_epochs: int | None) -> None:
 
     paths = DataPaths.from_environment()
     cfg_path = M_ONLY_CFG
+    prefix = run_prefix or M_ONLY_PREFIX
     if max_epochs is not None:
         import yaml
 
@@ -118,7 +124,7 @@ def flat_train(*, fold_filter: int | None, max_epochs: int | None) -> None:
     train_flat_region_arm(
         paths=paths,
         config_path=cfg_path,
-        run_prefix=M_ONLY_PREFIX,
+        run_prefix=prefix,
         device="cuda",
         report_dir=REPORT,
         fold_filter=fold_filter,
@@ -152,12 +158,22 @@ def collect_arm(kind: str, *, smoke: bool = False) -> dict[str, Any]:
                 row["run_id"] = run
                 folds.append(row)
     else:
-        # Smoke may use the same prefix with only fold 0 present.
+        prefix = f"{M_ONLY_PREFIX}-smoke" if smoke else M_ONLY_PREFIX
         for i in range(3):
-            mp = ROOT / "artifacts" / "runs" / f"{M_ONLY_PREFIX}-f{i}" / "metrics.json"
+            mp = ROOT / "artifacts" / "runs" / f"{prefix}-f{i}" / "metrics.json"
             if mp.is_file():
                 row = _e2e_metrics(mp)
                 row["fold"] = i
+                row["run_id"] = f"{prefix}-f{i}"
+                folds.append(row)
+        # Legacy: smoke once wrote into the full prefix (fold 0 only). Prefer
+        # full-budget metrics when both exist; otherwise keep legacy for reports.
+        if smoke and not folds:
+            mp = ROOT / "artifacts" / "runs" / f"{M_ONLY_PREFIX}-f0" / "metrics.json"
+            if mp.is_file():
+                row = _e2e_metrics(mp)
+                row["fold"] = 0
+                row["run_id"] = f"{M_ONLY_PREFIX}-f0"
                 folds.append(row)
     def _mean(key: str) -> float | None:
         vals = [float(f[key]) for f in folds if isinstance(f.get(key), (int, float))]
@@ -285,7 +301,12 @@ def main() -> None:
                 report_dir=REPORT / "_staging_p2_smoke",
             )
         if not args.skip_m_only:
-            flat_train(fold_filter=0, max_epochs=3)
+            # Distinct run prefix so smoke never poisons full skip-if-done.
+            flat_train(
+                fold_filter=0,
+                max_epochs=3,
+                run_prefix=f"{M_ONLY_PREFIX}-smoke",
+            )
         write_report(loader, smoke=True)
         return
 
