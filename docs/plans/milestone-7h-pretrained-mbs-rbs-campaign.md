@@ -74,11 +74,15 @@ then **C**, then **D**. Map onto this campaign:
    — owns GPU 0. **Do not kill / do not start a second fold.**
 2. **Auto-chained next (GPU-0 keeper):** `scripts/run_7h_next_queue.sh`
    — waits for (1), repairs smoke-poisoned m-only fold-0, refreshes report,
-   runs Track **B.4** (ATS seed-43 2×2), then ATS light-mean seed-43.
-   Poll ~30s; `CUDA_VISIBLE_DEVICES=0`.
+   runs **nine-pack vector RBS** (mean→max + max→max @ 15 ep) as the scalar-
+   vs-vector scale screen, then Track **B.4** (ATS seed-43 2×2) + ATS
+   light-mean seed-43. Poll ~30s; `CUDA_VISIBLE_DEVICES=0`.
+   **P2-G is provisional only** — do not declare a cascade primary until
+   `vector_vs_scalar.md` lands. **N-light** remains a co-equal OOF finalist.
 3. **Soft stop after keeper.** Do **not** auto-launch Stage B / Milestone 12 OOF /
    disease-cancer GPU / blood-brain GPU — but prefer GPU 0 when those are
-   manually approved.
+   manually approved. Milestone **12** OOF = **finalists only** (winning
+   cascade + N-light), not all ~9 arms.
 4. **Track C (manual, after reviewing A.4 + B.4 reports):**
    - Interpret nine-pack 3-fold P2-G vs m-only vs ATS refs.
    - Disease/cancer case/control **policy defined** (CPU):

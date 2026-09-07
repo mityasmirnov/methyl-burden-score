@@ -33,7 +33,9 @@ From `reports/inspection/stage0_7g_gene_only_probe/analysis.md` § matched-budge
 
 ## Next
 
-Phase 3 nine-pack split `hub-nine-pack-3fold-v1` is frozen via
-`scripts/build_hub_nine_pack_split.py`. Do **not** launch Stage B or Milestone 7
-OOF from this checkpoint alone — continue 7H architecture work on ATS, then
-scale carefully to nine-pack.
+Phase 3 nine-pack split `hub-nine-pack-3fold-v1` is frozen. **P2-G is not a
+product lock** — ATS scalar vs vector was within noise; nine-pack vector RBS
+arms are the scale test before any cascade primary. Keep **N-light**
+(`m_only`) as a co-equal light MBS finalist for Milestone **12** OOF
+(finalists only — do not 5×6 all Stage A arms). Do **not** launch Stage B or
+OOF from this ATS checkpoint alone.

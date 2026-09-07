@@ -14,6 +14,15 @@ the expensive protocol.
 ([ADR 0008](../adr/0008-score-identifiability.md)); no TBS
 ([ADR 0009](../adr/0009-drop-tbs-scores.md)).
 
+**Arms:** **finalists only** after Milestone **10** scale screen:
+
+1. Winning **cascade** (scalar P2-G *or* nine-pack vector RBS — undecided until
+   `reports/inspection/stage0_7h_nine_pack_smoke/vector_vs_scalar.md`)
+2. **N-light** one-hop light MBS (`m_only` / gene-mean) — co-equal deployment
+   model, not a side ablation
+
+Do **not** spend 5×6 budget on all ~9 Stage A arms.
+
 Prerequisites narrative (still valid; numbers updated):
 [ADR 0007](../adr/0007-crossfit-prerequisites.md),
 [`post-v0-scientific-programme.md`](post-v0-scientific-programme.md).

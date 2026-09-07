@@ -45,16 +45,18 @@ Live board for **10**: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milest
 2. **GPU-0 keeper queued** — `scripts/run_7h_next_queue.sh` (pid
    `scratch/logs/7h_next_queue.pid`) after (1):
    - repair m-only fold-0 if smoke poisoned `skip-if-done`
-   - refresh report
-   - **10b** ATS seed-43 2×2 pooling
-   - ATS one-hop light-mean seed-43 (extra keep-busy)
+   - refresh P2-G / m-only report
+   - **nine-pack vector RBS** @ 15 ep (`vector-mean-max`, `vector-max-max`) —
+     honest scalar-vs-vector at 34k before any “primary”
+   - **10b** ATS seed-43 2×2 pooling + ATS light-mean seed-43
    **B.5 trait census DONE** (`trait_adequacy.md`).
-3. **Soft stop after keeper queue.** Then **10c** (manual): interpret full refs;
-   fix disease/cancer case/control; repair blood/brain labels before trait GPU.
-4. **10d** after 10c — pretrained checkpoint contract.
-5. **Still blocked auto:** Milestone **11** (`run_7g_prime_stage_b.py`), Milestone
-   **12** OOF, GEO-enriched GPU training, ONT/PacBio ingestion. Launch these
-   on GPU 0 only after review (still prefer device 0).
+3. **Soft stop after keeper queue.** Review `vector_vs_scalar.md`. Then **10c**
+   (manual trait hygiene) / pick cascade finalist. **N-light stays a finalist.**
+4. **10d** after architecture pick — pretrained checkpoint contract (cascade +
+   light), not a premature P2-G-only Phase 4.
+5. **Still blocked auto:** Milestone **11** Stage B GPU, Milestone **12** OOF
+   (finalists only — winning cascade + N-light), disease GPU, GEO/ONT. Prefer
+   GPU 0 when approved.
 
 ### Trustworthy ATS numbers (`explicit_only`, 51 375 gene-linked CpGs, test)
 
@@ -68,7 +70,10 @@ Live board for **10**: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milest
 | Seed-mask | `G0` beats G1–G3 | — | **Not adopted** |
 | Invalid (do not cite) | pre-fix `mbs_e2e` on P*-G | ~0.67–0.70 | train+val+test leak |
 
-**Refs:** P2-G primary cascade; one-hop `m_only` lightweight alternative.
+**Refs:** P2-G is a **provisional** ATS cascade reference only (`architecture_locked:
+false`). Nine-pack **vector RBS** (mean→max / max→max) is queued before any
+cascade primary. **N-light** (`m_only`) is a co-equal light-model finalist for
+Milestone **12** OOF — do not OOF all ~9 arms.
 **Platform (nine-pack):** HM450 only — no cross-platform claim.
 
 Frozen freezes (do not overwrite): **deepMAT-flat-v0.1** /
@@ -891,10 +896,18 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Status:** `blocked` until **11** (and sufficient **10**) complete
 - **Plan:** [`plans/milestone-12-final-oof.md`](plans/milestone-12-final-oof.md)
   (alias stub: [`milestone-13-final-oof.md`](plans/milestone-13-final-oof.md))
-- **Done when:** OOF gene-aggregated RBS / MBS (+ orphan RBS + direct), age and
-  tissue predictions, leakage controls, orientation-aligned scores (ADR 0008),
-  no TBS (ADR 0009). Protocol: **5** outer folds × up to **6** restarts.
-- **Depends on:** (7A)–(7F), **8**, **9**, **10** decisions, **11**.
+- **Arms policy:** **finalists only** — do **not** run 5×6 across all ~9 Stage A
+  arms. Intended product pair:
+  1. **Cascade finalist** — scalar P2-G *or* winning nine-pack **vector RBS**
+     (after `vector_vs_scalar.md`), dual RBS+MBS output
+  2. **Light finalist** — **N-light** one-hop (`m_only` / gene-mean) for cheap
+     MBS deployment
+- **Done when:** OOF gene-aggregated RBS / MBS (+ orphan RBS + direct as
+  applicable), age and tissue predictions, leakage controls, orientation-aligned
+  scores (ADR 0008), no TBS (ADR 0009). Protocol: **5** outer folds × up to
+  **6** restarts **per finalist**.
+- **Depends on:** (7A)–(7F), **8**, **9**, **10** scale screen (incl. vector vs
+  scalar), **11**.
 - **Note:** 3-fold / 1-restart plumbing smoke allowed; must not overwrite v0.1
   freezes ([ADR 0007](adr/0007-crossfit-prerequisites.md)).
 - **Next:** Milestone **13** expression continue/finetune (optional path after
