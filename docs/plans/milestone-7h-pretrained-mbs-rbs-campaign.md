@@ -73,16 +73,16 @@ then **C**, then **D**. Map onto this campaign:
 1. **Now (already launched):** `uv run python -u scripts/run_7h_nine_pack_smoke.py --phase full`
    — owns GPU 0. **Do not kill / do not start a second fold.**
 2. **Auto-chained next (GPU-0 keeper):** `scripts/run_7h_next_queue.sh`
-   — waits for (1), repairs smoke-poisoned m-only fold-0, refreshes report,
-   runs **nine-pack vector RBS** (mean→max + max→max @ 15 ep) as the scalar-
-   vs-vector scale screen, then Track **B.4** (ATS seed-43 2×2) + ATS
-   light-mean seed-43. Poll ~30s; `CUDA_VISIBLE_DEVICES=0`.
-   **P2-G is provisional only** — do not declare a cascade primary until
-   `vector_vs_scalar.md` lands. **N-light** remains a co-equal OOF finalist.
-3. **Soft stop after keeper.** Do **not** auto-launch Stage B / Milestone 12 OOF /
-   disease-cancer GPU / blood-brain GPU — but prefer GPU 0 when those are
-   manually approved. Milestone **12** OOF = **finalists only** (winning
-   cascade + N-light), not all ~9 arms.
+   — after m-only-f0 repair: refresh report → **nine-pack vector RBS** →
+   **one-hop correctness smokes** (seed-mask + multi-seed) → Track **B.4**
+   ATS seed-43 pooling. **Skipped:** ATS light-mean s2 keep-busy.
+   Handoff helper: `scripts/run_7h_queue_handoff.sh` (waits for m-only-f0
+   metrics then relaunches updated keeper).
+   **P2-G provisional only.** **N-light** co-equal OOF finalist.
+3. **Soft stop after keeper.** Review `vector_vs_scalar.md` +
+   `stage0_7h_onehop_correctness/`. Milestone **12** OOF = **finalists only**.
+   Disease/cancer GPU blocked until configs use `label_status` sidecar;
+   blood/brain/bmi/ancestry deferred.
 4. **Track C (manual, after reviewing A.4 + B.4 reports):**
    - Interpret nine-pack 3-fold P2-G vs m-only vs ATS refs.
    - Disease/cancer case/control **policy defined** (CPU):

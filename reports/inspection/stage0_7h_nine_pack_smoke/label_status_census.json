@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-09-07T13:48:18.829527+00:00",
+  "n_samples": 37257,
+  "disease": {
+    "label_status": {
+      "NaN": 22756,
+      "control": 9188,
+      "case": 5289,
+      "adjacent_normal": 24
+    },
+    "raw_sample_type": {
+      "NaN": 22756,
+      "control": 9188,
+      "disease tissue": 5289,
+      "adjacent normal": 24
+    },
+    "n_case_control_mask": 14477
+  },
+  "cancer": {
+    "label_status": {
+      "NaN": 26196,
+      "case": 7164,
+      "control": 2530,
+      "adjacent_normal": 1367
+    },
+    "raw_sample_type": {
+      "NaN": 26196,
+      "disease tissue": 7164,
+      "control": 2530,
+      "adjacent normal": 1367
+    },
+    "n_case_control_mask": 9694
+  },
+  "note": "Pack-membership disease_mask/cancer_mask are unchanged and must not be used as control labels. Blood/brain heads remain deferred."
+}

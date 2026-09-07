@@ -20,43 +20,57 @@ On-disk `stage0_7g_*` / `run_7g_*` / `stage0_7h_*` IDs stay unchanged.
 8            done     methylation-only full eval + tissue probe          (was 7G)
 9            done     gene-only architecture on ATS (9a–9d screens)      (was 7G′)
 10           ← NOW    pretrained MBS/RBS scale / nine-pack campaign      (was 7H)
-  10a        running  virtual multi-store + 3-fold P2-G / m-only refs
-  10b        partial  ATS seed-43 pooling (queued) + trait census (done)
-  10c        pending  trait hygiene (disease/cancer case≠control; blood/brain)
-  10d        pending  reference checkpoint(s) + association how-to
-11           blocked  fold-selected panel + full model                   (was 7G′ Stage B)
-12           blocked  final 5×6 study-grouped OOF                        (was “Milestone 7”)
-13           deferred expression aux (continue/finetune after OOF)       (was 7G″)
-14           deferred optional Stage 1+ layers (trimmed)
+  10a        wrapping P2-G done; m-only f0 full-budget repair on GPU 0
+  10a+       queued   nine-pack vector RBS @15ep (scale screen vs P2-G)
+  10a++      queued   one-hop correctness: seed-mask + multi-seed (cheap)
+  10b        queued   ATS seed-43 2×2 pooling (after 10a+/++)
+  10c        partial  label_status parquet written; wire heads later
+  10d        pending  reference checkpoints after finalists chosen
+11           blocked  fold-selected panel (CPU panels running)
+12           blocked  final 5×6 OOF — finalists only (cascade + N-light)
+13           deferred expression aux after OOF
+14           deferred optional a–f
 ```
 
-Live board for **10**: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pretrained-mbs-rbs.md)
-→ running log [`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md).
+Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pretrained-mbs-rbs.md)
+→ [`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md).
 
 ### Next steps (ordered)
 
-**GPU-0 policy:** keep device 0 occupied with chained Milestone **10** jobs
-(`CUDA_VISIBLE_DEVICES=0`). Handoff poll ~30s. Soft-stop before Milestone **11**
-/ **12** / disease GPU.
+**GPU-0 policy:** validate cheaply before scaling. Soft-stop before Milestone
+**11** Stage B GPU / **12** OOF / disease heads.
 
-1. **10a full (RUNNING on GPU 0)** — 3-fold nine-pack P2-G then m-only.
-   PID `scratch/logs/7h_nine_pack_full.pid`. **Do not duplicate.** Smoke done.
-   Report: [`reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
-2. **GPU-0 keeper queued** — `scripts/run_7h_next_queue.sh` (pid
-   `scratch/logs/7h_next_queue.pid`) after (1):
-   - repair m-only fold-0 if smoke poisoned `skip-if-done`
-   - refresh P2-G / m-only report
-   - **nine-pack vector RBS** @ 15 ep (`vector-mean-max`, `vector-max-max`) —
-     honest scalar-vs-vector at 34k before any “primary”
-   - **10b** ATS seed-43 2×2 pooling + ATS light-mean seed-43
-   **B.5 trait census DONE** (`trait_adequacy.md`).
-3. **Soft stop after keeper queue.** Review `vector_vs_scalar.md`. Then **10c**
-   (manual trait hygiene) / pick cascade finalist. **N-light stays a finalist.**
-4. **10d** after architecture pick — pretrained checkpoint contract (cascade +
-   light), not a premature P2-G-only Phase 4.
-5. **Still blocked auto:** Milestone **11** Stage B GPU, Milestone **12** OOF
-   (finalists only — winning cascade + N-light), disease GPU, GEO/ONT. Prefer
-   GPU 0 when approved.
+**Priority (before any reference-architecture claim):**
+
+1. **Finish m-only-f0 repair** (in flight) then refresh nine-pack report.
+2. **HIGH — nine-pack vector RBS** @ matched 15-ep / 3-fold (`vector-mean-max`,
+   `vector-max-max`) vs provisional scalar P2-G → `vector_vs_scalar.md`.
+3. **HIGH — one-hop correctness smokes** (ATS fold 0, ~5 ep):
+   - seed-gene mask G0 vs G1 on `flat_region` (never tested on one-hop; 9c was cascade-only)
+   - multi-seed restarts 42/43/44 (seed-offset path unproven on one-hop)
+   Runner: `scripts/run_7h_onehop_correctness_smokes.py`.
+4. **Track B.4** ATS seed-43 2×2 pooling — keep; runs after (2)–(3).
+5. **Demoted / skipped:** ATS light-mean s2 keep-busy (lower value than 2–3).
+
+**CPU parallel:**
+
+6. **10c data prep:** disease/cancer `label_status` from Hub `sample_type` via
+   `SAMPLE_TYPE_CASE_CONTROL` — sidecar
+   `sample_phenotype_table_hub_nine_pack_v1.label_status.parquet` +
+   `label_status_census.md` (written). Live training heads remain
+   **age/tissue/sex only** until configs switch. **Blood/brain deferred**;
+   **bmi/ancestry** not joined (future). Script:
+   `scripts/write_nine_pack_label_status.py`.
+7. Milestone **11** CPU `--panels-only` — already running; no conflict.
+
+**After 2–3 converge:**
+
+8. Pick **finalists** (cascade winner + **N-light**) → Milestone **12** 5×6 OOF
+   on those two only — **not** all Stage A arms, **not** all 9 packs.
+9. **10d** checkpoint contract for the finalist pair.
+
+**Still blocked auto:** Stage B GPU, full OOF, disease/cancer GPU heads,
+blood/brain/bmi/ancestry expansion, GEO/ONT.
 
 ### Trustworthy ATS numbers (`explicit_only`, 51 375 gene-linked CpGs, test)
 

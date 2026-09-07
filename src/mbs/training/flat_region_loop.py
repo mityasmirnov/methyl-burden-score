@@ -58,6 +58,9 @@ def train_flat_region_on_arrays(
     arm: str = "N-light-gene-max",
     locus_index: Any | None = None,
     allow_other_gene: bool = False,
+    age_seed_mask: Any | None = None,
+    tissue_seed_mask: Any | None = None,
+    sex_seed_mask: Any | None = None,
 ) -> dict[str, Any]:
     """Train FlatDeepSetRegion on one fold; return test tissue/age/sex metrics."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -80,7 +83,16 @@ def train_flat_region_on_arrays(
         rho_layers=2,
         pool=pool,  # type: ignore[arg-type]
     ).to(device)
-    heads = MultitaskHeads(n_genes, n_classes, sex_enabled=True).to(device)
+    head_kwargs: dict[str, Any] = {"sex_enabled": True}
+    if age_seed_mask is not None:
+        head_kwargs["age_seed_mask"] = torch.as_tensor(age_seed_mask, dtype=torch.float32)
+    if tissue_seed_mask is not None:
+        head_kwargs["tissue_seed_mask"] = torch.as_tensor(
+            tissue_seed_mask, dtype=torch.float32
+        )
+    if sex_seed_mask is not None:
+        head_kwargs["sex_seed_mask"] = torch.as_tensor(sex_seed_mask, dtype=torch.float32)
+    heads = MultitaskHeads(n_genes, n_classes, **head_kwargs).to(device)
     opt = torch.optim.AdamW(list(model.parameters()) + list(heads.parameters()), lr=lr)
     age_mask_a = np.ones(len(sample_ids), dtype=bool) if age_mask is None else age_mask
     tissue_mask_a = np.ones(len(sample_ids), dtype=bool) if tissue_mask is None else tissue_mask
@@ -199,6 +211,13 @@ def train_flat_region_on_arrays(
         "pool": pool,
         "eval_split": "test",
         "n_eval_samples": int(test_idx_a.size),
+        "seed": int(seed),
+        "max_epochs": int(max_epochs),
+        "seed_masks": {
+            "age": age_seed_mask is not None,
+            "tissue": tissue_seed_mask is not None,
+            "sex": sex_seed_mask is not None,
+        },
         "evaluations": {
             "mbs_e2e": {
                 "metrics": metrics,
