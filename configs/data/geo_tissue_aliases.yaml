@@ -24,8 +24,33 @@ aliases:
   leucocytes: leukocyte
   mononuclear cell: peripheral blood mononuclear cell
   mononuclear cells: peripheral blood mononuclear cell
+  # PBL (peripheral blood lymphocytes) excludes granulocytes, same as PBMC --
+  # closer to "peripheral blood mononuclear cell" than to the broader
+  # "leukocyte" (which includes granulocytes). Approximate, not exact.
+  pbl: peripheral blood mononuclear cell
+  peripheral blood lymphocytes: peripheral blood mononuclear cell
+  peripheral blood lymphocyte: peripheral blood mononuclear cell
+  # "White blood cell" is an exact synonym for leukocyte (all granulocyte +
+  # mononuclear populations), unlike PBL/PBMC above.
+  white blood cell: leukocyte
+  white blood cells: leukocyte
+  wbc: leukocyte
+  peripheral blood sample: whole blood
+  blood dna: whole blood
+  baby_venous_blood: whole blood
+  mother_venous_blood: whole blood
   cord blood: cord blood
   umbilical cord blood: cord blood
+  umbilical cord blood buffy coat: cord blood
+  cord blood buffy coat: cord blood
+  buffy coat: leukocyte
+  cerebellum: brain - cerebellum
+  frontal cortex: brain - frontal cortex
+  frontal lobe: brain - frontal lobe
+  occipital lobe: brain - occipital lobe
+  entorhinal cortex: brain - entorhinal cortex
+  dorsolateral prefrontal cortex: brain - dorsolateral prefrontal cortex
+  superior temporal gyrus: brain - superior temporal gyrus
   buccal: buccal epithelium
   buccal swab: buccal epithelium
   buccal cells: buccal epithelium
