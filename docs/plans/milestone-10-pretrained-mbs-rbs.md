@@ -11,8 +11,8 @@ Authoritative running log:
 
 | ID | Status | Intent |
 |----|--------|--------|
-| **10a** | wrapping | Nine-pack P2-G done; m-only f0 full-budget repair |
-| **10a+** | queued | Nine-pack **vector RBS** @15 ep (mean→max, max→max) vs provisional P2-G |
+| **10a** | done | Nine-pack P2-G + m-only 3/3 (f0 repaired); report refreshed |
+| **10a+** | running | Nine-pack **vector RBS** mean→max (fold1 eval) then max→max |
 | **10a++** | queued | One-hop correctness: seed-mask G0/G1 + multi-seed (fold0, ~5 ep) |
 | **10b** | queued | ATS seed-43 2×2 pooling (after 10a+/++); B.5 census done |
 | **10c** | partial | `label_status` sidecar written; wire disease/cancer heads later |

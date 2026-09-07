@@ -1,0 +1,132 @@
+{
+  "blood": {
+    "decision": "defer_head",
+    "n_pack_index": 3402,
+    "nine_pack_blood_mask_true": 0,
+    "phenotype_value_nunique": 38,
+    "reason": "Pack membership exists but sample_phenotype_table blood_mask is hardcoded False; sidecar sample_type is 100% 'control' (pack label, not a case/control trait). Treat as tissue/cell catalogue, not a binary trait head.",
+    "sample_type_counts": {
+      "control": 3402
+    }
+  },
+  "brain": {
+    "decision": "defer_head",
+    "n_pack_index": 1997,
+    "nine_pack_brain_mask_true": 0,
+    "phenotype_value_nunique": 41,
+    "reason": "Same as blood: brain_mask hardcoded False; sample_type 100% 'control'. Defer brain trait head until an explicit labeled mapping clears \u22651k/arm.",
+    "sample_type_counts": {
+      "control": 1997
+    }
+  },
+  "cancer": {
+    "family": "cancer",
+    "in_nine_pack": {
+      "mapped_label_status": {
+        "adjacent_normal": 1024,
+        "case": 7157,
+        "control": 1920
+      },
+      "n_samples": 10101,
+      "pack_membership_mask_true": 10101
+    },
+    "mapped_label_status": {
+      "adjacent_normal": 1024,
+      "case": 7157,
+      "control": 1920
+    },
+    "n_adjacent_normal": 1024,
+    "n_explicit_case": 7157,
+    "n_explicit_control": 1920,
+    "n_pack_index": 10101,
+    "n_sidecar_rows": 10841,
+    "n_sidecar_samples": 10101,
+    "passes_1k_case_and_control": true,
+    "sample_type_counts": {
+      "adjacent normal": 1024,
+      "control": 1920,
+      "disease tissue": 7157
+    }
+  },
+  "disease": {
+    "family": "disease",
+    "in_nine_pack": {
+      "mapped_label_status": {
+        "adjacent_normal": 24,
+        "case": 5264,
+        "control": 6930
+      },
+      "n_samples": 12218,
+      "pack_membership_mask_true": 12218
+    },
+    "mapped_label_status": {
+      "adjacent_normal": 24,
+      "case": 5264,
+      "control": 6930
+    },
+    "n_adjacent_normal": 24,
+    "n_explicit_case": 5264,
+    "n_explicit_control": 6930,
+    "n_pack_index": 12218,
+    "n_sidecar_rows": 14501,
+    "n_sidecar_samples": 12218,
+    "passes_1k_case_and_control": true,
+    "sample_type_counts": {
+      "adjacent normal": 24,
+      "control": 6930,
+      "disease tissue": 5264
+    }
+  },
+  "milestone": "10c",
+  "n_nine_pack_samples": 34234,
+  "non_goals": [
+    "No sample_phenotype_table_*_v2.parquet in this change",
+    "No frozen ATS mutation",
+    "No disease/cancer/blood/brain GPU"
+  ],
+  "policy": {
+    "blood_brain": {
+      "blood": "defer_head",
+      "brain": "defer_head",
+      "decision": "defer"
+    },
+    "disease_cancer": {
+      "pack_membership_mask_meaning": "pack index membership only; false \u2260 control",
+      "rule": "Train only rows with explicit sample_type mapped via SAMPLE_TYPE_CASE_CONTROL to label_status in {case, control}. Never treat pack-nonmembers (disease_mask/cancer_mask false) as controls. adjacent_normal stays distinct or excluded until an ADR says otherwise. Diagnosis-only phenotype_value strings are multilabel targets, not case/control.",
+      "token_source": "mbs.datahub_census.SAMPLE_TYPE_CASE_CONTROL"
+    },
+    "tissue": {
+      "decision": "do_not_expand_tissue_ce",
+      "labels_ge_1000": {
+        "whole blood": 2070
+      },
+      "n_labeled": 13457,
+      "n_labels": 64,
+      "reason": "Only 'whole blood' meets \u22651k among 64 labels. Do not expand the tissue CE head without a collapse map (later ADR/config).",
+      "top5": {
+        "CD14+ monocyte": 724,
+        "breast": 595,
+        "leukocyte": 934,
+        "saliva": 629,
+        "whole blood": 2070
+      }
+    }
+  },
+  "status": "policy_defined_table_rewrite_pending",
+  "tissue": {
+    "decision": "do_not_expand_tissue_ce",
+    "labels_ge_1000": {
+      "whole blood": 2070
+    },
+    "n_labeled": 13457,
+    "n_labels": 64,
+    "reason": "Only 'whole blood' meets \u22651k among 64 labels. Do not expand the tissue CE head without a collapse map (later ADR/config).",
+    "top5": {
+      "CD14+ monocyte": 724,
+      "breast": 595,
+      "leukocyte": 934,
+      "saliva": 629,
+      "whole blood": 2070
+    }
+  }
+}

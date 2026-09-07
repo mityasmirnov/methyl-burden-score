@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-09-07T10:15:06.371671+00:00",
+  "generated_at": "2026-09-07T14:19:29.640183+00:00",
   "split_id": "hub-nine-pack-3fold-v1",
   "matrix_id": "matrix-hub-nine-pack-virtual-v1",
   "n_samples": 34234,
   "platform": "HM450",
   "cross_platform_claim": false,
-  "phase": "smoke",
+  "phase": "full_reference",
   "loader_self_check": {
     "matrix_id": "matrix-hub-nine-pack-virtual-v1",
     "shape": [
@@ -23,44 +23,81 @@
   "arms": {
     "P2-G": {
       "arm": "P2-G",
-      "n_folds": 1,
+      "n_folds": 3,
       "folds": [
         {
           "eval_split": "test",
-          "tissue_f1": 0.3433791888216678,
-          "age_mae": 15.037650264341393,
-          "sex_auroc": 0.8914664301304904,
-          "best_epoch": 3,
+          "tissue_f1": 0.36363491876843274,
+          "age_mae": 12.796308918815143,
+          "sex_auroc": 0.9496811792587474,
+          "best_epoch": 12,
           "fold": 0,
-          "run_id": "stage0-7h-nine-pack-P2-G-smoke"
+          "run_id": "stage0-7h-nine-pack-P2-G"
+        },
+        {
+          "eval_split": "test",
+          "tissue_f1": 0.29745126516793496,
+          "age_mae": 16.00099787320679,
+          "sex_auroc": 0.8297151660378583,
+          "best_epoch": 4,
+          "fold": 1,
+          "run_id": "stage0-7h-nine-pack-P2-G"
+        },
+        {
+          "eval_split": "test",
+          "tissue_f1": 0.4039206479276686,
+          "age_mae": 11.494403423776612,
+          "sex_auroc": 0.7795242257598387,
+          "best_epoch": 10,
+          "fold": 2,
+          "run_id": "stage0-7h-nine-pack-P2-G"
         }
       ],
-      "tissue_f1_mean": 0.3433791888216678,
-      "tissue_f1_sd": null,
-      "age_mae_mean": 15.037650264341393,
-      "age_mae_sd": null,
-      "sex_auroc_mean": 0.8914664301304904,
-      "sex_auroc_sd": null
+      "tissue_f1_mean": 0.3550022772880121,
+      "tissue_f1_sd": 0.05375708549118688,
+      "age_mae_mean": 13.430570071932848,
+      "age_mae_sd": 2.3192808779176293,
+      "sex_auroc_mean": 0.8529735236854815,
+      "sex_auroc_sd": 0.08743031857631543
     },
     "m_only": {
       "arm": "N-light-gene-ablation-m-only",
-      "n_folds": 1,
+      "n_folds": 3,
       "folds": [
         {
           "eval_split": "test",
-          "tissue_f1": 0.11920655025403026,
-          "age_mae": 18.060063433191566,
-          "sex_auroc": 0.7352226095439334,
-          "best_epoch": 3,
-          "fold": 0
+          "tissue_f1": 0.342626863679713,
+          "age_mae": 12.072589709898208,
+          "sex_auroc": 0.8901185613370428,
+          "best_epoch": 13,
+          "fold": 0,
+          "run_id": "stage0-7h-nine-pack-m-only-f0"
+        },
+        {
+          "eval_split": "test",
+          "tissue_f1": 0.24524517234989326,
+          "age_mae": 17.05477789444737,
+          "sex_auroc": 0.7083240108010432,
+          "best_epoch": 6,
+          "fold": 1,
+          "run_id": "stage0-7h-nine-pack-m-only-f1"
+        },
+        {
+          "eval_split": "test",
+          "tissue_f1": 0.23045663488369839,
+          "age_mae": 16.044592541373653,
+          "sex_auroc": 0.6262277663475293,
+          "best_epoch": 7,
+          "fold": 2,
+          "run_id": "stage0-7h-nine-pack-m-only-f2"
         }
       ],
-      "tissue_f1_mean": 0.11920655025403026,
-      "tissue_f1_sd": null,
-      "age_mae_mean": 18.060063433191566,
-      "age_mae_sd": null,
-      "sex_auroc_mean": 0.7352226095439334,
-      "sex_auroc_sd": null
+      "tissue_f1_mean": 0.2727762236377682,
+      "tissue_f1_sd": 0.06094267097690475,
+      "age_mae_mean": 15.057320048573077,
+      "age_mae_sd": 2.6337387888410295,
+      "sex_auroc_mean": 0.7415567794952052,
+      "sex_auroc_sd": 0.13504777157124478
     }
   }
 }

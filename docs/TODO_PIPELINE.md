@@ -20,8 +20,8 @@ On-disk `stage0_7g_*` / `run_7g_*` / `stage0_7h_*` IDs stay unchanged.
 8            done     methylation-only full eval + tissue probe          (was 7G)
 9            done     gene-only architecture on ATS (9a–9d screens)      (was 7G′)
 10           ← NOW    pretrained MBS/RBS scale / nine-pack campaign      (was 7H)
-  10a        wrapping P2-G done; m-only f0 full-budget repair on GPU 0
-  10a+       queued   nine-pack vector RBS @15ep (scale screen vs P2-G)
+  10a        done     P2-G + m-only full 3-fold (f0 repaired); report refreshed
+  10a+       running  nine-pack vector RBS mean→max (fold1 eval; then max→max)
   10a++      queued   one-hop correctness: seed-mask + multi-seed (cheap)
   10b        queued   ATS seed-43 2×2 pooling (after 10a+/++)
   10c        partial  label_status parquet written; wire heads later
@@ -42,8 +42,11 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
 
 **Priority (before any reference-architecture claim):**
 
-1. **Finish m-only-f0 repair** (in flight) then refresh nine-pack report.
-2. **HIGH — nine-pack vector RBS** @ matched 15-ep / 3-fold (`vector-mean-max`,
+1. ~~**Finish m-only-f0 repair**~~ — done 2026-09-07; report refreshed
+   (m-only tissue F1 **0.273** / age **15.1** / sex **0.742** vs P2-G
+   **0.355 / 13.4 / 0.853**).
+2. **HIGH — nine-pack vector RBS** @ matched 15-ep / 3-fold (`vector-mean-max`
+   in flight: fold0 metrics written, fold1 post-train eval; then fold2 +
    `vector-max-max`) vs provisional scalar P2-G → `vector_vs_scalar.md`.
 3. **HIGH — one-hop correctness smokes** (ATS fold 0, ~5 ep):
    - seed-gene mask G0 vs G1 on `flat_region` (never tested on one-hop; 9c was cascade-only)
@@ -173,7 +176,12 @@ Milestone **12**), [0008](adr/0008-score-identifiability.md),
   `deepmat-data-geo-dev-v1` **built** (Hub/GEO arms; no matrix convert yet) —
   [`plans/geo-enriched-training-release.md`](plans/geo-enriched-training-release.md).
   Do **not** mutate frozen ATS; do **not** wire GEO into age/tissue training or
-  enlarge the crawl until Milestone **10/11** gates allow. Plans:
+  enlarge the crawl until Milestone **10/11** gates allow. **Wave-1 label fix**
+  (2026-09-07): tissue mapped **14 663→43 886** via `remap_geo_tissue` /
+  source_name fallback; catalog GEO tissue **36 861** (0 `nan`); Atlas still
+  **182**/1 763 matched (PMID ceiling) —
+  [`plans/improve-labels-study-context.md`](plans/improve-labels-study-context.md).
+  Plans:
   [`plans/geo-metadata-backfill-pre-scale.md`](plans/geo-metadata-backfill-pre-scale.md).
   Inventory: [`EWAS_DATA.md`](EWAS_DATA.md), [`DATA_CATALOG.md`](DATA_CATALOG.md),
   `reports/inspection/raw_inventory/`.
