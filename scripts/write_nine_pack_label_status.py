@@ -50,9 +50,27 @@ def main() -> None:
     df = pd.read_parquet(table_path)
     dis = pd.read_parquet(disease_info, columns=["sample_id", "sample_type"])
     can = pd.read_parquet(cancer_info, columns=["sample_id", "sample_type"])
+    # disease_sample_info.parquet / cancer_sample_info.parquet have duplicate
+    # sample_id rows (multiple source annotation passes). sample_type is
+    # consistent across duplicates for every id (verified), but merging
+    # without deduplicating first fans out rows -- confirmed this produced
+    # 37,257 rows instead of 34,234 (2,011 duplicated sample_ids) before this
+    # fix. Dedup first so the merge can't multiply the phenotype table.
+    for name, frame in (("disease", dis), ("cancer", can)):
+        n_types = frame.groupby("sample_id")["sample_type"].nunique()
+        conflicting = n_types[n_types > 1]
+        if not conflicting.empty:
+            raise ValueError(
+                f"{name}: {len(conflicting)} sample_id(s) have conflicting sample_type, "
+                f"e.g. {conflicting.index[:5].tolist()} -- refusing to silently pick one"
+            )
+    dis = dis.drop_duplicates(subset="sample_id")
+    can = can.drop_duplicates(subset="sample_id")
     dis = dis.rename(columns={"sample_type": "disease_sample_type"})
     can = can.rename(columns={"sample_type": "cancer_sample_type"})
     out = df.merge(dis, on="sample_id", how="left").merge(can, on="sample_id", how="left")
+    if len(out) != len(df):
+        raise RuntimeError(f"merge changed row count {len(df)} -> {len(out)} -- dedup failed")
     out["disease_label_status"] = out["disease_sample_type"].map(_map_status)
     out["cancer_label_status"] = out["cancer_sample_type"].map(_map_status)
     # Trainable binary masks: only confirmed case/control (exclude adjacent_normal).
