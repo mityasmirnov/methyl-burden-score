@@ -68,12 +68,17 @@ make enrich-geo-series-metadata
 MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
 ```
 
-## Wave 2b — next audited GEO crawl list
+## Wave 2b — next audited GEO crawl list (**done** list 2026-09-08)
 
 ```bash
 make write-geo-next-gse-list
-# → configs/data/geo_backfill_next_gse.txt + reports/.../geo_backfill_next/
+# → configs/data/geo_backfill_next_gse.txt (100 GSE)
+# → reports/inspection/deepmat_data_v1/geo_backfill_next/
 ```
+
+**2026-09-08:** **440** candidates (≥50 GSM, not yet fetched); **100** selected.
+Top: `GSE51057` (329 assay, SOFT cached), then high-N uncached series. Fetch still
+gated — list only.
 
 ## Wave 2 (remaining, gated)
 
