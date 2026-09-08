@@ -1,13 +1,25 @@
 # Milestone 10 — nine-pack campaign analysis
 
-Updated: `2026-09-08` (manual synthesis over auto `summary.json` / `vector_vs_scalar.*`)
+Updated: `2026-09-08T13:07+02:00`
 
 - Matrix: `matrix-hub-nine-pack-virtual-v1` (virtual multi-store)
 - Split: `hub-nine-pack-3fold-v1` (**34 234** samples)
 - Platform: **HM450 only** — no cross-platform claim
 - Primary readout: **`mbs_e2e`** on outer **test** (means ± population SD across 3 folds unless noted)
 
-**How to read this file:** newest / decision-blocking results first; each section ends with an explicit **Interpretation**. Machine snapshots that only cover P2-G + m-only live in [`summary.json`](summary.json); the pooling grid dump is [`vector_vs_scalar.md`](vector_vs_scalar.md).
+**How to read this file:** newest / decision-blocking results first; each section ends with an explicit **Interpretation**. Machine snapshots: [`summary.json`](summary.json), [`vector_vs_scalar.md`](vector_vs_scalar.md).
+
+---
+
+## Live status (GPU 0)
+
+| Job | Status | Detail |
+|-----|--------|--------|
+| **Vector mean→max warm-start** | **running** | Fold 0 done; fold 1 ~epoch 12/15 (LP-FT from scalar mean/max ckpt) |
+| Vector max→max warm-start | **done** (3/3) | See §4 — improves vs cold; still trails P2-G tissue |
+| Age-covariates ablation | done (rejected) | §2 |
+| One-hop correctness smokes | **queued** | Waiter blocked until warm-start queue exits; import fix landed |
+| Keeper soft-stop | idle | Prior vector→onehop→B.4 keeper finished; ATS B.4 already done |
 
 ---
 
@@ -15,25 +27,37 @@ Updated: `2026-09-08` (manual synthesis over auto `summary.json` / `vector_vs_sc
 
 | Decision | Status | Basis |
 |----------|--------|-------|
-| Cascade finalist | **P2-G scalar max/max** | Best tissue F1 **and** best age MAE in the full 5-combo nine-pack pooling grid |
-| Light-model finalist | **N-light m-only (`rho_hidden=64`)** | Wide screen beat rho=10 on tissue/age/sex; adopted as default 2026-09-08 |
-| Vector RBS at nine-pack | **Does not beat scalar P2-G** | Both vector arms trail on tissue + age |
-| Age head + tissue/sex covariates | **Not adopted** | All three headline metrics slightly worse |
-| Widen m-only `rho_hidden` 10→64 | **Adopted as N-light default** | 0.273→**0.308** tissue, 15.1→**14.7** age, 0.742→**0.852** sex; still trails cascade |
-| Milestone **12** OOF scope | **Finalists only** | P2-G cascade + N-light — not all pooling arms, not all 9 trait packs |
-| Disease / cancer / blood / brain heads | **Blocked / deferred** | Need `label_status` wiring; blood/brain pack semantics broken |
-
-**Still in flight / blocked**
-
-- Vector max/max **warm-start from P2-G** — fold 0 done; fold 1 training (do not treat as final).
-- One-hop correctness smokes (seed-mask + multi-seed) — **blocked** on `ImportError: open_betas_for_matrix`.
-- Trait GPU expansion — not started; age/tissue/sex heads only in live configs.
+| Cascade finalist | **P2-G scalar max/max** | Best tissue F1 **and** best age MAE in cold 5-combo grid |
+| Light-model finalist | **N-light m-only (`rho_hidden=64`)** | Wide `mbs_e2e` beat rho=10 on all three metrics |
+| Cold vector RBS | **Does not beat P2-G** | Both cold vector arms trail tissue + age |
+| Warm vector max→max | **Closer, still not primary** | 0.342 / **13.41** / 0.851 vs P2-G 0.355 / 13.43 / 0.853 |
+| Age head + tissue/sex covariates | **Not adopted** | All three headlines slightly worse |
+| Milestone **12** OOF | **Finalists only** | P2-G + N-light@64 — not full arm matrix / not all 9 packs |
 
 ---
 
-## 1. Scalar vs vector RBS at nine-pack scale *(latest scale screen)*
+## Leaderboard (`mbs_e2e`, nine-pack test)
 
-Matched budget: **15 epochs × 3 folds**, same split/seed/checkpoint rule as P2-G.
+| Arm | folds | Tissue F1 ↑ | Age MAE ↓ | Sex AUROC ↑ | Note |
+|-----|------:|------------:|----------:|------------:|------|
+| **P2-G scalar max/max** | 3 | **0.355** | **13.431** | 0.853 | **Cascade finalist** |
+| vector max→max **warm** | 3 | 0.342 | **13.406** | 0.851 | Closes most of age gap; −0.013 tissue vs P2-G |
+| scalar mean/max | 3 | 0.330 | 13.496 | **0.875** | Best sex only |
+| vector mean→max cold | 3 | 0.335 | 16.448 | 0.780 | |
+| vector max→max cold | 3 | 0.333 | 15.408 | 0.834 | |
+| scalar max/mean | 3 | 0.318 | 17.426 | 0.812 | |
+| **N-light rho=64** | 3 | 0.308 | 14.727 | 0.852 | **Light finalist** |
+| N-light rho=10 | 3 | 0.273 | 15.057 | 0.742 | historical |
+| P2-G + age covariates | 3 | 0.340 | 14.135 | 0.834 | rejected |
+| vector mean→max **warm** | 1+ | 0.364* | 12.80* | 0.941* | *fold 0 only — in flight |
+
+**Interpretation.** At nine-pack scale the story is stable: **scalar P2-G remains the cascade pick**. Warm-starting vector max→max from the P2-G checkpoint **mostly fixes age** (15.4→13.4, matching P2-G) and lifts tissue (0.333→0.342) but **does not overtake** P2-G’s 0.355 tissue. Treat warm vector as an optimization ablation, not a new finalist, unless mean→max warm 3-fold clearly beats P2-G (fold 0 alone is not enough).
+
+---
+
+## 1. Scalar vs vector RBS (cold) — scale screen
+
+Matched budget: **15 epochs × 3 folds**.
 
 | Arm | folds | Tissue F1 | Age MAE ↓ | Sex AUROC |
 |-----|------:|----------:|----------:|----------:|
@@ -53,139 +77,117 @@ Fold detail (tissue / age / sex):
 | vector mean→max | 0.323 / 14.61 / 0.829 | 0.303 / 15.97 / 0.809 | 0.380 / 18.76 / 0.703 |
 | vector max→max | 0.335 / 14.20 / 0.872 | 0.285 / 11.47 / 0.866 | 0.381 / 20.56 / 0.762 |
 
-**Interpretation.** This is the gate Milestone 11 was waiting on: ATS-scale scalar-vs-vector was within noise; nine-pack (~34k) is large enough to separate them. **Scalar max/max wins on the two highest-weighted tasks** (tissue weight 3.0, age primary). Vector embeddings do not buy a tissue or age win here — both vector arms sit ~2 F1 points and ~2–3 years of MAE behind P2-G. Scalar mean/max is the only arm that beats P2-G on sex (+0.022 AUROC) while staying close on age, but it loses tissue; with current loss weights that is not enough to dethrone P2-G. **Cascade finalist is no longer provisional: lock P2-G scalar max/max** for Stage B / OOF planning. See also [`vector_vs_scalar.md`](vector_vs_scalar.md).
+**Interpretation.** Milestone 11’s gate: ATS scalar-vs-vector was within noise; nine-pack separates them. **Scalar max/max wins the two highest-weighted tasks.** Cold vector is not primary. See [`vector_vs_scalar.md`](vector_vs_scalar.md).
 
 ---
 
-## 2. Age-covariates ablation *(tissue + sex → age head)*
-
-Full 3-fold rerun of P2-G with `model.age_covariates: [tissue, sex]` (ground-truth embeddings concatenated into the age head only).
+## 2. Age-covariates ablation *(rejected)*
 
 | Metric | P2-G baseline | + tissue/sex conditioning | Δ |
 |--------|-------------:|--------------------------:|--:|
 | Tissue F1 | 0.355 | 0.340 | −0.015 |
-| Age MAE | 13.431 | 14.135 | +0.704 (worse) |
+| Age MAE | 13.431 | 14.135 | +0.704 |
 | Sex AUROC | 0.853 | 0.834 | −0.019 |
 
-Per-fold age MAE: baseline `[12.80, 16.00, 11.49]` vs conditioned `[12.75, 13.27, 16.38]` — fold 2 flips from best→worst and dominates the mean.
-
-**Interpretation.** The biological motivation (clocks are tissue-dependent; blood easy / brain+colon hard) is real, but a linear embedding-concat age head is the wrong lever on this encoder: headlines move **against** conditioning, and the blood-vs-brain median gap barely narrows. **Do not adopt.** Do not spend on FiLM/nonlinear variants without new evidence. Unconditioned P2-G remains the cascade finalist.
+**Interpretation.** Linear embedding-concat age head is the wrong lever. **Do not adopt.** Unconditioned P2-G stays the cascade finalist.
 
 ---
 
-## 3. N-light (one-hop m-only) — **`rho_hidden=64` is now the default**
+## 3. N-light — **`rho_hidden=64` default**
 
 | Arm | folds | Tissue F1 | Age MAE | Sex AUROC |
 |-----|------:|----------:|--------:|----------:|
 | P2-G cascade | 3 | **0.355** | **13.431** | 0.853 |
-| N-light m-only (`rho_hidden=10`, historical) | 3 | 0.273 (±0.050) | 15.057 (±2.150) | 0.742 (±0.110) |
-| **N-light m-only (`rho_hidden=64`, default)** | 3 | **0.308** (±0.053) | **14.727** (±1.370) | **0.852** (±0.032) |
+| N-light rho=10 (historical) | 3 | 0.273 | 15.057 | 0.742 |
+| **N-light rho=64 (default)** | 3 | **0.308** | **14.727** | **0.852** |
 
-Configs updated 2026-09-08: `stage0_7h_nine_pack_m_only.yaml`, light-mean/max product
-YAMLs, and `flat_region` code defaults. Canonical nine-pack numbers for OOF planning
-are the **rho=64** row (`stage0-7h-nine-pack-m-only-wide-f*`).
+Canonical run ids: `stage0-7h-nine-pack-m-only-wide-f*`. Product configs + `flat_region` defaults updated 2026-09-08.
 
-**Interpretation.** At ATS scale, N-light was near-parity with cascade; at nine-pack
-scale a gap remains even at rho=64 (~5 tissue F1 points, ~1.3 y age). Widening the
-DeepSet rho MLP from 10→64 **clearly helps** vs the narrow bottleneck (especially
-sex AUROC, which catches cascade), so **64 is the N-light default going forward**.
-It still does **not** replace cascade — Milestone **12** keeps both finalists
-(P2-G + N-light@64).
+**Interpretation.** Wider rho **helps** one-hop (especially sex) but **does not close** the cascade gap (~5 F1 / ~1.3 y). Milestone **12** still pairs **P2-G + N-light@64**. Do not cite stale `external_test` 0.194/20.6 for this comparison.
 
 ---
 
-## 4. Vector warm-start from P2-G *(in flight)*
+## 4. Vector warm-start (LP-FT) — **max→max done; mean→max in flight**
 
-Hypothesis: cold vector underperforms because of harder optimization, not because vector RBS is inherently worse — warm-start encoder/heads from scalar P2-G.
+Hypothesis: cold vector lost on optimization, not representation. Transplant scalar checkpoint → freeze ~4 ep → fine-tune at reduced LR.
 
-| Status | Tissue F1 | Age MAE | Sex AUROC |
-|--------|----------:|--------:|----------:|
-| Cold vector max→max (3-fold mean) | 0.333 | 15.408 | 0.834 |
-| Warm-start fold 0 only | 0.348 | 12.884 | 0.949 |
-| Warm-start folds 1–2 | **running** | — | — |
+### 4a. Vector max→max warm (complete, 3 folds)
 
-**Interpretation.** Fold 0 looks encouraging vs cold vector on the same fold (0.335 / 14.20 / 0.872 → 0.348 / 12.88 / 0.949), but **one fold is not a decision**. Wait for the full 3-fold mean before any claim that warm-start resurrects vector RBS — and even a warm-start win would need to beat **scalar P2-G** (0.355 / 13.43), not merely beat cold vector.
+| | Tissue F1 | Age MAE | Sex AUROC |
+|--|----------:|--------:|----------:|
+| Cold vector max→max | 0.333 | 15.408 | 0.834 |
+| **Warm vector max→max** | **0.342** (±0.015) | **13.406** (±0.544) | **0.851** (±0.076) |
+| P2-G scalar (ref) | 0.355 | 13.431 | 0.853 |
+
+Folds (warm): f0 **0.348 / 12.88 / 0.949**, f1 0.321 / 13.18 / 0.840, f2 0.355 / 14.16 / 0.765.
+
+**Interpretation.** Warm-start is a **real win vs cold vector** (esp. age + fold stability). Vs P2-G: age/sex essentially tied; tissue still **−0.013**. **Not enough to replace P2-G** as cascade finalist. Keep as diagnostic evidence that vector underperformance was partly optimization.
+
+### 4b. Vector mean→max warm (in flight)
+
+| | Tissue F1 | Age MAE | Sex AUROC |
+|--|----------:|--------:|----------:|
+| Cold vector mean→max | 0.335 | 16.448 | 0.780 |
+| Warm fold 0 only | 0.364 | 12.799 | 0.941 |
+| Warm folds 1–2 | **running** (~f1 ep12) | — | — |
+
+**Interpretation.** Fold 0 matches P2-G fold 0 almost exactly — promising, but **one fold ≠ decision**. Finish 3-fold mean before any finalist change.
 
 ---
 
-## 5. ATS seed-43 pooling (Track B.4) — secondary confirmation
-
-Seed **43** on `hub-ats-7e-3fold-v1` (exercises the seed-offset fix). Full write-up: [`../stage0_7h_ats_pooling_s2/analysis.md`](../stage0_7h_ats_pooling_s2/analysis.md).
+## 5. ATS seed-43 pooling (Track B.4) — done
 
 | Arm | folds | Tissue F1 | Age MAE | Sex AUROC |
 |-----|------:|----------:|--------:|----------:|
-| P2-G-s2 | 3 | **0.379** (±0.054) | **19.251** | **0.765** |
+| P2-G-s2 | 3 | **0.379** | **19.251** | **0.765** |
 | scalar-mean-max-s2 | 3 | 0.352 | 22.200 | 0.706 |
 | scalar-max-mean-s2 | 3 | 0.353 | 20.824 | 0.703 |
 | vector-mean-max-s2 | 3 | 0.342 | 21.735 | 0.658 |
 
-**Interpretation.** On a second seed, **P2-G still leads** every column in this incomplete 2×2 (+P2) grid. Useful as a diversity / correctness check after the seed-offset bugfix; **not** a reason to reopen the nine-pack pooling decision. ATS age MAEs are on a different scale/cohort than nine-pack — do not mix absolute age numbers across these tables.
+**Interpretation.** Second seed still prefers P2-G. Do not mix ATS absolute age with nine-pack. Details: [`../stage0_7h_ats_pooling_s2/analysis.md`](../stage0_7h_ats_pooling_s2/analysis.md).
 
 ---
 
-## 6. One-hop correctness smokes *(fix applied — rerunning)*
+## 6. One-hop correctness smokes *(queued behind warm-start)*
 
-Intended cheap checks (fold 0, ~5 ep) on `flat_region` with **`rho_hidden=64`**:
+Cheap checks (ATS fold 0, ~5 ep, **`rho_hidden=64`**):
 
-1. Seed-gene mask G0 vs G1 (9c only ever tested this on **cascade**).
-2. Multi-seed restarts 42/43/44 (path unproven on one-hop after the seed-offset fix).
+1. Seed-gene mask **G0 vs G1** on `flat_region` (never tested on one-hop; 9c = cascade only).
+2. Multi-seed restarts **42 / 43 / 44**.
 
-**Status:** queue previously hit `ImportError: open_betas_for_matrix` (wrong import
-from `mbs.matrix.store`). **Fixed:** re-export added on `store.py`, smoke script
-uses keyword `sample_ids=…`, and training uses rho=64. Report lands in
-[`../stage0_7h_onehop_correctness/`](../stage0_7h_onehop_correctness/).
+**Status:** ImportError fixed (`open_betas_for_matrix` re-export + `sample_ids=`). Waiter
+`scratch/logs/7h_onehop_correctness.*` starts when `run_7h_age_cov_and_warmstart_queue.sh`
+exits. Report → [`../stage0_7h_onehop_correctness/`](../stage0_7h_onehop_correctness/).
 
-**Interpretation.** These remain the right **validate-before-scale** steps before
-any multi-trait / multi-restart N-light campaign. Do **not** launch Milestone 12
-light-model OOF prep that assumes seed-mask or multi-seed work on one-hop until
-this report shows stable G0/G1 runs and non-zero multi-seed diversity.
+**Interpretation.** Still the right **validate-before-scale** gate for N-light tricks /
+Milestone 12 light OOF. Until G0/G1 + multi-seed diversity land, do not assume those
+paths work on one-hop.
 
 ---
 
-## 7. Trait expansion hygiene (10c) — data, not modeling
+## 7. Trait expansion hygiene (10c)
 
-Policy + census: [`trait_hygiene.md`](trait_hygiene.md), [`label_status_census.md`](label_status_census.md). Sidecar parquet written; **live training heads remain age / tissue / sex only**.
+See [`trait_hygiene.md`](trait_hygiene.md), [`label_status_census.md`](label_status_census.md).
 
-| Trait family | Trainable now? | Note |
-|--------------|----------------|------|
-| age / sex | yes | Wired in P2-G / m-only configs |
-| tissue | yes, constrained | Only `whole blood` clears ≥1k among 64 labels — do **not** expand CE head |
-| disease | labels ready | `label_status` case+control ≈ **12.2k**; must not use pack `disease_mask` as control |
-| cancer | labels ready | case+control ≈ **9.1k**; same mask caveat |
-| blood / brain | **defer** | Pack rows are catalogue `sample_type=control`, not case/control |
-| bmi / ancestry | **not in table** | Separate small files; not joined |
+| Trait | Status |
+|-------|--------|
+| age / sex / tissue | wired (tissue CE not expanded) |
+| disease / cancer | `label_status` ready (~12.2k / ~9.1k case+control); GPU freeze-reuse next |
+| bmi / ancestry | label-prep / heads stubbed in tree; GPU gated (≥1k bar / review) |
+| blood / brain | **defer** heads |
 
-**Interpretation.** “All 9 packs” is not an executable training plan today. The honest multi-trait light-model target is **≤5** traits after wiring disease/cancer heads to `label_status`, and only after one-hop smokes pass. Training on naive pack masks would silently reproduce the case≠control bug.
+**Interpretation.** Live train configs still **age/tissue/sex only**. No GPU trait expansion until one-hop smokes + freeze-reuse plan are green.
 
 ---
 
-## 8. Baseline reference pair (P2-G vs m-only) — auto snapshot
+## 8. Milestone 12 skeleton numbers
 
-Generated machine view (may lag the sections above if only these two arms were refreshed): [`summary.json`](summary.json).
+| Finalist | Tissue F1 | Age MAE | Sex AUROC |
+|----------|----------:|--------:|----------:|
+| P2-G cascade | **0.355** | **13.431** | 0.853 |
+| N-light@64 | 0.308 | 14.727 | 0.852 |
 
-| Arm | folds | Tissue F1 | Age MAE | Sex AUROC |
-|-----|------:|----------:|--------:|----------:|
-| P2-G cascade | 3 | 0.355 (±0.054) | 13.431 (±2.319) | 0.853 (±0.087) |
-| one-hop m-only | 3 | 0.273 (±0.061) | 15.057 (±2.634) | 0.742 (±0.135) |
-
-### Fold detail
-
-```json
-{
-  "P2-G": [
-    {"fold": 0, "tissue_f1": 0.364, "age_mae": 12.796, "sex_auroc": 0.950, "best_epoch": 12},
-    {"fold": 1, "tissue_f1": 0.297, "age_mae": 16.001, "sex_auroc": 0.830, "best_epoch": 4},
-    {"fold": 2, "tissue_f1": 0.404, "age_mae": 11.494, "sex_auroc": 0.780, "best_epoch": 10}
-  ],
-  "m_only": [
-    {"fold": 0, "tissue_f1": 0.343, "age_mae": 12.073, "sex_auroc": 0.890, "best_epoch": 13},
-    {"fold": 1, "tissue_f1": 0.245, "age_mae": 17.055, "sex_auroc": 0.708, "best_epoch": 6},
-    {"fold": 2, "tissue_f1": 0.230, "age_mae": 16.045, "sex_auroc": 0.626, "best_epoch": 7}
-  ]
-}
-```
-
-**Interpretation.** This pair is the **Milestone 12 OOF skeleton**: cascade product path + cheap light model. m-only fold 0 is competitive with P2-G on that fold alone; folds 1–2 drag the mean — another reason cheap multi-seed / seed-mask smokes on one-hop matter before spending OOF budget.
+**Interpretation.** OOF = these two only. rho10 m-only (0.273) is historical, not the light deliverable.
 
 ---
 
@@ -195,16 +197,16 @@ Generated machine view (may lag the sections above if only these two arms were r
 {"matrix_id": "matrix-hub-nine-pack-virtual-v1", "shape": [34234, 482379], "checked_rows": 8, "checked_cols": 64, "finite_fraction": 0.91796875, "packs_in_check": {"matrix-hub-blood-full-v1": 8}, "platform_claim": "HM450_only_no_cross_platform"}
 ```
 
-**Interpretation.** Virtual multi-store loads; finite fraction ~0.92 on the probe slice is expected for sparse/missing methylation. **HM450-only** — do not generalize scores to EPIC/other arrays from these runs.
+**Interpretation.** HM450-only; no cross-platform claim.
 
 ---
 
-## 10. What this does *not* authorize
+## 10. Next steps (ordered)
 
-- Declaring vector RBS primary (warm-start unfinished; cold vector lost).
-- Expanding disease/cancer GPU heads on pack-membership masks.
-- Blood/brain/bmi/ancestry as “nine arms.”
-- Milestone **12** OOF on the full Stage A matrix or all pooling combos.
-- Trusting one-hop seed-mask / multi-seed behavior before the import fix + smokes.
+1. **Finish vector mean→max warm-start** (folds 1–2) → update §4b mean; if 3-fold mean still ≤ P2-G tissue, **close warm-start** without changing finalists.
+2. **Run one-hop correctness smokes** (auto after warm queue, or launch manually on GPU 0 when free) → seed-mask + multi-seed report.
+3. **Only then:** Milestone **12** scheduling (5×6 OOF on P2-G + N-light@64) and/or disease/cancer **freeze-and-reuse** probes (no joint retrain).
+4. Soft-stop: do **not** auto-launch Stage B GPU / full OOF / pack-mask trait heads.
+5. Optional follow-up only if warm vector still lags: stage-1 `region_pool: mean` pretrain-then-transplant (known dense-grad issue under max pooling).
 
-**Next engineering priorities:** (1) finish vector warm-start 3-fold and record vs P2-G; (2) fix + run one-hop correctness smokes; (3) only then consider light-model multi-trait or Milestone 12 scheduling.
+**Does not authorize yet:** vector as primary; OOF on all arms; blood/brain heads; trusting one-hop seed-mask/multi-seed without the smoke report.
