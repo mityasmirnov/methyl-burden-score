@@ -23,13 +23,14 @@ are **historical aliases** — do not rename on-disk run trees.
 | **10** | **in_progress** | Pretrained MBS/RBS scale campaign | **7H** |
 | **10a** | done | Nine-pack grid; P2-G locked cascade finalist | 7H Track A |
 | **10a-cap** | done | N-light rho_hidden=64 adopted | 7H capacity |
-| **10a-warm** | in_progress | Vector LP-FT warm-start (max→max done) | 7H warmstart |
-| **10a++** | queued | One-hop seed-mask + multi-seed smokes | 7H correctness |
+| **10a-warm** | done | Vector LP-FT warm-start (both pooling recipes) | 7H warmstart |
+| **10a++** | running | One-hop seed-mask + multi-seed smokes | 7H correctness |
 | **10b** | done | ATS seed-43 pooling | 7H Track B |
 | **10c** | partial | Trait labels / freeze-reuse prep | 7H Track C |
-| **10d** | pending | Reference checkpoint(s) + association how-to | 7H Track D / Phase 4 |
+| **10d** | pending | Reference checkpoint(s) after staged recipe + enet | 7H Track D / Phase 4 |
+| **10e** | **pending (blocks 12)** | Staged RBS→MBS train + frozen enet co-primary | pre-OOF recipe |
 | **11** | deferred | Fold-selected panel Stage B (**parallel; does not block 12**) | **7G′ Stage B** |
-| **12** | blocked | Final study-grouped OOF (5×6) — needs **10** + one-hop, **not 11** | historical **Milestone 7** |
+| **12** | blocked | Final study-grouped OOF (5×6) — needs **10e** recipe smoke, **not 11** | historical **Milestone 7** |
 | **13** | deferred | Expression aux (continue/finetune **after** OOF; download first) | **7G″** |
 | **14** | deferred | Optional Stage 1+ layers (a–f only) | historical **§8 Optional** |
 
@@ -40,6 +41,7 @@ are **historical aliases** — do not rename on-disk run trees.
 | [`milestone-8-methylation-eval.md`](milestone-8-methylation-eval.md) | `milestone-7g-methylation-eval.md` + tissue probe |
 | [`milestone-9-gene-only-architecture.md`](milestone-9-gene-only-architecture.md) | `milestone-7g-prime-*.md` family |
 | [`milestone-10-pretrained-mbs-rbs.md`](milestone-10-pretrained-mbs-rbs.md) | `milestone-7h-pretrained-mbs-rbs-campaign.md` |
+| [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md) | pre-OOF staged recipe (blocks 12) |
 | [`milestone-11-fold-selected-panel.md`](milestone-11-fold-selected-panel.md) | Stage B sections of `milestone-7g-prime-matched-probe-lightweight.md` |
 | [`milestone-12-final-oof.md`](milestone-12-final-oof.md) | ADR 0007 + programme § final OOF |
 | [`milestone-13-expression-auxiliary.md`](milestone-13-expression-auxiliary.md) | `milestone-7g-double-prime-expression-auxiliary.md` (+ download) |

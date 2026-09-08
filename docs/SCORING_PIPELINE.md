@@ -20,7 +20,7 @@ MBS scoring function.
 | GPU policy for real training | Present |
 | Flat vs hierarchical aggregation | Present (+ unassigned semantics) |
 | Phenotype masking / shared encoder | Present |
-| Today vs Milestone 12 OOF MBS | Present; 12 blocked until M11 |
+| Today vs Milestone 12 OOF MBS | Present; 12 blocked until **10e** (not M11) |
 | Current 7F cascade (MBS/orphan RBS/direct; no TBS) | Implemented; `direct_cpg.zarr` is a Milestone **11** gap |
 | Numeric train metrics / loss curves | Out of scope here → `stage0_5d_max_n/`, TB |
 | Cross-fitting fold diagram | Deferred with M12 |
@@ -272,13 +272,14 @@ Contracts: [`EWAS_METADATA.md`](EWAS_METADATA.md),
 - Study-grouped train / validation / external_test splits exist
   (`evaluation/splits.py`); hierarchical runs can reuse a flat `split.json`.
 
-**Deferred (Milestone 12 — blocked until Milestones 9 and 11)**
+**Deferred (Milestone 12 — blocked until **10e** staged recipe; 11 is parallel)**
 
 - Full **out-of-fold** score matrix: every training sample scored only by models
   that never saw its study group; persisted OOF MBS, qualified per-region orphan
   RBS, indexed direct CpGs, and optional phenotype predictions. No TBS.
 - Protocol: [`EXPERIMENT_PROTOCOL.md`](EXPERIMENT_PROTOCOL.md) § out-of-fold;
-  gates: [`TODO_PIPELINE.md`](TODO_PIPELINE.md) Milestones **8–11** then **12**;
+  gates: [`TODO_PIPELINE.md`](TODO_PIPELINE.md) Milestones **8–10e** then **12**
+  (**11** parallel);
   [ADR 0007](adr/0007-crossfit-prerequisites.md).
 
 ## Proposed improvements (not blocking)

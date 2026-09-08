@@ -13,15 +13,13 @@ checks). Authoritative progress:
 Milestone numbers (8, 9, 10, …):
 [`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md).
 
-**Current gate (2026-09-07):** **Milestone 10** — pretrained MBS/RBS scale
-campaign (nine-pack virtual multi-store + ATS follow-ups). Gene-only ATS
-selection (**Milestone 9**, was 7G′) is **done**: best landed cascade is
-**`P2-G`** (max/max, 15 ep) on `explicit_only` (51 375 CpGs); classical
-`C-mvalue-enet-G` still leads tissue (0.388 vs 0.373 `mbs_e2e`); seed-masking
-**not** adopted. Fold-selected panel (**Milestone 11**) and final 5×6 OOF
-(**Milestone 12**, historical “Milestone 7”) stay **blocked**. Expression
-continue/finetune is **Milestone 13** (after OOF; download expression data
-first).
+**Current gate (2026-09-08):** **Milestone 10e** — staged RBS→MBS training +
+frozen enet readout **before** any 5×6 OOF. Gene-only ATS selection
+(**Milestone 9**) is **done** (`P2-G` topology; classical `C-mvalue-enet-G`
+still leads tissue). Fold-selected panel (**Milestone 11**) is **deferred
+parallel** and does **not** block 12. Final OOF (**Milestone 12**) is
+**blocked on 10e**, not on joint `mbs_e2e` as trained today. Expression
+continue/finetune is **Milestone 13** (after OOF).
 
 Programme docs: [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md),
 [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md),
@@ -43,7 +41,8 @@ Do **not** retrain frozen **deepMAT-flat-v0.1** / **hierarchical-v0.1**.
 3. CpGs are organized into biologically typed regions before gene-level
    aggregation (**RBS → gene MBS**); leftover CpGs stay **direct** ([ADR 0009](docs/adr/0009-drop-tbs-scores.md) — **no tile/TBS scores**).
 4. Every reported training-sample score is obtained by study-grouped
-   cross-fitting (Milestone **12**, after Milestones **9–11**).
+   cross-fitting (Milestone **12**, after **10e** staged training; **11** is
+   parallel, not a hard gate).
 
 ## Stage 0 scope
 
@@ -57,8 +56,8 @@ Stage 0 implements:
 - **RBS → gene cascade + direct leftover** topology (**7F**; no TBS);
 - gene-only architecture selection on `explicit_only` (**Milestone 9** — done);
 - pretrained / nine-pack scale campaign (**Milestone 10** — current);
-- fold-selected panel + full model (**Milestone 11** — blocked);
-- study-grouped OOF cross-fitting (**Milestone 12**);
+- fold-selected panel + full model (**Milestone 11** — deferred parallel);
+- study-grouped OOF cross-fitting (**Milestone 12** — blocked on 10e);
 - expression continue-train / finetune after OOF (**Milestone 13** — deferred;
   download expression data first);
 - static CpGPT sequence-adapter features exported offline;

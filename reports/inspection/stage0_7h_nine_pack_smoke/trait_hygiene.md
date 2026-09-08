@@ -47,7 +47,9 @@ honest; **no `brain_head`**. Blood still deferred.
 
 ## Next
 
-- Disease/cancer freeze-and-reuse probes (GPU after M10 encoder finalist).
+- After **10e** encoder: freeze-reuse probes on RBS/MBS for ATS, BMI,
+  ancestry, cancer types, and individual diseases (AD 945 / PD 333 /
+  stroke 204 cases — census matched controls before GPU).
 - BMI/ancestry head-only configs stubbed — **do not auto-queue** until
   ≥1k policy exception or collapse ADR + GPU free.
 - Full-catalog sample overview: `sample_overview_hub_geo_v1` +

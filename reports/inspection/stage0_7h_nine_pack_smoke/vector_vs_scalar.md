@@ -1,9 +1,10 @@
 # Nine-pack scalar vs vector RBS
 
-Updated: `2026-09-08T14:16+02:00`  
+Updated: `2026-09-08T14:40+02:00`  
 Cold 5-combo grid completed `2026-09-08T04:33+02:00`; warm-starts completed `~13:42+02:00`.
 
-**Primary readout:** `mbs_e2e` outer **test**, nine-pack split `hub-nine-pack-3fold-v1` (34 234 samples), HM450 only.  
+**Architecture-screen readout:** `mbs_e2e` outer **test**, nine-pack split `hub-nine-pack-3fold-v1` (34 234 samples), HM450 only.  
+**Product readout (locked):** frozen `rbs_enet` / `mbs_enet(_nested)` co-primary — see §5 and [`milestone-10e-staged-rbs-mbs-training.md`](../../../docs/plans/milestone-10e-staged-rbs-mbs-training.md).  
 Full narrative: [`analysis.md`](analysis.md).
 
 ---
@@ -17,9 +18,9 @@ Full narrative: [`analysis.md`](analysis.md).
 | Was vector just under-trained? | **Partly yes** — LP-FT warm-start closes most of the gap; still no clear win over P2-G |
 | Light-model default? | **N-light@64** (0.308 / 14.727 / 0.852) |
 | Age + tissue/sex covariates? | **Rejected** (all three metrics worse) |
-| Milestone **12** OOF arms? | **P2-G + N-light@64** only (gene-linked path; 11 does not block) |
+| Milestone **12** OOF? | **Blocked on 10e** staged RBS→MBS + enet co-primary. Topology candidates still P2-G / N-light@64. **11 does not block** |
 
-**Cascade finalist remains P2-G.** Warm vector is an optimization ablation, not a replacement.
+**Cascade topology remains P2-G.** Warm vector is an optimization ablation, not a replacement. **Do not 5×6 joint e2e as-is.**
 
 ---
 
@@ -119,20 +120,37 @@ Folds age MAE `[12.80, 12.00, 18.94]` — fold 2 volatile (same pattern as age-c
 
 ### Optional follow-up (in flight on other GPU)
 
-Dense-gradient stage-1 (`region_pool: mean`) then transplant — `scripts/run_7h_dense_stage1_queue.sh` — because max-pool starves `region_rho` gradients. Not required to lock finalists.
+Dense-gradient stage-1 (`region_pool: mean`) then transplant — `scripts/run_7h_dense_stage1_queue.sh` — because max-pool starves `region_rho` gradients. This is **10e S1 only**, not the full staged recipe and not a 5×6 launch.
 
 ---
 
-## 5. Side note: `rbs_linear_probe` often beats `mbs_e2e`
+## 5. Frozen RBS / MBS probes beat `mbs_e2e` — **training lock, not a side note**
 
-Classical probe on region-level RBS frequently wins age MAE (and sometimes tissue) vs neural `mbs_e2e`. Flag for Milestone **12** reporting discussion (co-primary readout?) — **not** changing finalist selection unilaterally. Details in prior section of this file / `analysis.md`.
+Classical probes on region-level RBS (and often gene-pooled MBS) beat jointly trained `mbs_e2e`. This **blocks** launching Milestone 12 on the joint-e2e recipe. Staged RBS→MBS + frozen enet is the pre-OOF plan (10e).
+
+`rbs_linear_probe`: classical (sklearn) probe fit directly on `all_gene_rbs` (`[n_samples, ~15,165 regions]`, pre-gene-pooling), same held-out `test_idx` as `mbs_e2e`, written for every cascade run all along but never compared until now.
+
+| Arm | eval | Tissue F1 | Age MAE | Sex AUROC |
+|---|---|---:|---:|---:|
+| P2-G scalar max/max | `mbs_e2e` | 0.355 | 13.431 | 0.853 |
+| P2-G scalar max/max | `mbs_linear_probe` | 0.347 | **11.567** | 0.816 |
+| P2-G scalar max/max | `rbs_linear_probe` | **0.364** | 12.559 | 0.835 |
+| vector max/max cold | `mbs_e2e` | 0.333 | 15.408 | 0.834 |
+| vector max/max cold | `rbs_linear_probe` | 0.314 | **9.638** | **0.858** |
+| vector max/max warm | `mbs_e2e` | 0.342 | 13.406 | 0.851 |
+| vector max/max warm | `rbs_linear_probe` | 0.363 | 12.425 | 0.837 |
+| scalar mean/max | `mbs_e2e` | 0.330 | 13.496 | 0.875 |
+| scalar mean/max | `rbs_linear_probe` | **0.368** | 12.059 | 0.859 |
+
+Consistent across every arm checked: `rbs_linear_probe` beats `mbs_e2e` on age MAE every time (0.9-5.8 years), and beats or ties it on tissue F1 in 3/4 arms. The best tissue F1 (0.368) and best age MAE (9.638) of the whole campaign both come from `rbs_linear_probe`, not any `mbs_e2e` arm. `mbs_linear_probe` (classical on gene-pooled MBS, not region-level RBS) also beats `mbs_e2e` on age MAE — so part of the gap is "classical regression beats a jointly-trained multi-task neural head," part is "raw region-level features carry more signal than gene-pooled ones," stacking in the RBS case.
 
 ---
 
 ## Outlook
 
-1. **Finalists locked for planning:** P2-G cascade + N-light@64.  
-2. **One-hop correctness smokes** running on GPU 0 (G0 done ~0.335 / 17.3 / 0.75; G1 in flight) → gate before trusting seed-mask / multi-seed on one-hop.  
-3. **Milestone 12** OOF after smokes — **does not wait on Milestone 11**.  
-4. **Milestone 11** = parallel sparse-panel track.  
-5. Dense stage-1 / RBS-probe emphasis = optional science follow-ups, not blockers for finalist OOF.
+1. **Topology** locked: P2-G cascade + N-light@64 encoder. **Training recipe is not locked** until 10e 1-fold smoke.  
+2. **One-hop correctness smokes** running on GPU 0 (G0 done ~0.335 / 17.3 / 0.75; G1 in flight).  
+3. **CPU enet** on existing nine-pack checkpoints (probes were deferred). N-light **must** report nested enet.  
+4. **10e** staged S1–S4 (dense vector RBS → freeze → learned MBS hop → unfreeze) before any 5×6.  
+5. **Milestone 12** after that smoke — **does not wait on Milestone 11**. Extra traits = freeze-reuse on 34k encoder / 173k catalog, not joint retrain.  
+6. Dense stage-1 (GPU 2) = **S1 experiment only**.

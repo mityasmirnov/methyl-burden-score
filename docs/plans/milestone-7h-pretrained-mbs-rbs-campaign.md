@@ -542,11 +542,11 @@ bypass it.
   0.9-5.8 years), and beats or ties it on tissue F1 in 3/4 arms checked.
   **Implication: the neural end-to-end head we've used as the primary
   finalist-selection metric all campaign is not the best predictor these
-  architectures actually produce.** Open question, not yet decided:
-  whether Milestone 12 should report/deploy `rbs_linear_probe` (or an
-  RBS+MBS fusion) as a co-primary readout. Full table in
-  `vector_vs_scalar.md` § RBS-only classical probe vs. MBS-based
-  prediction.
+  architectures actually produce.** **Resolved (10e):** do not launch
+  Milestone 12 on joint `mbs_e2e`. Staged RBS→MBS training + frozen
+  `rbs_enet` / `mbs_enet(_nested)` are co-primary. Plan:
+  `milestone-10e-staged-rbs-mbs-training.md`. Full table in
+  `vector_vs_scalar.md` §5.
 - 2026-09-08: **Two GPUs loaded in parallel** (GPU 0 free after the
   age-cov/warm-start queue finished; GPU 2, a ~98GB RTX PRO 6000
   Blackwell, found idle). GPU 0: **one-hop correctness smokes**
