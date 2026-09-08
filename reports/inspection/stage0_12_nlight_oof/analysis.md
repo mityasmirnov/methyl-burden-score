@@ -8,6 +8,7 @@ Updated: `2026-09-08T17:05+02:00`
 - Encoder aux: 9 disease classes + 9 cancer types with nine-pack disease-tissue **n>200**
 - Device: GPU 2 (~98 GB), `batch_size=1024` (~87 GB used)
 - Budget: **30 epochs**, early-stopping patience **15**
+- **Scope:** HM450 **65k-prefix gene-linked** (~2 646 genes / 51 375 CpGs). Not the ~20k-gene product. See [`milestone-12b-full-gene-panel.md`](../../../docs/plans/milestone-12b-full-gene-panel.md).
 
 ## Progress
 

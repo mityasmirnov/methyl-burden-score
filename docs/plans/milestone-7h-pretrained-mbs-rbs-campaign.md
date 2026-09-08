@@ -713,3 +713,42 @@ bypass it.
   `f0-r0` at **~epoch 19–20/30** (1/30). Val disease AUROC ~**0.76**, cancer
   ~**0.85**. Best val_loss so far epoch 16. Nested enet still pending this
   restart. GPU 0 free after S1–S4 smoke.
+- 2026-09-08: **Cascade Milestone 12 OOF built and queued to auto-launch on
+  GPU 2 after N-light finishes.** Given S1-S4 was tested and rejected (see
+  above), cascade proceeds with its native, already-proven P2-G scalar
+  max/max config -- no architecture challenger remains. Built
+  `scripts/run_12_cascade_oof.py` (5x6 runner, mirrors
+  `run_12_nlight_oof.py`'s pattern: skip-if-done, nested enet enqueued via
+  a background thread pool overlapping the next GPU fold) and
+  `configs/experiment/stage0_12_cascade_oof.yaml` (`hub-nine-pack-5fold-v1`,
+  30-epoch budget matched to N-light's OOF for a fair arm comparison,
+  early_stopping_patience 15). Required extending `run_cascade_hub` with
+  `fold_indices`/`seed_override` params (previously only supported a
+  "first N folds" prefix slice via `max_folds`, with seed always
+  `base_seed + fold_i` -- insufficient for a runner that needs one specific
+  (fold, restart) combination per invocation with an independent seed).
+  Validated via a 1-fold/1-restart/2-epoch smoke test on GPU 0 before
+  committing. Waiter (`scripts/run_12_cascade_oof_gpu2_after_nlight.sh`,
+  `kill -0` on the tracked PID, not `pgrep -f` text matching -- see the
+  2026-09-07 self-matching bug entry above) launched to auto-hand GPU 2
+  from N-light OOF to cascade OOF the moment N-light's process exits.
+- 2026-09-08: **Found and fixed a real coordination gap on GPU 2.** The
+  N-light OOF process running at the time (started 15:11, 16 epochs, no
+  aux heads) turned out to be stale: a concurrent session had edited
+  `stage0_12_nlight_oof.yaml` to 30 epochs + 9 disease + 9 cancer auxiliary
+  classification heads (config mtime 16:20:46), but that edit landed
+  *after* a second process had already started (16:17:52) and loaded the
+  old config into memory -- it was training against outdated settings.
+  Killed the stale process and relaunched cleanly; confirmed the new
+  process picked up the intended config (30 epochs, both label sets of 9
+  loaded). Verified the aux-head machinery is genuinely implemented in
+  `phenotype_table.py`/`loop.py`/`phenotypes.py`, not just aspirational
+  config, before restarting.
+- 2026-09-08: **Locked 65k OOF as representation-validation, not the 20k-gene
+  product.** Current N-light (and any 65k-matched cascade comparison) uses
+  `max_loci: 65536` then `gene_linked_only` → **2 646 genes / 51 375 CpGs**.
+  Full matrix gene-linked is **19 554 genes / 374 309 CpGs** (graph 19 937).
+  Plan: `docs/plans/milestone-12b-full-gene-panel.md`. Recipe is DeepRVAT:
+  shared `φ/ρ`, keep all genes, sample CpGs *within* gene, canonical
+  present-mask — do **not** dense-load 482k. Product cascade OOF = that
+  panel; queued 65k cascade 5×6 remains a matched-budget arm comparison.

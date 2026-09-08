@@ -1,9 +1,11 @@
 # Milestone 12 — N-light@64 OOF (first arm).
+# SCOPE LOCK: HM450 nine-pack, first 65,536 matrix columns, then gene-linked
+# explicit_only (~2.6k genes). This is a representation-validation 5×6, NOT
+# the ~20k-gene product. Full-graph expansion: docs/plans/milestone-12b-full-gene-panel.md
 # Split: hub-nine-pack-5fold-v1 (34 234, study-grouped). Protocol 5×6.
 # Product readout: frozen nested elastic-net on gene MBS (not joint mbs_e2e).
-# Encoder is gene-invariant ragged Deep Set: same weights on HM450 / EPIC / ONT
-# (more probes per gene). This OOF cohort is still HM450 nine-pack; platform
-# transfer is scored later, not baked into a fixed array manifest.
+# Encoder weights are gene-invariant; this cohort is still HM450 + 65k prefix.
+# Platform transfer and held-out-gene tests are 12b, not this run.
 #
 # Encoder supervision: age/tissue/sex plus disease classes and cancer types
 # with n>200 nine-pack *disease tissue* samples. Adjacent-normal stays unknown.
@@ -12,6 +14,7 @@
 split_id: hub-nine-pack-5fold-v1
 sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
 cv_budget:
+  # Ordered matrix prefix (not a genome-balanced gene panel). 12b lifts this.
   max_loci: 65536
   max_epochs: 30
 experiment:

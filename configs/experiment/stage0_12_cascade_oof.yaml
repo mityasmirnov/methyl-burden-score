@@ -1,0 +1,57 @@
+# Milestone 12 -- P2-G cascade 5x6 OOF (second arm, after N-light).
+# Split: hub-nine-pack-5fold-v1 (34,234, study-grouped). Protocol 5x6.
+# Architecture: P2-G scalar max/max -- the confirmed nine-pack cascade
+# finalist (5-combo pooling grid + LP-FT warm-start + S1-S4 staged recipe
+# all tested; S1-S4 rejected outright on a 1-fold smoke, see
+# milestone-7h-pretrained-mbs-rbs-campaign.md 2026-09-08). No architecture
+# challenger remains, so this trains the native, already-proven config.
+# Product readout: frozen nested elastic-net on gene MBS and region RBS
+# (mbs_enet_nested / rbs_enet_nested), matching N-light's readout policy.
+# Joint mbs_e2e is encoder supervision / diagnostic only.
+# SCOPE LOCK: same 65k prefix as N-light 12 for a *matched* architecture
+# comparison (~2.6k genes). That is NOT the ~20k-gene product. Product-scale
+# cascade OOF: docs/plans/milestone-12b-full-gene-panel.md (full gene-linked
+# graph + within-gene CpG sampling). Do not silently treat this yaml as 12b.
+split_id: hub-nine-pack-5fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+milestone: 12-cascade-oof
+cv_budget:
+  max_loci: 65536
+  max_epochs: 30
+experiment:
+  name: stage0_12_cascade_oof
+  seed: 42
+  stage: 0
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-nine-pack-virtual-v1
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology_hub_nine_pack_v1.yaml
+  split_id: hub-nine-pack-5fold-v1
+model:
+  topology: rbs_gene_direct
+  tbs_arm: false
+  cpg_pool: max
+  region_pool: max
+  gene_aggregation: scalar_rbs
+  gene_allocation: explicit_only
+  cpg_hidden_dim: 64
+  region_hidden_dim: 32
+  dropout: 0.1
+training:
+  max_epochs: 30
+  batch_size: auto
+  learning_rate: 0.001
+  tissue_loss_weight: 3.0
+  age_loss_weight: 0.3
+  sex_loss_weight: 1.0
+  gene_linked_only: true
+  primary_evaluation: mbs_e2e
+  stage_a_include_mbs_enet: false
+  stage_a_defer_cpu_probes: true
+  checkpoint_selection: validation_tissue_macro_f1_then_age_mae
+  gradient_clip_norm: 2.0
+  early_stopping_patience: 15
+device:
+  torch_device: cuda

@@ -14,7 +14,14 @@ disease ~0.76 / cancer ~0.85). 16-ep plumbing archived as
 if launched, use **native P2-G** (not staged). P2-G nested **3/3**.
 **Does not wait on Milestone 11.**
 
-Recipe / readout: [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md).
+**Scope lock:** this 5×6 is **HM450, first-65 536-locus, gene-linked**
+(~2 646 genes / 51 375 CpG columns). Shared `φ`/`ρ` are gene-invariant
+**architecturally**; they have not been shown to transfer to the other
+~17k graph genes, EPIC, or ONT. Do **not** treat the checkpoint as the
+~20k-gene product. Plan:
+[`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md).
+Cascade 5×6 (native P2-G) should use that full gene-linked graph, not
+copy this prefix.
 
 **Protocol:** 5 outer folds × up to 6 restarts; orientation-aligned scores
 ([ADR 0008](../adr/0008-score-identifiability.md)); no TBS
@@ -37,9 +44,9 @@ encoder supervision / diagnostic only.
    **n>200** (exact 200 excluded). Nine-pack 3-fold nested already
    **0.368 / 9.88 / 0.803** vs e2e **0.308 / 14.73 / 0.852** — do not 5×6
    e2e-only.
-2. **Cascade (later)** — P2-G topology trained **S1–S4**, not 15-ep joint
-   max/max. Finalist vs N-light decided **under nested enet**, including
-   whether vector `gene_rho` (`region_hidden`) beats scalar.
+2. **Cascade (later)** — native **P2-G** (10e staged recipe rejected). Prefer
+   the **full gene-linked graph** (12b), not another 65k-prefix 5×6. Rank vs
+   N-light under nested enet.
 
 **Encoder aux (n>200, this OOF):** nine-pack `disease tissue` classes above
 200 samples, with pack-matched `control` as negatives (adjacent-normal
@@ -58,11 +65,13 @@ on naive pack `cancer_mask` / `disease_mask`.
 
 ## Panel / cohort / platforms
 
-- **This OOF:** gene-linked nine-pack HM450 (same encoder family as M10).
-- **Architecture invariant:** ragged, gene-invariant Deep Set — must accept
-  HM450, EPIC (more probes/gene), and ONT (even more) without a fixed
-  manifest. This 5×6 does **not** mix platforms; transfer eval is separate.
-- **Not required:** Milestone **11** fold-selected sparse panel.
+- **This OOF:** HM450 nine-pack, **65k column prefix**, then explicit
+  gene-linked CpGs (**2 646 genes**). Same encoder family as M10.
+- **Architecture:** ragged Deep Set with shared `φ`/`ρ` (no gene IDs in the
+  encoder). That is a **capability**, not a completed whole-genome /
+  cross-platform claim.
+- **Not this run:** full 482k / ~20k-gene panel (12b); mixed EPIC/ONT;
+  Milestone **11** fold-selected sparse panel.
 
 ## Prerequisites
 
@@ -77,4 +86,7 @@ on naive pack `cancer_mask` / `disease_mask`.
 Narrative: [ADR 0007](../adr/0007-crossfit-prerequisites.md),
 [`post-v0-scientific-programme.md`](post-v0-scientific-programme.md).
 
-**Next:** Milestone **13** — expression continue-training / finetune (optional).
+**Next:** finish this 65k 5×6, then
+[`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md)
+(full gene-linked ~20k-gene sampler; cascade OOF on that graph). Expression
+continue/finetune remains Milestone **13**.

@@ -30,7 +30,8 @@ are **historical aliases** — do not rename on-disk run trees.
 | **10d** | pending | Reference checkpoint(s) after staged recipe + enet | 7H Track D / Phase 4 |
 | **10e** | **done (negative)** | S1–S4 1-fold smoke loses to native P2-G; no staged 3-fold | pre-OOF recipe |
 | **11** | deferred | Fold-selected panel Stage B (**parallel; does not block 12**) | **7G′ Stage B** |
-| **12** | **in_progress** | N-light 5×6 GPU2 f0-r0 ~ep 20/30 (30-ep + n>200); cascade = native P2-G | historical **Milestone 7** |
+| **12** | **in_progress** | N-light 5×6 GPU2 (HM450 **65k-prefix** validation; 30-ep + n>200) | historical **Milestone 7** |
+| **12b** | pending | Full-graph ~20k-gene panel (DeepRVAT sampler); cascade OOF should use this | after 12 65k OOF |
 | **13** | deferred | Expression aux (continue/finetune **after** OOF; download first) | **7G″** |
 | **14** | deferred | Optional Stage 1+ layers (a–f only) | historical **§8 Optional** |
 
@@ -44,6 +45,7 @@ are **historical aliases** — do not rename on-disk run trees.
 | [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md) | pre-OOF staged recipe (gates cascade 12; N-light unblocked) |
 | [`milestone-11-fold-selected-panel.md`](milestone-11-fold-selected-panel.md) | Stage B sections of `milestone-7g-prime-matched-probe-lightweight.md` |
 | [`milestone-12-final-oof.md`](milestone-12-final-oof.md) | ADR 0007 + programme § final OOF |
+| [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md) | expand beyond 65k prefix; ~20k genes |
 | [`milestone-13-expression-auxiliary.md`](milestone-13-expression-auxiliary.md) | `milestone-7g-double-prime-expression-auxiliary.md` (+ download) |
 
 Legacy redirects (old numbers):

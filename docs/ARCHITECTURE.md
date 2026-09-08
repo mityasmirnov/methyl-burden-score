@@ -117,9 +117,16 @@ Cascade trainer flags (`training/cascade_loop.py`, experiment YAML):
 - `extra_fusion_modes: [mbs_direct]` → orphan-RBS ablation (`fusion_full` vs
   `fusion_mbs_direct`).
 
-Flat and hierarchical arms use the same **locus prefix** (`cv_budget.max_loci`)
-or a fold-selected column list in Stage B; gene-only flat/hier runs restrict the
-packed `cpg_to_gene` / `cpg_to_region` edges to `gene_cols` the same way.
+Flat and hierarchical arms currently use an **ordered locus prefix**
+(`cv_budget.max_loci`, typically 65 536) or a fold-selected column list in
+Stage B; gene-only runs then restrict packed edges to `gene_cols`.
+
+**That prefix is a compute cap, not the product genome.** Current N-light
+OOF therefore sees ~2.6k genes. Expanding to the full gene-linked matrix
+(~19.6k genes, 374k columns) must **not** dense-load 482k loci; use the
+DeepRVAT-style within-gene CpG sampler in
+[`plans/milestone-12b-full-gene-panel.md`](plans/milestone-12b-full-gene-panel.md).
+Encoder `φ`/`ρ` stay gene-ID-free; the linear/enet readout does not.
 
 ### Compute: use GPU for real training
 

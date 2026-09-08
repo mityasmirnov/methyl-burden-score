@@ -148,6 +148,7 @@ plumbing archived (nested **0.300 / 8.63 / 0.880**). Split
 
 1. Dense S1 **fold 0 done** (queue stopped mid fold 1 to free GPU 2).
 2. P2-G nested enet **3/3** (MBS **0.335 / 9.81 / 0.759**; RBS age 19.8).
-3. 1-fold **S1–S4 smoke done — negative** (e2e 0.300/14.97/0.900 vs P2-G
-   0.364/12.80/0.950). **No staged 3-fold.** Cascade OOF = **native P2-G**.
+3. 1-fold **S1–S4 smoke done — negative**. **No staged 3-fold.** Native P2-G
+   65k 5×6 = matched comparison to N-light; **product cascade = 12b**
+   ([`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md)).
 4. Pack-level freeze-reuse **done** (cancer strong; AD 0.838; broad disease modest).
