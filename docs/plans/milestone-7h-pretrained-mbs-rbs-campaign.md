@@ -501,3 +501,18 @@ bypass it.
   CpGPT embeddings/positional features, sex-chromosome-based sex
   imputation, and epigenetic-clock-based (Horvath/CpGPT/MethylGPT) age
   imputation are all explicitly deferred to **after** Milestone 12 OOF.
+- 2026-09-08: **Correction to the capacity-bottleneck diagnostic above: it
+  was read from the wrong evaluation field and the verdict flips.** The
+  original "rejected" call (this doc, and initially `vector_vs_scalar.md`)
+  used `external_test` metrics, which under-report tissue F1 for
+  `flat_region`/one-hop runs specifically. Reading the same
+  `artifacts/runs/stage0-7h-nine-pack-m-only-wide-f*/metrics.json` via
+  `mbs_e2e` (the primary evaluation every other arm in this campaign is
+  compared on) instead: tissue F1 0.273→**0.308**, age MAE
+  15.057→**14.727**, sex AUROC 0.742→**0.852** — improves on all three
+  metrics, not worse on two of them as previously reported. Verified
+  independently by recomputing from the raw JSON before accepting this.
+  **`rho_hidden_dimension: 64` is now the N-light default** (still trails
+  P2-G cascade, 0.355/13.431 — capacity helps one-hop but doesn't replace
+  the cascade). Do not cite the old 0.194/20.6 `external_test` figures for
+  this comparison going forward.
