@@ -19,6 +19,9 @@ ENET_L1_GRID = (0.25, 0.5, 0.75)
 # Per-fit hard sparsity: SGD elastic-net with tiny α leaves almost every col
 # nonzero; count only the top-|coef| columns toward selection frequency.
 STABILITY_TOP_K_PER_FIT = 64
+# ponytail: 65k-col × 3×3×3 SGD is multi-day on CPU; univariate screen first
+# (same idea as seed_panel). Pass prefilter_max_cols=0 to disable.
+DEFAULT_PREFILTER_MAX_COLS = 4096
 
 
 def _enet_classifier_pipeline(*, alpha: float, l1_ratio: float) -> Pipeline:
@@ -109,6 +112,40 @@ def _finite_nonconstant_cols(x: np.ndarray) -> np.ndarray:
     return np.flatnonzero(keep).astype(np.int64)
 
 
+def _univariate_prefilter(
+    x: np.ndarray,
+    y: np.ndarray,
+    *,
+    task: TaskKind,
+    max_cols: int,
+) -> np.ndarray:
+    """Keep the top ``max_cols`` by univariate association (outer-train only)."""
+    n_cols = int(x.shape[1])
+    if max_cols <= 0 or n_cols <= max_cols:
+        return np.arange(n_cols, dtype=np.int64)
+    x64 = np.asarray(x, dtype=np.float64)
+    col_mean = np.nanmean(x64, axis=0)
+    filled = np.where(np.isfinite(x64), x64, col_mean)
+    if task == "age":
+        y64 = np.asarray(y, dtype=np.float64)
+        y_c = y64 - float(np.mean(y64))
+        x_c = filled - filled.mean(axis=0, keepdims=True)
+        denom = np.sqrt((x_c * x_c).sum(axis=0) * float((y_c * y_c).sum())) + 1e-12
+        score = np.abs((x_c * y_c[:, None]).sum(axis=0) / denom)
+    else:
+        y_i = np.asarray(y).astype(np.int64, copy=False)
+        classes = np.unique(y_i)
+        score = np.zeros(n_cols, dtype=np.float64)
+        for c in classes:
+            mask_c = y_i == c
+            if not mask_c.any() or mask_c.all():
+                continue
+            diff = filled[mask_c].mean(axis=0) - filled[~mask_c].mean(axis=0)
+            score = np.maximum(score, np.abs(diff))
+    order = np.argsort(-score, kind="stable")
+    return order[:max_cols].astype(np.int64)
+
+
 def stability_select_columns(
     x_train: np.ndarray,
     y_train: np.ndarray,
@@ -120,6 +157,7 @@ def stability_select_columns(
     n_repeats: int = 5,
     min_frequency: float = 0.34,
     seed: int = 42,
+    prefilter_max_cols: int = DEFAULT_PREFILTER_MAX_COLS,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """Repeated study-grouped inner-CV elastic-net; rank columns by selection frequency."""
     empty_meta: dict[str, Any] = {
@@ -133,6 +171,8 @@ def stability_select_columns(
         "n_cols_input": int(x_train.shape[1]) if x_train.ndim == 2 else 0,
         "n_cols_nonzero_variance": 0,
         "n_zero_variance_dropped": 0,
+        "n_cols_after_prefilter": 0,
+        "prefilter_max_cols": int(prefilter_max_cols),
         "n_passing_min_frequency": 0,
         "frequency_quantiles": {},
         "n_fits_attempted": 0,
@@ -152,7 +192,13 @@ def stability_select_columns(
             "n_cols_input": n_cols_in,
             "n_zero_variance_dropped": n_zv_dropped,
         }
-    x_use = np.asarray(x_train[:, var_keep], dtype=np.float64)
+    x_var = np.asarray(x_train[:, var_keep], dtype=np.float64)
+    pref_local = _univariate_prefilter(
+        x_var, y_train, task=task, max_cols=prefilter_max_cols
+    )
+    # Remap: SGD-local → variance-local → caller columns.
+    col_map = var_keep[pref_local]
+    x_use = x_var[:, pref_local]
     n_cols = int(x_use.shape[1])
     counts = np.zeros(n_cols, dtype=np.int64)
     coef_sum = np.zeros(n_cols, dtype=np.float64)
@@ -212,12 +258,14 @@ def stability_select_columns(
                             n_jobs=1,
                         )
                     n_attempted += 1
-                    if n_attempted == 1 or n_attempted % 9 == 0:
-                        print(
-                            f"[fold-panel] task={task} fit {n_attempted} "
-                            f"(repeat={repeat} n_cols={n_cols})",
-                            flush=True,
-                        )
+                    n_total_est = n_repeats * max(len(inner_splits), 1) * len(ENET_ALPHA_GRID) * len(
+                        ENET_L1_GRID
+                    )
+                    print(
+                        f"[fold-panel] task={task} fit {n_attempted}/{n_total_est} "
+                        f"(repeat={repeat} n_cols={n_cols})",
+                        flush=True,
+                    )
                     sgd.fit(x_fit, y_fit)
                     n_iter = getattr(sgd, "n_iter_", None)
                     max_iter = int(getattr(sgd, "max_iter", 0) or 0)
@@ -246,8 +294,10 @@ def stability_select_columns(
         return np.zeros(0, dtype=np.int64), {
             **empty_meta,
             "n_cols_input": n_cols_in,
-            "n_cols_nonzero_variance": n_cols,
+            "n_cols_nonzero_variance": int(var_keep.size),
             "n_zero_variance_dropped": n_zv_dropped,
+            "n_cols_after_prefilter": n_cols,
+            "prefilter_max_cols": int(prefilter_max_cols),
             "n_fits_attempted": n_attempted,
         }
     freq = counts.astype(np.float64) / float(n_runs)
@@ -258,8 +308,8 @@ def stability_select_columns(
         picked_local = order[: min(max_seeds, n_cols)]
     else:
         picked_local = passing[: min(max_seeds, passing.size)]
-    # Remap local variance-filtered indices back to the caller's columns.
-    picked = var_keep[picked_local]
+    # Remap SGD-local indices back to the caller's columns.
+    picked = col_map[picked_local]
     mean_abs = coef_sum / float(n_runs)
     q = [0.0, 0.25, 0.5, 0.75, 0.9, 0.99, 1.0]
     freq_q = {f"q{int(100 * qq)}": float(np.quantile(freq, qq)) for qq in q}
@@ -271,17 +321,19 @@ def stability_select_columns(
     )
     meta = {
         "n_runs": n_runs,
-        "frequency": {int(var_keep[int(i)]): float(freq[int(i)]) for i in picked_local.tolist()},
+        "frequency": {int(col_map[int(i)]): float(freq[int(i)]) for i in picked_local.tolist()},
         "mean_abs_coef": {
-            int(var_keep[int(i)]): float(mean_abs[int(i)]) for i in picked_local.tolist()
+            int(col_map[int(i)]): float(mean_abs[int(i)]) for i in picked_local.tolist()
         },
         "standardization": (
             "X: StandardScaler(with_mean=True); "
             "age y: z-score inside each inner-train fold"
         ),
         "n_cols_input": n_cols_in,
-        "n_cols_nonzero_variance": n_cols,
+        "n_cols_nonzero_variance": int(var_keep.size),
         "n_zero_variance_dropped": n_zv_dropped,
+        "n_cols_after_prefilter": n_cols,
+        "prefilter_max_cols": int(prefilter_max_cols),
         "n_passing_min_frequency": n_passing,
         "frequency_quantiles": freq_q,
         "n_fits_attempted": n_attempted,
@@ -353,8 +405,11 @@ def select_multitask_fold_panel(
     matrix_id: str | None = None,
     graph_id: str | None = None,
     graph_content_hash: str | None = None,
+    n_repeats: int = 5,
 ) -> dict[str, Any]:
     """Outer-train multitask stability selection + graph expansion (canonical artifact)."""
+    if n_repeats < 1:
+        raise ValueError("n_repeats must be >= 1")
     quota = per_task_quota or max(1, max_seeds // 3)
     seed_union: set[int] = set()
     seed_by_task: dict[str, list[int]] = {}
@@ -368,6 +423,7 @@ def select_multitask_fold_panel(
             study_ids=study_ids[age_m],
             task="age",
             max_seeds=quota,
+            n_repeats=n_repeats,
         )
         seed_by_task["age"] = cols.tolist()
         meta_by_task["age"] = meta
@@ -381,6 +437,7 @@ def select_multitask_fold_panel(
             study_ids=study_ids[sex_m],
             task="sex",
             max_seeds=quota,
+            n_repeats=n_repeats,
         )
         seed_by_task["sex"] = cols.tolist()
         meta_by_task["sex"] = meta
@@ -394,6 +451,7 @@ def select_multitask_fold_panel(
             study_ids=study_ids[tissue_m],
             task="tissue",
             max_seeds=quota,
+            n_repeats=n_repeats,
         )
         seed_by_task["tissue"] = cols.tolist()
         meta_by_task["tissue"] = meta
@@ -416,6 +474,7 @@ def select_multitask_fold_panel(
         "panel_cols": expanded.tolist(),
         "n_seed": int(seeds.size),
         "n_panel": int(expanded.size),
+        "n_repeats": int(n_repeats),
         "matrix_id": matrix_id,
         "graph_id": graph_id,
         "graph_content_hash": graph_content_hash,

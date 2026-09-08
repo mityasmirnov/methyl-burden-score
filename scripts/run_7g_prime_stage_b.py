@@ -126,9 +126,18 @@ def main() -> None:
         default=None,
         help="Comma-separated 0-based fold indices (default: all folds in split)",
     )
+    parser.add_argument(
+        "--panel-repeats",
+        type=int,
+        default=None,
+        help="Stability-selection repeats (default: config panel.n_repeats or 5). "
+        "Use 1 for CPU dry-run speed; production panels should use 5.",
+    )
     args = parser.parse_args()
     if args.panels_only and args.classical_only:
         parser.error("--panels-only and --classical-only are mutually exclusive")
+    if args.panel_repeats is not None and args.panel_repeats < 1:
+        parser.error("--panel-repeats must be >= 1")
 
     # Cap torch/BLAS fan-out for CPU panel selection (huge design matrices).
     if args.panels_only or args.classical_only or args.device == "cpu":
@@ -151,6 +160,11 @@ def main() -> None:
     graph_id = str(pilot.get("graph_id", "graph-grch38-gencode38-cgi-tile-v2"))
     panel_cfg = cfg.get("panel") or {}
     max_seeds = int(panel_cfg.get("max_seeds", 10_000))
+    panel_repeats = (
+        int(args.panel_repeats)
+        if args.panel_repeats is not None
+        else int(panel_cfg.get("n_repeats", 5))
+    )
     stage_a_defaults = cfg.get("stage_a_defaults") or {}
 
     pheno_rel = Path(str(cfg.get("sample_phenotype_table")))
@@ -165,7 +179,7 @@ def main() -> None:
     mode = "panels_only" if args.panels_only else ("classical_only" if args.classical_only else "full")
     print(
         f"[stage-b] mode={mode} split={split_id} folds={fold_indices} "
-        f"max_loci={max_loci} device={args.device}",
+        f"max_loci={max_loci} panel_repeats={panel_repeats} device={args.device}",
         flush=True,
     )
     matrix_paths = matrix_store_paths(paths.data_root / "canonical" / "matrices" / matrix_id)
@@ -266,6 +280,7 @@ def main() -> None:
                 matrix_id=matrix_id,
                 graph_id=graph_id,
                 graph_content_hash=graph_hash,
+                n_repeats=panel_repeats,
             )
             write_json(panel_path, panel_info)
             print(
@@ -413,6 +428,7 @@ def main() -> None:
                 "graph_id": graph_id,
                 "max_loci": max_loci,
                 "max_seeds": max_seeds,
+                "n_repeats": panel_repeats,
                 "folds": panel_manifest_folds,
             },
         )

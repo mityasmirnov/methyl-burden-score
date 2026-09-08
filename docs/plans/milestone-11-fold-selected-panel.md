@@ -56,24 +56,26 @@ Panel: `max_seeds: 10000`, split `hub-ats-7e-3fold-v1`, matrix
 ## CPU prep flags (no GPU)
 
 ```bash
-# Write fold_panels only
-uv run python -u scripts/run_7g_prime_stage_b.py --device cpu --panels-only --folds 0
+# Write fold_panels only (CPU dry-run may use --panel-repeats 1; production: 5)
+uv run python -u scripts/run_7g_prime_stage_b.py --device cpu --panels-only --folds 0 --panel-repeats 1
 
 # Classical enetS after panels exist
 uv run python -u scripts/run_7g_prime_stage_b.py --device cpu --classical-only --folds 0
 
 # Or: wait for fold-0 panel, then classical + folds 1–2 (BLAS threads capped)
-bash scripts/run_stage_b_cpu_chain.sh
+PANEL_REPEATS=1 bash scripts/run_stage_b_cpu_chain.sh
 ```
 
-Cap OpenBLAS when selecting on 65k columns:
+Cap OpenBLAS when selecting on wide matrices:
 `OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8` (set in the chain script).
+Stability selection univariate-prefilters to **4096** columns before the enet
+grid (same screen as gene-seed panels); meta records `n_cols_after_prefilter`.
 
 `--panels-only` and `--classical-only` are mutually exclusive. Panels-only
 writes `fold_panels/manifest.json` and does **not** regenerate the full Stage B
 report. Classical-only loads existing `fold_*_panel.json` and writes
-`per_arm/C-mvalue-enetS.json`.
-
+`per_arm/C-mvalue-enetS.json`. `--panel-repeats` sets stability-selection
+repeats (default 5; dry-run `1` is recorded in the panel JSON/manifest).
 Lock input:
 `reports/inspection/stage0_7g_gene_only_probe/lock_recommendation.json`
 (update when promoting: cascade finalist **P2-G**, light **N-light@64**,

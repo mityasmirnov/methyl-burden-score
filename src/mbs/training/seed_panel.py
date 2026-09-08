@@ -27,7 +27,7 @@ import pandas as pd
 
 from mbs.annotation.manifest import sha256_file
 from mbs.training.cascade_assign import CascadeAssignment
-from mbs.training.fold_safe_panel import stability_select_columns
+from mbs.training.fold_safe_panel import _univariate_prefilter, stability_select_columns
 
 TraitRole = Literal["primary", "secondary", "auxiliary"]
 _PROMOTER_ROLES = frozenset({"promoter_core", "promoter_proximal", "five_prime"})
@@ -43,6 +43,7 @@ DEFAULT_STRENGTH_CAP_QUANTILE = 0.99
 DEFAULT_MIN_FREQUENCY = 0.34
 # ponytail: full 51k-col × 5×3×9 enet grid is multi-hour; univariate prefilter
 # + lighter CV keeps DeepRVAT-faithful fold-fitting while finishing a screen.
+# Prefilter lives in fold_safe_panel; keep the Stage-B seed default here.
 DEFAULT_PREFILTER_MAX_COLS = 4096
 DEFAULT_N_INNER_FOLDS = 2
 DEFAULT_N_REPEATS = 2
@@ -268,41 +269,6 @@ def _gene_chrom_is_autosomal(
             if chrom in _SEX_CHROMS:
                 return False
     return True
-
-
-def _univariate_prefilter(
-    x: np.ndarray,
-    y: np.ndarray,
-    *,
-    task: Literal["age", "sex", "tissue"],
-    max_cols: int,
-) -> np.ndarray:
-    """Keep the top ``max_cols`` by univariate association (outer-train only)."""
-    n_cols = int(x.shape[1])
-    if n_cols <= max_cols:
-        return np.arange(n_cols, dtype=np.int64)
-    x64 = np.asarray(x, dtype=np.float64)
-    # Column-wise nan-safe centering for correlation / mean diffs.
-    col_mean = np.nanmean(x64, axis=0)
-    filled = np.where(np.isfinite(x64), x64, col_mean)
-    if task == "age":
-        y64 = np.asarray(y, dtype=np.float64)
-        y_c = y64 - float(np.mean(y64))
-        x_c = filled - filled.mean(axis=0, keepdims=True)
-        denom = np.sqrt((x_c * x_c).sum(axis=0) * float((y_c * y_c).sum())) + 1e-12
-        score = np.abs((x_c * y_c[:, None]).sum(axis=0) / denom)
-    else:
-        y_i = np.asarray(y).astype(np.int64, copy=False)
-        classes = np.unique(y_i)
-        score = np.zeros(n_cols, dtype=np.float64)
-        for c in classes:
-            mask_c = y_i == c
-            if not mask_c.any() or mask_c.all():
-                continue
-            diff = filled[mask_c].mean(axis=0) - filled[~mask_c].mean(axis=0)
-            score = np.maximum(score, np.abs(diff))
-    order = np.argsort(-score, kind="stable")
-    return order[:max_cols].astype(np.int64)
 
 
 def _select_trait_genes(
