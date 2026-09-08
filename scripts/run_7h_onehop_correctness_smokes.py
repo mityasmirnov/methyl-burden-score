@@ -18,9 +18,15 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import yaml
 
-from mbs.matrix.store import matrix_store_paths, open_betas_for_matrix, read_sample_index
+from mbs.matrix.store import (
+    matrix_store_paths,
+    open_betas_for_matrix,
+    read_locus_index,
+    read_sample_index,
+)
 from mbs.paths import DataPaths
 from mbs.training.cascade_assign import build_cascade_assignment
 from mbs.training.dev_cv import load_frozen_folds
@@ -84,9 +90,18 @@ def _load_ats_fold0(*, max_loci: int) -> dict[str, Any]:
     train_idx = np.asarray([row_by_id[s] for s in train_ids], dtype=np.int64)
     test_idx = np.asarray([row_by_id[s] for s in test_ids], dtype=np.int64)
     arrays = _phenotype_arrays(phenotypes, sample_ids)
-    loci, genes, edges = load_graph_tables(paths.data_root / "canonical" / "graphs" / graph_id)
+    graph_dir = paths.data_root / "canonical" / "graphs" / graph_id
+    locus_index = read_locus_index(matrix_store_paths(matrix_root).locus_index_path)
+    lr_edges, regions = load_graph_tables(graph_dir)
+    genes_path = graph_dir / "genes.parquet"
+    genes = pd.read_parquet(genes_path) if genes_path.is_file() else pd.DataFrame()
     assignment = build_cascade_assignment(
-        loci, genes, edges, gene_allocation="explicit_only"
+        locus_index=locus_index,
+        locus_region_edges=lr_edges,
+        regions=regions,
+        genes=genes,
+        max_loci=max_loci,
+        gene_allocation="explicit_only",
     )
     print(
         f"[onehop-smoke] loading betas {matrix_id} cols=[:{max_loci}] …",

@@ -241,15 +241,20 @@ def build_lock_recommendation(
     ``locked_cascade_arm`` / ``architecture_locked`` stay null/false.
     """
     provisional_reason = (
-        "P2-G is the provisional cascade reference, not a pooling lock; "
-        "ATS 2x2 pooling retained pending Milestone 10b seed-43; "
-        "seed-mask not adopted (9c); Stage B waits on honest 10a+10b review."
+        "P2-G is provisional on ATS only. Nine-pack vector RBS (mean→max, max→max) "
+        "must finish before any cascade primary; N-light m-only is a co-equal "
+        "light-model finalist for Milestone 12 OOF. Stage B waits on "
+        "milestone_10_scale_review."
     )
     rec: dict[str, Any] = {
         "primary_metric": "mbs_e2e.metrics.tissue.macro_f1",
         "architecture_locked": False,
         "locked_cascade_arm": None,
         "provisional_reference_arm": None,
+        "provisional_caveat": (
+            "ATS scalar vs vector was within noise; vector RBS may separate at "
+            "nine-pack (34k). Do not treat provisional_reference_arm as a product lock."
+        ),
         "best_landed_cascade_arm": None,
         "pooling_cpg": None,
         "pooling_region": None,
@@ -265,6 +270,11 @@ def build_lock_recommendation(
         ),
         "mbs_e2e_valid": False,
         "next_gate": "milestone_10_scale_review",
+        "oof_policy": (
+            "Milestone 12 runs finalists only: winning cascade (scalar or vector "
+            "after nine-pack screen) + N-light gene model — not all Stage A arms."
+        ),
+        "light_model_finalist": "N-light-gene-mean / m_only",
     }
     folds_by_arm = cascade_folds_by_arm or {}
     valid_cascade_rows = [

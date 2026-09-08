@@ -15,9 +15,8 @@ from pathlib import Path
 
 from mbs.annotation.manifest import utc_now_iso, write_json
 from mbs.geo_metadata import (
-    build_geo_frame_from_soft,
+    build_geo_frame_from_soft_path,
     load_geo_frame,
-    read_cached_soft,
     species_census,
 )
 from mbs.paths import DataPaths
@@ -98,8 +97,8 @@ def main() -> None:
         }
         if soft.is_file():
             try:
-                frame = build_geo_frame_from_soft(
-                    read_cached_soft(soft),
+                frame = build_geo_frame_from_soft_path(
+                    soft,
                     fetched_at=utc_now_iso(),
                     soft_sha256="cache",
                 )

@@ -100,6 +100,8 @@ def test_lock_allowed_with_valid_mbs_e2e() -> None:
     assert lock["pooling_cpg"] == "max"
     assert lock["pooling_region"] == "max"
     assert lock["max_epochs"] == 15
+    assert "provisional_caveat" in lock
+    assert lock.get("light_model_finalist")
 
 
 def test_cascade_mode_row_metric_specific_fold_count() -> None:

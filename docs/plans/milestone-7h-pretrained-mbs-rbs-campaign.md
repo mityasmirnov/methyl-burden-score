@@ -516,3 +516,51 @@ bypass it.
   P2-G cascade, 0.355/13.431 — capacity helps one-hop but doesn't replace
   the cascade). Do not cite the old 0.194/20.6 `external_test` figures for
   this comparison going forward.
+- 2026-09-08: **Vector warm-start: full 3-fold results in for both
+  max/max and mean/max.** Max/max: tissue F1 0.342 / age MAE 13.406 / sex
+  AUROC 0.851 (vs. P2-G baseline 0.355/13.431/0.853, vs. from-scratch
+  vector 0.333/15.408/0.834) — essentially at parity with scalar, clearly
+  beats from-scratch. Mean/max: tissue F1 0.345 / age MAE 14.578 / sex
+  AUROC 0.862 (vs. scalar mean/max baseline 0.330/13.496/0.875, vs.
+  from-scratch vector mean/max 0.335/16.448/0.780) — same pattern, age MAE
+  gap driven by one volatile fold (`[12.80, 12.00, 18.94]`), not a
+  systematic regression. **Both arms confirm LP-FT warm-start reliably
+  closes most/all of the from-scratch gap; P2-G scalar max/max remains the
+  finalist** (no clear win from vector, added complexity for parity at
+  best). Full tables in `vector_vs_scalar.md`.
+- 2026-09-08: **RBS-only classical probe beats the neural `mbs_e2e` head,
+  consistently, across every arm.** The cascade pipeline already writes
+  `rbs_linear_probe` (classical probe on `all_gene_rbs`,
+  `[n_samples, ~15,165 regions]`, pre-gene-pooling, same held-out
+  `test_idx` as `mbs_e2e`) for every run — computed all along, not
+  compared until now. P2-G: `mbs_e2e` 13.431 MAE vs. `rbs_linear_probe`
+  **12.559** MAE. Vector from-scratch: `mbs_e2e` 15.408 vs.
+  `rbs_linear_probe` **9.638**(!) MAE. Scalar mean/max: `rbs_linear_probe`
+  tissue F1 **0.368** — the best tissue F1 of the entire campaign, beating
+  every `mbs_e2e` arm including the finalist. Pattern holds for every arm
+  checked: `rbs_linear_probe` beats `mbs_e2e` on age MAE every time (by
+  0.9-5.8 years), and beats or ties it on tissue F1 in 3/4 arms checked.
+  **Implication: the neural end-to-end head we've used as the primary
+  finalist-selection metric all campaign is not the best predictor these
+  architectures actually produce.** Open question, not yet decided:
+  whether Milestone 12 should report/deploy `rbs_linear_probe` (or an
+  RBS+MBS fusion) as a co-primary readout. Full table in
+  `vector_vs_scalar.md` § RBS-only classical probe vs. MBS-based
+  prediction.
+- 2026-09-08: **Two GPUs loaded in parallel** (GPU 0 free after the
+  age-cov/warm-start queue finished; GPU 2, a ~98GB RTX PRO 6000
+  Blackwell, found idle). GPU 0: **one-hop correctness smokes**
+  (`scripts/run_7h_onehop_correctness_smokes.py`) — this script has never
+  completed a run; found and fixed a **third** bug on this relaunch
+  (`load_graph_tables` returns a 2-tuple `(locus_region_edges, regions)`,
+  script unpacked into 3 variables `loci, genes, edges` — missing
+  `read_locus_index` + separate `genes.parquet` load; fixed to match the
+  working pattern in `run_cascade_hub`). GPU 2: **dense-gradient stage-1
+  RBS pretrain** (`stage0_7h_nine_pack_dense_stage1_mean_mean.yaml`,
+  `cpg_pool: mean` + `region_pool: mean` for fully dense gradient to every
+  CpG/region, motivated by the `region_rho`-gradient-starvation finding
+  above), then two stage-2 transplants (scalar max/max, vector max/max)
+  via the same warm-start mechanism, testing whether a more thoroughly-
+  trained encoder beats P2-G's own from-scratch result and/or further
+  improves the `rbs_linear_probe` numbers. Runner:
+  `scripts/run_7h_dense_stage1_queue.sh`.

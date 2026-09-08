@@ -537,6 +537,62 @@ def _fit_direct_columns(
         return np.zeros((n_all, 0), dtype=np.float32), []
     return np.concatenate(cols, axis=1), names
 
+# CascadeDeepSet's CpG->region->RBS pathway; shared by scalar_rbs (no further
+# learned params) and region_hidden ("vector", adds gene_rho on top). Warm
+# starting the vector variant from a converged scalar_rbs checkpoint copies
+# exactly these modules -- gene_rho and the trait heads are always freshly
+# initialized, since their input distribution changes with the aggregation.
+CASCADE_ENCODER_PREFIXES = (
+    "cpg_encoder.",
+    "region_type_embedding.",
+    "region_encoder.",
+    "region_rho.",
+)
+
+
+def _load_encoder_warm_start(model: CascadeDeepSet, checkpoint_path: Path) -> int:
+    """Copy the CpG/region encoder from ``checkpoint_path`` into ``model`` in place.
+
+    Only keys under ``CASCADE_ENCODER_PREFIXES`` with a matching shape are
+    copied; ``gene_rho`` and any trait heads are left at their fresh init.
+    Returns the number of tensors copied (fails loudly if zero -- a silent
+    no-op here would look like warm-starting worked when it didn't).
+    """
+    ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    src_state = ckpt.get("model", ckpt)
+    dst_state = model.state_dict()
+    copied = 0
+    for key, value in src_state.items():
+        if not key.startswith(CASCADE_ENCODER_PREFIXES):
+            continue
+        if key not in dst_state:
+            raise ValueError(f"warm-start checkpoint key {key!r} not found in model")
+        if dst_state[key].shape != value.shape:
+            raise ValueError(
+                f"warm-start shape mismatch for {key!r}: "
+                f"checkpoint={tuple(value.shape)} model={tuple(dst_state[key].shape)}"
+            )
+        dst_state[key] = value
+        copied += 1
+    if copied == 0:
+        raise ValueError(
+            f"warm-start checkpoint {checkpoint_path} contained no matching encoder keys"
+        )
+    model.load_state_dict(dst_state)
+    return copied
+
+
+def _covariate_index(values: np.ndarray, mask: np.ndarray, n_classes: int) -> np.ndarray:
+    """Ground-truth covariate index for age-head embedding lookup.
+
+    ``n_classes`` doubles as the "unknown" bucket index for samples whose
+    covariate is masked out -- kept distinct from any real class id (0..n_classes-1).
+    """
+    values_a = np.asarray(values, dtype=np.int64)
+    mask_a = np.asarray(mask, dtype=bool)
+    return np.where(mask_a, values_a, n_classes).astype(np.int64)
+
+
 def _tissue_class_weights(
     tissue_train: np.ndarray,
     tissue_mask_train: np.ndarray,
@@ -589,7 +645,22 @@ def _evaluate_cascade_validation(
     heads.eval()
     with torch.no_grad():
         if bool(age_mask_val.any()):
-            age_pred = heads.forward_age(mbs_t, present_t).detach().cpu().numpy()
+            tissue_idx_t = torch.tensor(
+                _covariate_index(tissue_val, tissue_mask_val, heads.n_tissue_classes),
+                device=device,
+                dtype=torch.long,
+            )
+            sex_idx_t = torch.tensor(
+                _covariate_index(sex_val, sex_mask_val, heads.n_sex_classes),
+                device=device,
+                dtype=torch.long,
+            )
+            age_pred = (
+                heads.forward_age(mbs_t, present_t, tissue_index=tissue_idx_t, sex_index=sex_idx_t)
+                .detach()
+                .cpu()
+                .numpy()
+            )
             out["age_mae"] = regression_metrics(
                 ages_val[age_mask_val], age_pred[age_mask_val]
             )["mae"]
@@ -646,7 +717,22 @@ def _evaluate_mbs_e2e(
     present_t = torch.from_numpy(present_te).to(device)
     heads.eval()
     with torch.no_grad():
-        age_pred = heads.forward_age(mbs_t, present_t).detach().cpu().numpy()
+        tissue_idx_t = torch.tensor(
+            _covariate_index(tissue[test_idx_a], tissue_mask[test_idx_a], heads.n_tissue_classes),
+            device=device,
+            dtype=torch.long,
+        )
+        sex_idx_t = torch.tensor(
+            _covariate_index(sex[test_idx_a], sex_mask[test_idx_a], heads.n_sex_classes),
+            device=device,
+            dtype=torch.long,
+        )
+        age_pred = (
+            heads.forward_age(mbs_t, present_t, tissue_index=tissue_idx_t, sex_index=sex_idx_t)
+            .detach()
+            .cpu()
+            .numpy()
+        )
         tissue_logits = heads.forward_tissue(mbs_t, present_t)
         tissue_pred = tissue_logits.detach().cpu().numpy().argmax(axis=1)
         tissue_proba = torch.softmax(tissue_logits, dim=-1).detach().cpu().numpy()
@@ -843,6 +929,10 @@ def train_cascade_on_arrays(
     train_batch_size: int | str | None = "auto",
     gpu_share: int = 1,
     include_mbs_enet: bool = True,
+    age_covariates: tuple[str, ...] = (),
+    warm_start_encoder_checkpoint: Path | None = None,
+    freeze_encoder_epochs: int = 0,
+    fine_tune_learning_rate: float | None = None,
 ) -> dict[str, Any]:
     """Train CascadeDeepSet + MBS heads; write scores; evaluate; return metrics.
 
@@ -907,6 +997,7 @@ def train_cascade_on_arrays(
         age_seed_mask=age_seed_t,
         tissue_seed_mask=tissue_seed_t,
         sex_seed_mask=sex_seed_t,
+        age_covariates=age_covariates,
     )
     seed_mask_meta = {
         trait: meta
@@ -917,11 +1008,52 @@ def train_cascade_on_arrays(
         )
         if meta is not None
     }
+    n_encoder_keys_loaded = 0
+    if warm_start_encoder_checkpoint is not None:
+        n_encoder_keys_loaded = _load_encoder_warm_start(model, warm_start_encoder_checkpoint)
+        print(
+            f"[cascade] {out_dir.name} warm-started {n_encoder_keys_loaded} encoder tensors "
+            f"from {warm_start_encoder_checkpoint}",
+            flush=True,
+        )
+    freeze_encoder_epochs = max(0, int(freeze_encoder_epochs))
+    if freeze_encoder_epochs > 0 and warm_start_encoder_checkpoint is None:
+        raise ValueError("freeze_encoder_epochs requires warm_start_encoder_checkpoint")
+    encoder_frozen = freeze_encoder_epochs > 0
+    if encoder_frozen:
+        for name, p in model.named_parameters():
+            if name.startswith(CASCADE_ENCODER_PREFIXES):
+                p.requires_grad_(False)
+
     model.to(device)
     heads.to(device)
+
+    def _split_encoder_params(m: torch.nn.Module) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+        enc, rest = [], []
+        for name, p in m.named_parameters():
+            (enc if name.startswith(CASCADE_ENCODER_PREFIXES) else rest).append(p)
+        return enc, rest
+
+    encoder_params, model_rest_params = _split_encoder_params(model)
     opt = torch.optim.AdamW(
-        list(model.parameters()) + list(heads.parameters()), lr=lr, weight_decay=1e-4
+        [
+            {"params": encoder_params, "lr": lr},
+            {"params": model_rest_params + list(heads.parameters()), "lr": lr},
+        ],
+        weight_decay=1e-4,
     )
+
+    def _unfreeze_encoder() -> None:
+        for name, p in model.named_parameters():
+            if name.startswith(CASCADE_ENCODER_PREFIXES):
+                p.requires_grad_(True)
+        opt.param_groups[0]["lr"] = (
+            lr if fine_tune_learning_rate is None else float(fine_tune_learning_rate)
+        )
+        print(
+            f"[cascade] {out_dir.name} unfroze encoder, fine-tune lr={opt.param_groups[0]['lr']}",
+            flush=True,
+        )
 
     train_idx = np.asarray(train_idx, dtype=np.int64)
     test_idx = np.asarray(test_idx, dtype=np.int64)
@@ -937,6 +1069,8 @@ def train_cascade_on_arrays(
     sex_mask_a = (
         np.ones(n, dtype=bool) if sex_mask is None else np.asarray(sex_mask, dtype=bool)
     )
+    tissue_idx_for_age = _covariate_index(tissue, tissue_mask_a, heads.n_tissue_classes)
+    sex_idx_for_age = _covariate_index(sex, sex_mask_a, heads.n_sex_classes)
     tissue_class_weights = _tissue_class_weights(
         tissue[train_idx],
         tissue_mask_a[train_idx],
@@ -1026,6 +1160,9 @@ def train_cascade_on_arrays(
             checkpoint_selection = {"selection": "eval_only_reload", "best_epoch": ckpt.get("epoch")}
     else:
         for _epoch in range(max_epochs):
+            if encoder_frozen and _epoch == freeze_encoder_epochs:
+                _unfreeze_encoder()
+                encoder_frozen = False
             epochs_completed = _epoch + 1
             model.train()
             heads.train()
@@ -1062,8 +1199,20 @@ def train_cascade_on_arrays(
                 sex_term: torch.Tensor | None = None
                 age_m = age_mask_a[active_a]
                 if bool(age_m.any()):
-                    age_t = torch.tensor(ages[active_a][age_m], device=device, dtype=torch.float32)
-                    age_pred = heads.forward_age(mbs[age_m], present[age_m])
+                    age_active = active_a[age_m]
+                    age_t = torch.tensor(ages[age_active], device=device, dtype=torch.float32)
+                    age_tissue_idx_t = torch.tensor(
+                        tissue_idx_for_age[age_active], device=device, dtype=torch.long
+                    )
+                    age_sex_idx_t = torch.tensor(
+                        sex_idx_for_age[age_active], device=device, dtype=torch.long
+                    )
+                    age_pred = heads.forward_age(
+                        mbs[age_m],
+                        present[age_m],
+                        tissue_index=age_tissue_idx_t,
+                        sex_index=age_sex_idx_t,
+                    )
                     age_term = F.huber_loss(age_pred, age_t)
                     loss = loss + age_loss_weight * age_term
                 tissue_m = tissue_mask_a[active_a]
@@ -1470,6 +1619,12 @@ def train_cascade_on_arrays(
         "pooling": {"cpg_to_region": cpg_pool, "region_to_gene": region_pool},
         "gene_aggregation": gene_aggregation,
         "gene_allocation": gene_allocation_policy,
+        "age_covariates": list(age_covariates),
+        "warm_start_encoder_checkpoint": (
+            str(warm_start_encoder_checkpoint) if warm_start_encoder_checkpoint else None
+        ),
+        "warm_start_encoder_tensors_loaded": n_encoder_keys_loaded,
+        "freeze_encoder_epochs": freeze_encoder_epochs,
         "checkpoint_selection_mode": checkpoint_selection_mode,
         "n_optimizer_steps": int(n_optimizer_steps),
         "peak_gpu_memory_bytes": peak_gpu_memory_bytes,
@@ -1642,6 +1797,20 @@ def run_cascade_hub(
     gene_aggregation = str(model_cfg.get("gene_aggregation", "scalar_rbs"))
     if gene_aggregation not in ("scalar_rbs", "region_hidden"):
         raise ValueError(f"unsupported gene_aggregation: {gene_aggregation!r}")
+    age_covariates_raw = model_cfg.get("age_covariates", []) or []
+    age_covariates = tuple(str(c) for c in age_covariates_raw)
+    if set(age_covariates) - {"tissue", "sex"}:
+        raise ValueError(f"unsupported model.age_covariates: {age_covariates!r}")
+    # ``{fold_id}`` is substituted per fold below so each fold warm-starts from
+    # the matching fold's own checkpoint -- reusing another fold's checkpoint
+    # (whose train split overlaps this fold's test split) would leak test data
+    # into initialization.
+    warm_start_encoder_checkpoint_template = model_cfg.get("warm_start_encoder_checkpoint")
+    freeze_encoder_epochs = int(model_cfg.get("freeze_encoder_epochs", 0) or 0)
+    fine_tune_lr_raw = model_cfg.get("fine_tune_learning_rate")
+    fine_tune_learning_rate = None if fine_tune_lr_raw is None else float(fine_tune_lr_raw)
+    if freeze_encoder_epochs > 0 and not warm_start_encoder_checkpoint_template:
+        raise ValueError("model.freeze_encoder_epochs requires model.warm_start_encoder_checkpoint")
     training_cfg = config.get("training", {})
     age_loss_weight = float(training_cfg.get("age_loss_weight", 1.0))
     tissue_loss_weight = float(training_cfg.get("tissue_loss_weight", 1.0))
@@ -1890,6 +2059,18 @@ def run_cascade_hub(
             train_batch_size=train_batch_size,
             gpu_share=gpu_share,
             include_mbs_enet=bool(training_cfg.get("stage_a_include_mbs_enet", False)),
+            age_covariates=age_covariates,
+            warm_start_encoder_checkpoint=(
+                Path(
+                    str(warm_start_encoder_checkpoint_template).format(
+                        fold_id=fold.get("fold_id", fold_i)
+                    )
+                )
+                if warm_start_encoder_checkpoint_template
+                else None
+            ),
+            freeze_encoder_epochs=freeze_encoder_epochs,
+            fine_tune_learning_rate=fine_tune_learning_rate,
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
         fold_summaries.append(metrics)

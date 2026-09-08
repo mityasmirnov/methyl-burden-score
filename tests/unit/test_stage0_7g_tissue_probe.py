@@ -15,6 +15,7 @@ from mbs.training.cascade_assign import (
 )
 from mbs.training.cascade_scores import fusion_feature_matrix
 from mbs.training.cascade_loop import (
+    CASCADE_ENCODER_PREFIXES,
     _evaluate_mbs_e2e,
     make_synthetic_cascade_tables,
     train_cascade_on_arrays,
@@ -148,6 +149,143 @@ def test_cascade_mean_pooling_smoke(tmp_path: Path) -> None:
         "cpg_to_region": "mean",
         "region_to_gene": "mean",
     }
+
+
+def test_cascade_age_covariates_smoke(tmp_path: Path) -> None:
+    """End-to-end: age head conditioned on tissue+sex trains and evaluates cleanly."""
+    tables = make_synthetic_cascade_tables(seed=7)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, max(3, (n * 2) // 3), dtype=np.int64)
+    test_idx = np.arange(train_idx[-1] + 1, n, dtype=np.int64)
+    if test_idx.size == 0:
+        test_idx = train_idx.copy()
+    out = train_cascade_on_arrays(
+        assignment=assignment,
+        betas=tables["betas"],
+        train_idx=train_idx,
+        test_idx=test_idx,
+        ages=tables["ages"],
+        tissue=tables["tissue"],
+        sex=tables["sex"],
+        study_ids=tables["study_ids"],
+        sample_ids=tables["sample_ids"],
+        class_names=tables["class_names"],
+        out_dir=tmp_path / "age_cov_fold",
+        max_epochs=2,
+        seed=0,
+        device_str="cpu",
+        age_covariates=("tissue", "sex"),
+    )
+    assert out.get("age_covariates") == ["tissue", "sex"]
+    assert "metrics" in out
+    assert (tmp_path / "age_cov_fold" / "scores" / "score_manifest.json").is_file()
+
+
+def test_cascade_warm_start_vector_from_scalar(tmp_path: Path) -> None:
+    """Vector (region_hidden) run warm-started from a converged scalar_rbs checkpoint."""
+    tables = make_synthetic_cascade_tables(seed=9)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, max(3, (n * 2) // 3), dtype=np.int64)
+    test_idx = np.arange(train_idx[-1] + 1, n, dtype=np.int64)
+    if test_idx.size == 0:
+        test_idx = train_idx.copy()
+
+    common_kwargs = dict(
+        assignment=assignment,
+        betas=tables["betas"],
+        train_idx=train_idx,
+        test_idx=test_idx,
+        ages=tables["ages"],
+        tissue=tables["tissue"],
+        sex=tables["sex"],
+        study_ids=tables["study_ids"],
+        sample_ids=tables["sample_ids"],
+        class_names=tables["class_names"],
+        seed=0,
+        device_str="cpu",
+    )
+    scalar_out_dir = tmp_path / "scalar_fold"
+    train_cascade_on_arrays(
+        **common_kwargs,
+        out_dir=scalar_out_dir,
+        max_epochs=2,
+        gene_aggregation="scalar_rbs",
+    )
+    scalar_ckpt = scalar_out_dir / "best.pt"
+    assert scalar_ckpt.is_file()
+
+    vector_out_dir = tmp_path / "vector_fold"
+    out = train_cascade_on_arrays(
+        **common_kwargs,
+        out_dir=vector_out_dir,
+        max_epochs=3,
+        gene_aggregation="region_hidden",
+        warm_start_encoder_checkpoint=scalar_ckpt,
+        freeze_encoder_epochs=1,
+    )
+    assert out["warm_start_encoder_tensors_loaded"] > 0
+    assert out["freeze_encoder_epochs"] == 1
+    assert "metrics" in out
+
+    import torch
+
+    scalar_state = torch.load(scalar_ckpt, map_location="cpu", weights_only=False)["model"]
+    vector_state = torch.load(vector_out_dir / "best.pt", map_location="cpu", weights_only=False)[
+        "model"
+    ]
+    # cpg_encoder weights must differ from the scalar checkpoint after fine-tuning
+    # (encoder unfroze at epoch 1 and continued training) -- otherwise warm-start
+    # silently degenerated into a permanent freeze.
+    any_changed = any(
+        not torch.equal(scalar_state[k], vector_state[k])
+        for k in scalar_state
+        if k.startswith(CASCADE_ENCODER_PREFIXES) and k in vector_state
+    )
+    assert any_changed, "expected encoder weights to continue updating after unfreeze"
+
+
+def test_cascade_warm_start_rejects_missing_checkpoint(tmp_path: Path) -> None:
+    tables = make_synthetic_cascade_tables(seed=10)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, max(3, (n * 2) // 3), dtype=np.int64)
+    test_idx = np.arange(train_idx[-1] + 1, n, dtype=np.int64)
+    with pytest.raises(FileNotFoundError):
+        train_cascade_on_arrays(
+            assignment=assignment,
+            betas=tables["betas"],
+            train_idx=train_idx,
+            test_idx=test_idx,
+            ages=tables["ages"],
+            tissue=tables["tissue"],
+            sex=tables["sex"],
+            study_ids=tables["study_ids"],
+            sample_ids=tables["sample_ids"],
+            class_names=tables["class_names"],
+            out_dir=tmp_path / "missing_ckpt_fold",
+            max_epochs=1,
+            seed=0,
+            device_str="cpu",
+            gene_aggregation="region_hidden",
+            warm_start_encoder_checkpoint=tmp_path / "does_not_exist.pt",
+        )
 
 
 def test_cascade_early_stop_smoke(tmp_path: Path) -> None:
@@ -363,6 +501,8 @@ def test_mbs_e2e_evaluates_test_only_not_train() -> None:
     model = MagicMock()
     heads = MagicMock()
     heads.sex_head = None
+    heads.n_tissue_classes = 3
+    heads.n_sex_classes = 2
 
     def _tissue_logits(mbs: torch.Tensor, present: torch.Tensor) -> torch.Tensor:
         logits = torch.zeros((mbs.shape[0], 3))

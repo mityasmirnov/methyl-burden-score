@@ -1,0 +1,55 @@
+# 7H / Milestone 10: P2-G scalar max/max, warm-started from the dense-gradient
+# (mean/mean) stage-1 pretrain instead of trained from scratch.
+#
+# Tests whether a more thoroughly-trained encoder (every CpG/region got
+# gradient every step in stage 1, vs. P2-G's own native max/max training
+# where only the argmax CpG/region per gene got gradient) beats P2-G's own
+# from-scratch result (0.355 F1 / 13.431 MAE / 0.853 AUROC) once transplanted
+# into the max-pooled config that's empirically best for final aggregation.
+# Same LP-FT recipe as the other warm-start arms: freeze 4 epochs, fine-tune
+# 11 at reduced LR. {fold_id} substituted per fold (matching fold only).
+split_id: hub-nine-pack-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+milestone: 7H-nine-pack-scalar-max-max-from-dense-stage1
+report_dir: reports/inspection/stage0_7h_nine_pack_smoke/_staging_scalar_max_max_from_dense_stage1
+cv_budget:
+  max_loci: 65536
+  max_epochs: 15
+experiment:
+  name: stage0_7h_nine_pack_scalar_max_max_from_dense_stage1
+  seed: 42
+  stage: 0
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-nine-pack-virtual-v1
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology_hub_nine_pack_v1.yaml
+  split_id: hub-nine-pack-3fold-v1
+model:
+  topology: rbs_gene_direct
+  tbs_arm: false
+  cpg_pool: max
+  region_pool: max
+  gene_aggregation: scalar_rbs
+  gene_allocation: explicit_only
+  cpg_hidden_dim: 64
+  region_hidden_dim: 32
+  dropout: 0.1
+  warm_start_encoder_checkpoint: artifacts/runs/stage0-7h-nine-pack-dense-stage1-mean-mean/fold_{fold_id}/best.pt
+  freeze_encoder_epochs: 4
+  fine_tune_learning_rate: 0.0003
+training:
+  max_epochs: 15
+  batch_size: auto
+  learning_rate: 0.001
+  tissue_loss_weight: 3.0
+  age_loss_weight: 0.3
+  sex_loss_weight: 1.0
+  gene_linked_only: true
+  primary_evaluation: mbs_e2e
+  stage_a_include_mbs_enet: false
+  checkpoint_selection: validation_tissue_macro_f1_then_age_mae
+  gradient_clip_norm: 2.0
+device:
+  torch_device: cuda

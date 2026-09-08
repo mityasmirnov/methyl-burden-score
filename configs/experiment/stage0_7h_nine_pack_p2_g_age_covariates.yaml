@@ -1,0 +1,59 @@
+# 7H / Milestone 10: P2-G cascade with age head conditioned on tissue + sex.
+# Identical to stage0_7h_nine_pack_p2_g.yaml (the confirmed cascade finalist,
+# scalar max/max) in every other respect -- same cohort/split/budget/seed.
+#
+# Motivation: per-study age MAE on the P2-G baseline ranges 3.3-51.6 years and
+# tracks tissue identity (blood-derived tissues ~8-16 MAE, brain regions
+# ~19-30, colonic mucosa ~43.5 -- see vector_vs_scalar.md). The dense age head
+# only ever sees the shared gene MBS vector, with zero access to tissue or
+# sex, even though age/tissue/sex are the three canonical EWAS covariates and
+# epigenetic clocks are well known to be tissue- (and mildly sex-) dependent.
+# This arm feeds ground-truth tissue + sex labels (not this model's own
+# tissue/sex predictions, to avoid propagating tissue-classifier errors -- see
+# MultitaskHeads docstring) into the age head via a learned embedding.
+#
+# Compare against the P2-G baseline: age MAE 13.431, tissue F1 0.355, sex
+# AUROC 0.853. Tissue/sex heads are untouched, so their metrics should be
+# unchanged (or noise-level); the signal to look at is age MAE and whether
+# the per-tissue MAE spread narrows.
+split_id: hub-nine-pack-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+milestone: 7H-nine-pack-P2-G-age-covariates
+report_dir: reports/inspection/stage0_7h_nine_pack_smoke/_staging_p2_g_age_covariates
+cv_budget:
+  max_loci: 65536
+  max_epochs: 15
+experiment:
+  name: stage0_7h_nine_pack_p2_g_age_covariates
+  seed: 42
+  stage: 0
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-nine-pack-virtual-v1
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology_hub_nine_pack_v1.yaml
+  split_id: hub-nine-pack-3fold-v1
+model:
+  topology: rbs_gene_direct
+  tbs_arm: false
+  pooling: max
+  gene_allocation: explicit_only
+  cpg_hidden_dim: 64
+  region_hidden_dim: 32
+  dropout: 0.1
+  age_covariates: [tissue, sex]
+training:
+  max_epochs: 15
+  batch_size: auto
+  learning_rate: 0.001
+  tissue_loss_weight: 3.0
+  age_loss_weight: 0.3
+  sex_loss_weight: 1.0
+  gene_linked_only: true
+  primary_evaluation: mbs_e2e
+  stage_a_include_mbs_enet: false
+  checkpoint_selection: validation_tissue_macro_f1_then_age_mae
+  gradient_clip_norm: 2.0
+device:
+  torch_device: cuda

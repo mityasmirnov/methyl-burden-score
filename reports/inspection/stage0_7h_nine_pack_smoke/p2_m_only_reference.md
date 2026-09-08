@@ -1,6 +1,6 @@
 # Nine-pack P2-G / m-only reference snapshot
 
-Generated: `2026-09-08T09:46:13.872287+00:00`
+Generated: `2026-09-08T11:42:08.700327+00:00`
 
 Auto-exported pair only. Curated campaign board with pooling grid,
 ablations, and interpretations: [`analysis.md`](analysis.md).
