@@ -58,5 +58,7 @@ Latest architecture-decision detail:
 
 ## Hard stops
 
-Do not auto-launch Milestone **11** Stage B GPU or Milestone **12** OOF from
-this campaign. HM450 only — no cross-platform claim yet.
+Do not auto-launch Milestone **11** Stage B GPU or **cascade** 5×6 from this
+campaign. N-light 5×6 is started from `scripts/run_12_nlight_oof_gpu2_after_s1.sh`.
+This OOF cohort is HM450; the encoder must stay gene-invariant for later
+EPIC / ONT (more probes per gene) — no mixed-platform claim yet.

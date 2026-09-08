@@ -47,12 +47,11 @@ src/mbs/registry/        phenotype / source dataset registry (Milestone 5b)
 src/mbs/evaluation/      metrics + study-grouped split helpers (Milestone 5b)
 ```
 
-Milestones **1–7F** (and **7E′**) are done. **Current gate: Milestone 10e**
-(staged RBS→MBS + frozen enet; alias under **7H**). Gene-only ATS
-selection is **Milestone 9** (done). Fold-selected panel is **11**
-(deferred parallel; does not block 12). Final OOF is **Milestone 12**
-(blocked on 10e, not on joint e2e). Expression continue/finetune is **13**
-(after OOF) — see
+Milestones **1–7F** (and **7E′**) are done. **Current gate: Milestone 12
+N-light 5×6** (nested enet readout; GPU 2 after dense S1). Cascade 5×6 still
+waits on **10e**. Gene-only ATS selection is **Milestone 9** (done).
+Fold-selected panel is **11** (deferred parallel; does not block 12).
+Expression continue/finetune is **13** (after OOF) — see
 [`TODO_PIPELINE.md`](TODO_PIPELINE.md),
 [`plans/MILESTONE_INDEX.md`](plans/MILESTONE_INDEX.md),
 [ADR 0007](adr/0007-crossfit-prerequisites.md),

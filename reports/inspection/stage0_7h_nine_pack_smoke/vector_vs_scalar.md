@@ -1,7 +1,7 @@
 # Nine-pack scalar vs vector RBS
 
-Updated: `2026-09-08T14:40+02:00`  
-Cold 5-combo grid completed `2026-09-08T04:33+02:00`; warm-starts completed `~13:42+02:00`.
+Updated: `2026-09-08T15:05+02:00`  
+Cold 5-combo grid completed `2026-09-08T04:33+02:00`; warm-starts completed `~13:42+02:00`; N-light nested enet 3-fold landed `~14:41+02:00`.
 
 **Architecture-screen readout:** `mbs_e2e` outer **test**, nine-pack split `hub-nine-pack-3fold-v1` (34 234 samples), HM450 only.  
 **Product readout (locked):** frozen `rbs_enet` / `mbs_enet(_nested)` co-primary — see §5 and [`milestone-10e-staged-rbs-mbs-training.md`](../../../docs/plans/milestone-10e-staged-rbs-mbs-training.md).  
@@ -18,7 +18,7 @@ Full narrative: [`analysis.md`](analysis.md).
 | Was vector just under-trained? | **Partly yes** — LP-FT warm-start closes most of the gap; still no clear win over P2-G |
 | Light-model default? | **N-light@64** (0.308 / 14.727 / 0.852) |
 | Age + tissue/sex covariates? | **Rejected** (all three metrics worse) |
-| Milestone **12** OOF? | **Blocked on 10e** staged RBS→MBS + enet co-primary. Topology candidates still P2-G / N-light@64. **11 does not block** |
+| Milestone **12** OOF? | **N-light 5×6 first** (queued GPU 2 after S1). Cascade still gated on 10e. **11 does not block** |
 
 **Cascade topology remains P2-G.** Warm vector is an optimization ablation, not a replacement. **Do not 5×6 joint e2e as-is.**
 
@@ -148,9 +148,8 @@ Consistent across every arm checked: `rbs_linear_probe` beats `mbs_e2e` on age M
 
 ## Outlook
 
-1. **Topology** locked: P2-G cascade + N-light@64 encoder. **Training recipe is not locked** until 10e 1-fold smoke.  
-2. **One-hop correctness smokes** running on GPU 0 (G0 done ~0.335 / 17.3 / 0.75; G1 in flight).  
-3. **CPU enet** on existing nine-pack checkpoints (probes were deferred). N-light **must** report nested enet.  
-4. **10e** staged S1–S4 (dense vector RBS → freeze → learned MBS hop → unfreeze) before any 5×6.  
-5. **Milestone 12** after that smoke — **does not wait on Milestone 11**. Extra traits = freeze-reuse on 34k encoder / 173k catalog, not joint retrain.  
-6. Dense stage-1 (GPU 2) = **S1 experiment only**.
+1. **Topology** locked for the e2e screen: P2-G cascade + N-light@64 encoder. Rank under **nested enet**.  
+2. **One-hop smokes done** (G0 ≫ G1; seeds 42/43/44 distinct).  
+3. **N-light nested enet 3-fold 0.368 / 9.88 / 0.803** vs e2e 0.308 / 14.73 / 0.852.  
+4. **Milestone 12 N-light 5×6** queued on GPU 2 after dense S1 (skip transplants).  
+5. Cascade 5×6 still waits on 10e S1–S4. Extra traits with **n≥600** = freeze-reuse. Encoder stays gene-invariant for later EPIC/ONT.

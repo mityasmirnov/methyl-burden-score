@@ -869,8 +869,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   0.273→0.308, age MAE 15.057→14.727, sex AUROC 0.742→0.852, all improved.
   Age head tissue+sex conditioning built, tested, **rejected** (full
   3-fold ablation regressed all 3 metrics). Full detail: `vector_vs_scalar.md`.
-- **Next:** one-hop smokes; CPU enet on existing checkpoints; **10e** staged
-  recipe before any 5×6. Freeze-reuse 10c on frozen scores (not pack masks).
+- **Next:** N-light 5×6 (Milestone 12) on GPU 2 after dense S1; cascade 5×6
+  still waits on 10e. Freeze-reuse 10c for traits with n≥600.
 
 ### 10a-warm — Vector warm-start (LP-FT)
 
@@ -882,7 +882,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ### 10a++ — One-hop correctness smokes
 
-- **Status:** `in_progress` (GPU 0) — G0 done (~0.335 / 17.3 / 0.75); G1 + multi-seed running
+- **Status:** `done` — G0 ≫ G1 (0.335 / 17.3 / 0.75 vs 0.146 / 21.7 / 0.56);
+  multi-seed 42/43/44 distinct (tissue F1 span 0.027). Seed-mask **not** adopted.
 - **Runner:** `scripts/run_7h_onehop_correctness_smokes.py`
 - **Done when:** report under `reports/inspection/stage0_7h_onehop_correctness/`
 

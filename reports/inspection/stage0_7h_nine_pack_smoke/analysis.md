@@ -1,6 +1,6 @@
 # Milestone 10 — nine-pack campaign analysis
 
-Updated: `2026-09-08T15:05+02:00`
+Updated: `2026-09-08T15:10+02:00`
 
 - Matrix: `matrix-hub-nine-pack-virtual-v1` · Screen split: `hub-nine-pack-3fold-v1` (**34 234**)
 - OOF split: `hub-nine-pack-5fold-v1` · Platform: **HM450 this OOF**; encoder is gene-invariant for later EPIC/ONT
@@ -16,7 +16,7 @@ Updated: `2026-09-08T15:05+02:00`
 |-----|--------|--------|
 | Vector warm-starts (max + mean) | **done** | See leaderboard |
 | **One-hop smokes** | **done** | G0 ≫ G1; seeds 42/43/44 distinct (span 0.027) |
-| Dense stage-1 (S1) | GPU 2 fold 1 | then **hand off to N-light OOF** (skip transplants) |
+| Dense stage-1 (S1) | GPU 2 **fold 1 ~epoch 6/15** | then **hand off to N-light OOF** (skip transplants) |
 | N-light nested enet (3-fold) | **done** | **0.368 / 9.88 / 0.803** vs e2e 0.308 / 14.73 / 0.852 |
 | **12 N-light 5×6** | **queued GPU 2** | after S1; max VRAM |
 | Cascade 10e S1–S4 | pending | still gates cascade 5×6 |
