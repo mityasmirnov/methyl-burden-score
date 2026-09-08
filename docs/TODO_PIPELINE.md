@@ -23,61 +23,48 @@ On-disk `stage0_7g_*` / `run_7g_*` / `stage0_7h_*` IDs stay unchanged.
   10a        done     5-combo grid; P2-G scalar max/max LOCKED cascade finalist
   10a-cap    done     N-light rho_hidden=64 adopted (mbs_e2e 0.308/14.7/0.852)
   10a-agecov rejected age head tissue+sex conditioning — all 3 metrics worse
-  10a-warm   running  max→max warm DONE (0.342/13.41/0.851); mean→max fold2
-  10a++      queued   one-hop smokes (seed-mask + multi-seed) after warm queue
+  10a-warm   done     both vector warms done; max→max 0.342/13.41/0.851 (≤ P2-G tissue)
+  10a++      running  one-hop smokes on GPU 0 (G0 done; G1/multi-seed next)
   10b        done     ATS seed-43 pooling (P2-G still leads)
   10c        partial  label_status + BMI/ancestry joined; freeze-reuse GPU next
   10d        pending  reference checkpoints after finalists confirmed
 11           deferred fold-selected panel Stage B — parallel, not a hard gate on 12
-12           blocked  final 5×6 OOF — finalists only (P2-G + N-light@64); needs 10 + one-hop
+12           blocked  final 5×6 OOF — finalists only (P2-G + N-light@64); needs one-hop
 13           deferred expression aux after OOF
 14           deferred optional a–f
 ```
 
 Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pretrained-mbs-rbs.md)
 → [`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md)
-→ campaign analysis [`../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
+→ [`../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md)
+→ [`../reports/inspection/stage0_7h_nine_pack_smoke/vector_vs_scalar.md`](../reports/inspection/stage0_7h_nine_pack_smoke/vector_vs_scalar.md).
 
 ### Next steps (ordered)
 
 **GPU-0 policy:** validate cheaply before scaling. Soft-stop before Milestone
 **12** OOF / joint trait retrains. Milestone **11** Stage B GPU is **optional /
-parallel** (sparse-panel product) — it no longer hard-blocks **12**.
+parallel** — it no longer hard-blocks **12**.
 
 **Priority:**
 
-1. ~~**5-combo pooling grid**~~ — done. **P2-G scalar max/max** locked cascade
-   finalist (0.355 / 13.431 / 0.853).
-2. ~~**N-light rho 10→64**~~ — done; **adopted as light finalist default**
-   (`mbs_e2e` 0.308 / 14.727 / 0.852). Do not cite stale `external_test` 0.194/20.6.
-3. ~~**Age covariates**~~ — done, **rejected**.
-4. ~~**Vector max→max warm-start**~~ — done 2026-09-08: **0.342 / 13.406 / 0.851**
-   (vs cold 0.333 / 15.408 / 0.834). Closes most of the age gap; tissue still
-   **−0.013 vs P2-G** → **does not replace** cascade finalist.
-5. **Finish vector mean→max warm-start** (fold 2 running; f0–f1 partial
-   ~0.335 / 12.4). If 3-fold mean still ≤ P2-G tissue, **close warm-start**
-   without changing finalists. Optional later: stage-1 `region_pool: mean`
-   pretrain if we revisit vector.
-6. **HIGH — one-hop correctness smokes** (queued behind warm queue; import
-   fixed): seed-mask G0/G1 + multi-seed 42/43/44, fold0, ~5 ep, rho=64.
-   Report → `reports/inspection/stage0_7h_onehop_correctness/`. Blocker before
-   light-model scale / OOF assumptions about those tricks.
-7. **THEN — Milestone 12** 5×6 OOF on **P2-G + N-light@64 only** (gene-linked
-   finalist path) — after (6) and soft review of (5). Then **10d** checkpoint
-   contract. **Does not wait on Milestone 11.**
-8. **Parallel / deferred — Milestone 11** fold-safe sparse panel Stage B
-   (CPU panels → optional GPU: classical `enetS` + finalists-on-S). Sparsity /
-   panel-product track; thinner matrix OK (not full historical Stage B arm soup).
-9. **THEN — freeze-and-reuse** disease/cancer probes (labels ready); BMI/
-   ancestry heads wired but GPU gated on ≥1k bar + review. Plan:
-   [`label-prep-bmi-ancestry-sample-overview.md`](plans/label-prep-bmi-ancestry-sample-overview.md).
-10. **Deferred post-OOF:** CpGPT/positional embeddings, sex-chr sex imputation,
-    epigenetic-clock age imputation.
-
-**CPU parallel:** Milestone **11** `--panels-only` may continue anytime.
+1. ~~**5-combo pooling grid**~~ — done. **P2-G** locked (0.355 / 13.431 / 0.853).
+2. ~~**N-light rho=64**~~ — done; light finalist (0.308 / 14.727 / 0.852).
+3. ~~**Age covariates**~~ — rejected.
+4. ~~**Vector warm-starts**~~ — **both done**. max→max warm **0.342 / 13.406 / 0.851**;
+   mean→max warm **0.345 / 14.578 / 0.862**. Beat cold vector; **do not replace P2-G**.
+5. **HIGH — finish one-hop correctness smokes** (GPU 0): G0 logged
+   (~0.335 / 17.3 / 0.75); G1 seed-mask + multi-seed 42/43/44 still running.
+   Report → `reports/inspection/stage0_7h_onehop_correctness/`.
+6. **THEN — Milestone 12** 5×6 OOF on **P2-G + N-light@64** (gene-linked).
+   **Does not wait on Milestone 11.** Then **10d** checkpoints.
+7. **Parallel — Milestone 11** sparse-panel Stage B (CPU anytime; thin GPU later).
+8. **Optional science** — dense stage-1 queue (GPU 2) / RBS-probe as co-readout
+   discussion; not required to start finalist OOF.
+9. **Freeze-reuse** disease/cancer after (5); BMI/ancestry GPU gated.
+10. **Deferred post-OOF:** CpGPT/positional, sex-chr imputation, clock age imputation.
 
 **Still blocked auto:** full-arm OOF, pack-mask trait heads, blood/brain heads,
-GEO/ONT. Stage B GPU only after explicit review (not required for 12).
+GEO/ONT.
 
 ### Trustworthy ATS numbers (`explicit_only`, 51 375 gene-linked CpGs, test)
 
