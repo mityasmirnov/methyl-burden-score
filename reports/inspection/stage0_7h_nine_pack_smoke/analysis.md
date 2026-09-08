@@ -205,8 +205,9 @@ See [`trait_hygiene.md`](trait_hygiene.md), [`label_status_census.md`](label_sta
 
 1. **Finish vector mean→max warm-start** (folds 1–2) → update §4b mean; if 3-fold mean still ≤ P2-G tissue, **close warm-start** without changing finalists.
 2. **Run one-hop correctness smokes** (auto after warm queue, or launch manually on GPU 0 when free) → seed-mask + multi-seed report.
-3. **Only then:** Milestone **12** scheduling (5×6 OOF on P2-G + N-light@64) and/or disease/cancer **freeze-and-reuse** probes (no joint retrain).
-4. Soft-stop: do **not** auto-launch Stage B GPU / full OOF / pack-mask trait heads.
-5. Optional follow-up only if warm vector still lags: stage-1 `region_pool: mean` pretrain-then-transplant (known dense-grad issue under max pooling).
+3. **Then Milestone 12** 5×6 OOF on **P2-G + N-light@64** (gene-linked path). **Does not wait on Milestone 11.**
+4. **Parallel / deferred — Milestone 11** fold-safe sparse panel Stage B (CPU anytime; thinner GPU matrix when scheduled).
+5. Soft-stop: do **not** auto-launch full-arm OOF / pack-mask trait heads / Stage B GPU from the keeper.
+6. Optional follow-up only if warm vector still lags: stage-1 `region_pool: mean` pretrain-then-transplant.
 
 **Does not authorize yet:** vector as primary; OOF on all arms; blood/brain heads; trusting one-hop seed-mask/multi-seed without the smoke report.

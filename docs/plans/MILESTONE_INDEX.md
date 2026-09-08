@@ -21,12 +21,15 @@ are **historical aliases** — do not rename on-disk run trees.
 | **9c** | done | Age-primary seed-mask (not adopted) | 7G′ seed-mask |
 | **9d** | done | Typed-RBS R0–R5 CPU (neural typed not promoted) | 7G′ typed-RBS |
 | **10** | **in_progress** | Pretrained MBS/RBS scale campaign | **7H** |
-| **10a** | in_progress | Nine-pack virtual loader + P2-G / m-only refs | 7H Track A |
-| **10b** | partial | ATS seed-43 pooling + trait adequacy census | 7H Track B |
-| **10c** | pending | Trait expansion hygiene (case/control, blood/brain) | 7H Track C |
+| **10a** | done | Nine-pack grid; P2-G locked cascade finalist | 7H Track A |
+| **10a-cap** | done | N-light rho_hidden=64 adopted | 7H capacity |
+| **10a-warm** | in_progress | Vector LP-FT warm-start (max→max done) | 7H warmstart |
+| **10a++** | queued | One-hop seed-mask + multi-seed smokes | 7H correctness |
+| **10b** | done | ATS seed-43 pooling | 7H Track B |
+| **10c** | partial | Trait labels / freeze-reuse prep | 7H Track C |
 | **10d** | pending | Reference checkpoint(s) + association how-to | 7H Track D / Phase 4 |
-| **11** | blocked | Fold-selected panel + full model | **7G′ Stage B** |
-| **12** | blocked | Final study-grouped OOF (5×6) | historical **Milestone 7** |
+| **11** | deferred | Fold-selected panel Stage B (**parallel; does not block 12**) | **7G′ Stage B** |
+| **12** | blocked | Final study-grouped OOF (5×6) — needs **10** + one-hop, **not 11** | historical **Milestone 7** |
 | **13** | deferred | Expression aux (continue/finetune **after** OOF; download first) | **7G″** |
 | **14** | deferred | Optional Stage 1+ layers (a–f only) | historical **§8 Optional** |
 

@@ -28,8 +28,8 @@ On-disk `stage0_7g_*` / `run_7g_*` / `stage0_7h_*` IDs stay unchanged.
   10b        done     ATS seed-43 pooling (P2-G still leads)
   10c        partial  label_status + BMI/ancestry joined; freeze-reuse GPU next
   10d        pending  reference checkpoints after finalists confirmed
-11           blocked  fold-selected panel (CPU panels)
-12           blocked  final 5×6 OOF — finalists only (P2-G + N-light@64)
+11           deferred fold-selected panel Stage B — parallel, not a hard gate on 12
+12           blocked  final 5×6 OOF — finalists only (P2-G + N-light@64); needs 10 + one-hop
 13           deferred expression aux after OOF
 14           deferred optional a–f
 ```
@@ -41,7 +41,8 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
 ### Next steps (ordered)
 
 **GPU-0 policy:** validate cheaply before scaling. Soft-stop before Milestone
-**11** Stage B GPU / **12** OOF / joint trait retrains.
+**12** OOF / joint trait retrains. Milestone **11** Stage B GPU is **optional /
+parallel** (sparse-panel product) — it no longer hard-blocks **12**.
 
 **Priority:**
 
@@ -61,18 +62,22 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
    fixed): seed-mask G0/G1 + multi-seed 42/43/44, fold0, ~5 ep, rho=64.
    Report → `reports/inspection/stage0_7h_onehop_correctness/`. Blocker before
    light-model scale / OOF assumptions about those tricks.
-7. **THEN — freeze-and-reuse** disease/cancer probes (labels ready); BMI/
+7. **THEN — Milestone 12** 5×6 OOF on **P2-G + N-light@64 only** (gene-linked
+   finalist path) — after (6) and soft review of (5). Then **10d** checkpoint
+   contract. **Does not wait on Milestone 11.**
+8. **Parallel / deferred — Milestone 11** fold-safe sparse panel Stage B
+   (CPU panels → optional GPU: classical `enetS` + finalists-on-S). Sparsity /
+   panel-product track; thinner matrix OK (not full historical Stage B arm soup).
+9. **THEN — freeze-and-reuse** disease/cancer probes (labels ready); BMI/
    ancestry heads wired but GPU gated on ≥1k bar + review. Plan:
    [`label-prep-bmi-ancestry-sample-overview.md`](plans/label-prep-bmi-ancestry-sample-overview.md).
-8. **Milestone 12** 5×6 OOF on **P2-G + N-light@64 only** — after (6) and soft
-   review of (5). Then **10d** checkpoint contract.
-9. **Deferred post-OOF:** CpGPT/positional embeddings, sex-chr sex imputation,
-   epigenetic-clock age imputation.
+10. **Deferred post-OOF:** CpGPT/positional embeddings, sex-chr sex imputation,
+    epigenetic-clock age imputation.
 
-**CPU parallel:** Milestone **11** `--panels-only` — no conflict.
+**CPU parallel:** Milestone **11** `--panels-only` may continue anytime.
 
-**Still blocked auto:** Stage B GPU, full-arm OOF, pack-mask trait heads,
-blood/brain heads, GEO/ONT.
+**Still blocked auto:** full-arm OOF, pack-mask trait heads, blood/brain heads,
+GEO/ONT. Stage B GPU only after explicit review (not required for 12).
 
 ### Trustworthy ATS numbers (`explicit_only`, 51 375 gene-linked CpGs, test)
 
@@ -951,41 +956,52 @@ decision, not before.
 
 ## 11. Fold-selected panel + full model (alias: 7G′ Stage B)
 
-- **Status:** `blocked` (CPU prep underway; GPU not launched)
+- **Status:** `deferred` (parallel track — **not** a hard gate on Milestone **12**)
 - **Plan:** [`plans/milestone-11-fold-selected-panel.md`](plans/milestone-11-fold-selected-panel.md)
 - **Runner:** `scripts/run_7g_prime_stage_b.py`
-- **CPU prep:** `--panels-only` / `--classical-only` / `--folds`; lock refreshed
-  (`next_gate: milestone_10_scale_review`); orphan census under
+- **Role after Milestone 10:** sparsity / fold-safe **panel product** and classical
+  `C-mvalue-enetS` comparator — **not** architecture selection (that locked in **10**).
+- **CPU prep:** `--panels-only` / `--classical-only` / `--folds` may continue anytime;
+  orphan census under
   `reports/inspection/stage0_7g_prime_matched_probe/orphan_rbs_census.md`.
-- **Done when:** fold-safe panels, matched `C-mvalue-enetS` / `N-cascade-S` /
-  fusion ablations, `direct_cpg.zarr` when direct loci exist; report under
+- **Preferred thinner GPU matrix (when scheduled):** panels + `C-mvalue-enetS` +
+  finalists-on-S (`N-cascade-S` = P2-G params, `N-light` on same panel) ± fusion
+  ablations — not the full historical Stage A arm soup.
+- **Done when:** fold-safe panels, matched classical/finalist-on-S report,
+  `direct_cpg.zarr` when direct loci exist; report under
   `reports/inspection/stage0_7g_prime_matched_probe/`.
-- **Depends on:** honest **10** scale/architecture decisions (and prior **9**
-  gene encoder). Seed-gene / seed-mask gate **cleared** (9c; not adopted).
-- **Blocks:** Milestone **12** (final OOF).
-- **Hard stop:** do not launch full Stage B GPU until 10a+10b review.
+- **Depends on:** honest **10** scale/architecture decisions (cleared: P2-G +
+  N-light@64). Seed-mask gate cleared (9c; not adopted).
+- **Does not block:** Milestone **12** finalist OOF on the gene-linked path.
+- **Hard stop:** do not auto-launch full Stage B GPU from the Milestone 10 keeper;
+  schedule explicitly after review.
 
 ---
 
 ## 12. Final study-grouped OOF (alias: historical Milestone 7)
 
-- **Status:** `blocked` until **11** (and sufficient **10**) complete
+- **Status:** `blocked` until Milestone **10** is sufficient (**+ one-hop smokes**);
+  **does not wait on Milestone 11**
 - **Plan:** [`plans/milestone-12-final-oof.md`](plans/milestone-12-final-oof.md)
   (alias stub: [`milestone-13-final-oof.md`](plans/milestone-13-final-oof.md))
 - **Arms policy:** **finalists only** — do **not** run 5×6 across all ~9 Stage A
-  arms. Intended product pair:
+  arms. Intended product pair (gene-linked / nine-pack-proven path):
   1. **Cascade finalist** — **P2-G scalar max/max** (locked). Vector max→max
      warm-start (0.342 / 13.406 / 0.851) improved vs cold but did **not** beat
      P2-G tissue; mean→max warm finishing — unlikely to change unless 3-fold
      clearly exceeds 0.355 tissue. Dual RBS+MBS output.
   2. **Light finalist** — **N-light@64** one-hop (`m_only` / gene-mean) for
      cheap MBS deployment (rho=10 historical only).
+- **Panel for this OOF:** same **gene-linked** setting used in Milestone **10**
+  refs (not the Milestone **11** fold-selected sparse panel unless a separate
+  sparse-panel OOF is explicitly scoped later).
 - **Done when:** OOF gene-aggregated RBS / MBS (+ orphan RBS + direct as
   applicable), age and tissue predictions, leakage controls, orientation-aligned
   scores (ADR 0008), no TBS (ADR 0009). Protocol: **5** outer folds × up to
   **6** restarts **per finalist**.
-- **Depends on:** (7A)–(7F), **8**, **9**, **10** scale screen (incl. vector vs
-  scalar), **11**.
+- **Depends on:** (7A)–(7F), **8**, **9**, **10** scale screen (vector vs scalar,
+  rho64, warm-start review), **10a++** one-hop correctness smokes. Milestone
+  **11** is parallel/optional for this OOF.
 - **Note:** 3-fold / 1-restart plumbing smoke allowed; must not overwrite v0.1
   freezes ([ADR 0007](adr/0007-crossfit-prerequisites.md)).
 - **Next:** Milestone **13** expression continue/finetune (optional path after
