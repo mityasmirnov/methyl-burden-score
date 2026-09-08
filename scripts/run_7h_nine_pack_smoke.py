@@ -215,9 +215,12 @@ def write_report(loader: dict[str, Any], *, smoke: bool) -> None:
         json.dumps(summary, indent=2, default=str) + "\n", encoding="utf-8"
     )
     lines = [
-        "# 7H Phase 3 — nine-pack smoke / reference",
+        "# Nine-pack P2-G / m-only reference snapshot",
         "",
         f"Generated: `{summary['generated_at']}`",
+        "",
+        "Auto-exported pair only. Curated campaign board with pooling grid,",
+        "ablations, and interpretations: [`analysis.md`](analysis.md).",
         "",
         f"- Matrix: `{summary['matrix_id']}` (virtual multi-store)",
         f"- Split: `{summary['split_id']}` (**{summary['n_samples']}** samples)",
@@ -268,8 +271,11 @@ def write_report(loader: dict[str, Any], *, smoke: bool) -> None:
             "",
         ]
     )
-    (REPORT / "analysis.md").write_text("\n".join(lines), encoding="utf-8")
-    print(f"[nine-pack] wrote {REPORT / 'analysis.md'}", flush=True)
+    # Keep analysis.md as the curated campaign board (pooling grid, ablations,
+    # interpretations). This auto snapshot is only the P2-G / m-only pair.
+    snapshot = REPORT / "p2_m_only_reference.md"
+    snapshot.write_text("\n".join(lines), encoding="utf-8")
+    print(f"[nine-pack] wrote {snapshot} (analysis.md is curated; not overwritten)", flush=True)
 
 
 def main() -> None:
