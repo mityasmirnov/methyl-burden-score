@@ -888,10 +888,13 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   grid (3-fold, 15 ep): P2-G scalar max/max wins outright (tissue F1
   **0.355**, age MAE **13.431**, sex AUROC **0.853**) over scalar mean/max,
   scalar max/mean, vector mean→max, vector max→max — all worse on F1 and
-  MAE. N-light capacity diagnostic (`rho_hidden` 10→64) tested and
-  **rejected** (made both metrics worse). Age head tissue+sex conditioning
-  built, tested, **rejected** (full 3-fold ablation regressed all 3
-  metrics). Full detail: `vector_vs_scalar.md`.
+  MAE. N-light capacity diagnostic (`rho_hidden` 10→64), read correctly via
+  the primary `mbs_e2e` evaluation (an earlier read of this used
+  `external_test`, which under-reports tissue F1 for flat runs and gave a
+  false "worse" verdict), **adopted as the N-light default**: tissue F1
+  0.273→0.308, age MAE 15.057→14.727, sex AUROC 0.742→0.852, all improved.
+  Age head tissue+sex conditioning built, tested, **rejected** (full
+  3-fold ablation regressed all 3 metrics). Full detail: `vector_vs_scalar.md`.
 - **Next:** vector warm-start (LP-FT from the P2-G checkpoint) in progress
   — see § 10a-warm below.
 
