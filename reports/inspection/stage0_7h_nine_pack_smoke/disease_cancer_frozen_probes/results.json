@@ -1,0 +1,166 @@
+{
+  "generated": "2026-09-08T13:32:00.028992+00:00",
+  "checkpoint_run_id": "stage0-7h-nine-pack-P2-G",
+  "split_id": "hub-nine-pack-3fold-v1",
+  "results": {
+    "disease": [
+      {
+        "fold": 0,
+        "mbs": {
+          "n_train": 6295,
+          "n_test": 4351,
+          "auroc": 0.49665335773890545,
+          "auprc": 0.5046056316312285,
+          "skipped": false
+        },
+        "rbs": {
+          "n_train": 6295,
+          "n_test": 4351,
+          "auroc": 0.5014808207712274,
+          "auprc": 0.5043064924127634,
+          "skipped": false
+        }
+      },
+      {
+        "fold": 1,
+        "mbs": {
+          "n_train": 7569,
+          "n_test": 3762,
+          "auroc": 0.6398517274714769,
+          "auprc": 0.5157867563350778,
+          "skipped": false
+        },
+        "rbs": {
+          "n_train": 7569,
+          "n_test": 3762,
+          "auroc": 0.6253216937815317,
+          "auprc": 0.49079218937259517,
+          "skipped": false
+        }
+      },
+      {
+        "fold": 2,
+        "mbs": {
+          "n_train": 5918,
+          "n_test": 4081,
+          "auroc": 0.6216232132208666,
+          "auprc": 0.5284633632130971,
+          "skipped": false
+        },
+        "rbs": {
+          "n_train": 5918,
+          "n_test": 4081,
+          "auroc": 0.6272134781973975,
+          "auprc": 0.5377661241173347,
+          "skipped": false
+        }
+      }
+    ],
+    "cancer": [
+      {
+        "fold": 0,
+        "mbs": {
+          "n_train": 5909,
+          "n_test": 2158,
+          "auroc": 0.964817414570499,
+          "auprc": 0.9890192436733151,
+          "skipped": false
+        },
+        "rbs": {
+          "n_train": 5909,
+          "n_test": 2158,
+          "auroc": 0.9654362175940454,
+          "auprc": 0.9896734901449648,
+          "skipped": false
+        }
+      },
+      {
+        "fold": 1,
+        "mbs": {
+          "n_train": 4747,
+          "n_test": 3205,
+          "auroc": 0.9239626943871854,
+          "auprc": 0.9817179385320285,
+          "skipped": false
+        },
+        "rbs": {
+          "n_train": 4747,
+          "n_test": 3205,
+          "auroc": 0.9305171892141864,
+          "auprc": 0.9831959083521781,
+          "skipped": false
+        }
+      },
+      {
+        "fold": 2,
+        "mbs": {
+          "n_train": 4941,
+          "n_test": 3714,
+          "auroc": 0.9734424295277913,
+          "auprc": 0.9936062434333471,
+          "skipped": false
+        },
+        "rbs": {
+          "n_train": 4941,
+          "n_test": 3714,
+          "auroc": 0.9768363347222966,
+          "auprc": 0.9943714132008863,
+          "skipped": false
+        }
+      }
+    ],
+    "bmi": [
+      {
+        "fold": 0,
+        "mbs": {
+          "n_train": 1251,
+          "n_test": 819,
+          "mae": 8.00479993168385,
+          "r2": -0.057880346139663974,
+          "skipped": false
+        },
+        "rbs": {
+          "n_train": 1251,
+          "n_test": 819,
+          "mae": 8.103038473268539,
+          "r2": -0.06593428344777896,
+          "skipped": false
+        }
+      },
+      {
+        "fold": 1,
+        "mbs": {
+          "n_train": 1181,
+          "n_test": 872,
+          "mae": 12.299463630835508,
+          "r2": -1.1232300832126874,
+          "skipped": false
+        },
+        "rbs": {
+          "n_train": 1181,
+          "n_test": 872,
+          "mae": 12.437471092770078,
+          "r2": -1.045147039135918,
+          "skipped": false
+        }
+      },
+      {
+        "fold": 2,
+        "mbs": {
+          "n_train": 1588,
+          "n_test": 379,
+          "mae": 9.302908792065946,
+          "r2": -0.39643761356507534,
+          "skipped": false
+        },
+        "rbs": {
+          "n_train": 1588,
+          "n_test": 379,
+          "mae": 7.440330767645119,
+          "r2": 0.08931539785044462,
+          "skipped": false
+        }
+      }
+    ]
+  }
+}

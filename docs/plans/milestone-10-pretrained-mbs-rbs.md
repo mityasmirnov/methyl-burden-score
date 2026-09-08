@@ -18,9 +18,9 @@ Latest architecture-decision detail:
 | **10a-age-cov** | done (rejected) | Age head tissue+sex conditioning — full 3-fold ablation, all 3 metrics worse, not adopted |
 | **10a-warmstart** | **done** | Vector (`region_hidden`) warm-started from P2-G/scalar-mean-max — both max/max (0.342/13.41/0.851) and mean/max (0.345/14.58/0.862) closed most/all of the from-scratch gap; scalar stays finalist |
 | **10a-rbs-vs-mbs** | **resolved → 10e** | `rbs_linear_probe` beats `mbs_e2e`; OOF co-primary is frozen **enet** on RBS/MBS, not joint e2e alone |
-| **10a-dense-stage1** | running (GPU 2) | Dense-gradient (`cpg_pool`/`region_pool`: mean) stage-1 RBS pretrain → transplant into scalar + vector max/max, testing whether a more thoroughly-trained encoder beats P2-G's own result |
+| **10a-dense-stage1** | **partial** | Fold 0 done (e2e 0.348/14.52, linear age 10.93); queue stopped mid fold 1 to free GPU 2 for N-light OOF |
 | **10a-onehop-smoke** | **done, both pass** | One-hop correctness smokes — first-ever full completion (3rd bug found+fixed). G0 beats G1 (0.335/17.3/0.750 vs 0.146/21.7/0.560), matching 9c. Multi-seed 42/43/44 genuinely distinct (F1 span 0.027, not collapsed) — restart ensembling is trustworthy for Milestone 12 |
-| **10c** | next | Freeze-and-reuse probes on frozen RBS/MBS (disease/cancer/BMI/ancestry/individual diagnoses) |
+| **10c** | **done** (pack-level) | Cancer AUROC **0.954–0.958**; broad disease **0.585–0.586**; BMI not useful. AD 945 still open |
 | **10d** | pending | Reference checkpoints **after** staged recipe + enet readout |
 | **10e** | **in_progress** | Cascade S1–S4 still gates cascade 5×6; N-light 5×6 unblocked — see [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md) |
 | deferred | post-OOF | CpGPT/positional embeddings, sex-chromosome sex imputation, epigenetic-clock age imputation — explicitly after Milestone 12 |

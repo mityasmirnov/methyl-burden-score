@@ -564,3 +564,55 @@ bypass it.
   trained encoder beats P2-G's own from-scratch result and/or further
   improves the `rbs_linear_probe` numbers. Runner:
   `scripts/run_7h_dense_stage1_queue.sh`.
+- 2026-09-08: **First freeze-and-reuse result: disease/cancer probes on the
+  frozen P2-G encoder.** Built `scripts/run_7h_disease_cancer_frozen_probes.py`
+  — for each of the 3 nine-pack folds, load that fold's own converged P2-G
+  checkpoint (no cross-fold reuse), score ALL samples once (frozen forward
+  pass), fit a logistic probe on MBS and on RBS using only that fold's train
+  split, evaluate on its test split. One bug found+fixed en route: building
+  the eval-only model with `dropout=0.0` shifts `SharedMLP`'s internal layer
+  indices vs. the checkpoint's `dropout=0.1` training-time state_dict (a
+  Dropout layer is only inserted when dropout>0) — fixed by matching the
+  training dropout rate (harmless since `model.eval()` makes it a no-op
+  either way). Results (3-fold mean, no GPU encoder retrain):
+
+  | Trait | AUROC (MBS) | AUROC (RBS) |
+  |---|---:|---:|
+  | Cancer | **0.954** | **0.958** |
+  | Disease (broad/any) | 0.586 | 0.585 |
+
+  Cancer detection from a frozen, never-trained-on-cancer encoder is
+  excellent — confirms methylation-based cancer signal is strong and cheaply
+  recoverable via freeze-and-reuse, no joint retraining needed. Disease (a
+  broad "any condition" label spanning many heterogeneous diagnoses) shows
+  real but modest signal (~0.59) — plausible given how diagnostically mixed
+  that label is, not a pipeline bug (verified: cancer's strong result uses
+  the identical code path/row-alignment, ruling out an indexing bug).
+  Unlike age, MBS and RBS perform essentially identically for both traits
+  here. Individual-disease probes (Alzheimer's, n=945, the only one clearing
+  the n≥600 threshold) not yet run.
+- 2026-09-08: **Milestone 12 N-light 5×6 OOF launched on GPU 2.** Per
+  10e's finding that N-light + nested enet is competitive with cascade,
+  N-light's OOF no longer waits on cascade's S1-S4 recipe. A waiter script
+  (already built by a concurrent session,
+  `scripts/run_12_nlight_oof_gpu2_after_s1.sh`) was set to hand GPU 2 from
+  the dense-stage1 pretrain to this OOF run once S1 finished naturally.
+  Given the priority of getting N-light OOF running at full GPU 2 scale
+  immediately, killed the dense-stage1 queue early (fold 1 was 60% done,
+  fold 2 hadn't started) rather than waiting ~45 more minutes — fold 0's
+  checkpoint is preserved as a usable artifact regardless. The waiter
+  detected the freed GPU within its 30s poll and launched
+  `scripts/run_12_nlight_oof.py` automatically: `hub-nine-pack-5fold-v1`
+  split, `mbs_enet_nested` as primary readout, `batch_size: 1024` /
+  `batch_token_budget: 128000000` tuned for GPU 2's ~98GB — confirmed
+  actually using ~85GB once training started (not just configured on
+  paper). 5 folds × 6 restarts: **f0-r0 epoch 13/16** as of 15:47 (1/30).
+- 2026-09-08: **P2-G nested enet 2/3 folds.** Fold 0: tissue 0.331 / age **9.89**
+  / sex 0.848. Fold 1: 0.289 / **9.64** / 0.745. Fold 2 still CPU. Age already
+  matches N-light nested (~9.9); tissue still trails N-light’s 3-fold 0.368.
+- 2026-09-08: **10e S1–S4 1-fold smoke on GPU 0.** Warm-started 17 encoder
+  tensors from dense S1 fold 0 `best.pt`; encoder unfrozen after freeze
+  epochs, fine-tune lr=3e-4. Run id `stage0-7h-nine-pack-s1s4-smoke-fold0`.
+- 2026-09-08: **BMI freeze-reuse is not useful yet** (3-fold MAE ~9.9 y,
+  R² negative). Cancer/disease pack probes as above. Alzheimer’s individual
+  probe still pending (homogeneity/subtype script in flight).

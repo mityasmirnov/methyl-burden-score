@@ -138,15 +138,12 @@ packs pay off without poisoning the 34k split.
 
 ## Gate before Milestone 12 (split by arm)
 
-**N-light 5×6 (now):** one-hop smokes done; 3-fold nested enet landed;
-split `hub-nine-pack-5fold-v1` frozen. GPU 2 after dense S1.
-Runner: `scripts/run_12_nlight_oof.sh`.
+**N-light 5×6 (running):** GPU 2 `f0-r0` epoch 13/16, batch 1024 (~85 GB).
+1/30 jobs. Split `hub-nine-pack-5fold-v1`. Runner: `scripts/run_12_nlight_oof.sh`.
 
 **Cascade 5×6 (still gated):**
 
-1. Finish dense S1 (in flight). Do **not** spend GPU 2 on naive transplants.
-2. P2-G nested enet 3-fold (CPU, in flight) — needed to re-rank vs N-light
-   under the **same** readout.
-3. Cheap 1-fold **S1–S4** smoke vs that nested ranking.
-4. Disease freeze-reuse for traits with **n≥600** (AD 945; BMI/ancestry/cancer
-   pack). Not extra OOF arms.
+1. Dense S1 **fold 0 done** (queue stopped mid fold 1 to free GPU 2).
+2. P2-G nested enet **2/3** (CPU fold 2 in flight).
+3. 1-fold **S1–S4 smoke** running on GPU 0 from S1 fold 0.
+4. Pack-level freeze-reuse **done** (cancer strong; broad disease modest).

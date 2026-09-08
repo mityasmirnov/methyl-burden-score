@@ -151,5 +151,5 @@ Consistent across every arm checked: `rbs_linear_probe` beats `mbs_e2e` on age M
 1. **Topology** locked for the e2e screen: P2-G cascade + N-light@64 encoder. Rank under **nested enet**.  
 2. **One-hop smokes done** (G0 ≫ G1; seeds 42/43/44 distinct).  
 3. **N-light nested enet 3-fold 0.368 / 9.88 / 0.803** vs e2e 0.308 / 14.73 / 0.852.  
-4. **Milestone 12 N-light 5×6** queued on GPU 2 after dense S1 (skip transplants).  
-5. Cascade 5×6 still waits on 10e S1–S4. Extra traits with **n≥600** = freeze-reuse. Encoder stays gene-invariant for later EPIC/ONT.
+4. **Milestone 12 N-light 5×6 running GPU 2** — f0-r0 epoch 13/16, batch 1024 (~85 GB).  
+5. Cascade 5×6 waits on GPU-0 S1–S4 smoke + P2-G nested fold 2. Cancer freeze-reuse AUROC ~0.95.

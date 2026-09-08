@@ -1,6 +1,6 @@
 # Milestone 10 — nine-pack campaign analysis
 
-Updated: `2026-09-08T15:10+02:00`
+Updated: `2026-09-08T15:50+02:00`
 
 - Matrix: `matrix-hub-nine-pack-virtual-v1` · Screen split: `hub-nine-pack-3fold-v1` (**34 234**)
 - OOF split: `hub-nine-pack-5fold-v1` · Platform: **HM450 this OOF**; encoder is gene-invariant for later EPIC/ONT
@@ -14,12 +14,14 @@ Updated: `2026-09-08T15:10+02:00`
 
 | Job | Status | Detail |
 |-----|--------|--------|
-| Vector warm-starts (max + mean) | **done** | See leaderboard |
-| **One-hop smokes** | **done** | G0 ≫ G1; seeds 42/43/44 distinct (span 0.027) |
-| Dense stage-1 (S1) | GPU 2 **fold 1 ~epoch 6/15** | then **hand off to N-light OOF** (skip transplants) |
-| N-light nested enet (3-fold) | **done** | **0.368 / 9.88 / 0.803** vs e2e 0.308 / 14.73 / 0.852 |
-| **12 N-light 5×6** | **queued GPU 2** | after S1; max VRAM |
-| Cascade 10e S1–S4 | pending | still gates cascade 5×6 |
+| Vector warm-starts | **done** | See leaderboard |
+| One-hop smokes | **done** | G0 ≫ G1; seeds 42/43/44 distinct |
+| Dense S1 (mean/mean) | **fold 0 done**; fold 1 stopped ~epoch 12/15 | GPU 2 handed to N-light OOF. Fold 0 e2e **0.348 / 14.52**; linear age **10.93** |
+| N-light nested enet (3-fold screen) | **done** | **0.368 / 9.88 / 0.803** vs e2e 0.308 / 14.73 / 0.852 |
+| P2-G nested enet | **2 / 3 folds** | f0 **0.331 / 9.89**; f1 **0.289 / 9.64**; f2 CPU in flight |
+| Freeze-reuse P2-G | **done** (pack-level) | Cancer AUROC **0.954 / 0.958** (MBS/RBS); disease **0.586**; BMI not useful |
+| **12 N-light 5×6** | **running GPU 2** | f0-r0 **epoch 13/16**, batch **1024** (~85 GB). 1/30 jobs |
+| 10e S1–S4 1-fold smoke | **running GPU 0** | warm-start from S1 fold 0; encoder unfrozen @ lr 3e-4 |
 | Milestone 11 Stage B | deferred parallel | does **not** block OOF |
 
 ---
@@ -122,10 +124,10 @@ Report: `reports/inspection/stage0_7h_onehop_correctness/`.
 
 ## Outlook / next steps
 
-1. GPU 2: finish dense S1, **skip transplants**, start **N-light 5×6**.
-2. CPU: finish P2-G nested enet 3-fold; re-rank under enet.
-3. Freeze-reuse n≥600 (AD 945, BMI, ancestry, cancer pack).
-4. Cascade 5×6 only after 10e S1–S4 smoke.
+1. Let **N-light 5×6** finish on GPU 2 (29 jobs after f0-r0).
+2. Finish P2-G nested fold 2; re-rank N-light vs P2-G under enet (2-fold P2-G tissue ~0.31 vs N-light 0.368).
+3. Land 10e 1-fold S1–S4 smoke on GPU 0; then decide cascade 5×6.
+4. Alzheimer’s freeze-reuse (n_cases 945); disease subtypes. Cancer pack-level is already strong.
 5. Keep encoder gene-invariant for later EPIC/ONT; this OOF stays HM450.
 
 ---
@@ -133,4 +135,6 @@ Report: `reports/inspection/stage0_7h_onehop_correctness/`.
 ## Trait hygiene (10c)
 
 age/sex/tissue wired · disease/cancer `label_status` ready · BMI/ancestry joined/stubbed · blood/brain defer.  
-See [`trait_hygiene.md`](trait_hygiene.md).
+See [`trait_hygiene.md`](trait_hygiene.md) and
+[`disease_cancer_frozen_probes/analysis.md`](disease_cancer_frozen_probes/analysis.md)
+(cancer AUROC ~0.95; broad disease ~0.59; BMI not useful).

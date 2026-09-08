@@ -6,9 +6,9 @@
 > **Renumber note (2026-09-07):** previously stubbed as Milestone **13**;
 > expression auxiliary is now **13** (after OOF).
 
-**Status:** **N-light arm `in_progress`** (GPU 2 after dense S1). **Cascade
-arm `blocked`** until 10e S1–S4 smoke + P2-G nested-enet ranking.
-**Does not wait on Milestone 11.**
+**Status:** **N-light arm `in_progress`** — GPU 2 `f0-r0` epoch 13/16 (1/30 jobs,
+batch 1024, ~85 GB). **Cascade arm `blocked`** until 10e S1–S4 smoke (GPU 0)
++ P2-G nested fold 2. **Does not wait on Milestone 11.**
 
 Recipe / readout: [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md).
 

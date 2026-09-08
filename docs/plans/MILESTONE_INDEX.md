@@ -26,11 +26,11 @@ are **historical aliases** — do not rename on-disk run trees.
 | **10a-warm** | done | Vector LP-FT warm-start (both pooling recipes) | 7H warmstart |
 | **10a++** | done | One-hop seed-mask + multi-seed smokes | 7H correctness |
 | **10b** | done | ATS seed-43 pooling | 7H Track B |
-| **10c** | partial | Trait labels / freeze-reuse prep | 7H Track C |
+| **10c** | **done** (pack-level) | Freeze-reuse cancer/disease/BMI probes | 7H Track C |
 | **10d** | pending | Reference checkpoint(s) after staged recipe + enet | 7H Track D / Phase 4 |
-| **10e** | **in_progress** | Cascade S1–S4 still gated; N-light nested enet landed | pre-OOF recipe |
+| **10e** | **in_progress** | S1–S4 1-fold smoke on GPU 0; N-light 5×6 unblocked | pre-OOF recipe |
 | **11** | deferred | Fold-selected panel Stage B (**parallel; does not block 12**) | **7G′ Stage B** |
-| **12** | **in_progress** | N-light 5×6 first; cascade 5×6 still gated on 10e | historical **Milestone 7** |
+| **12** | **in_progress** | N-light 5×6 GPU2 f0-r0 13/16 (1/30); cascade gated on 10e | historical **Milestone 7** |
 | **13** | deferred | Expression aux (continue/finetune **after** OOF; download first) | **7G″** |
 | **14** | deferred | Optional Stage 1+ layers (a–f only) | historical **§8 Optional** |
 
@@ -41,7 +41,7 @@ are **historical aliases** — do not rename on-disk run trees.
 | [`milestone-8-methylation-eval.md`](milestone-8-methylation-eval.md) | `milestone-7g-methylation-eval.md` + tissue probe |
 | [`milestone-9-gene-only-architecture.md`](milestone-9-gene-only-architecture.md) | `milestone-7g-prime-*.md` family |
 | [`milestone-10-pretrained-mbs-rbs.md`](milestone-10-pretrained-mbs-rbs.md) | `milestone-7h-pretrained-mbs-rbs-campaign.md` |
-| [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md) | pre-OOF staged recipe (blocks 12) |
+| [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md) | pre-OOF staged recipe (gates cascade 12; N-light unblocked) |
 | [`milestone-11-fold-selected-panel.md`](milestone-11-fold-selected-panel.md) | Stage B sections of `milestone-7g-prime-matched-probe-lightweight.md` |
 | [`milestone-12-final-oof.md`](milestone-12-final-oof.md) | ADR 0007 + programme § final OOF |
 | [`milestone-13-expression-auxiliary.md`](milestone-13-expression-auxiliary.md) | `milestone-7g-double-prime-expression-auxiliary.md` (+ download) |

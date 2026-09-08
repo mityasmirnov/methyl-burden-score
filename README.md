@@ -13,11 +13,10 @@ checks). Authoritative progress:
 Milestone numbers (8, 9, 10, …):
 [`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md).
 
-**Current gate (2026-09-08):** **Milestone 12 N-light 5×6** is starting (GPU 2
-after dense S1). Product readout is frozen nested enet, not joint `mbs_e2e`.
-Cascade 5×6 still waits on **10e** S1–S4. Gene-only ATS selection
-(**Milestone 9**) is **done**. Fold-selected panel (**Milestone 11**) is
-**deferred parallel**. Expression continue/finetune is **Milestone 13**.
+**Current gate (2026-09-08):** **Milestone 12 N-light 5×6** is running on GPU 2
+(f0-r0, batch 1024). Product readout is frozen nested enet, not joint `mbs_e2e`.
+Cascade 5×6 still waits on **10e** S1–S4 (GPU 0 smoke). Fold-selected panel
+(**Milestone 11**) is **deferred parallel**. Expression is **Milestone 13**.
 
 Programme docs: [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md),
 [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md),
