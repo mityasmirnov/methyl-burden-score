@@ -1,10 +1,10 @@
 # Milestone 10 — nine-pack campaign analysis
 
-Updated: `2026-09-08T14:40+02:00`
+Updated: `2026-09-08T15:05+02:00`
 
-- Matrix: `matrix-hub-nine-pack-virtual-v1` · Split: `hub-nine-pack-3fold-v1` (**34 234**)
-- Platform: **HM450 only** · Architecture grid primary: **`mbs_e2e`** outer test
-- **Product readout (locked for planning):** frozen **`rbs_enet` / `mbs_enet(_nested)`** co-primary; `mbs_e2e` secondary
+- Matrix: `matrix-hub-nine-pack-virtual-v1` · Screen split: `hub-nine-pack-3fold-v1` (**34 234**)
+- OOF split: `hub-nine-pack-5fold-v1` · Platform: **HM450 this OOF**; encoder is gene-invariant for later EPIC/ONT
+- **Product readout (locked):** frozen **`mbs_enet_nested` / `rbs_enet`**; `mbs_e2e` is encoder diagnostic only
 - Detail dump: [`vector_vs_scalar.md`](vector_vs_scalar.md)
 - Pre-OOF recipe: [`docs/plans/milestone-10e-staged-rbs-mbs-training.md`](../../../docs/plans/milestone-10e-staged-rbs-mbs-training.md)
 
@@ -15,9 +15,11 @@ Updated: `2026-09-08T14:40+02:00`
 | Job | Status | Detail |
 |-----|--------|--------|
 | Vector warm-starts (max + mean) | **done** | See leaderboard |
-| **One-hop smokes** | **running** GPU 0 | G0 ≈0.335 / 17.3 / 0.75; G1 in flight |
-| Dense stage-1 (S1 experiment) | other GPU | informs 10e; **not** a 5×6 launch |
-| **10e staged recipe smoke** | **pending — blocks 12** | S1–S4 + enet; not joint e2e |
+| **One-hop smokes** | **done** | G0 ≫ G1; seeds 42/43/44 distinct (span 0.027) |
+| Dense stage-1 (S1) | GPU 2 fold 1 | then **hand off to N-light OOF** (skip transplants) |
+| N-light nested enet (3-fold) | **done** | **0.368 / 9.88 / 0.803** vs e2e 0.308 / 14.73 / 0.852 |
+| **12 N-light 5×6** | **queued GPU 2** | after S1; max VRAM |
+| Cascade 10e S1–S4 | pending | still gates cascade 5×6 |
 | Milestone 11 Stage B | deferred parallel | does **not** block OOF |
 
 ---
@@ -29,10 +31,10 @@ Updated: `2026-09-08T14:40+02:00`
 | Cascade *topology* | **P2-G** (scalar max/max still the best *joint-e2e* arm) |
 | How to *train* it before OOF | **Staged S1–S4** (dense vector RBS → freeze → MBS hop → unfreeze). Do **not** 5×6 joint e2e as-is |
 | Light *encoder* | **N-light@64** |
-| Light *product readout* | **`mbs_enet_nested` required** (ATS: e2e age 17 vs nested enet 10) |
+| Light *product readout* | **`mbs_enet_nested` 3-fold 0.368 / 9.88 / 0.803** — no longer trails cascade e2e |
+| Milestone **12** | **N-light 5×6 first**; cascade still gated on 10e; **not gated on 11** |
 | Cold / warm vector | Warm closes gap; **neither replaces P2-G topology** |
 | Age covariates | **Rejected** |
-| Milestone **12** | Blocked on **10e** recipe smoke + enet co-primary; **not gated on 11** |
 
 ---
 
@@ -42,7 +44,9 @@ The campaign ranked arms with jointly trained multitask heads. That ranking is *
 
 1. **Frozen RBS + classical beats gene MBS e2e.** Best campaign tissue F1 **0.368** and best age MAE **9.638** are `rbs_linear_probe`, not any e2e arm. P2-G: e2e 0.355 / 13.43 vs RBS probe **0.364 / 12.56**; MBS linear probe age **11.57**.
 2. **LP-FT already showed freeze-then-train works.** Cold vector lost; warm-start from a frozen scalar encoder closed most of the gap. Jointly training a random gene hop with the encoder was the same class of mistake as joint e2e heads.
-3. **enet ≫ e2e, especially N-light.** ATS N-light: `mbs_e2e` ~0.378 / age **17.1** vs `mbs_enet_nested` **0.387 / 10.3**. ATS P2-G: `mbs_enet` 0.385 vs `mbs_e2e` 0.373. Nine-pack N-light@64 still has **no** enet score (`include_mbs_enet` was off) — CPU before GPU OOF.
+3. **enet ≫ e2e, especially N-light.** Nine-pack N-light@64 3-fold nested:
+   **0.368 / 9.88 / 0.803** vs e2e **0.308 / 14.73 / 0.852**. Same MBS
+   features: `mbs_linear_probe` also beats e2e — **readout, not encoder**.
 
 **Interpretation.** Region RBS carries more signal than max-pooled gene MBS for several tasks; jointly trained heads throw some of it away. Train the encoder in stages; **report frozen elastic-net**. Improving e2e (deeper / separate heads) is a head problem, not a reason to skip enet or to launch 5×6 on today’s joint recipe.
 
@@ -78,7 +82,7 @@ This table chose the **topology**. It does **not** choose the OOF training recip
 
 Then freeze the encoder and fit **enet / logistic** on RBS and MBS for ATS and extra traits.
 
-Cheap **1-fold** S1–S4 smoke must beat P2-G joint e2e **and** match that run’s own RBS/MBS enet before any 5×6. Dense stage-1 (GPU 2) is **S1 only**.
+Cheap **1-fold** S1–S4 smoke still gates **cascade** 5×6. **N-light 5×6 does not wait.** Dense stage-1 (GPU 2) is **S1 only**.
 
 ---
 
@@ -92,10 +96,10 @@ Nine-pack **34 234** (HM450) is the honest **encoder-training** cohort. Catalo
 | BMI | 2 070 | freeze-reuse regression |
 | Ancestry | 1 380; no class ≥1k | freeze-reuse CE; weak per-class |
 | Cancer types | pack ~9.1k case+control; diagnosis strings | `label_status` + `phenotype_value`; **not** `cancer_mask` |
-| Individual diseases | see census below | freeze-reuse logistic; skip if n≪1k |
+| Individual diseases | n_cases ≥ 600 | **Alzheimer’s 945 only**; schizophrenia 536 near-miss |
 | Blood / brain packs | catalogue / control-only | **no trait head** |
 
-Hub disease-pack cases (nine-pack Hub, `sample_overview`): Alzheimer’s **945**, schizophrenia **536**, SLE **341**, Parkinson’s **333**, UC **258**, MS **228**, RA **225**, psoriasis **211**, stroke **204**, … (28 labels). **Census n + matched controls before GPU**; do not train on naive pack masks.
+Hub disease-pack cases: Alzheimer’s **945** (≥600), schizophrenia **536**, SLE **341**, Parkinson’s **333**, UC **258**, MS **228**, RA **225**, psoriasis **211**, stroke **204**, … (28 labels). Freeze-reuse only n_cases≥600 + matched `label_status=control`.
 
 ---
 
@@ -109,24 +113,20 @@ Hub disease-pack cases (nine-pack Hub, `sample_overview`): Alzheimer’s **945**
 
 ---
 
-## One-hop smokes (in flight)
+## One-hop smokes — **done**
 
-G0 (dense, no mask): tissue **0.335**, age **17.3**, sex **0.750** (5 ep ATS fold 0, rho=64).  
-G1 (seed-mask) + multi-seed 42/43/44 next.  
+G0 (dense): **0.335 / 17.3 / 0.750**. G1 seed-mask **collapses** (0.146 / 21.7 / 0.56) — **not adopted**. Multi-seed 42/43/44 distinct (tissue F1 span 0.027).  
 Report: `reports/inspection/stage0_7h_onehop_correctness/`.
-
-Correctness gate on the **encoder**, not a substitute for nested enet.
 
 ---
 
 ## Outlook / next steps
 
-1. Finish one-hop G1 + multi-seed → publish smoke report.
-2. **CPU:** enet on existing P2-G + N-light@64 checkpoints (nine-pack skipped `include_mbs_enet`).
-3. **10e:** 1-fold S1–S4 smoke vs P2-G joint e2e and vs that smoke’s RBS/MBS enet.
-4. Freeze-reuse: ATS, BMI, ancestry, cancer types, AD/PD/stroke/… on frozen scores.
-5. **Then** Milestone **12** 5×6 on staged recipe + enet co-primary.
-6. Milestone **11** stays parallel. Soft-stop: no joint-e2e 5×6, no pack-mask trait GPU, no auto Stage B.
+1. GPU 2: finish dense S1, **skip transplants**, start **N-light 5×6**.
+2. CPU: finish P2-G nested enet 3-fold; re-rank under enet.
+3. Freeze-reuse n≥600 (AD 945, BMI, ancestry, cancer pack).
+4. Cascade 5×6 only after 10e S1–S4 smoke.
+5. Keep encoder gene-invariant for later EPIC/ONT; this OOF stays HM450.
 
 ---
 

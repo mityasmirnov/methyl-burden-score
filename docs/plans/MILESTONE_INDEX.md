@@ -24,13 +24,13 @@ are **historical aliases** — do not rename on-disk run trees.
 | **10a** | done | Nine-pack grid; P2-G locked cascade finalist | 7H Track A |
 | **10a-cap** | done | N-light rho_hidden=64 adopted | 7H capacity |
 | **10a-warm** | done | Vector LP-FT warm-start (both pooling recipes) | 7H warmstart |
-| **10a++** | running | One-hop seed-mask + multi-seed smokes | 7H correctness |
+| **10a++** | done | One-hop seed-mask + multi-seed smokes | 7H correctness |
 | **10b** | done | ATS seed-43 pooling | 7H Track B |
 | **10c** | partial | Trait labels / freeze-reuse prep | 7H Track C |
 | **10d** | pending | Reference checkpoint(s) after staged recipe + enet | 7H Track D / Phase 4 |
-| **10e** | **pending (blocks 12)** | Staged RBS→MBS train + frozen enet co-primary | pre-OOF recipe |
+| **10e** | **in_progress** | Cascade S1–S4 still gated; N-light nested enet landed | pre-OOF recipe |
 | **11** | deferred | Fold-selected panel Stage B (**parallel; does not block 12**) | **7G′ Stage B** |
-| **12** | blocked | Final study-grouped OOF (5×6) — needs **10e** recipe smoke, **not 11** | historical **Milestone 7** |
+| **12** | **in_progress** | N-light 5×6 first; cascade 5×6 still gated on 10e | historical **Milestone 7** |
 | **13** | deferred | Expression aux (continue/finetune **after** OOF; download first) | **7G″** |
 | **14** | deferred | Optional Stage 1+ layers (a–f only) | historical **§8 Optional** |
 

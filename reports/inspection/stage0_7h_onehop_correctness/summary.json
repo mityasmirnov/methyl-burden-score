@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-09-08T12:09:01.023864+00:00",
+  "epochs": 5,
+  "rho_hidden_dim_default": 64,
+  "note": "Cheap correctness only. One-hop+seed-mask and one-hop multi-seed were previously untested; do not scale before these land. Uses N-light default rho_hidden=64.",
+  "seed_mask": {
+    "n_seed_genes_age": 256,
+    "n_seed_genes_tissue": 41,
+    "n_seed_genes_sex": 50,
+    "rho_hidden_dim": 64,
+    "G0_onehop": {
+      "tissue_f1": 0.3350715881349236,
+      "age_mae": 17.30601512710046,
+      "sex_auroc": 0.7503350254464041
+    },
+    "G1_onehop": {
+      "tissue_f1": 0.14590206771158448,
+      "age_mae": 21.712911626753257,
+      "sex_auroc": 0.5596277351244495
+    }
+  },
+  "multiseed": {
+    "rho_hidden_dim": 64,
+    "onehop_mean_s42": {
+      "seed": 42,
+      "tissue_f1": 0.2988096584577759,
+      "age_mae": 17.661871715225228,
+      "sex_auroc": 0.7997804782565088
+    },
+    "onehop_mean_s43": {
+      "seed": 43,
+      "tissue_f1": 0.3254996663074338,
+      "age_mae": 16.48994905198777,
+      "sex_auroc": 0.7668924974359471
+    },
+    "onehop_mean_s44": {
+      "seed": 44,
+      "tissue_f1": 0.3114642620650313,
+      "age_mae": 15.693638692739013,
+      "sex_auroc": 0.8011877145473194
+    },
+    "_diversity": {
+      "tissue_f1_span": 0.026690007849657915,
+      "n_seeds": 3,
+      "ok_distinct": true
+    }
+  }
+}

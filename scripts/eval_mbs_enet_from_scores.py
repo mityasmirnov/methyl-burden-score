@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -309,8 +310,8 @@ def _resolve_targets(
     run_root = paths.artifact_root / "runs" / run_id
     if (run_root / "fold_0").is_dir():
         return [("cascade_fold", run_root / f"fold_{i}") for i in range(n_folds)]
-    # Single flat run id ending in -f0 style passed as run-id
-    if run_id.endswith(("-f0", "-f1", "-f2")) or (run_root / "scores" / "mbs.npy").is_file():
+    # Single flat run id (``…-f0``, ``…-f0-r2``, …) passed as run-id
+    if re.search(r"-f\d+", run_id) or (run_root / "scores" / "mbs.npy").is_file():
         return [("flat_run", run_root)]
     raise FileNotFoundError(f"run not found or unsupported layout: {run_root}")
 
@@ -365,7 +366,12 @@ def main() -> None:
         if not metrics_path.is_file():
             print(f"[enet] skip {target.name}: metrics missing", flush=True)
             continue
-        fold = folds[min(i, len(folds) - 1)]
+        parsed = re.search(r"-f(\d+)", target.name)
+        if parsed is not None:
+            fold_i = min(int(parsed.group(1)), len(folds) - 1)
+        else:
+            fold_i = min(i, len(folds) - 1)
+        fold = folds[fold_i]
         if kind == "cascade_fold":
             patch_cascade_fold(
                 fold_dir=target,
