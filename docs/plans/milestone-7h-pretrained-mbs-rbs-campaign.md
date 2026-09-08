@@ -616,3 +616,49 @@ bypass it.
 - 2026-09-08: **BMI freeze-reuse is not useful yet** (3-fold MAE ~9.9 y,
   R² negative). Cancer/disease pack probes as above. Alzheimer’s individual
   probe still pending (homogeneity/subtype script in flight).
+- 2026-09-08: **N-light 5-fold plumbing readout.** `stage0-12-nlight-oof-f0-r0`
+  finished 16-ep / patience-5 (14 epochs, `best_epoch=9`). Nested enet
+  **0.300 / 8.63 / 0.880** vs e2e 0.286 / 17.74 / 0.748. Archived as
+  `stage0-12-nlight-oof-ep16-f0-r0`. Not the product 5×6.
+- 2026-09-08: **OOF recipe: 30 epochs + n>200 disease/cancer aux heads.**
+  Encoder supervision now includes 9 disease classes and 9 cancer types
+  with nine-pack *disease tissue* n>200; pack-matched controls as negatives;
+  adjacent-normal unknown. Patience 15 so the extra budget can actually be
+  used. Remaining 16-ep jobs were not allowed to continue (in-memory
+  `max_epochs=16`). Cascade 5×6 inherits the same head policy when 10e
+  unblocks it.
+- 2026-09-08: **P2-G nested enet: MBS beats RBS on age, reversing the plain-
+  probe pattern.** Full 3-fold `mbs_enet_nested` vs `rbs_enet_nested`
+  (`scripts/eval_mbs_enet_from_scores.py --which both --nested`):
+
+  | Readout | Tissue F1 | Age MAE | Sex AUROC |
+  |---|---:|---:|---:|
+  | MBS (nested enet) | 0.335 | **9.81** | 0.759 |
+  | RBS (nested enet) | 0.338 | 19.77 | 0.790 |
+
+  RBS's age MAE degrades monotonically across folds (14.0 -> 18.7 -> 26.6),
+  not noise. Likely cause: RBS has ~5x more features (13,212 vs 2,646) at
+  the same training sample sizes; nested inner-CV sometimes selects
+  too-weak regularization (alpha=0.01) for that feature/sample ratio,
+  overfitting worse as the inner-train split shrinks in later folds.
+  **Correction to the earlier framing**: RBS is not universally better than
+  MBS once proper regularization is added -- it's arm- and metric-
+  dependent. For P2-G, MBS is the better nested-enet age readout; the
+  plain (non-nested) `rbs_linear_probe` result (12.56 MAE, beating
+  `mbs_linear_probe`'s 11.57) doesn't hold once nested hyperparameter
+  search is applied to both.
+- 2026-09-08: **Freeze-and-reuse follow-ups still in flight**
+  (`scripts/run_7h_disease_subtype_and_homogeneity.py`): Alzheimer’s vs
+  disease-pack controls, cancer-subtype multiclass (≥200), and
+  case/control homogeneity. Pack-level probes remain cancer **0.954** /
+  broad disease **0.586**. Do not cite per-diagnosis numbers until that
+  report writes.
+- 2026-09-08: **S1-S4 1-fold smoke: fold 0 training complete, evaluation
+  pending.** Reused the already-completed dense-stage1 (S1, mean/mean)
+  fold-0 checkpoint, warm-started into `gene_aggregation: region_hidden`
+  (freeze 4ep, fine-tune 11ep) -- `stage0_7h_nine_pack_vector_max_max_from_dense_stage1.yaml`,
+  `--max-folds 1`. Per the 10e promotion criterion, comparing this fold-0
+  result against P2-G's own fold-0 `mbs_e2e` (0.364/12.80/0.950) and
+  `rbs_linear_probe`/`mbs_enet` decides whether to invest in regenerating
+  S1 for folds 1-2 (killed early to free GPU 2 for N-light OOF) and
+  running the full 3-fold recipe, or stop here.

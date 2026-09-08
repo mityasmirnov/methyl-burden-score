@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Milestone 12 N-light 5×6 OOF on GPU 2 (max VRAM). Exclusive: do not share
-# this GPU. Dense-stage1 S1 may still be finishing; the waiter script hands
-# off after S1 and skips naive max/max transplants.
+# this GPU. Recipe: 30 epochs, patience 15, n>200 disease/cancer aux heads.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 source scripts/activate_data_environment.sh

@@ -4,11 +4,16 @@
 # Encoder is gene-invariant ragged Deep Set: same weights on HM450 / EPIC / ONT
 # (more probes per gene). This OOF cohort is still HM450 nine-pack; platform
 # transfer is scored later, not baked into a fixed array manifest.
+#
+# Encoder supervision: age/tissue/sex plus disease classes and cancer types
+# with n>200 nine-pack *disease tissue* samples. Adjacent-normal stays unknown.
+# Pack-matched `control` rows are observed negatives. Product readout is still
+# nested enet on ATS (and later freeze-reuse probes), not these aux heads.
 split_id: hub-nine-pack-5fold-v1
 sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
 cv_budget:
   max_loci: 65536
-  max_epochs: 16
+  max_epochs: 30
 experiment:
   name: stage0_12_nlight_oof
   seed: 42
@@ -38,10 +43,54 @@ heads:
     linear: true
     loss: cross_entropy
     ontology: harmonized
+  disease:
+    enabled: true
+    loss: bce_with_logits
+    role: auxiliary
+    linear: true
+    value_column: phenotype_value
+    min_count: 201
+    count_within_sample_ids: true
+    positive_sample_types: [disease tissue]
+    negative_sample_types: [control]
+    # Locked nine-pack disease-tissue n>200 (exact 200 excluded).
+    label_names:
+      - Alzheimer's disease
+      - childhood asthma
+      - multiple sclerosis
+      - Parkinson's disease
+      - psoriasis
+      - rheumatoid arthritis
+      - schizophrenia
+      - stroke
+      - systemic lupus erythematosus
+  cancer:
+    enabled: true
+    loss: bce_with_logits
+    role: auxiliary
+    linear: true
+    value_column: phenotype_value
+    min_count: 201
+    count_within_sample_ids: true
+    positive_sample_types: [disease tissue]
+    negative_sample_types: [control]
+    # Locked nine-pack disease-tissue n>200 (exact 200 excluded).
+    label_names:
+      - acute myeloid leukemia
+      - breast cancer
+      - glioma
+      - head and neck squamous-cell carcinoma
+      - hepatocellular carcinoma
+      - melanoma
+      - prostate cancer
+      - sarcoma
+      - stomach cancer
 loss:
   lambda_age: 0.3
   lambda_sex: 1.0
   lambda_tissue: 3.0
+  lambda_disease: 1.0
+  lambda_cancer: 1.0
 model:
   topology: flat_region
   flat_region_feature_mode: m_only
@@ -63,6 +112,8 @@ pilot:
   auto_split: false
   graph_id: graph-grch38-gencode38-cgi-tile-v2
   matrix_id: matrix-hub-nine-pack-virtual-v1
+  disease_matrix_id: matrix-hub-disease-full-v1
+  cancer_matrix_id: matrix-hub-cancer-full-v1
   mode: multitask_hub
   sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
   split_id: hub-nine-pack-5fold-v1
@@ -74,7 +125,7 @@ training:
   # GPU2 ~98GB: request a large micro-batch; loop.py VRAM probe calibrates down.
   batch_size: 1024
   batch_token_budget: 128000000
-  early_stopping_patience: 5
+  early_stopping_patience: 15
   gene_linked_only: true
   gene_allocation: explicit_only
   primary_evaluation: mbs_enet_nested
@@ -84,7 +135,7 @@ training:
   stage_a_per_epoch_eval: true
   gradient_clip_norm: 2.0
   learning_rate: 0.001
-  max_epochs: 16
+  max_epochs: 30
   optimizer: adamw
   precision: bf16-mixed
   require_cuda: true

@@ -32,18 +32,20 @@ Latest architecture-decision detail:
 - **Freeze-and-reuse is the standing architecture philosophy going forward**
   (DeepRVAT precedent: train a gene-invariant encoder once, freeze it, reuse
   frozen scores for new traits via lightweight probes rather than joint
-  retraining). Applies to: extending to disease/cancer (real labels exist,
-  no head trained yet) and to warm-starting the vector aggregation variant
+  retraining). Applies to: BMI/ancestry and diagnoses **below** the n>200
+  encoder-aux bar; n>200 disease/cancer classes now supervise the OOF
+  encoder. Also applies to warm-starting the vector aggregation variant
   from the converged scalar encoder.
 - **BMI/ancestry labels are joined** (2 070 / 1 380); heads stubbed for
   freeze-reuse. Ancestry has no class ≥1k. **Brain/blood** still have no
-  honest trait head (catalogue / control-only). Individual diseases
-  (AD 945, PD 333, stroke 204, …) are freeze-reuse targets after a
-  per-diagnosis n census — not joint encoder retrains.
-- **Milestone 12** waits on **10e**: do not 5×6 joint `mbs_e2e` as-is.
-  Staged RBS→MBS (dense vector RBS → freeze → MBS hop → unfreeze) plus
-  frozen **enet** readouts (critical for N-light). Extra Hub packs / 173k
-  samples = freeze-reuse traits, not a bigger joint train.
+  honest trait head (catalogue / control-only). Disease classes and cancer
+  types with **n>200** nine-pack disease-tissue samples are **encoder aux
+  heads** on Milestone 12 (not freeze-reuse-only). Remaining diagnoses stay
+  freeze-reuse / census.
+- **Milestone 12 N-light** is unblocked (30-ep + n>200 aux heads). **Cascade
+  12** still waits on **10e**: do not 5×6 joint `mbs_e2e` as-is. Staged
+  RBS→MBS plus frozen **enet** readouts. Extra Hub packs / 173k samples =
+  freeze-reuse traits, not a bigger joint train.
 
 ## Runners
 

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -415,6 +417,32 @@ def hub_longform_ready(data_root: Path, matrix_id: str) -> bool:
     ).is_file()
 
 
+def multilabel_kwargs_from_head_cfg(cfg: dict[str, Any] | None) -> dict[str, Any]:
+    """Translate a ``heads.disease`` / ``heads.cancer`` block into loader kwargs."""
+    raw = cfg if isinstance(cfg, dict) else {}
+    kwargs: dict[str, Any] = {
+        "value_column": str(raw.get("value_column") or "phenotype_value"),
+        "min_count": int(raw.get("min_count", 1) or 1),
+        "count_within_sample_ids": bool(raw.get("count_within_sample_ids", False)),
+    }
+    names = raw.get("label_names")
+    if names:
+        kwargs["label_names"] = [str(x) for x in names]
+    pos = raw.get("positive_sample_types")
+    if pos is not None:
+        kwargs["positive_sample_types"] = [pos] if isinstance(pos, str) else [str(x) for x in pos]
+    neg = raw.get("negative_sample_types")
+    if neg is not None:
+        kwargs["negative_sample_types"] = [neg] if isinstance(neg, str) else [str(x) for x in neg]
+    return kwargs
+
+
+def _as_type_set(values: Sequence[str] | None) -> set[str] | None:
+    if values is None:
+        return None
+    return {str(x).strip().lower() for x in values if str(x).strip()}
+
+
 def load_longform_multilabel(
     parquet_path: Path,
     *,
@@ -422,11 +450,22 @@ def load_longform_multilabel(
     value_column: str | None = None,
     min_count: int = 1,
     label_names: list[str] | None = None,
+    count_within_sample_ids: bool = False,
+    positive_sample_types: Sequence[str] | None = None,
+    negative_sample_types: Sequence[str] | None = None,
+    sample_type_column: str = "sample_type",
 ) -> MultilabelMaps:
     """Build multi-hot labels from a long-form Hub sidecar (repeats ``sample_id``).
 
     Samples with no rows remain all-False masks (unknown, not control).
     Does not collapse GSM rows via last-wins.
+
+    When ``positive_sample_types`` is set (Hub: ``disease tissue``), only those
+    rows count as positives and toward ``min_count``. When
+    ``negative_sample_types`` is set (Hub: ``control``), those samples become
+    observed negatives for every selected label they are not already positive
+    for. Adjacent-normal / other types stay unknown. ``count_within_sample_ids``
+    restricts ``min_count`` to the requested cohort rather than the full sidecar.
     """
     path = parquet_path.resolve()
     if not path.is_file():
@@ -447,6 +486,8 @@ def load_longform_multilabel(
 
     work = frame.copy()
     work["sample_id"] = work["sample_id"].astype(str)
+    wanted = set(sample_ids)
+
     def _as_label(value: object) -> str | None:
         if value is None:
             return None
@@ -458,8 +499,22 @@ def load_longform_multilabel(
 
     work["_label"] = [_as_label(v) for v in work[col].tolist()]
     work = work.loc[work["_label"].notna()]
+    if count_within_sample_ids:
+        work = work.loc[work["sample_id"].isin(wanted)]
+
+    pos_types = _as_type_set(positive_sample_types)
+    if pos_types is not None:
+        if sample_type_column not in work.columns:
+            raise ValueError(
+                f"positive_sample_types set but {sample_type_column!r} missing from sidecar"
+            )
+        st = work[sample_type_column].astype(str).str.strip().str.lower()
+        positive_rows = work.loc[st.isin(pos_types)]
+    else:
+        positive_rows = work
+
     if label_names is None:
-        counts = work["_label"].value_counts()
+        counts = positive_rows["_label"].value_counts()
         names = sorted(str(lab) for lab, n in counts.items() if int(n) >= int(min_count))
     else:
         names = list(label_names)
@@ -474,8 +529,7 @@ def load_longform_multilabel(
         sid: np.zeros(n_labels, dtype=np.float32) for sid in sample_ids
     }
     masks: dict[str, np.ndarray] = {sid: np.zeros(n_labels, dtype=bool) for sid in sample_ids}
-    wanted = set(sample_ids)
-    for sid, lab in zip(work["sample_id"], work["_label"], strict=True):
+    for sid, lab in zip(positive_rows["sample_id"], positive_rows["_label"], strict=True):
         if sid not in wanted:
             continue
         idx = name_to_idx.get(str(lab))
@@ -483,4 +537,20 @@ def load_longform_multilabel(
             continue
         targets[sid][idx] = 1.0
         masks[sid][idx] = True
+
+    neg_types = _as_type_set(negative_sample_types)
+    if neg_types is not None:
+        if sample_type_column not in frame.columns:
+            raise ValueError(
+                f"negative_sample_types set but {sample_type_column!r} missing from sidecar"
+            )
+        st_all = frame.copy()
+        st_all["sample_id"] = st_all["sample_id"].astype(str)
+        st_vals = st_all[sample_type_column].astype(str).str.strip().str.lower()
+        neg_sids = set(st_all.loc[st_vals.isin(neg_types), "sample_id"]) & wanted
+        for sid in neg_sids:
+            for i in range(n_labels):
+                if not masks[sid][i]:
+                    targets[sid][i] = 0.0
+                    masks[sid][i] = True
     return MultilabelMaps(label_names=tuple(names), targets=targets, masks=masks)

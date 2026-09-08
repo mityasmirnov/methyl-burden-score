@@ -30,7 +30,7 @@ are **historical aliases** — do not rename on-disk run trees.
 | **10d** | pending | Reference checkpoint(s) after staged recipe + enet | 7H Track D / Phase 4 |
 | **10e** | **in_progress** | S1–S4 1-fold smoke on GPU 0; N-light 5×6 unblocked | pre-OOF recipe |
 | **11** | deferred | Fold-selected panel Stage B (**parallel; does not block 12**) | **7G′ Stage B** |
-| **12** | **in_progress** | N-light 5×6 GPU2 f0-r0 13/16 (1/30); cascade gated on 10e | historical **Milestone 7** |
+| **12** | **in_progress** | N-light 5×6 30-ep + n>200 disease/cancer; cascade gated on 10e | historical **Milestone 7** |
 | **13** | deferred | Expression aux (continue/finetune **after** OOF; download first) | **7G″** |
 | **14** | deferred | Optional Stage 1+ layers (a–f only) | historical **§8 Optional** |
 

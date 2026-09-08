@@ -105,6 +105,7 @@ from mbs.training.phenotypes import (
     load_hub_sample_info_phenotypes,
     load_longform_multilabel,
     load_multitask_phenotypes,
+    multilabel_kwargs_from_head_cfg,
 )
 from mbs.training.run_artifacts import (
     checkpoint_dir,
@@ -1554,8 +1555,12 @@ def train_flat_baseline(
                 disease_maps = load_longform_multilabel(
                     dis_sidecar,
                     sample_ids=sid_list,
-                    value_column=str(dis_cfg_early.get("value_column") or "phenotype_value"),
-                    min_count=int(dis_cfg_early.get("min_count", 1) or 1),
+                    **multilabel_kwargs_from_head_cfg(dis_cfg_early),
+                )
+                print(
+                    f"[multilabel] disease labels={list(disease_maps.label_names)} "
+                    f"n={len(disease_maps.label_names)}",
+                    flush=True,
                 )
         if want_cancer and sid_list:
             can_sidecar = (
@@ -1579,8 +1584,12 @@ def train_flat_baseline(
                 cancer_maps = load_longform_multilabel(
                     can_sidecar,
                     sample_ids=sid_list,
-                    value_column=str(can_cfg_early.get("value_column") or "phenotype_value"),
-                    min_count=int(can_cfg_early.get("min_count", 1) or 1),
+                    **multilabel_kwargs_from_head_cfg(can_cfg_early),
+                )
+                print(
+                    f"[multilabel] cancer labels={list(cancer_maps.label_names)} "
+                    f"n={len(cancer_maps.label_names)}",
+                    flush=True,
                 )
         if (disease_maps and disease_maps.label_names) or (cancer_maps and cancer_maps.label_names):
             task_kind = "multitask"

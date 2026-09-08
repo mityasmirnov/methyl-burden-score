@@ -328,6 +328,63 @@ def test_longform_multilabel_unknown_not_control(tmp_path: Path) -> None:
     assert float(maps.targets["s3"].sum()) == 0.0
 
 
+def test_longform_multilabel_controls_are_negatives_when_requested(tmp_path: Path) -> None:
+    frame = pd.DataFrame(
+        {
+            "sample_id": ["c1", "p1", "p2", "adj"],
+            "phenotype_value": [None, "Alzheimer's disease", "schizophrenia", "Alzheimer's disease"],
+            "sample_type": ["control", "disease tissue", "disease tissue", "adjacent normal"],
+        }
+    )
+    path = tmp_path / "sample_phenotypes.parquet"
+    frame.to_parquet(path, index=False)
+    maps = load_longform_multilabel(
+        path,
+        sample_ids=["c1", "p1", "p2", "adj", "unk"],
+        min_count=1,
+        count_within_sample_ids=True,
+        positive_sample_types=["disease tissue"],
+        negative_sample_types=["control"],
+    )
+    assert maps.label_names == ("Alzheimer's disease", "schizophrenia")
+    np.testing.assert_array_equal(maps.targets["c1"], [0.0, 0.0])
+    assert maps.masks["c1"].tolist() == [True, True]
+    np.testing.assert_array_equal(maps.targets["p1"], [1.0, 0.0])
+    assert maps.masks["p1"].tolist() == [True, False]
+    np.testing.assert_array_equal(maps.targets["p2"], [0.0, 1.0])
+    assert maps.masks["p2"].tolist() == [False, True]
+    assert maps.masks["adj"].tolist() == [False, False]
+    assert maps.masks["unk"].tolist() == [False, False]
+
+
+def test_longform_multilabel_min_count_within_sample_ids(tmp_path: Path) -> None:
+    frame = pd.DataFrame(
+        {
+            "sample_id": ["in1", "in2", "out1", "out2", "out3"],
+            "phenotype_value": ["keep", "keep", "drop", "drop", "drop"],
+            "sample_type": ["disease tissue"] * 5,
+        }
+    )
+    path = tmp_path / "sample_phenotypes.parquet"
+    frame.to_parquet(path, index=False)
+    maps = load_longform_multilabel(
+        path,
+        sample_ids=["in1", "in2"],
+        min_count=3,
+        count_within_sample_ids=True,
+        positive_sample_types=["disease tissue"],
+    )
+    assert maps.label_names == ()
+    maps_ok = load_longform_multilabel(
+        path,
+        sample_ids=["in1", "in2"],
+        min_count=2,
+        count_within_sample_ids=True,
+        positive_sample_types=["disease tissue"],
+    )
+    assert maps_ok.label_names == ("keep",)
+
+
 def test_overfit_writes_score_manifest(monkeypatch: pytest.MonkeyPatch) -> None:
     repo = Path(__file__).resolve().parents[2]
     workspace = repo / "scratch" / "pytest" / f"7c-orient-{uuid4().hex}"

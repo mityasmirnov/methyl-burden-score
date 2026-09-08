@@ -1,10 +1,11 @@
 # Milestone 10 — nine-pack campaign analysis
 
-Updated: `2026-09-08T15:50+02:00`
+Updated: `2026-09-08T16:20+02:00`
 
 - Matrix: `matrix-hub-nine-pack-virtual-v1` · Screen split: `hub-nine-pack-3fold-v1` (**34 234**)
 - OOF split: `hub-nine-pack-5fold-v1` · Platform: **HM450 this OOF**; encoder is gene-invariant for later EPIC/ONT
 - **Product readout (locked):** frozen **`mbs_enet_nested` / `rbs_enet`**; `mbs_e2e` is encoder diagnostic only
+- Encoder aux: disease classes + cancer types with nine-pack disease-tissue **n>200**
 - Detail dump: [`vector_vs_scalar.md`](vector_vs_scalar.md)
 - Pre-OOF recipe: [`docs/plans/milestone-10e-staged-rbs-mbs-training.md`](../../../docs/plans/milestone-10e-staged-rbs-mbs-training.md)
 
@@ -18,10 +19,10 @@ Updated: `2026-09-08T15:50+02:00`
 | One-hop smokes | **done** | G0 ≫ G1; seeds 42/43/44 distinct |
 | Dense S1 (mean/mean) | **fold 0 done**; fold 1 stopped ~epoch 12/15 | GPU 2 handed to N-light OOF. Fold 0 e2e **0.348 / 14.52**; linear age **10.93** |
 | N-light nested enet (3-fold screen) | **done** | **0.368 / 9.88 / 0.803** vs e2e 0.308 / 14.73 / 0.852 |
-| P2-G nested enet | **2 / 3 folds** | f0 **0.331 / 9.89**; f1 **0.289 / 9.64**; f2 CPU in flight |
+| P2-G nested enet | **3 / 3 folds** | MBS **0.335 / 9.81 / 0.759**; RBS age MAE **19.8** (overfits) |
 | Freeze-reuse P2-G | **done** (pack-level) | Cancer AUROC **0.954 / 0.958** (MBS/RBS); disease **0.586**; BMI not useful |
-| **12 N-light 5×6** | **running GPU 2** | f0-r0 **epoch 13/16**, batch **1024** (~85 GB). 1/30 jobs |
-| 10e S1–S4 1-fold smoke | **running GPU 0** | warm-start from S1 fold 0; encoder unfrozen @ lr 3e-4 |
+| **12 N-light 5×6** | **restarting GPU 2** | **30 ep**, patience 15, n>200 disease/cancer aux. 16-ep `f0-r0` archived: nested **0.300 / 8.63 / 0.880** |
+| 10e S1–S4 1-fold smoke | **train 15/15 GPU 0** | eval pending; warm-start from S1 fold 0 |
 | Milestone 11 Stage B | deferred parallel | does **not** block OOF |
 
 ---
@@ -95,13 +96,14 @@ Nine-pack **34 234** (HM450) is the honest **encoder-training** cohort. Catalo
 | Trait | n (honest labels) | How |
 |-------|------------------|-----|
 | ATS / age / tissue / sex | nine-pack split | encoder S1–S4 + frozen enet |
+| Disease classes n>200 | 9 diagnoses (AD 945 … childhood asthma 202) | **encoder aux BCE** (Milestone 12) |
+| Cancer types n>200 | 9 types (glioma 481 … sarcoma 239) | **encoder aux BCE** (Milestone 12) |
 | BMI | 2 070 | freeze-reuse regression |
 | Ancestry | 1 380; no class ≥1k | freeze-reuse CE; weak per-class |
-| Cancer types | pack ~9.1k case+control; diagnosis strings | `label_status` + `phenotype_value`; **not** `cancer_mask` |
-| Individual diseases | n_cases ≥ 600 | **Alzheimer’s 945 only**; schizophrenia 536 near-miss |
+| Remaining diagnoses / types | n≤200 or exact 200 | freeze-reuse / census; **not** pack masks |
 | Blood / brain packs | catalogue / control-only | **no trait head** |
 
-Hub disease-pack cases: Alzheimer’s **945** (≥600), schizophrenia **536**, SLE **341**, Parkinson’s **333**, UC **258**, MS **228**, RA **225**, psoriasis **211**, stroke **204**, … (28 labels). Freeze-reuse only n_cases≥600 + matched `label_status=control`.
+Hub disease-pack cases in nine-pack *disease tissue*: Alzheimer’s **945**, schizophrenia **536**, SLE **341**, Parkinson’s **333**, RA **250**, MS **228**, psoriasis **211**, stroke **204**, childhood asthma **202** (encoder aux). Exact-200 and below stay out of joint training. Pack-matched `control` = negatives; adjacent-normal = unknown.
 
 ---
 
@@ -124,10 +126,10 @@ Report: `reports/inspection/stage0_7h_onehop_correctness/`.
 
 ## Outlook / next steps
 
-1. Let **N-light 5×6** finish on GPU 2 (29 jobs after f0-r0).
-2. Finish P2-G nested fold 2; re-rank N-light vs P2-G under enet (2-fold P2-G tissue ~0.31 vs N-light 0.368).
-3. Land 10e 1-fold S1–S4 smoke on GPU 0; then decide cascade 5×6.
-4. Alzheimer’s freeze-reuse (n_cases 945); disease subtypes. Cancer pack-level is already strong.
+1. Let **N-light 5×6** run on GPU 2 (30-ep + n>200 aux; 16-ep f0-r0 archived).
+2. P2-G nested **3/3 done** (MBS **0.335 / 9.81 / 0.759** vs N-light 3-fold **0.368 / 9.88 / 0.803**).
+3. Land 10e 1-fold S1–S4 smoke on GPU 0 (train reached 15/15; eval pending); then decide cascade 5×6.
+4. Alzheimer’s freeze-reuse / disease subtypes still in flight. Cancer pack-level is already strong.
 5. Keep encoder gene-invariant for later EPIC/ONT; this OOF stays HM450.
 
 ---

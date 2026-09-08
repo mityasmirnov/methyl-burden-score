@@ -2,12 +2,14 @@
 """Milestone 12 — N-light@64 5×6 OOF (first arm).
 
 Trains the gene-invariant one-hop encoder on ``hub-nine-pack-5fold-v1``.
-Joint multitask heads are encoder supervision only. Product readout is
-post-hoc ``mbs_enet_nested`` (CPU, overlaps the next GPU fold).
+Joint multitask heads (ATS + n>200 disease/cancer classes) are encoder
+supervision only. Product readout is post-hoc ``mbs_enet_nested`` (CPU,
+overlaps the next GPU fold).
 
 Skip-if-done on ``metrics.json``. Nested enet is filled by
 ``eval_mbs_enet_from_scores.py --nested`` after each GPU run (and at the end
-for any missing folds).
+for any missing folds). 16-epoch plumbing ``f0-r0`` is archived as
+``stage0-12-nlight-oof-ep16-f0-r0``; this runner retrains at 30 epochs.
 """
 
 from __future__ import annotations

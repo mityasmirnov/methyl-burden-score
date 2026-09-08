@@ -123,12 +123,12 @@ is a **post-architecture** gate, not extra OOF arms.
 
 | Use | Cohort | How |
 |-----|--------|-----|
-| Train encoders | Nine-pack HM450 | Joint age/tissue/sex supervision only |
+| Train encoders | Nine-pack HM450 | Age/tissue/sex **plus** n>200 disease classes and cancer types (aux BCE; pack-matched controls). Not pack masks. |
 | ATS / age / tissue / sex **report** | same split, frozen scores | nested enet / logistic — not `mbs_e2e` |
 | BMI | 2 070 | freeze-reuse if n≥600 (yes) |
 | Ancestry | 1 380 | freeze-reuse if n≥600 (yes; no class ≥1k) |
-| Cancer types | pack case/control ~9.1k | `label_status` + diagnosis; subtypes with **n≥600** |
-| Individual diseases | Hub diagnosis strings | **n≥600 labeled samples**, with **n_cases ≥ 600** so the positive class is honest. Today that is **Alzheimer’s 945 only**. Schizophrenia 536 is the near-miss. PD 333 / stroke 204 / others stay in the census, not GPU. Matched `label_status=control`. |
+| Cancer types | nine-pack disease-tissue **n>200** | **encoder aux heads** (9 types). Remaining types / pack C/C = freeze-reuse. `label_status` + diagnosis; **not** `cancer_mask`. |
+| Individual diseases | nine-pack disease-tissue **n>200** | **encoder aux heads** (9 classes). n≥600 freeze-reuse probes remain optional (AD 945). Matched `label_status=control`. |
 | Blood / brain packs | catalogue / control-only | **No trait head** |
 | EPIC / ONT | later matrices | same gene-invariant weights; do not retrain a new architecture |
 
@@ -138,12 +138,14 @@ packs pay off without poisoning the 34k split.
 
 ## Gate before Milestone 12 (split by arm)
 
-**N-light 5×6 (running):** GPU 2 `f0-r0` epoch 13/16, batch 1024 (~85 GB).
-1/30 jobs. Split `hub-nine-pack-5fold-v1`. Runner: `scripts/run_12_nlight_oof.sh`.
+**N-light 5×6 (running):** GPU 2 restarting at **30 epochs**, patience 15,
+n>200 disease/cancer aux heads. 16-ep `f0-r0` archived (nested
+**0.300 / 8.63 / 0.880**). Split `hub-nine-pack-5fold-v1`. Runner:
+`scripts/run_12_nlight_oof.sh`.
 
 **Cascade 5×6 (still gated):**
 
 1. Dense S1 **fold 0 done** (queue stopped mid fold 1 to free GPU 2).
-2. P2-G nested enet **2/3** (CPU fold 2 in flight).
+2. P2-G nested enet **3/3** (MBS **0.335 / 9.81 / 0.759**; RBS age 19.8).
 3. 1-fold **S1–S4 smoke** running on GPU 0 from S1 fold 0.
 4. Pack-level freeze-reuse **done** (cancer strong; broad disease modest).
