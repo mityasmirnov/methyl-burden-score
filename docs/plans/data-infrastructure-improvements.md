@@ -49,6 +49,7 @@ columns empty; EWAS_db-only samples lack Hub phenotype rows.
 | **GEO eligibility-by-study deep audit** | Trait × study + assay-on-disk; global green ≠ train | **Done** — `geo_backfill_batch/eligibility_by_study.md` |
 | **GEO disease/cancer for training** | Need matrix+label QC + per-study balance | **Not yet** — catalog eligibility may pass counts; do not wire heads |
 | **Improve labels beyond Hub** (tissue remap + Atlas) | Mapped GEO tissue **36 861**; Atlas still **182** matched | **Wave 1 done** — [`improve-labels-study-context.md`](improve-labels-study-context.md) |
+| **GEO series study context** (title/summary/design) | **1 718**/1 718 GSE with `metadata_json.geo` | **Wave 2a done** — `make enrich-geo-series-metadata` |
 | **GEO-enriched training release** | Separate immutable release; not ATS | **Phenotype built** — `deepmat-data-geo-dev-v1`; matrices / train launch still gated — [`geo-enriched-training-release.md`](geo-enriched-training-release.md) |
 | **Larger GEO crawl** | Beyond batch-50 | **Gated** |
 | **Study-level Atlas enrichment** (`study_atlas_enrichment` + `study.metadata_json.atlas_enrichment`) | External stratification (tissue, cohort size, disease area); not sample labels | **Done** (auto `seed-atlas-gse-map` on `catalog-refresh-release`; **175**/1587 matched) |

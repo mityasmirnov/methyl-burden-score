@@ -1,32 +1,32 @@
 {
   "candidate_gsm_by_trait": {
     "age": {
-      "n_geo_only_gsm": 21940,
-      "n_gsm": 21940,
+      "n_geo_only_gsm": 32969,
+      "n_gsm": 32969,
       "n_hub_overlap_gsm": 0
     },
     "cancer": {
-      "n_geo_only_gsm": 1687,
-      "n_gsm": 1687,
+      "n_geo_only_gsm": 3438,
+      "n_gsm": 3438,
       "n_hub_overlap_gsm": 0
     },
     "disease": {
-      "n_geo_only_gsm": 6065,
-      "n_gsm": 6065,
+      "n_geo_only_gsm": 10516,
+      "n_gsm": 10516,
       "n_hub_overlap_gsm": 0
     },
     "sex": {
-      "n_geo_only_gsm": 32083,
-      "n_gsm": 32083,
-      "n_hub_overlap_gsm": 0
+      "n_geo_only_gsm": 52205,
+      "n_gsm": 52413,
+      "n_hub_overlap_gsm": 208
     },
     "tissue": {
-      "n_geo_only_gsm": 25303,
-      "n_gsm": 25303,
+      "n_geo_only_gsm": 50317,
+      "n_gsm": 50317,
       "n_hub_overlap_gsm": 0
     }
   },
-  "generated_at": "2026-09-07T14:29:53Z",
+  "generated_at": "2026-09-07T18:10:40Z",
   "geo_source_family": "geo_metadata_backfill",
   "global_trait_eligibility": [
     {
@@ -35,25 +35,25 @@
       "exclusion_reason": NaN,
       "n_cases": null,
       "n_controls": null,
-      "n_samples": 21940,
+      "n_samples": 32969,
       "phenotype_id": "age"
     },
     {
       "eligible_auxiliary_task": true,
       "eligible_core_task": true,
       "exclusion_reason": NaN,
-      "n_cases": 1422,
-      "n_controls": 265,
-      "n_samples": 1687,
+      "n_cases": 3015,
+      "n_controls": 423,
+      "n_samples": 3438,
       "phenotype_id": "cancer"
     },
     {
       "eligible_auxiliary_task": true,
       "eligible_core_task": true,
       "exclusion_reason": NaN,
-      "n_cases": 1937,
-      "n_controls": 4128,
-      "n_samples": 6065,
+      "n_cases": 4315,
+      "n_controls": 6201,
+      "n_samples": 10516,
       "phenotype_id": "disease"
     },
     {
@@ -62,7 +62,7 @@
       "exclusion_reason": "sex is auxiliary biological / QC, not a core burden target",
       "n_cases": null,
       "n_controls": null,
-      "n_samples": 32083,
+      "n_samples": 52413,
       "phenotype_id": "sex"
     },
     {
@@ -71,15 +71,15 @@
       "exclusion_reason": NaN,
       "n_cases": null,
       "n_controls": null,
-      "n_samples": 25303,
+      "n_samples": 50317,
       "phenotype_id": "tissue"
     }
   ],
   "n_assay_gsm_on_disk": 155708,
-  "n_geo_gsm_hub_overlap": 0,
-  "n_geo_gsm_with_assay": 42614,
-  "n_geo_observed_gsm": 42614,
-  "n_geo_observed_rows": 87078,
+  "n_geo_gsm_hub_overlap": 208,
+  "n_geo_gsm_with_assay": 70756,
+  "n_geo_observed_gsm": 70756,
+  "n_geo_observed_rows": 149653,
   "n_hub_membership_gsm": 34234,
   "notes": [
     "Global trait_eligibility can look green while many studies lack assay files or case/control balance.",
@@ -89,14 +89,80 @@
   ],
   "per_study": [
     {
+      "n_geo_gsm": 440,
+      "n_geo_phenotype_rows": 880,
+      "n_methylation_and_label": 440,
+      "n_with_ewas_assay": 440,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE100227",
+      "tissue_map_parquet": {
+        "mapped": 479
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 440,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 440,
+          "n_with_assay": 440
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 440,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 440,
+          "n_with_assay": 440
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 386,
+      "n_geo_phenotype_rows": 1158,
+      "n_methylation_and_label": 386,
+      "n_with_ewas_assay": 386,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE100264",
+      "tissue_map_parquet": {
+        "mapped": 386
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 386,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 386,
+          "n_with_assay": 386
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 386,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 386,
+          "n_with_assay": 386
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 386,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 386,
+          "n_with_assay": 386
+        }
+      }
+    },
+    {
       "n_geo_gsm": 112,
-      "n_geo_phenotype_rows": 392,
+      "n_geo_phenotype_rows": 336,
       "n_methylation_and_label": 112,
       "n_with_ewas_assay": 112,
       "n_with_hub_membership": 0,
-      "study_id": "GSE103286",
+      "study_id": "GSE101764",
       "tissue_map_parquet": {
-        "mapped": 112
+        "unmapped": 261
       },
       "traits": {
         "age": {
@@ -108,22 +174,14 @@
           "n_with_assay": 112
         },
         "disease": {
-          "n_cases": 0,
-          "n_controls": 56,
-          "n_gsm": 56,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 56,
-          "n_with_assay": 56
-        },
-        "sex": {
-          "n_cases": 0,
+          "n_cases": 112,
           "n_controls": 0,
           "n_gsm": 112,
           "n_hub_overlap_rows": 0,
           "n_rows": 112,
           "n_with_assay": 112
         },
-        "tissue": {
+        "sex": {
           "n_cases": 0,
           "n_controls": 0,
           "n_gsm": 112,
@@ -134,60 +192,44 @@
       }
     },
     {
-      "n_geo_gsm": 116,
-      "n_geo_phenotype_rows": 400,
-      "n_methylation_and_label": 116,
-      "n_with_ewas_assay": 116,
+      "n_geo_gsm": 39,
+      "n_geo_phenotype_rows": 52,
+      "n_methylation_and_label": 39,
+      "n_with_ewas_assay": 39,
       "n_with_hub_membership": 0,
-      "study_id": "GSE103332",
+      "study_id": "GSE103253",
       "tissue_map_parquet": {
-        "mapped": 112,
-        "unmapped": 4
+        "mapped": 82,
+        "unmapped": 163
       },
       "traits": {
-        "age": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 114,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 114,
-          "n_with_assay": 114
-        },
         "disease": {
           "n_cases": 0,
-          "n_controls": 56,
-          "n_gsm": 56,
+          "n_controls": 14,
+          "n_gsm": 14,
           "n_hub_overlap_rows": 0,
-          "n_rows": 56,
-          "n_with_assay": 56
-        },
-        "sex": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 114,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 114,
-          "n_with_assay": 114
+          "n_rows": 14,
+          "n_with_assay": 14
         },
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 116,
+          "n_gsm": 38,
           "n_hub_overlap_rows": 0,
-          "n_rows": 116,
-          "n_with_assay": 116
+          "n_rows": 38,
+          "n_with_assay": 38
         }
       }
     },
     {
       "n_geo_gsm": 675,
-      "n_geo_phenotype_rows": 1245,
+      "n_geo_phenotype_rows": 1920,
       "n_methylation_and_label": 675,
       "n_with_ewas_assay": 675,
       "n_with_hub_membership": 0,
       "study_id": "GSE104210",
       "tissue_map_parquet": {
-        "empty": 675
+        "mapped": 675
       },
       "traits": {
         "age": {
@@ -205,6 +247,14 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 675,
           "n_with_assay": 675
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 675,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 675,
+          "n_with_assay": 675
         }
       }
     },
@@ -216,7 +266,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE105018",
       "tissue_map_parquet": {
-        "empty": 1658
+        "unmapped": 1658
       },
       "traits": {
         "sex": {
@@ -230,8 +280,127 @@
       }
     },
     {
+      "n_geo_gsm": 384,
+      "n_geo_phenotype_rows": 880,
+      "n_methylation_and_label": 384,
+      "n_with_ewas_assay": 384,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE105109",
+      "tissue_map_parquet": {
+        "mapped": 384
+      },
+      "traits": {
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 112,
+          "n_gsm": 112,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 112,
+          "n_with_assay": 112
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 384,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 384,
+          "n_with_assay": 384
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 384,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 384,
+          "n_with_assay": 384
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 89,
+      "n_geo_phenotype_rows": 356,
+      "n_methylation_and_label": 89,
+      "n_with_ewas_assay": 89,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE106648",
+      "tissue_map_parquet": {
+        "mapped": 279
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 89,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 89,
+          "n_with_assay": 89
+        },
+        "disease": {
+          "n_cases": 2,
+          "n_controls": 87,
+          "n_gsm": 89,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 89,
+          "n_with_assay": 89
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 89,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 89,
+          "n_with_assay": 89
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 89,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 89,
+          "n_with_assay": 89
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 405,
+      "n_geo_phenotype_rows": 1215,
+      "n_methylation_and_label": 405,
+      "n_with_ewas_assay": 405,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE107080",
+      "tissue_map_parquet": {
+        "mapped": 405
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 405,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 405,
+          "n_with_assay": 405
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 405,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 405,
+          "n_with_assay": 405
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 405,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 405,
+          "n_with_assay": 405
+        }
+      }
+    },
+    {
       "n_geo_gsm": 116,
-      "n_geo_phenotype_rows": 232,
+      "n_geo_phenotype_rows": 116,
       "n_methylation_and_label": 116,
       "n_with_ewas_assay": 116,
       "n_with_hub_membership": 0,
@@ -247,20 +416,12 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 116,
           "n_with_assay": 116
-        },
-        "tissue": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 116,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 116,
-          "n_with_assay": 116
         }
       }
     },
     {
       "n_geo_gsm": 51,
-      "n_geo_phenotype_rows": 102,
+      "n_geo_phenotype_rows": 51,
       "n_methylation_and_label": 51,
       "n_with_ewas_assay": 51,
       "n_with_hub_membership": 0,
@@ -276,35 +437,6 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 51,
           "n_with_assay": 51
-        },
-        "tissue": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 51,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 51,
-          "n_with_assay": 51
-        }
-      }
-    },
-    {
-      "n_geo_gsm": 102,
-      "n_geo_phenotype_rows": 102,
-      "n_methylation_and_label": 102,
-      "n_with_ewas_assay": 102,
-      "n_with_hub_membership": 0,
-      "study_id": "GSE108187",
-      "tissue_map_parquet": {
-        "unmapped": 102
-      },
-      "traits": {
-        "tissue": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 102,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 102,
-          "n_with_assay": 102
         }
       }
     },
@@ -316,7 +448,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE108576",
       "tissue_map_parquet": {
-        "empty": 89
+        "unmapped": 89
       },
       "traits": {
         "disease": {
@@ -345,7 +477,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE109379",
       "tissue_map_parquet": {
-        "unmapped": 1104
+        "mapped": 1104
       },
       "traits": {
         "tissue": {
@@ -359,29 +491,37 @@
       }
     },
     {
-      "n_geo_gsm": 70,
-      "n_geo_phenotype_rows": 70,
-      "n_methylation_and_label": 70,
-      "n_with_ewas_assay": 70,
+      "n_geo_gsm": 46,
+      "n_geo_phenotype_rows": 92,
+      "n_methylation_and_label": 46,
+      "n_with_ewas_assay": 46,
       "n_with_hub_membership": 0,
-      "study_id": "GSE110184",
+      "study_id": "GSE110128",
       "tissue_map_parquet": {
-        "unmapped": 70
+        "mapped": 233
       },
       "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 46,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 46,
+          "n_with_assay": 46
+        },
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 70,
+          "n_gsm": 46,
           "n_hub_overlap_rows": 0,
-          "n_rows": 70,
-          "n_with_assay": 70
+          "n_rows": 46,
+          "n_with_assay": 46
         }
       }
     },
     {
       "n_geo_gsm": 58,
-      "n_geo_phenotype_rows": 116,
+      "n_geo_phenotype_rows": 58,
       "n_methylation_and_label": 58,
       "n_with_ewas_assay": 58,
       "n_with_hub_membership": 0,
@@ -391,14 +531,6 @@
       },
       "traits": {
         "sex": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 58,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 58,
-          "n_with_assay": 58
-        },
-        "tissue": {
           "n_cases": 0,
           "n_controls": 0,
           "n_gsm": 58,
@@ -416,7 +548,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE110697",
       "tissue_map_parquet": {
-        "empty": 78
+        "unmapped": 78
       },
       "traits": {
         "disease": {
@@ -430,10 +562,10 @@
       }
     },
     {
-      "n_geo_gsm": 147,
-      "n_geo_phenotype_rows": 349,
-      "n_methylation_and_label": 147,
-      "n_with_ewas_assay": 147,
+      "n_geo_gsm": 125,
+      "n_geo_phenotype_rows": 289,
+      "n_methylation_and_label": 125,
+      "n_with_ewas_assay": 125,
       "n_with_hub_membership": 0,
       "study_id": "GSE111165",
       "tissue_map_parquet": {
@@ -460,10 +592,10 @@
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 147,
+          "n_gsm": 87,
           "n_hub_overlap_rows": 0,
-          "n_rows": 147,
-          "n_with_assay": 147
+          "n_rows": 87,
+          "n_with_assay": 87
         }
       }
     },
@@ -513,14 +645,117 @@
       }
     },
     {
+      "n_geo_gsm": 402,
+      "n_geo_phenotype_rows": 1280,
+      "n_methylation_and_label": 402,
+      "n_with_ewas_assay": 402,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE112611",
+      "tissue_map_parquet": {
+        "mapped": 402
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 402,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 402,
+          "n_with_assay": 402
+        },
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 74,
+          "n_gsm": 74,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 74,
+          "n_with_assay": 74
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 402,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 402,
+          "n_with_assay": 402
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 402,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 402,
+          "n_with_assay": 402
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 374,
+      "n_geo_phenotype_rows": 748,
+      "n_methylation_and_label": 374,
+      "n_with_ewas_assay": 374,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE112893",
+      "tissue_map_parquet": {
+        "unmapped": 374
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 374,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 374,
+          "n_with_assay": 374
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 374,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 374,
+          "n_with_assay": 374
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 232,
+      "n_geo_phenotype_rows": 464,
+      "n_methylation_and_label": 232,
+      "n_with_ewas_assay": 232,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE113904",
+      "tissue_map_parquet": {
+        "unmapped": 232
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 232,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 232,
+          "n_with_assay": 232
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 232,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 232,
+          "n_with_assay": 232
+        }
+      }
+    },
+    {
       "n_geo_gsm": 474,
-      "n_geo_phenotype_rows": 948,
+      "n_geo_phenotype_rows": 1422,
       "n_methylation_and_label": 474,
       "n_with_ewas_assay": 474,
       "n_with_hub_membership": 0,
       "study_id": "GSE115278",
       "tissue_map_parquet": {
-        "empty": 474
+        "mapped": 474
       },
       "traits": {
         "age": {
@@ -532,6 +767,14 @@
           "n_with_assay": 474
         },
         "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 474,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 474,
+          "n_with_assay": 474
+        },
+        "tissue": {
           "n_cases": 0,
           "n_controls": 0,
           "n_gsm": 474,
@@ -616,6 +859,35 @@
       }
     },
     {
+      "n_geo_gsm": 529,
+      "n_geo_phenotype_rows": 1058,
+      "n_methylation_and_label": 529,
+      "n_with_ewas_assay": 529,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE117860",
+      "tissue_map_parquet": {
+        "unmapped": 529
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 529,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 529,
+          "n_with_assay": 529
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 529,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 529,
+          "n_with_assay": 529
+        }
+      }
+    },
+    {
       "n_geo_gsm": 60,
       "n_geo_phenotype_rows": 60,
       "n_methylation_and_label": 60,
@@ -623,7 +895,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE119144",
       "tissue_map_parquet": {
-        "empty": 60
+        "unmapped": 60
       },
       "traits": {
         "cancer": {
@@ -637,6 +909,43 @@
       }
     },
     {
+      "n_geo_gsm": 480,
+      "n_geo_phenotype_rows": 1440,
+      "n_methylation_and_label": 480,
+      "n_with_ewas_assay": 480,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE121633",
+      "tissue_map_parquet": {
+        "mapped": 480
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 480,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 480,
+          "n_with_assay": 480
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 480,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 480,
+          "n_with_assay": 480
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 480,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 480,
+          "n_with_assay": 480
+        }
+      }
+    },
+    {
       "n_geo_gsm": 203,
       "n_geo_phenotype_rows": 203,
       "n_methylation_and_label": 203,
@@ -644,7 +953,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE122038",
       "tissue_map_parquet": {
-        "empty": 217
+        "unmapped": 217
       },
       "traits": {
         "disease": {
@@ -659,13 +968,14 @@
     },
     {
       "n_geo_gsm": 77,
-      "n_geo_phenotype_rows": 164,
+      "n_geo_phenotype_rows": 165,
       "n_methylation_and_label": 77,
       "n_with_ewas_assay": 77,
       "n_with_hub_membership": 0,
       "study_id": "GSE122126",
       "tissue_map_parquet": {
-        "empty": 101
+        "mapped": 1,
+        "unmapped": 100
       },
       "traits": {
         "age": {
@@ -691,6 +1001,35 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 51,
           "n_with_assay": 51
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 1,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 1,
+          "n_with_assay": 1
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 104,
+      "n_geo_phenotype_rows": 104,
+      "n_methylation_and_label": 104,
+      "n_with_ewas_assay": 104,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE122920",
+      "tissue_map_parquet": {
+        "mapped": 104
+      },
+      "traits": {
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 104,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 104,
+          "n_with_assay": 104
         }
       }
     },
@@ -702,7 +1041,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE122994",
       "tissue_map_parquet": {
-        "unmapped": 380
+        "mapped": 380
       },
       "traits": {
         "sex": {
@@ -724,10 +1063,10 @@
       }
     },
     {
-      "n_geo_gsm": 142,
-      "n_geo_phenotype_rows": 142,
-      "n_methylation_and_label": 142,
-      "n_with_ewas_assay": 142,
+      "n_geo_gsm": 111,
+      "n_geo_phenotype_rows": 111,
+      "n_methylation_and_label": 111,
+      "n_with_ewas_assay": 111,
       "n_with_hub_membership": 0,
       "study_id": "GSE123601",
       "tissue_map_parquet": {
@@ -738,18 +1077,55 @@
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 142,
+          "n_gsm": 111,
           "n_hub_overlap_rows": 0,
-          "n_rows": 142,
-          "n_with_assay": 142
+          "n_rows": 111,
+          "n_with_assay": 111
         }
       }
     },
     {
-      "n_geo_gsm": 94,
-      "n_geo_phenotype_rows": 99,
-      "n_methylation_and_label": 94,
-      "n_with_ewas_assay": 94,
+      "n_geo_gsm": 500,
+      "n_geo_phenotype_rows": 959,
+      "n_methylation_and_label": 500,
+      "n_with_ewas_assay": 500,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE124413",
+      "tissue_map_parquet": {
+        "unmapped": 500
+      },
+      "traits": {
+        "cancer": {
+          "n_cases": 459,
+          "n_controls": 0,
+          "n_gsm": 459,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 459,
+          "n_with_assay": 459
+        },
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 41,
+          "n_gsm": 41,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 41,
+          "n_with_assay": 41
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 459,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 459,
+          "n_with_assay": 459
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 5,
+      "n_geo_phenotype_rows": 5,
+      "n_methylation_and_label": 5,
+      "n_with_ewas_assay": 5,
       "n_with_hub_membership": 0,
       "study_id": "GSE124617",
       "tissue_map_parquet": {
@@ -763,14 +1139,6 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 5,
           "n_with_assay": 5
-        },
-        "tissue": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 94,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 94,
-          "n_with_assay": 94
         }
       }
     },
@@ -821,13 +1189,14 @@
     },
     {
       "n_geo_gsm": 269,
-      "n_geo_phenotype_rows": 725,
+      "n_geo_phenotype_rows": 793,
       "n_methylation_and_label": 269,
       "n_with_ewas_assay": 269,
       "n_with_hub_membership": 0,
       "study_id": "GSE125895",
       "tissue_map_parquet": {
-        "empty": 269
+        "mapped": 68,
+        "unmapped": 201
       },
       "traits": {
         "age": {
@@ -853,6 +1222,35 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 269,
           "n_with_assay": 269
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 68,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 68,
+          "n_with_assay": 68
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 536,
+      "n_geo_phenotype_rows": 536,
+      "n_methylation_and_label": 536,
+      "n_with_ewas_assay": 536,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE128821",
+      "tissue_map_parquet": {
+        "unmapped": 542
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 536,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 536,
+          "n_with_assay": 536
         }
       }
     },
@@ -864,7 +1262,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE130051",
       "tissue_map_parquet": {
-        "unmapped": 1501
+        "mapped": 1501
       },
       "traits": {
         "tissue": {
@@ -879,7 +1277,7 @@
     },
     {
       "n_geo_gsm": 240,
-      "n_geo_phenotype_rows": 720,
+      "n_geo_phenotype_rows": 480,
       "n_methylation_and_label": 240,
       "n_with_ewas_assay": 240,
       "n_with_hub_membership": 0,
@@ -903,26 +1301,39 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 240,
           "n_with_assay": 240
-        },
-        "tissue": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 240,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 240,
-          "n_with_assay": 240
         }
       }
     },
     {
-      "n_geo_gsm": 33,
-      "n_geo_phenotype_rows": 66,
-      "n_methylation_and_label": 33,
-      "n_with_ewas_assay": 33,
+      "n_geo_gsm": 440,
+      "n_geo_phenotype_rows": 440,
+      "n_methylation_and_label": 440,
+      "n_with_ewas_assay": 440,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE131433",
+      "tissue_map_parquet": {
+        "unmapped": 440
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 440,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 440,
+          "n_with_assay": 440
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 153,
+      "n_geo_phenotype_rows": 219,
+      "n_methylation_and_label": 153,
+      "n_with_ewas_assay": 153,
       "n_with_hub_membership": 0,
       "study_id": "GSE131482",
       "tissue_map_parquet": {
-        "empty": 153
+        "mapped": 153
       },
       "traits": {
         "age": {
@@ -940,18 +1351,76 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 33,
           "n_with_assay": 33
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 153,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 153,
+          "n_with_assay": 153
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 371,
+      "n_geo_phenotype_rows": 371,
+      "n_methylation_and_label": 371,
+      "n_with_ewas_assay": 371,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE131989",
+      "tissue_map_parquet": {
+        "unmapped": 371
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 371,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 371,
+          "n_with_assay": 371
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 391,
+      "n_geo_phenotype_rows": 782,
+      "n_methylation_and_label": 391,
+      "n_with_ewas_assay": 391,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE132181",
+      "tissue_map_parquet": {
+        "mapped": 392
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 391,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 391,
+          "n_with_assay": 391
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 391,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 391,
+          "n_with_assay": 391
         }
       }
     },
     {
       "n_geo_gsm": 795,
-      "n_geo_phenotype_rows": 1590,
+      "n_geo_phenotype_rows": 2385,
       "n_methylation_and_label": 795,
       "n_with_ewas_assay": 795,
       "n_with_hub_membership": 0,
       "study_id": "GSE132203",
       "tissue_map_parquet": {
-        "empty": 795
+        "mapped": 795
       },
       "traits": {
         "age": {
@@ -963,6 +1432,14 @@
           "n_with_assay": 795
         },
         "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 795,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 795,
+          "n_with_assay": 795
+        },
+        "tissue": {
           "n_cases": 0,
           "n_controls": 0,
           "n_gsm": 795,
@@ -980,7 +1457,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE132650",
       "tissue_map_parquet": {
-        "empty": 78
+        "unmapped": 78
       },
       "traits": {
         "sex": {
@@ -1001,7 +1478,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE132804",
       "tissue_map_parquet": {
-        "empty": 334
+        "unmapped": 334
       },
       "traits": {
         "age": {
@@ -1067,7 +1544,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE136790",
       "tissue_map_parquet": {
-        "empty": 108
+        "unmapped": 108
       },
       "traits": {
         "sex": {
@@ -1081,35 +1558,138 @@
       }
     },
     {
-      "n_geo_gsm": 1504,
-      "n_geo_phenotype_rows": 1504,
-      "n_methylation_and_label": 1504,
-      "n_with_ewas_assay": 1504,
+      "n_geo_gsm": 250,
+      "n_geo_phenotype_rows": 385,
+      "n_methylation_and_label": 250,
+      "n_with_ewas_assay": 250,
       "n_with_hub_membership": 0,
-      "study_id": "GSE140686",
+      "study_id": "GSE137841",
       "tissue_map_parquet": {
-        "unmapped": 1505
+        "unmapped": 250
       },
       "traits": {
-        "tissue": {
+        "age": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 1504,
+          "n_gsm": 135,
           "n_hub_overlap_rows": 0,
-          "n_rows": 1504,
-          "n_with_assay": 1504
+          "n_rows": 135,
+          "n_with_assay": 135
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 250,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 250,
+          "n_with_assay": 250
         }
       }
     },
     {
-      "n_geo_gsm": 129,
-      "n_geo_phenotype_rows": 129,
-      "n_methylation_and_label": 129,
-      "n_with_ewas_assay": 129,
+      "n_geo_gsm": 265,
+      "n_geo_phenotype_rows": 530,
+      "n_methylation_and_label": 265,
+      "n_with_ewas_assay": 265,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE137898",
+      "tissue_map_parquet": {
+        "unmapped": 265
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 265,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 265,
+          "n_with_assay": 265
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 265,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 265,
+          "n_with_assay": 265
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 254,
+      "n_geo_phenotype_rows": 508,
+      "n_methylation_and_label": 254,
+      "n_with_ewas_assay": 254,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE137903",
+      "tissue_map_parquet": {
+        "unmapped": 254
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 254,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 254,
+          "n_with_assay": 254
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 254,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 254,
+          "n_with_assay": 254
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 65,
+      "n_geo_phenotype_rows": 195,
+      "n_methylation_and_label": 65,
+      "n_with_ewas_assay": 65,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE138279",
+      "tissue_map_parquet": {
+        "mapped": 65
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 65,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 65,
+          "n_with_assay": 65
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 65,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 65,
+          "n_with_assay": 65
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 65,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 65,
+          "n_with_assay": 65
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 153,
+      "n_geo_phenotype_rows": 282,
+      "n_methylation_and_label": 153,
+      "n_with_ewas_assay": 153,
       "n_with_hub_membership": 0,
       "study_id": "GSE141039",
       "tissue_map_parquet": {
-        "empty": 153
+        "mapped": 153
       },
       "traits": {
         "sex": {
@@ -1119,6 +1699,14 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 129,
           "n_with_assay": 129
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 153,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 153,
+          "n_with_assay": 153
         }
       }
     },
@@ -1130,7 +1718,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE141065",
       "tissue_map_parquet": {
-        "unmapped": 557
+        "mapped": 557
       },
       "traits": {
         "sex": {
@@ -1153,7 +1741,7 @@
     },
     {
       "n_geo_gsm": 84,
-      "n_geo_phenotype_rows": 252,
+      "n_geo_phenotype_rows": 168,
       "n_methylation_and_label": 84,
       "n_with_ewas_assay": 84,
       "n_with_hub_membership": 0,
@@ -1177,14 +1765,6 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 84,
           "n_with_assay": 84
-        },
-        "tissue": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 84,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 84,
-          "n_with_assay": 84
         }
       }
     },
@@ -1196,7 +1776,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE142512",
       "tissue_map_parquet": {
-        "unmapped": 395
+        "mapped": 395
       },
       "traits": {
         "age": {
@@ -1226,31 +1806,68 @@
       }
     },
     {
-      "n_geo_gsm": 75,
-      "n_geo_phenotype_rows": 150,
-      "n_methylation_and_label": 75,
-      "n_with_ewas_assay": 75,
+      "n_geo_gsm": 454,
+      "n_geo_phenotype_rows": 454,
+      "n_methylation_and_label": 454,
+      "n_with_ewas_assay": 454,
       "n_with_hub_membership": 0,
-      "study_id": "GSE143708",
+      "study_id": "GSE144129",
       "tissue_map_parquet": {
-        "mapped": 77
+        "mapped": 454
       },
       "traits": {
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 454,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 454,
+          "n_with_assay": 454
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 300,
+      "n_geo_phenotype_rows": 996,
+      "n_methylation_and_label": 300,
+      "n_with_ewas_assay": 300,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE144858",
+      "tissue_map_parquet": {
+        "mapped": 300
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 300,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 300,
+          "n_with_assay": 300
+        },
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 96,
+          "n_gsm": 96,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 96,
+          "n_with_assay": 96
+        },
         "sex": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 75,
+          "n_gsm": 300,
           "n_hub_overlap_rows": 0,
-          "n_rows": 75,
-          "n_with_assay": 75
+          "n_rows": 300,
+          "n_with_assay": 300
         },
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 75,
+          "n_gsm": 300,
           "n_hub_overlap_rows": 0,
-          "n_rows": 75,
-          "n_with_assay": 75
+          "n_rows": 300,
+          "n_with_assay": 300
         }
       }
     },
@@ -1313,14 +1930,44 @@
       }
     },
     {
+      "n_geo_gsm": 280,
+      "n_geo_phenotype_rows": 560,
+      "n_methylation_and_label": 280,
+      "n_with_ewas_assay": 280,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE146376",
+      "tissue_map_parquet": {
+        "unmapped": 280
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 280,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 280,
+          "n_with_assay": 280
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 280,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 280,
+          "n_with_assay": 280
+        }
+      }
+    },
+    {
       "n_geo_gsm": 713,
-      "n_geo_phenotype_rows": 2139,
+      "n_geo_phenotype_rows": 2852,
       "n_methylation_and_label": 713,
       "n_with_ewas_assay": 713,
       "n_with_hub_membership": 0,
       "study_id": "GSE147221",
       "tissue_map_parquet": {
-        "empty": 720
+        "mapped": 713,
+        "unmapped": 7
       },
       "traits": {
         "age": {
@@ -1346,39 +1993,26 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 713,
           "n_with_assay": 713
-        }
-      }
-    },
-    {
-      "n_geo_gsm": 132,
-      "n_geo_phenotype_rows": 132,
-      "n_methylation_and_label": 132,
-      "n_with_ewas_assay": 132,
-      "n_with_hub_membership": 0,
-      "study_id": "GSE147430",
-      "tissue_map_parquet": {
-        "unmapped": 132
-      },
-      "traits": {
+        },
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 132,
+          "n_gsm": 713,
           "n_hub_overlap_rows": 0,
-          "n_rows": 132,
-          "n_with_assay": 132
+          "n_rows": 713,
+          "n_with_assay": 713
         }
       }
     },
     {
       "n_geo_gsm": 1128,
-      "n_geo_phenotype_rows": 3384,
+      "n_geo_phenotype_rows": 4512,
       "n_methylation_and_label": 1128,
       "n_with_ewas_assay": 1128,
       "n_with_hub_membership": 0,
       "study_id": "GSE147740",
       "tissue_map_parquet": {
-        "empty": 1129
+        "mapped": 1129
       },
       "traits": {
         "age": {
@@ -1404,6 +2038,123 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 1128,
           "n_with_assay": 1128
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 1128,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 1128,
+          "n_with_assay": 1128
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 292,
+      "n_geo_phenotype_rows": 584,
+      "n_methylation_and_label": 292,
+      "n_with_ewas_assay": 292,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE149412",
+      "tissue_map_parquet": {
+        "mapped": 292
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 292,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 292,
+          "n_with_assay": 292
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 292,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 292,
+          "n_with_assay": 292
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 240,
+      "n_geo_phenotype_rows": 480,
+      "n_methylation_and_label": 240,
+      "n_with_ewas_assay": 240,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE150643",
+      "tissue_map_parquet": {
+        "unmapped": 240
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 240,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 240,
+          "n_with_assay": 240
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 240,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 240,
+          "n_with_assay": 240
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 484,
+      "n_geo_phenotype_rows": 484,
+      "n_methylation_and_label": 484,
+      "n_with_ewas_assay": 484,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE151042",
+      "tissue_map_parquet": {
+        "mapped": 484,
+        "unmapped": 8
+      },
+      "traits": {
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 484,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 484,
+          "n_with_assay": 484
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 256,
+      "n_geo_phenotype_rows": 512,
+      "n_methylation_and_label": 256,
+      "n_with_ewas_assay": 256,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE151732",
+      "tissue_map_parquet": {
+        "unmapped": 256
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 256,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 256,
+          "n_with_assay": 256
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 256,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 256,
+          "n_with_assay": 256
         }
       }
     },
@@ -1445,6 +2196,56 @@
       }
     },
     {
+      "n_geo_gsm": 233,
+      "n_geo_phenotype_rows": 466,
+      "n_methylation_and_label": 233,
+      "n_with_ewas_assay": 233,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE154566",
+      "tissue_map_parquet": {
+        "mapped": 1177
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 233,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 233,
+          "n_with_assay": 233
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 233,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 233,
+          "n_with_assay": 233
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 244,
+      "n_geo_phenotype_rows": 244,
+      "n_methylation_and_label": 244,
+      "n_with_ewas_assay": 244,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE156984",
+      "tissue_map_parquet": {
+        "unmapped": 244
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 244,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 244,
+          "n_with_assay": 244
+        }
+      }
+    },
+    {
       "n_geo_gsm": 1218,
       "n_geo_phenotype_rows": 2436,
       "n_methylation_and_label": 1218,
@@ -1474,6 +2275,35 @@
       }
     },
     {
+      "n_geo_gsm": 274,
+      "n_geo_phenotype_rows": 548,
+      "n_methylation_and_label": 274,
+      "n_with_ewas_assay": 274,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE157341",
+      "tissue_map_parquet": {
+        "unmapped": 274
+      },
+      "traits": {
+        "disease": {
+          "n_cases": 274,
+          "n_controls": 0,
+          "n_gsm": 274,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 274,
+          "n_with_assay": 274
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 274,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 274,
+          "n_with_assay": 274
+        }
+      }
+    },
+    {
       "n_geo_gsm": 49,
       "n_geo_phenotype_rows": 49,
       "n_methylation_and_label": 49,
@@ -1481,7 +2311,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE157397",
       "tissue_map_parquet": {
-        "empty": 51
+        "unmapped": 51
       },
       "traits": {
         "sex": {
@@ -1495,6 +2325,109 @@
       }
     },
     {
+      "n_geo_gsm": 492,
+      "n_geo_phenotype_rows": 984,
+      "n_methylation_and_label": 492,
+      "n_with_ewas_assay": 492,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE163970",
+      "tissue_map_parquet": {
+        "mapped": 492
+      },
+      "traits": {
+        "disease": {
+          "n_cases": 232,
+          "n_controls": 260,
+          "n_gsm": 492,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 492,
+          "n_with_assay": 492
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 492,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 492,
+          "n_with_assay": 492
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 256,
+      "n_geo_phenotype_rows": 768,
+      "n_methylation_and_label": 256,
+      "n_with_ewas_assay": 256,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE174422",
+      "tissue_map_parquet": {
+        "mapped": 256
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 256,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 256,
+          "n_with_assay": 256
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 256,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 256,
+          "n_with_assay": 256
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 256,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 256,
+          "n_with_assay": 256
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 547,
+      "n_geo_phenotype_rows": 1641,
+      "n_methylation_and_label": 547,
+      "n_with_ewas_assay": 547,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE175458",
+      "tissue_map_parquet": {
+        "mapped": 547
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 547,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 547,
+          "n_with_assay": 547
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 547,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 547,
+          "n_with_assay": 547
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 547,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 547,
+          "n_with_assay": 547
+        }
+      }
+    },
+    {
       "n_geo_gsm": 574,
       "n_geo_phenotype_rows": 1148,
       "n_methylation_and_label": 574,
@@ -1502,7 +2435,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE179325",
       "tissue_map_parquet": {
-        "empty": 574
+        "unmapped": 574
       },
       "traits": {
         "age": {
@@ -1531,7 +2464,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE183647",
       "tissue_map_parquet": {
-        "unmapped": 565
+        "mapped": 565
       },
       "traits": {
         "age": {
@@ -1560,7 +2493,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE183920",
       "tissue_map_parquet": {
-        "unmapped": 603
+        "mapped": 603
       },
       "traits": {
         "age": {
@@ -1598,6 +2531,56 @@
       }
     },
     {
+      "n_geo_gsm": 230,
+      "n_geo_phenotype_rows": 230,
+      "n_methylation_and_label": 230,
+      "n_with_ewas_assay": 230,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE185008",
+      "tissue_map_parquet": {
+        "unmapped": 270
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 230,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 230,
+          "n_with_assay": 230
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 369,
+      "n_geo_phenotype_rows": 738,
+      "n_methylation_and_label": 369,
+      "n_with_ewas_assay": 369,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE185061",
+      "tissue_map_parquet": {
+        "unmapped": 369
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 369,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 369,
+          "n_with_assay": 369
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 369,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 369,
+          "n_with_assay": 369
+        }
+      }
+    },
+    {
       "n_geo_gsm": 1471,
       "n_geo_phenotype_rows": 2942,
       "n_methylation_and_label": 1471,
@@ -1628,13 +2611,13 @@
     },
     {
       "n_geo_gsm": 2922,
-      "n_geo_phenotype_rows": 5844,
+      "n_geo_phenotype_rows": 8766,
       "n_methylation_and_label": 2922,
       "n_with_ewas_assay": 2922,
       "n_with_hub_membership": 0,
       "study_id": "GSE197678",
       "tissue_map_parquet": {
-        "empty": 2922
+        "mapped": 2922
       },
       "traits": {
         "age": {
@@ -1652,14 +2635,155 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 2922,
           "n_with_assay": 2922
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 2922,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 2922,
+          "n_with_assay": 2922
         }
       }
     },
     {
-      "n_geo_gsm": 568,
-      "n_geo_phenotype_rows": 1664,
-      "n_methylation_and_label": 568,
-      "n_with_ewas_assay": 568,
+      "n_geo_gsm": 316,
+      "n_geo_phenotype_rows": 647,
+      "n_methylation_and_label": 316,
+      "n_with_ewas_assay": 316,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE197723",
+      "tissue_map_parquet": {
+        "mapped": 17,
+        "unmapped": 300
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 315,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 315,
+          "n_with_assay": 315
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 315,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 315,
+          "n_with_assay": 315
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 17,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 17,
+          "n_with_assay": 17
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 232,
+      "n_geo_phenotype_rows": 696,
+      "n_methylation_and_label": 232,
+      "n_with_ewas_assay": 232,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE201322",
+      "tissue_map_parquet": {
+        "mapped": 232
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 232,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 232,
+          "n_with_assay": 232
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 232,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 232,
+          "n_with_assay": 232
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 232,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 232,
+          "n_with_assay": 232
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 290,
+      "n_geo_phenotype_rows": 870,
+      "n_methylation_and_label": 290,
+      "n_with_ewas_assay": 290,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE207460",
+      "tissue_map_parquet": {
+        "unmapped": 290
+      },
+      "traits": {
+        "cancer": {
+          "n_cases": 290,
+          "n_controls": 0,
+          "n_gsm": 290,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 290,
+          "n_with_assay": 290
+        },
+        "disease": {
+          "n_cases": 290,
+          "n_controls": 0,
+          "n_gsm": 290,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 290,
+          "n_with_assay": 290
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 290,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 290,
+          "n_with_assay": 290
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 391,
+      "n_geo_phenotype_rows": 391,
+      "n_methylation_and_label": 391,
+      "n_with_ewas_assay": 391,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE208529",
+      "tissue_map_parquet": {
+        "unmapped": 391
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 391,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 391,
+          "n_with_assay": 391
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 548,
+      "n_geo_phenotype_rows": 1096,
+      "n_methylation_and_label": 548,
+      "n_with_ewas_assay": 548,
       "n_with_hub_membership": 0,
       "study_id": "GSE208713",
       "tissue_map_parquet": {
@@ -1681,26 +2805,47 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 548,
           "n_with_assay": 548
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 418,
+      "n_geo_phenotype_rows": 836,
+      "n_methylation_and_label": 418,
+      "n_with_ewas_assay": 418,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE210254",
+      "tissue_map_parquet": {
+        "mapped": 418
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 418,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 418,
+          "n_with_assay": 418
         },
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 568,
+          "n_gsm": 418,
           "n_hub_overlap_rows": 0,
-          "n_rows": 568,
-          "n_with_assay": 568
+          "n_rows": 418,
+          "n_with_assay": 418
         }
       }
     },
     {
       "n_geo_gsm": 1394,
-      "n_geo_phenotype_rows": 1394,
+      "n_geo_phenotype_rows": 2788,
       "n_methylation_and_label": 1394,
       "n_with_ewas_assay": 1394,
       "n_with_hub_membership": 0,
       "study_id": "GSE210255",
       "tissue_map_parquet": {
-        "empty": 1394
+        "mapped": 1394
       },
       "traits": {
         "sex": {
@@ -1710,6 +2855,64 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 1394,
           "n_with_assay": 1394
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 1394,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 1394,
+          "n_with_assay": 1394
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 320,
+      "n_geo_phenotype_rows": 640,
+      "n_methylation_and_label": 320,
+      "n_with_ewas_assay": 320,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE212682",
+      "tissue_map_parquet": {
+        "unmapped": 321
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 320,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 320,
+          "n_with_assay": 320
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 320,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 320,
+          "n_with_assay": 320
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 937,
+      "n_geo_phenotype_rows": 937,
+      "n_methylation_and_label": 937,
+      "n_with_ewas_assay": 937,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE215240",
+      "tissue_map_parquet": {
+        "mapped": 1124
+      },
+      "traits": {
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 937,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 937,
+          "n_with_assay": 937
         }
       }
     },
@@ -1759,6 +2962,85 @@
       }
     },
     {
+      "n_geo_gsm": 391,
+      "n_geo_phenotype_rows": 782,
+      "n_methylation_and_label": 391,
+      "n_with_ewas_assay": 391,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE220622",
+      "tissue_map_parquet": {
+        "unmapped": 391
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 391,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 391,
+          "n_with_assay": 391
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 391,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 391,
+          "n_with_assay": 391
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 305,
+      "n_geo_phenotype_rows": 609,
+      "n_methylation_and_label": 305,
+      "n_with_ewas_assay": 305,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE221256",
+      "tissue_map_parquet": {
+        "unmapped": 305
+      },
+      "traits": {
+        "disease": {
+          "n_cases": 305,
+          "n_controls": 0,
+          "n_gsm": 305,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 305,
+          "n_with_assay": 305
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 304,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 304,
+          "n_with_assay": 304
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 321,
+      "n_geo_phenotype_rows": 321,
+      "n_methylation_and_label": 321,
+      "n_with_ewas_assay": 321,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE223467",
+      "tissue_map_parquet": {
+        "unmapped": 357
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 321,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 321,
+          "n_with_assay": 321
+        }
+      }
+    },
+    {
       "n_geo_gsm": 984,
       "n_geo_phenotype_rows": 2307,
       "n_methylation_and_label": 984,
@@ -1766,7 +3048,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE223817",
       "tissue_map_parquet": {
-        "empty": 984
+        "unmapped": 984
       },
       "traits": {
         "age": {
@@ -1803,7 +3085,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE224124",
       "tissue_map_parquet": {
-        "empty": 1107
+        "unmapped": 1107
       },
       "traits": {
         "sex": {
@@ -1824,7 +3106,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE224218",
       "tissue_map_parquet": {
-        "empty": 170
+        "unmapped": 170
       },
       "traits": {
         "age": {
@@ -1846,6 +3128,28 @@
       }
     },
     {
+      "n_geo_gsm": 80,
+      "n_geo_phenotype_rows": 80,
+      "n_methylation_and_label": 80,
+      "n_with_ewas_assay": 80,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE224339",
+      "tissue_map_parquet": {
+        "mapped": 80,
+        "unmapped": 159
+      },
+      "traits": {
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 80,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 80,
+          "n_with_assay": 80
+        }
+      }
+    },
+    {
       "n_geo_gsm": 712,
       "n_geo_phenotype_rows": 2130,
       "n_methylation_and_label": 712,
@@ -1853,7 +3157,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE224365",
       "tissue_map_parquet": {
-        "unmapped": 712
+        "mapped": 712
       },
       "traits": {
         "age": {
@@ -1883,14 +3187,36 @@
       }
     },
     {
+      "n_geo_gsm": 74,
+      "n_geo_phenotype_rows": 74,
+      "n_methylation_and_label": 74,
+      "n_with_ewas_assay": 74,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE225810",
+      "tissue_map_parquet": {
+        "mapped": 74,
+        "unmapped": 167
+      },
+      "traits": {
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 74,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 74,
+          "n_with_assay": 74
+        }
+      }
+    },
+    {
       "n_geo_gsm": 595,
-      "n_geo_phenotype_rows": 1050,
+      "n_geo_phenotype_rows": 1645,
       "n_methylation_and_label": 595,
       "n_with_ewas_assay": 595,
       "n_with_hub_membership": 0,
       "study_id": "GSE225845",
       "tissue_map_parquet": {
-        "empty": 595
+        "mapped": 595
       },
       "traits": {
         "cancer": {
@@ -1908,6 +3234,14 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 595,
           "n_with_assay": 595
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 595,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 595,
+          "n_with_assay": 595
         }
       }
     },
@@ -1919,7 +3253,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE226569",
       "tissue_map_parquet": {
-        "unmapped": 694
+        "mapped": 694
       },
       "traits": {
         "sex": {
@@ -1941,14 +3275,109 @@
       }
     },
     {
+      "n_geo_gsm": 275,
+      "n_geo_phenotype_rows": 693,
+      "n_methylation_and_label": 275,
+      "n_with_ewas_assay": 275,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE232332",
+      "tissue_map_parquet": {
+        "unmapped": 275
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 275,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 275,
+          "n_with_assay": 275
+        },
+        "disease": {
+          "n_cases": 67,
+          "n_controls": 76,
+          "n_gsm": 143,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 143,
+          "n_with_assay": 143
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 275,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 275,
+          "n_with_assay": 275
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 245,
+      "n_geo_phenotype_rows": 735,
+      "n_methylation_and_label": 245,
+      "n_with_ewas_assay": 245,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE234461",
+      "tissue_map_parquet": {
+        "mapped": 245
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 245,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 245,
+          "n_with_assay": 245
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 245,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 245,
+          "n_with_assay": 245
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 245,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 245,
+          "n_with_assay": 245
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 380,
+      "n_geo_phenotype_rows": 380,
+      "n_methylation_and_label": 380,
+      "n_with_ewas_assay": 380,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE237103",
+      "tissue_map_parquet": {
+        "unmapped": 380
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 380,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 380,
+          "n_with_assay": 380
+        }
+      }
+    },
+    {
       "n_geo_gsm": 126,
-      "n_geo_phenotype_rows": 252,
+      "n_geo_phenotype_rows": 378,
       "n_methylation_and_label": 126,
       "n_with_ewas_assay": 126,
       "n_with_hub_membership": 0,
       "study_id": "GSE237561",
       "tissue_map_parquet": {
-        "empty": 126
+        "mapped": 126
       },
       "traits": {
         "age": {
@@ -1966,65 +3395,355 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 126,
           "n_with_assay": 126
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 126,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 126,
+          "n_with_assay": 126
         }
       }
     },
     {
-      "n_geo_gsm": 58,
-      "n_geo_phenotype_rows": 58,
-      "n_methylation_and_label": 58,
-      "n_with_ewas_assay": 58,
+      "n_geo_gsm": 363,
+      "n_geo_phenotype_rows": 363,
+      "n_methylation_and_label": 363,
+      "n_with_ewas_assay": 363,
       "n_with_hub_membership": 0,
-      "study_id": "GSE240482",
+      "study_id": "GSE240704",
       "tissue_map_parquet": {
-        "unmapped": 64
+        "mapped": 363
       },
       "traits": {
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 58,
+          "n_gsm": 363,
           "n_hub_overlap_rows": 0,
-          "n_rows": 58,
-          "n_with_assay": 58
+          "n_rows": 363,
+          "n_with_assay": 363
         }
       }
     },
     {
-      "n_geo_gsm": 68,
-      "n_geo_phenotype_rows": 68,
-      "n_methylation_and_label": 68,
-      "n_with_ewas_assay": 68,
+      "n_geo_gsm": 253,
+      "n_geo_phenotype_rows": 253,
+      "n_methylation_and_label": 253,
+      "n_with_ewas_assay": 253,
       "n_with_hub_membership": 0,
-      "study_id": "GSE267015",
+      "study_id": "GSE243075",
       "tissue_map_parquet": {
-        "unmapped": 70
+        "unmapped": 363
+      },
+      "traits": {
+        "disease": {
+          "n_cases": 240,
+          "n_controls": 13,
+          "n_gsm": 253,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 253,
+          "n_with_assay": 253
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 524,
+      "n_geo_phenotype_rows": 524,
+      "n_methylation_and_label": 524,
+      "n_with_ewas_assay": 524,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE243529",
+      "tissue_map_parquet": {
+        "unmapped": 524
+      },
+      "traits": {
+        "disease": {
+          "n_cases": 256,
+          "n_controls": 268,
+          "n_gsm": 524,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 524,
+          "n_with_assay": 524
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 500,
+      "n_geo_phenotype_rows": 1500,
+      "n_methylation_and_label": 500,
+      "n_with_ewas_assay": 500,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE246337",
+      "tissue_map_parquet": {
+        "mapped": 500
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 500,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 500,
+          "n_with_assay": 500
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 500,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 500,
+          "n_with_assay": 500
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 500,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 500,
+          "n_with_assay": 500
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 398,
+      "n_geo_phenotype_rows": 1194,
+      "n_methylation_and_label": 398,
+      "n_with_ewas_assay": 398,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE249113",
+      "tissue_map_parquet": {
+        "mapped": 398
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 398,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 398,
+          "n_with_assay": 398
+        },
+        "disease": {
+          "n_cases": 170,
+          "n_controls": 228,
+          "n_gsm": 398,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 398,
+          "n_with_assay": 398
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 398,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 398,
+          "n_with_assay": 398
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 368,
+      "n_geo_phenotype_rows": 736,
+      "n_methylation_and_label": 368,
+      "n_with_ewas_assay": 368,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE250513",
+      "tissue_map_parquet": {
+        "unmapped": 376
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 368,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 368,
+          "n_with_assay": 368
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 368,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 368,
+          "n_with_assay": 368
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 359,
+      "n_geo_phenotype_rows": 718,
+      "n_methylation_and_label": 359,
+      "n_with_ewas_assay": 359,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE252169",
+      "tissue_map_parquet": {
+        "mapped": 359
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 359,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 359,
+          "n_with_assay": 359
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 359,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 359,
+          "n_with_assay": 359
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 411,
+      "n_geo_phenotype_rows": 573,
+      "n_methylation_and_label": 411,
+      "n_with_ewas_assay": 411,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE253101",
+      "tissue_map_parquet": {
+        "unmapped": 411
+      },
+      "traits": {
+        "cancer": {
+          "n_cases": 368,
+          "n_controls": 0,
+          "n_gsm": 368,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 368,
+          "n_with_assay": 368
+        },
+        "disease": {
+          "n_cases": 4,
+          "n_controls": 43,
+          "n_gsm": 47,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 47,
+          "n_with_assay": 47
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 158,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 158,
+          "n_with_assay": 158
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 298,
+      "n_geo_phenotype_rows": 298,
+      "n_methylation_and_label": 298,
+      "n_with_ewas_assay": 298,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE263787",
+      "tissue_map_parquet": {
+        "mapped": 298
       },
       "traits": {
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 68,
+          "n_gsm": 298,
           "n_hub_overlap_rows": 0,
-          "n_rows": 68,
-          "n_with_assay": 68
+          "n_rows": 298,
+          "n_with_assay": 298
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 238,
+      "n_geo_phenotype_rows": 238,
+      "n_methylation_and_label": 238,
+      "n_with_ewas_assay": 238,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE269244",
+      "tissue_map_parquet": {
+        "unmapped": 238
+      },
+      "traits": {
+        "cancer": {
+          "n_cases": 120,
+          "n_controls": 118,
+          "n_gsm": 238,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 238,
+          "n_with_assay": 238
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 289,
+      "n_geo_phenotype_rows": 289,
+      "n_methylation_and_label": 289,
+      "n_with_ewas_assay": 289,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE269416",
+      "tissue_map_parquet": {
+        "mapped": 289,
+        "unmapped": 1
+      },
+      "traits": {
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 289,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 289,
+          "n_with_assay": 289
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 392,
+      "n_geo_phenotype_rows": 392,
+      "n_methylation_and_label": 392,
+      "n_with_ewas_assay": 392,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE270223",
+      "tissue_map_parquet": {
+        "unmapped": 392
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 392,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 392,
+          "n_with_assay": 392
         }
       }
     },
     {
       "n_geo_gsm": 994,
-      "n_geo_phenotype_rows": 994,
+      "n_geo_phenotype_rows": 1988,
       "n_methylation_and_label": 994,
       "n_with_ewas_assay": 994,
       "n_with_hub_membership": 0,
       "study_id": "GSE270375",
       "tissue_map_parquet": {
-        "empty": 994,
-        "unmapped": 384
+        "mapped": 1378
       },
       "traits": {
         "cancer": {
           "n_cases": 994,
+          "n_controls": 0,
+          "n_gsm": 994,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 994,
+          "n_with_assay": 994
+        },
+        "tissue": {
+          "n_cases": 0,
           "n_controls": 0,
           "n_gsm": 994,
           "n_hub_overlap_rows": 0,
@@ -2041,7 +3760,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE280206",
       "tissue_map_parquet": {
-        "unmapped": 648
+        "mapped": 648
       },
       "traits": {
         "sex": {
@@ -2064,7 +3783,7 @@
     },
     {
       "n_geo_gsm": 153,
-      "n_geo_phenotype_rows": 306,
+      "n_geo_phenotype_rows": 153,
       "n_methylation_and_label": 153,
       "n_with_ewas_assay": 153,
       "n_with_hub_membership": 0,
@@ -2074,14 +3793,6 @@
       },
       "traits": {
         "sex": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 153,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 153,
-          "n_with_assay": 153
-        },
-        "tissue": {
           "n_cases": 0,
           "n_controls": 0,
           "n_gsm": 153,
@@ -2121,27 +3832,6 @@
       }
     },
     {
-      "n_geo_gsm": 90,
-      "n_geo_phenotype_rows": 90,
-      "n_methylation_and_label": 90,
-      "n_with_ewas_assay": 90,
-      "n_with_hub_membership": 0,
-      "study_id": "GSE41336",
-      "tissue_map_parquet": {
-        "unmapped": 90
-      },
-      "traits": {
-        "tissue": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 90,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 90,
-          "n_with_assay": 90
-        }
-      }
-    },
-    {
       "n_geo_gsm": 241,
       "n_geo_phenotype_rows": 810,
       "n_methylation_and_label": 241,
@@ -2149,7 +3839,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE42861",
       "tissue_map_parquet": {
-        "unmapped": 689
+        "mapped": 689
       },
       "traits": {
         "age": {
@@ -2194,8 +3884,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE43414",
       "tissue_map_parquet": {
-        "mapped": 95,
-        "unmapped": 601
+        "mapped": 696
       },
       "traits": {
         "sex": {
@@ -2217,10 +3906,10 @@
       }
     },
     {
-      "n_geo_gsm": 61,
-      "n_geo_phenotype_rows": 61,
-      "n_methylation_and_label": 61,
-      "n_with_ewas_assay": 61,
+      "n_geo_gsm": 9,
+      "n_geo_phenotype_rows": 9,
+      "n_methylation_and_label": 9,
+      "n_with_ewas_assay": 9,
       "n_with_hub_membership": 0,
       "study_id": "GSE49177",
       "tissue_map_parquet": {
@@ -2231,22 +3920,22 @@
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 61,
+          "n_gsm": 9,
           "n_hub_overlap_rows": 0,
-          "n_rows": 61,
-          "n_with_assay": 61
+          "n_rows": 9,
+          "n_with_assay": 9
         }
       }
     },
     {
       "n_geo_gsm": 297,
-      "n_geo_phenotype_rows": 594,
+      "n_geo_phenotype_rows": 891,
       "n_methylation_and_label": 297,
       "n_with_ewas_assay": 297,
       "n_with_hub_membership": 0,
       "study_id": "GSE51032",
       "tissue_map_parquet": {
-        "empty": 845
+        "mapped": 845
       },
       "traits": {
         "age": {
@@ -2264,12 +3953,20 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 297,
           "n_with_assay": 297
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 297,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 297,
+          "n_with_assay": 297
         }
       }
     },
     {
       "n_geo_gsm": 62,
-      "n_geo_phenotype_rows": 124,
+      "n_geo_phenotype_rows": 62,
       "n_methylation_and_label": 62,
       "n_with_ewas_assay": 62,
       "n_with_hub_membership": 0,
@@ -2285,14 +3982,118 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 62,
           "n_with_assay": 62
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 245,
+      "n_geo_phenotype_rows": 321,
+      "n_methylation_and_label": 245,
+      "n_with_ewas_assay": 245,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE52270",
+      "tissue_map_parquet": {
+        "mapped": 85,
+        "unmapped": 184
+      },
+      "traits": {
+        "cancer": {
+          "n_cases": 217,
+          "n_controls": 0,
+          "n_gsm": 217,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 217,
+          "n_with_assay": 217
+        },
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 28,
+          "n_gsm": 28,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 28,
+          "n_with_assay": 28
         },
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 62,
+          "n_gsm": 76,
           "n_hub_overlap_rows": 0,
-          "n_rows": 62,
-          "n_with_assay": 62
+          "n_rows": 76,
+          "n_with_assay": 76
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 56,
+      "n_geo_phenotype_rows": 112,
+      "n_methylation_and_label": 56,
+      "n_with_ewas_assay": 56,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE52401",
+      "tissue_map_parquet": {
+        "unmapped": 244
+      },
+      "traits": {
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 56,
+          "n_gsm": 56,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 56,
+          "n_with_assay": 56
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 56,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 56,
+          "n_with_assay": 56
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 187,
+      "n_geo_phenotype_rows": 530,
+      "n_methylation_and_label": 187,
+      "n_with_ewas_assay": 187,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE53740",
+      "tissue_map_parquet": {
+        "mapped": 384
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 186,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 186,
+          "n_with_assay": 186
+        },
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 57,
+          "n_gsm": 57,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 57,
+          "n_with_assay": 57
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 100,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 100,
+          "n_with_assay": 100
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 187,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 187,
+          "n_with_assay": 187
         }
       }
     },
@@ -2335,16 +4136,24 @@
     },
     {
       "n_geo_gsm": 290,
-      "n_geo_phenotype_rows": 290,
+      "n_geo_phenotype_rows": 580,
       "n_methylation_and_label": 290,
       "n_with_ewas_assay": 290,
       "n_with_hub_membership": 0,
       "study_id": "GSE56046",
       "tissue_map_parquet": {
-        "empty": 1202
+        "mapped": 1202
       },
       "traits": {
         "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 290,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 290,
+          "n_with_assay": 290
+        },
+        "tissue": {
           "n_cases": 0,
           "n_controls": 0,
           "n_gsm": 290,
@@ -2362,7 +4171,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE56105",
       "tissue_map_parquet": {
-        "unmapped": 614
+        "mapped": 614
       },
       "traits": {
         "age": {
@@ -2392,50 +4201,59 @@
       }
     },
     {
-      "n_geo_gsm": 54,
-      "n_geo_phenotype_rows": 54,
-      "n_methylation_and_label": 54,
-      "n_with_ewas_assay": 54,
+      "n_geo_gsm": 191,
+      "n_geo_phenotype_rows": 382,
+      "n_methylation_and_label": 191,
+      "n_with_ewas_assay": 191,
       "n_with_hub_membership": 0,
-      "study_id": "GSE57204",
+      "study_id": "GSE56588",
       "tissue_map_parquet": {
-        "unmapped": 54
+        "mapped": 243
       },
       "traits": {
+        "disease": {
+          "n_cases": 187,
+          "n_controls": 4,
+          "n_gsm": 191,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 191,
+          "n_with_assay": 191
+        },
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 54,
+          "n_gsm": 191,
           "n_hub_overlap_rows": 0,
-          "n_rows": 54,
-          "n_with_assay": 54
+          "n_rows": 191,
+          "n_with_assay": 191
         }
       }
     },
     {
-      "n_geo_gsm": 338,
-      "n_geo_phenotype_rows": 338,
-      "n_methylation_and_label": 338,
-      "n_with_ewas_assay": 338,
+      "n_geo_gsm": 210,
+      "n_geo_phenotype_rows": 210,
+      "n_methylation_and_label": 210,
+      "n_with_ewas_assay": 210,
       "n_with_hub_membership": 0,
       "study_id": "GSE57342",
       "tissue_map_parquet": {
-        "unmapped": 338
+        "mapped": 210,
+        "unmapped": 128
       },
       "traits": {
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 338,
+          "n_gsm": 210,
           "n_hub_overlap_rows": 0,
-          "n_rows": 338,
-          "n_with_assay": 338
+          "n_rows": 210,
+          "n_with_assay": 210
         }
       }
     },
     {
       "n_geo_gsm": 92,
-      "n_geo_phenotype_rows": 217,
+      "n_geo_phenotype_rows": 125,
       "n_methylation_and_label": 92,
       "n_with_ewas_assay": 92,
       "n_with_hub_membership": 0,
@@ -2459,14 +4277,36 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 92,
           "n_with_assay": 92
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 64,
+      "n_geo_phenotype_rows": 85,
+      "n_methylation_and_label": 64,
+      "n_with_ewas_assay": 64,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE59250",
+      "tissue_map_parquet": {
+        "mapped": 55,
+        "unmapped": 379
+      },
+      "traits": {
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 64,
+          "n_gsm": 64,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 64,
+          "n_with_assay": 64
         },
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 92,
+          "n_gsm": 21,
           "n_hub_overlap_rows": 0,
-          "n_rows": 92,
-          "n_with_assay": 92
+          "n_rows": 21,
+          "n_with_assay": 21
         }
       }
     },
@@ -2478,8 +4318,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE59685",
       "tissue_map_parquet": {
-        "mapped": 80,
-        "unmapped": 451
+        "mapped": 531
       },
       "traits": {
         "sex": {
@@ -2501,23 +4340,68 @@
       }
     },
     {
-      "n_geo_gsm": 144,
-      "n_geo_phenotype_rows": 144,
-      "n_methylation_and_label": 144,
-      "n_with_ewas_assay": 144,
+      "n_geo_gsm": 270,
+      "n_geo_phenotype_rows": 730,
+      "n_methylation_and_label": 270,
+      "n_with_ewas_assay": 270,
       "n_with_hub_membership": 0,
-      "study_id": "GSE65183",
+      "study_id": "GSE60185",
       "tissue_map_parquet": {
-        "unmapped": 144
+        "unmapped": 285
       },
       "traits": {
-        "tissue": {
+        "age": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 144,
+          "n_gsm": 190,
           "n_hub_overlap_rows": 0,
-          "n_rows": 144,
-          "n_with_assay": 144
+          "n_rows": 190,
+          "n_with_assay": 190
+        },
+        "disease": {
+          "n_cases": 239,
+          "n_controls": 31,
+          "n_gsm": 270,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 270,
+          "n_with_assay": 270
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 270,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 270,
+          "n_with_assay": 270
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 4,
+      "n_geo_phenotype_rows": 8,
+      "n_methylation_and_label": 4,
+      "n_with_ewas_assay": 4,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE64509",
+      "tissue_map_parquet": {
+        "unmapped": 260
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 4,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 4,
+          "n_with_assay": 4
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 4,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 4,
+          "n_with_assay": 4
         }
       }
     },
@@ -2529,7 +4413,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE65362",
       "tissue_map_parquet": {
-        "unmapped": 562
+        "mapped": 562
       },
       "traits": {
         "tissue": {
@@ -2543,52 +4427,10 @@
       }
     },
     {
-      "n_geo_gsm": 60,
-      "n_geo_phenotype_rows": 60,
-      "n_methylation_and_label": 60,
-      "n_with_ewas_assay": 60,
-      "n_with_hub_membership": 0,
-      "study_id": "GSE66872",
-      "tissue_map_parquet": {
-        "unmapped": 60
-      },
-      "traits": {
-        "tissue": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 60,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 60,
-          "n_with_assay": 60
-        }
-      }
-    },
-    {
-      "n_geo_gsm": 120,
-      "n_geo_phenotype_rows": 120,
-      "n_methylation_and_label": 120,
-      "n_with_ewas_assay": 120,
-      "n_with_hub_membership": 0,
-      "study_id": "GSE68060",
-      "tissue_map_parquet": {
-        "unmapped": 120
-      },
-      "traits": {
-        "tissue": {
-          "n_cases": 0,
-          "n_controls": 0,
-          "n_gsm": 120,
-          "n_hub_overlap_rows": 0,
-          "n_rows": 120,
-          "n_with_assay": 120
-        }
-      }
-    },
-    {
-      "n_geo_gsm": 144,
-      "n_geo_phenotype_rows": 542,
-      "n_methylation_and_label": 144,
-      "n_with_ewas_assay": 144,
+      "n_geo_gsm": 135,
+      "n_geo_phenotype_rows": 533,
+      "n_methylation_and_label": 135,
+      "n_with_ewas_assay": 135,
       "n_with_hub_membership": 0,
       "study_id": "GSE68825",
       "tissue_map_parquet": {
@@ -2623,16 +4465,16 @@
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 144,
+          "n_gsm": 135,
           "n_hub_overlap_rows": 0,
-          "n_rows": 144,
-          "n_with_assay": 144
+          "n_rows": 135,
+          "n_with_assay": 135
         }
       }
     },
     {
       "n_geo_gsm": 74,
-      "n_geo_phenotype_rows": 222,
+      "n_geo_phenotype_rows": 149,
       "n_methylation_and_label": 74,
       "n_with_ewas_assay": 74,
       "n_with_hub_membership": 0,
@@ -2669,10 +4511,10 @@
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 74,
+          "n_gsm": 1,
           "n_hub_overlap_rows": 0,
-          "n_rows": 74,
-          "n_with_assay": 74
+          "n_rows": 1,
+          "n_with_assay": 1
         }
       }
     },
@@ -2714,14 +4556,171 @@
       }
     },
     {
-      "n_geo_gsm": 577,
-      "n_geo_phenotype_rows": 1093,
-      "n_methylation_and_label": 577,
-      "n_with_ewas_assay": 577,
+      "n_geo_gsm": 148,
+      "n_geo_phenotype_rows": 444,
+      "n_methylation_and_label": 148,
+      "n_with_ewas_assay": 148,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE72773",
+      "tissue_map_parquet": {
+        "mapped": 310
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 148,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 148,
+          "n_with_assay": 148
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 148,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 148,
+          "n_with_assay": 148
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 148,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 148,
+          "n_with_assay": 148
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 317,
+      "n_geo_phenotype_rows": 1062,
+      "n_methylation_and_label": 317,
+      "n_with_ewas_assay": 317,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE72774",
+      "tissue_map_parquet": {
+        "mapped": 508
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 317,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 317,
+          "n_with_assay": 317
+        },
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 111,
+          "n_gsm": 111,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 111,
+          "n_with_assay": 111
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 317,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 317,
+          "n_with_assay": 317
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 317,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 317,
+          "n_with_assay": 317
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 171,
+      "n_geo_phenotype_rows": 513,
+      "n_methylation_and_label": 171,
+      "n_with_ewas_assay": 171,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE72775",
+      "tissue_map_parquet": {
+        "mapped": 335
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 171,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 171,
+          "n_with_assay": 171
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 171,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 171,
+          "n_with_assay": 171
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 171,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 171,
+          "n_with_assay": 171
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 203,
+      "n_geo_phenotype_rows": 609,
+      "n_methylation_and_label": 203,
+      "n_with_ewas_assay": 203,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE73103",
+      "tissue_map_parquet": {
+        "mapped": 355
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 203,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 203,
+          "n_with_assay": 203
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 203,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 203,
+          "n_with_assay": 203
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 203,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 203,
+          "n_with_assay": 203
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 584,
+      "n_geo_phenotype_rows": 1416,
+      "n_methylation_and_label": 584,
+      "n_with_ewas_assay": 584,
       "n_with_hub_membership": 0,
       "study_id": "GSE73801",
       "tissue_map_parquet": {
-        "empty": 593
+        "mapped": 323,
+        "unmapped": 270
       },
       "traits": {
         "age": {
@@ -2747,18 +4746,55 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 576,
           "n_with_assay": 576
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 323,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 323,
+          "n_with_assay": 323
         }
       }
     },
     {
-      "n_geo_gsm": 30,
-      "n_geo_phenotype_rows": 30,
-      "n_methylation_and_label": 30,
-      "n_with_ewas_assay": 30,
+      "n_geo_gsm": 180,
+      "n_geo_phenotype_rows": 180,
+      "n_methylation_and_label": 180,
+      "n_with_ewas_assay": 180,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE74104",
+      "tissue_map_parquet": {
+        "unmapped": 267
+      },
+      "traits": {
+        "cancer": {
+          "n_cases": 139,
+          "n_controls": 0,
+          "n_gsm": 139,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 139,
+          "n_with_assay": 139
+        },
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 41,
+          "n_gsm": 41,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 41,
+          "n_with_assay": 41
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 55,
+      "n_geo_phenotype_rows": 85,
+      "n_methylation_and_label": 55,
+      "n_with_ewas_assay": 55,
       "n_with_hub_membership": 0,
       "study_id": "GSE74193",
       "tissue_map_parquet": {
-        "empty": 675
+        "mapped": 675
       },
       "traits": {
         "disease": {
@@ -2768,18 +4804,27 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 30,
           "n_with_assay": 30
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 55,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 55,
+          "n_with_assay": 55
         }
       }
     },
     {
-      "n_geo_gsm": 62,
-      "n_geo_phenotype_rows": 62,
-      "n_methylation_and_label": 62,
-      "n_with_ewas_assay": 62,
+      "n_geo_gsm": 63,
+      "n_geo_phenotype_rows": 63,
+      "n_methylation_and_label": 63,
+      "n_with_ewas_assay": 63,
       "n_with_hub_membership": 0,
       "study_id": "GSE74738",
       "tissue_map_parquet": {
-        "empty": 79
+        "mapped": 1,
+        "unmapped": 78
       },
       "traits": {
         "age": {
@@ -2789,18 +4834,68 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 62,
           "n_with_assay": 62
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 1,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 1,
+          "n_with_assay": 1
         }
       }
     },
     {
-      "n_geo_gsm": 572,
-      "n_geo_phenotype_rows": 572,
-      "n_methylation_and_label": 572,
-      "n_with_ewas_assay": 572,
+      "n_geo_gsm": 1,
+      "n_geo_phenotype_rows": 1,
+      "n_methylation_and_label": 1,
+      "n_with_ewas_assay": 1,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE75248",
+      "tissue_map_parquet": {
+        "unmapped": 335
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 1,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 1,
+          "n_with_assay": 1
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 378,
+      "n_geo_phenotype_rows": 378,
+      "n_methylation_and_label": 378,
+      "n_with_ewas_assay": 378,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE77696",
+      "tissue_map_parquet": {
+        "mapped": 378
+      },
+      "traits": {
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 378,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 378,
+          "n_with_assay": 378
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 573,
+      "n_geo_phenotype_rows": 1145,
+      "n_methylation_and_label": 573,
+      "n_with_ewas_assay": 573,
       "n_with_hub_membership": 0,
       "study_id": "GSE77716",
       "tissue_map_parquet": {
-        "empty": 573
+        "mapped": 573
       },
       "traits": {
         "sex": {
@@ -2810,18 +4905,26 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 572,
           "n_with_assay": 572
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 573,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 573,
+          "n_with_assay": 573
         }
       }
     },
     {
       "n_geo_gsm": 16,
-      "n_geo_phenotype_rows": 32,
+      "n_geo_phenotype_rows": 48,
       "n_methylation_and_label": 16,
       "n_with_ewas_assay": 16,
       "n_with_hub_membership": 0,
       "study_id": "GSE78874",
       "tissue_map_parquet": {
-        "empty": 259
+        "mapped": 259
       },
       "traits": {
         "age": {
@@ -2839,14 +4942,22 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 16,
           "n_with_assay": 16
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 16,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 16,
+          "n_with_assay": 16
         }
       }
     },
     {
-      "n_geo_gsm": 61,
-      "n_geo_phenotype_rows": 61,
-      "n_methylation_and_label": 61,
-      "n_with_ewas_assay": 61,
+      "n_geo_gsm": 12,
+      "n_geo_phenotype_rows": 12,
+      "n_methylation_and_label": 12,
+      "n_with_ewas_assay": 12,
       "n_with_hub_membership": 0,
       "study_id": "GSE79185",
       "tissue_map_parquet": {
@@ -2857,10 +4968,10 @@
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 61,
+          "n_gsm": 12,
           "n_hub_overlap_rows": 0,
-          "n_rows": 61,
-          "n_with_assay": 61
+          "n_rows": 12,
+          "n_with_assay": 12
         }
       }
     },
@@ -2902,23 +5013,153 @@
       }
     },
     {
-      "n_geo_gsm": 51,
-      "n_geo_phenotype_rows": 51,
-      "n_methylation_and_label": 51,
-      "n_with_ewas_assay": 51,
+      "n_geo_gsm": 8,
+      "n_geo_phenotype_rows": 16,
+      "n_methylation_and_label": 8,
+      "n_with_ewas_assay": 8,
       "n_with_hub_membership": 0,
-      "study_id": "GSE81472",
+      "study_id": "GSE80970",
       "tissue_map_parquet": {
-        "unmapped": 51
+        "mapped": 144,
+        "unmapped": 142
+      },
+      "traits": {
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 8,
+          "n_gsm": 8,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 8,
+          "n_with_assay": 8
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 8,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 8,
+          "n_with_assay": 8
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 730,
+      "n_geo_phenotype_rows": 1460,
+      "n_methylation_and_label": 730,
+      "n_with_ewas_assay": 730,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE82273",
+      "tissue_map_parquet": {
+        "mapped": 889
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 730,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 730,
+          "n_with_assay": 730
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 730,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 730,
+          "n_with_assay": 730
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 330,
+      "n_geo_phenotype_rows": 330,
+      "n_methylation_and_label": 330,
+      "n_with_ewas_assay": 330,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE84207",
+      "tissue_map_parquet": {
+        "unmapped": 330
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 330,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 330,
+          "n_with_assay": 330
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 547,
+      "n_geo_phenotype_rows": 974,
+      "n_methylation_and_label": 547,
+      "n_with_ewas_assay": 547,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE84727",
+      "tissue_map_parquet": {
+        "unmapped": 847
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 427,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 427,
+          "n_with_assay": 427
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 547,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 547,
+          "n_with_assay": 547
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 235,
+      "n_geo_phenotype_rows": 235,
+      "n_methylation_and_label": 235,
+      "n_with_ewas_assay": 235,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE85210",
+      "tissue_map_parquet": {
+        "mapped": 253
       },
       "traits": {
         "tissue": {
           "n_cases": 0,
           "n_controls": 0,
-          "n_gsm": 51,
+          "n_gsm": 235,
           "n_hub_overlap_rows": 0,
-          "n_rows": 51,
-          "n_with_assay": 51
+          "n_rows": 235,
+          "n_with_assay": 235
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 763,
+      "n_geo_phenotype_rows": 763,
+      "n_methylation_and_label": 763,
+      "n_with_ewas_assay": 763,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE85212",
+      "tissue_map_parquet": {
+        "mapped": 763
+      },
+      "traits": {
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 763,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 763,
+          "n_with_assay": 763
         }
       }
     },
@@ -2930,7 +5171,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE86078",
       "tissue_map_parquet": {
-        "unmapped": 149
+        "mapped": 149
       },
       "traits": {
         "tissue": {
@@ -2944,14 +5185,15 @@
       }
     },
     {
-      "n_geo_gsm": 55,
-      "n_geo_phenotype_rows": 55,
-      "n_methylation_and_label": 55,
-      "n_with_ewas_assay": 55,
+      "n_geo_gsm": 86,
+      "n_geo_phenotype_rows": 86,
+      "n_methylation_and_label": 86,
+      "n_with_ewas_assay": 86,
       "n_with_hub_membership": 0,
       "study_id": "GSE87177",
       "tissue_map_parquet": {
-        "empty": 119
+        "mapped": 31,
+        "unmapped": 88
       },
       "traits": {
         "cancer": {
@@ -2961,6 +5203,188 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 55,
           "n_with_assay": 55
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 31,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 31,
+          "n_with_assay": 31
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 433,
+      "n_geo_phenotype_rows": 1727,
+      "n_methylation_and_label": 433,
+      "n_with_ewas_assay": 433,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE87571",
+      "tissue_map_parquet": {
+        "mapped": 732
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 430,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 430,
+          "n_with_assay": 430
+        },
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 433,
+          "n_gsm": 433,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 433,
+          "n_with_assay": 433
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 431,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 431,
+          "n_with_assay": 431
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 433,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 433,
+          "n_with_assay": 433
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 17,
+      "n_geo_phenotype_rows": 17,
+      "n_methylation_and_label": 17,
+      "n_with_ewas_assay": 17,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE87640",
+      "tissue_map_parquet": {
+        "unmapped": 240
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 17,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 17,
+          "n_with_assay": 17
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 69,
+      "n_geo_phenotype_rows": 207,
+      "n_methylation_and_label": 69,
+      "n_with_ewas_assay": 69,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE87648",
+      "tissue_map_parquet": {
+        "mapped": 384
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 69,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 69,
+          "n_with_assay": 69
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 69,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 69,
+          "n_with_assay": 69
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 69,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 69,
+          "n_with_assay": 69
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 620,
+      "n_geo_phenotype_rows": 1032,
+      "n_methylation_and_label": 620,
+      "n_with_ewas_assay": 620,
+      "n_with_hub_membership": 208,
+      "study_id": "GSE89353",
+      "tissue_map_parquet": {
+        "mapped": 620
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 620,
+          "n_hub_overlap_rows": 208,
+          "n_rows": 620,
+          "n_with_assay": 620
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 412,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 412,
+          "n_with_assay": 412
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 2801,
+      "n_geo_phenotype_rows": 2801,
+      "n_methylation_and_label": 2801,
+      "n_with_ewas_assay": 2801,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE90496",
+      "tissue_map_parquet": {
+        "mapped": 2801
+      },
+      "traits": {
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 2801,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 2801,
+          "n_with_assay": 2801
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 428,
+      "n_geo_phenotype_rows": 428,
+      "n_methylation_and_label": 428,
+      "n_with_ewas_assay": 428,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE93646",
+      "tissue_map_parquet": {
+        "unmapped": 428
+      },
+      "traits": {
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 428,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 428,
+          "n_with_assay": 428
         }
       }
     },
@@ -2972,7 +5396,7 @@
       "n_with_hub_membership": 0,
       "study_id": "GSE94943",
       "tissue_map_parquet": {
-        "empty": 72
+        "unmapped": 72
       },
       "traits": {
         "disease": {
@@ -2982,6 +5406,80 @@
           "n_hub_overlap_rows": 0,
           "n_rows": 24,
           "n_with_assay": 24
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 91,
+      "n_geo_phenotype_rows": 352,
+      "n_methylation_and_label": 91,
+      "n_with_ewas_assay": 91,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE97362",
+      "tissue_map_parquet": {
+        "mapped": 235
+      },
+      "traits": {
+        "age": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 90,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 90,
+          "n_with_assay": 90
+        },
+        "cancer": {
+          "n_cases": 0,
+          "n_controls": 40,
+          "n_gsm": 40,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 40,
+          "n_with_assay": 40
+        },
+        "disease": {
+          "n_cases": 0,
+          "n_controls": 40,
+          "n_gsm": 40,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 40,
+          "n_with_assay": 40
+        },
+        "sex": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 91,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 91,
+          "n_with_assay": 91
+        },
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 91,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 91,
+          "n_with_assay": 91
+        }
+      }
+    },
+    {
+      "n_geo_gsm": 189,
+      "n_geo_phenotype_rows": 189,
+      "n_methylation_and_label": 189,
+      "n_with_ewas_assay": 189,
+      "n_with_hub_membership": 0,
+      "study_id": "GSE97628",
+      "tissue_map_parquet": {
+        "mapped": 380
+      },
+      "traits": {
+        "tissue": {
+          "n_cases": 0,
+          "n_controls": 0,
+          "n_gsm": 189,
+          "n_hub_overlap_rows": 0,
+          "n_rows": 189,
+          "n_with_assay": 189
         }
       }
     }

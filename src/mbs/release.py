@@ -46,6 +46,7 @@ from mbs.geo_metadata import (
     resolve_tissue_ontology_path,
     write_geo_backfill_pilot_report,
 )
+from mbs.geo_series_metadata import load_geo_series_frame, merge_geo_series_into_studies
 from mbs.paths import DataPaths
 from mbs.platform_id import PLATFORM_ALIASES, normalize_platform
 from mbs.registry.sample_info import FAMILY_VALUE_COLUMN
@@ -1221,6 +1222,10 @@ def refresh_release(
         geo_merge_stats["parquet_path"] = str(geo_path)
         if ont_path is not None:
             geo_merge_stats["tissue_ontology"] = str(ont_path)
+
+    geo_series_frame = load_geo_series_frame(paths.data_root)
+    if not geo_series_frame.empty and not studies.empty:
+        studies = merge_geo_series_into_studies(studies, geo_series_frame)
 
     sample_lane_flags = build_sample_lane_flags(
         samples=samples,

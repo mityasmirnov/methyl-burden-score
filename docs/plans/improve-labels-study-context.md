@@ -1,6 +1,6 @@
 # Improve labels and study context beyond Hub packs
 
-**Status:** in progress (2026-09-07)  
+**Status:** Wave 1 + Wave 2a **done** (2026-09-07); Wave 2b list next  
 **Parent:** [`data-infrastructure-improvements.md`](data-infrastructure-improvements.md) §2  
 **Related:** [`geo-metadata-backfill-ewas-db.md`](geo-metadata-backfill-ewas-db.md),
 [`geo-enriched-training-release.md`](geo-enriched-training-release.md),
@@ -50,14 +50,40 @@ GEO batch-50 + Atlas enrichment exist but under-deliver:
 4. `MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release` (or full refresh after seed).
 5. Record Δ: mapped tissue N, Atlas matched N, top residual gaps.
 
-## Wave 2 (gated)
+## Wave 2a — GEO series study context (**done** 2026-09-07)
+
+| Metric | Value |
+|--------|------:|
+| Catalog GSE with `metadata_json.geo` | **1 718** / 1 718 |
+| With title / summary | **1 718** / **1 718** |
+| With overall_design (SOFT header) | **111** (cached family SOFT only) |
+| NCBI esummary | 1 607; esummary+SOFT 111 |
+
+Artifacts: `canonical/phenotypes/geo_series_metadata.parquet`,
+`reports/inspection/deepmat_data_v1/geo_series_enrichment.{json,md}`.
+Merged on every `mbs catalog refresh-release` via `merge_geo_series_into_studies`.
+
+```bash
+make enrich-geo-series-metadata
+MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
+```
+
+## Wave 2b — next audited GEO crawl list
+
+```bash
+make write-geo-next-gse-list
+# → configs/data/geo_backfill_next_gse.txt + reports/.../geo_backfill_next/
+```
+
+## Wave 2 (remaining, gated)
 
 | Item | Gate |
 |------|------|
-| Next audited GEO GSE list (high-N EWAS_db, no GEO yet) | Wave 1 numbers reviewed |
+| Fetch next GSE list (SOFT download) | Wave 2b list reviewed |
 | Disease/cancer from tumor source_name + case/control pairing report | Per-study audit green |
 | GEO-dev matrix convert + age/tissue train arms | Milestone 10/11 allow |
 | Platform-null residual fill (`geo_platform_gap_priority_gse.txt`) | Ops parallel |
+| overall_design for more studies | Needs family SOFT cache (download) |
 
 ## Non-goals
 

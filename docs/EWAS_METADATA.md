@@ -107,10 +107,15 @@ GSM. Operator brief, join keys, GPL map, and audit:
 [`plans/geo-metadata-backfill-ewas-db.md`](plans/geo-metadata-backfill-ewas-db.md).
 Pre-scale / batch-50:
 [`plans/geo-metadata-backfill-pre-scale.md`](plans/geo-metadata-backfill-pre-scale.md).
-Label quality beyond Hub (tissue remap, Atlas ceiling):
-[`plans/improve-labels-study-context.md`](plans/improve-labels-study-context.md).
-Training release design (not built; do not mutate ATS):
+GEO series study context (title/summary/design → `study.metadata_json.geo`):
+[`plans/improve-labels-study-context.md`](plans/improve-labels-study-context.md) Wave 2a.
+Training release design (phenotype built; matrices gated):
 [`plans/geo-enriched-training-release.md`](plans/geo-enriched-training-release.md).
+
+```bash
+make enrich-geo-series-metadata
+make write-geo-next-gse-list
+```
 
 ```bash
 source scripts/activate_data_environment.sh
