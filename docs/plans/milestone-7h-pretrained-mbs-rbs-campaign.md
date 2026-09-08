@@ -407,3 +407,97 @@ bypass it.
   `--classical-only` / `--folds`; orphan RBS census (861 singleton / 1092
   multi-CpG orphans @ max_loci=65536). See
   `docs/plans/milestone-11-fold-selected-panel.md`.
+- 2026-09-08: **Nine-pack 5-combo pooling grid complete; P2-G scalar max/max
+  confirmed cascade finalist, no longer provisional.** Full grid (3-fold,
+  15 ep, same split/budget/seed): P2-G scalar max/max wins outright (tissue
+  F1 0.355, age MAE 13.431, sex AUROC 0.853); scalar mean/max, scalar
+  max/mean, vector mean→max, vector max→max all worse on F1 and MAE. See
+  `vector_vs_scalar.md`. Capacity screen for N-light m-only
+  (`rho_hidden_dimension` 10→64) on primary **`mbs_e2e`**: tissue
+  0.273→**0.308**, age 15.057→**14.727**, sex 0.742→**0.852** —
+  **adopted as N-light default** (2026-09-08). A prior “rejected / 0.194 /
+  20.616” note used the wrong `external_test` readout; do not cite it.
+- 2026-09-08: **Age MAE mean-vs-median across studies.** Aggregate MAE
+  (13.431) is mean-of-folds and hides a skewed per-study distribution:
+  across 190 study×fold rows, mean 14.16 / median 11.78 / p90 24.54 / range
+  3.31-51.56. Blood/immune tissues sit low (CD14+ monocyte median 6.8,
+  whole blood 10.5) and brain regions + colonic mucosa sit high
+  (cerebellum 24.9, colonic mucosa 50.8) under *either* statistic — the
+  tissue-heterogeneity finding isn't a mean-driven-skew artifact. See
+  `vector_vs_scalar.md` § Age MAE: mean vs. median.
+- 2026-09-08: **Age head tissue+sex conditioning — implemented, tested,
+  rejected.** Added `MultitaskHeads.age_covariates` (embedding-conditioned
+  dense age head, ground-truth tissue/sex labels with an "unknown" bucket
+  for masked-out samples; deliberately *not* conditioned on this model's
+  own tissue/sex predictions, to avoid propagating the tissue head's ~35%
+  F1 error rate into age) — `src/mbs/training/multitask.py`,
+  `src/mbs/training/cascade_loop.py`, config field `model.age_covariates:
+  [tissue, sex]`, unit tests in `test_multitask.py`. Full 3-fold ablation
+  vs. P2-G baseline: tissue F1 0.355→0.340, age MAE 13.431→14.135 (worse),
+  sex AUROC 0.853→0.834 — all three metrics moved against conditioning.
+  Also checked whether it at least narrowed the blood-vs-brain MAE gap that
+  motivated the test: 10.05→9.29, flat within fold-to-fold noise. **Not
+  adopted; P2-G stays unconditioned.** See `vector_vs_scalar.md` § Age-
+  covariates ablation for the full per-fold breakdown and discussion.
+- 2026-09-08: **Vector (region_hidden) warm-start from P2-G checkpoint —
+  built and running.** New mechanism in `cascade_loop.py`
+  (`_load_encoder_warm_start`, `warm_start_encoder_checkpoint` /
+  `freeze_encoder_epochs` / `fine_tune_learning_rate`, unit-tested):
+  transplant the converged P2-G CpG/region/RBS encoder into a fresh
+  `gene_aggregation: region_hidden` model (per-fold, matching fold only —
+  no cross-fold leakage), freeze it for 4 epochs while `gene_rho` + trait
+  heads linear-probe, then unfreeze and fine-tune jointly at 3e-4 for the
+  remaining 11 epochs. Motivated by LP-FT (Kumar et al. 2022): the
+  from-scratch vector arm trained a random-init `gene_rho` jointly with the
+  encoder, risking early noisy gradients distorting it. Fold 0 result:
+  tissue F1 0.348 / age MAE 12.88 / sex AUROC 0.949 — close to P2-G's own
+  fold 0 (0.364/12.80/0.950) and clearly above from-scratch vector's
+  aggregate on every metric. Folds 1-2 in progress; full verdict pending.
+  Configs: `stage0_7h_nine_pack_vector_{max_max,mean_max}_warmstart.yaml`.
+- 2026-09-08: **Known limitation surfaced (not yet addressed): `region_rho`
+  never gets a dense gradient even in P2-G's own training.** `scalar_rbs`'s
+  MBS is `max_pool(RBS)` — max-pooling routes gradient only to the argmax
+  region per gene per sample, so most regions get zero gradient most
+  batches, for the entire 15-epoch budget. The warm-start above transplants
+  an RBS encoder that was itself gradient-starved this way. Proposed
+  follow-up (not built): a dedicated stage-1 pretrain with `region_pool:
+  mean` (dense gradient to every region) purely to train the encoder well,
+  then transplant into the max-pooled stage-2 config (max-pooling still
+  likely correct for the *final* aggregation — burden scores want "is
+  there at least one impaired region," which mean-pooling would dilute;
+  consistent with `scalar_max_mean` already scoring worse than
+  `scalar_max_max`, 0.318 vs 0.355). Build only if the simpler warm-start
+  above doesn't close the scalar-vs-vector gap.
+- 2026-09-08: **Freeze-and-reuse adopted as standing practice** (user:
+  "what i always asked for") — matches DeepRVAT's actual training recipe
+  (train a gene-invariant impairment/burden network jointly across seed
+  traits, **freeze it**, reuse the frozen scores for classical regression
+  on new traits, including traits never seen in training — no further
+  gradient training per new trait; DeepRVAT also bags/ensembles multiple
+  training-split repeats for score stability). Concrete next deliverable:
+  freeze the converged P2-G encoder, score all nine-pack samples once,
+  fit lightweight logistic probes for **disease** and **cancer** (real
+  case/control labels already built: 12,194 and 9,077 usable samples;
+  neither trait is in the current champion config's loss at all) —
+  study-grouped per fold to avoid leakage. For the probe's own gene
+  panel: use **column selection** (only the genes with a trait-relevant
+  biological prior) rather than `SeedMaskedLinearHead`-style always-
+  multiply-by-mask, since the shared encoder has no cross-gene interaction
+  (each gene's score depends only on its own CpGs) — filtering columns
+  before vs. after a gene-local encoder gives identical numbers for
+  surviving genes, and column selection avoids carrying dead parameters.
+  Note: seed-masking specifically was tested for age/tissue/sex in
+  Milestone 9c and dense heads won there — that finding doesn't
+  necessarily generalize to disease/cancer, where a real disease-gene
+  panel is plausibly more genuinely sparse; worth re-testing there, not
+  written off. **BMI/ancestry label-prep (2026-09-08):** Hub labels joined
+  into the nine-pack phenotype table; `bmi_head` / `ancestry_head` wired
+  for DeepRVAT freeze-and-reuse (configs stubbed, GPU not queued). Brain
+  region labels joined for honesty; **no `brain_head`** (catalogue, not
+  case/control). Full-catalog sample overview:
+  [`label-prep-bmi-ancestry-sample-overview.md`](label-prep-bmi-ancestry-sample-overview.md).
+  Region-level annotation richness was already tried in this project and
+  underperformed (user-reported) — not re-proposing that specific form.
+  CpGPT embeddings/positional features, sex-chromosome-based sex
+  imputation, and epigenetic-clock-based (Horvath/CpGPT/MethylGPT) age
+  imputation are all explicitly deferred to **after** Milestone 12 OOF.

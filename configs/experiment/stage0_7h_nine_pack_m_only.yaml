@@ -1,5 +1,7 @@
 # 7H Phase 3: one-hop m-only flat reference on full nine-pack cohort (34,234).
 # Platform: HM450 only — no cross-platform claim. Matched to ATS m_only-16ep.
+# Default rho_hidden_dimension=64 (nine-pack wide screen beat rho=10 on tissue/
+# age/sex; adopted as N-light finalist default 2026-09-08).
 split_id: hub-nine-pack-3fold-v1
 sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
 cv_budget:
@@ -52,7 +54,7 @@ model:
   phi_hidden_dimension: 64
   phi_layers: 2
   pooling: mean
-  rho_hidden_dimension: 10
+  rho_hidden_dimension: 64
   rho_layers: 2
   type: flat_deepset
 pilot:

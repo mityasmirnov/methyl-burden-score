@@ -5,7 +5,7 @@
    on one-hop (9c only covered cascade).
 2) One-hop multi-seed restarts (seeds 42/43/44, fold 0).
 
-Default: ATS fold 0, 5 epochs, mean pool, gene-linked panel. Age/tissue/sex only.
+Default: ATS fold 0, 5 epochs, mean pool, gene-linked panel, rho_hidden=64.
 Reuses fold-0 seed panels from Milestone 9c when present.
 """
 
@@ -20,8 +20,7 @@ from typing import Any
 import numpy as np
 import yaml
 
-from mbs.matrix.store import matrix_store_paths, read_sample_index
-from mbs.matrix.virtual_hub_store import open_betas_for_matrix
+from mbs.matrix.store import matrix_store_paths, open_betas_for_matrix, read_sample_index
 from mbs.paths import DataPaths
 from mbs.training.cascade_assign import build_cascade_assignment
 from mbs.training.dev_cv import load_frozen_folds
@@ -36,6 +35,8 @@ LIGHT_CFG = ROOT / "configs" / "experiment" / "stage0_7g_gene_only_probe_light_m
 SEED_PANEL_DIR = (
     ROOT / "reports" / "inspection" / "stage0_7g_prime_seed_mask" / "seed_panels" / "fold_0"
 )
+# N-light default after nine-pack wide screen (2026-09-08).
+DEFAULT_RHO_HIDDEN = 64
 
 
 def _phenotype_arrays(phenotypes: list[Any], sample_ids: list[str]) -> dict[str, np.ndarray]:
@@ -64,14 +65,15 @@ def _load_ats_fold0(*, max_loci: int) -> dict[str, Any]:
     pilot = cfg["pilot"]
     matrix_id = str(pilot["matrix_id"])
     graph_id = str(pilot["graph_id"])
-    split_id = str(cfg.get("split_id") or "hub-ats-7e-3fold-v1")
+    split_id = str(cfg.get("split_id") or pilot.get("split_id") or "hub-ats-7e-3fold-v1")
+    pheno_rel = str(cfg.get("sample_phenotype_table") or pilot["sample_phenotype_table"])
     matrix_root = paths.data_root / "canonical" / "matrices" / matrix_id
     sample_index = read_sample_index(matrix_store_paths(matrix_root).sample_index_path)
     sample_ids = [str(s) for s in sample_index["sample_id"].tolist()]
     row_by_id = {sid: i for i, sid in enumerate(sample_ids)}
     phenotypes, class_names = load_multitask_phenotypes(
-        paths.data_root / str(cfg["sample_phenotype_table"]),
-        sample_ids,
+        paths.data_root / pheno_rel,
+        sample_ids=sample_ids,
     )
     fold_pack = load_frozen_folds(_split_path(paths, split_id))
     fold0 = fold_pack["folds"][0]
@@ -86,6 +88,10 @@ def _load_ats_fold0(*, max_loci: int) -> dict[str, Any]:
     assignment = build_cascade_assignment(
         loci, genes, edges, gene_allocation="explicit_only"
     )
+    print(
+        f"[onehop-smoke] loading betas {matrix_id} cols=[:{max_loci}] …",
+        flush=True,
+    )
     betas = np.asarray(open_betas_for_matrix(matrix_root)[:, :max_loci], dtype=np.float32)
     gene_cols = np.unique(assignment.edge_col_index)
     gene_cols = gene_cols[gene_cols < max_loci]
@@ -99,6 +105,9 @@ def _load_ats_fold0(*, max_loci: int) -> dict[str, Any]:
         "class_names": list(class_names),
         "gene_cols": gene_cols,
         "gene_ids": list(assignment.gene_ids),
+        "rho_hidden_dim": int(
+            (cfg.get("model") or {}).get("rho_hidden_dimension", DEFAULT_RHO_HIDDEN)
+        ),
     }
 
 
@@ -107,6 +116,35 @@ def _gene_indices_for_trait(artifacts: Any, trait: str, gene_ids: list[str]) -> 
     trait_genes = genes.loc[genes["trait"].astype(str) == trait, "gene_id"].astype(str).tolist()
     id_to_idx = {gid: i for i, gid in enumerate(gene_ids)}
     return [id_to_idx[g] for g in trait_genes if g in id_to_idx]
+
+
+def _train_kwargs(pack: dict[str, Any], *, arm: str, epochs: int, seed: int, device: str, out: Path, masks: dict[str, Any] | None = None) -> dict[str, Any]:
+    kw: dict[str, Any] = dict(
+        assignment=pack["assignment"],
+        betas=pack["betas"],
+        train_idx=pack["train_idx"],
+        test_idx=pack["test_idx"],
+        ages=pack["arrays"]["age"],
+        tissue=pack["arrays"]["tissue"],
+        sex=pack["arrays"]["sex"],
+        study_ids=pack["arrays"]["study_ids"],
+        sample_ids=pack["sample_ids"],
+        class_names=pack["class_names"],
+        out_dir=out,
+        max_epochs=epochs,
+        seed=seed,
+        device_str=device,
+        age_mask=pack["arrays"]["age_mask"],
+        tissue_mask=pack["arrays"]["tissue_mask"],
+        sex_mask=pack["arrays"]["sex_mask"],
+        panel_cols=pack["gene_cols"],
+        pool="mean",
+        arm=arm,
+        rho_hidden_dim=int(pack.get("rho_hidden_dim", DEFAULT_RHO_HIDDEN)),
+    )
+    if masks:
+        kw.update(masks)
+    return kw
 
 
 def run_seed_mask_smoke(*, epochs: int, device: str, max_loci: int) -> dict[str, Any]:
@@ -131,33 +169,31 @@ def run_seed_mask_smoke(*, epochs: int, device: str, max_loci: int) -> dict[str,
         "n_seed_genes_age": len(age_idx),
         "n_seed_genes_tissue": len(tissue_idx),
         "n_seed_genes_sex": len(sex_idx),
+        "rho_hidden_dim": pack.get("rho_hidden_dim", DEFAULT_RHO_HIDDEN),
     }
     for arm, use_masks in (("G0_onehop", False), ("G1_onehop", True)):
         out = REPORT / "seed_mask" / arm
         payload = train_flat_region_on_arrays(
-            assignment=pack["assignment"],
-            betas=pack["betas"],
-            train_idx=pack["train_idx"],
-            test_idx=pack["test_idx"],
-            ages=pack["arrays"]["age"],
-            tissue=pack["arrays"]["tissue"],
-            sex=pack["arrays"]["sex"],
-            study_ids=pack["arrays"]["study_ids"],
-            sample_ids=pack["sample_ids"],
-            class_names=pack["class_names"],
-            out_dir=out,
-            max_epochs=epochs,
-            seed=42,
-            device_str=device,
-            age_mask=pack["arrays"]["age_mask"],
-            tissue_mask=pack["arrays"]["tissue_mask"],
-            sex_mask=pack["arrays"]["sex_mask"],
-            panel_cols=pack["gene_cols"],
-            pool="mean",
-            arm=arm,
-            **(masks if use_masks else {}),
+            **_train_kwargs(
+                pack,
+                arm=arm,
+                epochs=epochs,
+                seed=42,
+                device=device,
+                out=out,
+                masks=(masks if use_masks else None),
+            )
         )
         m = (payload.get("evaluations") or {}).get("mbs_e2e", {}).get("metrics") or {}
+        # flat_region_loop may also put metrics at top level
+        if not m and "tissue" in (payload.get("metrics") or {}):
+            m = payload["metrics"]
+        if not m:
+            m = {
+                "tissue": {"macro_f1": payload.get("tissue_f1") or payload.get("macro_f1")},
+                "age": {"mae": payload.get("age_mae") or payload.get("mae")},
+                "sex": {"auroc": payload.get("sex_auroc") or payload.get("auroc")},
+            }
         results[arm] = {
             "tissue_f1": (m.get("tissue") or {}).get("macro_f1"),
             "age_mae": (m.get("age") or {}).get("mae"),
@@ -169,32 +205,24 @@ def run_seed_mask_smoke(*, epochs: int, device: str, max_loci: int) -> dict[str,
 
 def run_multiseed_smoke(*, epochs: int, device: str, max_loci: int, seeds: list[int]) -> dict[str, Any]:
     pack = _load_ats_fold0(max_loci=max_loci)
-    results: dict[str, Any] = {}
+    results: dict[str, Any] = {
+        "rho_hidden_dim": pack.get("rho_hidden_dim", DEFAULT_RHO_HIDDEN),
+    }
     for seed in seeds:
         arm = f"onehop_mean_s{seed}"
         payload = train_flat_region_on_arrays(
-            assignment=pack["assignment"],
-            betas=pack["betas"],
-            train_idx=pack["train_idx"],
-            test_idx=pack["test_idx"],
-            ages=pack["arrays"]["age"],
-            tissue=pack["arrays"]["tissue"],
-            sex=pack["arrays"]["sex"],
-            study_ids=pack["arrays"]["study_ids"],
-            sample_ids=pack["sample_ids"],
-            class_names=pack["class_names"],
-            out_dir=REPORT / "multiseed" / arm,
-            max_epochs=epochs,
-            seed=seed,
-            device_str=device,
-            age_mask=pack["arrays"]["age_mask"],
-            tissue_mask=pack["arrays"]["tissue_mask"],
-            sex_mask=pack["arrays"]["sex_mask"],
-            panel_cols=pack["gene_cols"],
-            pool="mean",
-            arm=arm,
+            **_train_kwargs(
+                pack,
+                arm=arm,
+                epochs=epochs,
+                seed=seed,
+                device=device,
+                out=REPORT / "multiseed" / arm,
+            )
         )
         m = (payload.get("evaluations") or {}).get("mbs_e2e", {}).get("metrics") or {}
+        if not m and "tissue" in (payload.get("metrics") or {}):
+            m = payload["metrics"]
         results[arm] = {
             "seed": seed,
             "tissue_f1": (m.get("tissue") or {}).get("macro_f1"),
@@ -202,7 +230,7 @@ def run_multiseed_smoke(*, epochs: int, device: str, max_loci: int, seeds: list[
             "sex_auroc": (m.get("sex") or {}).get("auroc"),
         }
         print(f"[onehop-smoke] {arm} {results[arm]}", flush=True)
-    tissues = [float(v["tissue_f1"]) for v in results.values() if v.get("tissue_f1") is not None]
+    tissues = [float(v["tissue_f1"]) for v in results.values() if isinstance(v, dict) and v.get("tissue_f1") is not None]
     results["_diversity"] = {
         "tissue_f1_span": (max(tissues) - min(tissues)) if len(tissues) >= 2 else None,
         "n_seeds": len(seeds),
@@ -224,9 +252,11 @@ def main() -> None:
     summary: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "epochs": args.epochs,
+        "rho_hidden_dim_default": DEFAULT_RHO_HIDDEN,
         "note": (
             "Cheap correctness only. One-hop+seed-mask and one-hop multi-seed "
-            "were previously untested; do not scale before these land."
+            "were previously untested; do not scale before these land. "
+            f"Uses N-light default rho_hidden={DEFAULT_RHO_HIDDEN}."
         ),
     }
     if not args.skip_seed_mask:
@@ -252,11 +282,36 @@ def main() -> None:
         for arm, row in summary["seed_mask"].items():
             lines.append(f"- **{arm}**: `{row}`")
         lines.append("")
+        g0 = summary["seed_mask"].get("G0_onehop") or {}
+        g1 = summary["seed_mask"].get("G1_onehop") or {}
+        lines += [
+            "### Interpretation",
+            "",
+            "G0 = dense one-hop (no seed mask); G1 = trait-associated seed genes only. "
+            "On cascade (9c), G0 beat G1–G3 for age-primary training. Here we ask whether "
+            "one-hop’s single-stage pooling interacts differently with sparse masking. "
+            "Stable train + sensible metrics = correctness pass; adopt masking only if G1 "
+            "clearly helps on the primary tasks.",
+            "",
+            f"- G0 tissue/age/sex: `{g0}`",
+            f"- G1 tissue/age/sex: `{g1}`",
+            "",
+        ]
     if "multiseed" in summary:
         lines += ["## Multi-seed restarts (fold 0)", ""]
         for arm, row in summary["multiseed"].items():
             lines.append(f"- **{arm}**: `{row}`")
         lines.append("")
+        div = summary["multiseed"].get("_diversity") or {}
+        lines += [
+            "### Interpretation",
+            "",
+            "After the seed-offset fix, restarts must produce **distinct** sensible runs "
+            f"(tissue F1 span `{div.get('tissue_f1_span')}`, ok_distinct=`{div.get('ok_distinct')}`). "
+            "A zero span means the seed path is still broken; do not trust Milestone 12 "
+            "restart ensembling until this is true.",
+            "",
+        ]
     (REPORT / "analysis.md").write_text("\n".join(lines) + "\n")
     print(f"wrote {REPORT / 'analysis.md'}", flush=True)
 

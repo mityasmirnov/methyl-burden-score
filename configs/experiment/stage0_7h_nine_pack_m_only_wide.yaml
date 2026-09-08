@@ -1,9 +1,6 @@
-# 7H Phase 3: one-hop m-only, WIDE rho capacity diagnostic (34,234 samples).
-# rho_hidden_dimension 10->64 (matching phi_hidden_dimension) to test whether
-# the narrow pooled-representation bottleneck explains m-only underperforming
-# P2-G more at nine-pack scale than it did at ATS scale (0.273 vs 0.355 F1
-# here, vs near-parity 0.372 vs 0.379 on ATS).
-# Platform: HM450 only — no cross-platform claim. Matched to ATS m_only-16ep.
+# 7H Phase 3: one-hop m-only WIDE (rho_hidden=64) — now the N-light default.
+# Alias of stage0_7h_nine_pack_m_only.yaml capacity; kept for run-id continuity
+# with stage0-7h-nine-pack-m-only-wide-f*. Platform: HM450 only.
 split_id: hub-nine-pack-3fold-v1
 sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
 cv_budget:

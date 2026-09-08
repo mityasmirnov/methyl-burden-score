@@ -61,6 +61,8 @@ def train_flat_region_on_arrays(
     age_seed_mask: Any | None = None,
     tissue_seed_mask: Any | None = None,
     sex_seed_mask: Any | None = None,
+    rho_hidden_dim: int = 64,
+    phi_hidden_dim: int = 64,
 ) -> dict[str, Any]:
     """Train FlatDeepSetRegion on one fold; return test tissue/age/sex metrics."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -77,9 +79,9 @@ def train_flat_region_on_arrays(
     input_dim = flat_region_input_dim()
     model = FlatDeepSetRegion(
         input_dim,
-        phi_hidden_dim=64,
+        phi_hidden_dim=int(phi_hidden_dim),
         phi_layers=2,
-        rho_hidden_dim=10,
+        rho_hidden_dim=int(rho_hidden_dim),
         rho_layers=2,
         pool=pool,  # type: ignore[arg-type]
     ).to(device)

@@ -16,23 +16,31 @@ provisional.
 | scalar max/mean | 3 | 0.318 | 17.426 | 0.812 |
 | vector mean→max | 3 | 0.335 | 16.448 | 0.780 |
 | vector max→max | 3 | 0.333 | 15.408 | 0.834 |
-| N-light m-only | 3 | 0.273 | 15.057 | 0.742 |
-| N-light m-only, rho_hidden 10→64 | 3 | 0.308 | 14.727 | 0.852 |
+| N-light m-only (rho=10, historical) | 3 | 0.273 | 15.057 | 0.742 |
+| **N-light m-only (rho=64, default)** | 3 | **0.308** | **14.727** | **0.852** |
 
-Milestone **12** OOF = finalists only (P2-G scalar max/max cascade + N-light).
+All rows are **`mbs_e2e`** outer test (not `external_test`, which under-reports tissue F1
+for flat runs and previously caused a false “rho64 worse” reading of 0.194 / 20.6).
+
+Milestone **12** OOF = finalists only (P2-G scalar max/max cascade + **N-light@64**).
 
 Full campaign narrative + interpretations: [`analysis.md`](analysis.md).
 
-## Capacity-bottleneck diagnostic (not a cascade substitute)
+## Capacity: rho 10→64 adopted as N-light default
 
-Widening `rho_hidden_dimension` 10→64 (matching `phi_hidden_dimension`) to test
-whether the narrow DeepSet pooling bottleneck explained m-only's widening gap vs.
-P2-G at nine-pack scale (vs. near-parity at ATS scale) **helps modestly** vs narrow
-m-only (tissue 0.273→0.308, age 15.057→14.727, sex 0.742→0.852) but **does not
-close the cascade gap** to P2-G (0.355 / 13.431). Same split/budget/seed/
-checkpoint-selection criterion. **Capacity alone is not the bottleneck that
-makes one-hop match cascade; keep N-light at `rho_hidden_dimension: 10` for
-Milestone 12 OOF** unless a dedicated sweep says otherwise.
+Widening `rho_hidden_dimension` 10→64 (matching `phi_hidden_dimension`), evaluated
+via primary **`mbs_e2e`** on `stage0-7h-nine-pack-m-only-wide-f*`:
+
+| | rho=10 | rho=64 | Δ |
+|--|------:|------:|--:|
+| Tissue F1 | 0.273 | **0.308** | +0.035 |
+| Age MAE | 15.057 | **14.727** | −0.330 |
+| Sex AUROC | 0.742 | **0.852** | +0.110 |
+
+**Adopted as the N-light default** (2026-09-08) in product configs + `flat_region`
+code fallbacks. Still trails P2-G cascade (0.355 / 13.431) — capacity helps one-hop
+but does not replace cascade. Do **not** cite the stale `external_test` 0.194/20.6
+figures for this comparison.
 
 ## Age MAE: mean vs. median across studies (P2-G baseline)
 
@@ -94,4 +102,45 @@ representation already implicitly encodes enough tissue signal for the
 dense age head to use, or because 3 folds is too few samples of the
 effect to detect at this budget. Not planning to pursue a fancier
 (nonlinear/FiLM) version of this without new evidence motivating it.
+
+## Vector (region_hidden) warm-started from P2-G scalar checkpoint (in progress)
+
+Motivation: from-scratch vector max/max scored 0.333 F1 / 15.408 MAE / 0.834
+AUROC vs. P2-G scalar's 0.355 / 13.431 / 0.853 -- worse on every metric. But
+`gene_rho` (vector's only extra learned module) was trained jointly from
+random init alongside the CpG/region encoder in that run, which per LP-FT
+(Kumar et al. 2022) risks the random head's early noisy gradients distorting
+an otherwise-good encoder. New mechanism built in `cascade_loop.py`
+(`_load_encoder_warm_start`, `warm_start_encoder_checkpoint` /
+`freeze_encoder_epochs` / `fine_tune_learning_rate` config fields, unit-tested
+in `test_stage0_7g_tissue_probe.py::test_cascade_warm_start_*`): copy the
+converged P2-G `cpg_encoder`/`region_type_embedding`/`region_encoder`/
+`region_rho` into a fresh `region_hidden` model (per-fold, from that same
+fold's own P2-G checkpoint -- never a different fold, which would leak that
+fold's train split into this fold's initialization), freeze it for 4 epochs
+while `gene_rho` + trait heads linear-probe, then unfreeze and fine-tune
+everything jointly at 3e-4 for the remaining 11 epochs (15 total, matching
+every other arm's budget).
+
+Fold 0 (of 3): tissue F1 **0.348**, age MAE **12.88**, sex AUROC **0.949** --
+close to the P2-G baseline's own fold 0 (0.364 / 12.80 / 0.950) and well
+above from-scratch vector max/max's aggregate on every metric. Folds 1-2
+still running; full 3-fold verdict pending.
+
+### Known limitation of this warm-start (not yet addressed)
+
+Even P2-G's own training never gave `region_rho` a *dense* gradient signal:
+`scalar_rbs`'s "MBS" is `max_pool(RBS scores in gene)`, and max-pooling
+routes gradient only to the single argmax region per gene per sample --
+every other region gets exactly zero gradient that step. So the checkpoint
+being warm-started from was itself trained under a gradient-starved regime
+for `region_rho`, the whole 15 epochs. A more thorough fix would be a
+dedicated stage-1 pretraining pass with `region_pool: mean` (dense gradient
+to every region) purely to train the encoder well, then transplant *that*
+into the max-pooled stage-2 config (max-pooling is still likely the right
+choice for the *final* aggregation -- burden scores want "is there at least
+one impaired region," which mean-pooling would dilute; `scalar_max_mean`
+(region_pool: mean) already scored worse than `scalar_max_max`, 0.318 vs
+0.355, consistent with this). Not yet built -- proposed as a follow-up arm
+if the simpler warm-start above doesn't close the gap.
 

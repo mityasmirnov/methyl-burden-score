@@ -1623,7 +1623,12 @@ def train_flat_baseline(
         input_dim,
         phi_hidden_dim=int(enc["cpg_hidden_dim"]),
         phi_layers=int(model_cfg.get("phi_layers", 2)),
-        rho_hidden_dim=int(model_cfg.get("rho_hidden_dimension", 10)),
+        rho_hidden_dim=int(
+            model_cfg.get(
+                "rho_hidden_dimension",
+                64 if topology == "flat_region" else 10,
+            )
+        ),
         rho_layers=int(model_cfg.get("rho_layers", 3)),
         pool=pool_name,
         neutral_score=float(model_cfg.get("neutral_score", 0.5)),

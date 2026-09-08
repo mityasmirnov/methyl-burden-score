@@ -16,10 +16,10 @@ Updated: `2026-09-08` (manual synthesis over auto `summary.json` / `vector_vs_sc
 | Decision | Status | Basis |
 |----------|--------|-------|
 | Cascade finalist | **P2-G scalar max/max** | Best tissue F1 **and** best age MAE in the full 5-combo nine-pack pooling grid |
-| Light-model finalist | **N-light m-only** (`rho_hidden=10`) | Still the co-equal Milestone **12** OOF partner; far behind cascade at this scale |
+| Light-model finalist | **N-light m-only (`rho_hidden=64`)** | Wide screen beat rho=10 on tissue/age/sex; adopted as default 2026-09-08 |
 | Vector RBS at nine-pack | **Does not beat scalar P2-G** | Both vector arms trail on tissue + age |
 | Age head + tissue/sex covariates | **Not adopted** | All three headline metrics slightly worse |
-| Widen m-only `rho_hidden` 10→64 | **Not adopted as a fix** | Mild help vs narrow m-only; does **not** close the cascade gap |
+| Widen m-only `rho_hidden` 10→64 | **Adopted as N-light default** | 0.273→**0.308** tissue, 15.1→**14.7** age, 0.742→**0.852** sex; still trails cascade |
 | Milestone **12** OOF scope | **Finalists only** | P2-G cascade + N-light — not all pooling arms, not all 9 trait packs |
 | Disease / cancer / blood / brain heads | **Blocked / deferred** | Need `label_status` wiring; blood/brain pack semantics broken |
 
@@ -73,17 +73,24 @@ Per-fold age MAE: baseline `[12.80, 16.00, 11.49]` vs conditioned `[12.75, 13.27
 
 ---
 
-## 3. N-light (one-hop m-only) vs cascade + capacity check
+## 3. N-light (one-hop m-only) — **`rho_hidden=64` is now the default**
 
 | Arm | folds | Tissue F1 | Age MAE | Sex AUROC |
 |-----|------:|----------:|--------:|----------:|
 | P2-G cascade | 3 | **0.355** | **13.431** | 0.853 |
-| N-light m-only (`rho_hidden=10`) | 3 | 0.273 (±0.050) | 15.057 (±2.150) | 0.742 (±0.110) |
-| N-light m-only wide (`rho_hidden=64`) | 3 | 0.308 (±0.053) | 14.727 (±1.370) | **0.852** (±0.032) |
+| N-light m-only (`rho_hidden=10`, historical) | 3 | 0.273 (±0.050) | 15.057 (±2.150) | 0.742 (±0.110) |
+| **N-light m-only (`rho_hidden=64`, default)** | 3 | **0.308** (±0.053) | **14.727** (±1.370) | **0.852** (±0.032) |
 
-m-only fold detail (`rho=10`): f0 **0.343 / 12.07 / 0.890**, f1 0.245 / 17.05 / 0.708, f2 0.230 / 16.04 / 0.626.
+Configs updated 2026-09-08: `stage0_7h_nine_pack_m_only.yaml`, light-mean/max product
+YAMLs, and `flat_region` code defaults. Canonical nine-pack numbers for OOF planning
+are the **rho=64** row (`stage0-7h-nine-pack-m-only-wide-f*`).
 
-**Interpretation.** At ATS scale, N-light was near-parity with cascade; at nine-pack scale the **gap opens** (~8 tissue F1 points, ~1.6 y age). That is expected if cascade’s two-stage pooling exploits the larger, more heterogeneous cohort better — not a reason to drop N-light from OOF, but a reason not to pretend the architectures are interchangeable. Widening `rho_hidden` 10→64 **helps modestly** (tissue 0.273→0.308, age 15.1→14.7, sex catches up to cascade) but **does not close the cascade gap** and is not a substitute for cascade. Keep default N-light at `rho_hidden=10` unless a dedicated capacity sweep says otherwise; treat the wide run as a negative-for-“capacity-is-the-bottleneck” diagnostic, not as a new finalist. *(Note: an earlier draft line quoting tissue 0.194 / MAE 20.6 for rho64 does not match `stage0-7h-nine-pack-m-only-wide-f*` metrics — use the table above.)*
+**Interpretation.** At ATS scale, N-light was near-parity with cascade; at nine-pack
+scale a gap remains even at rho=64 (~5 tissue F1 points, ~1.3 y age). Widening the
+DeepSet rho MLP from 10→64 **clearly helps** vs the narrow bottleneck (especially
+sex AUROC, which catches cascade), so **64 is the N-light default going forward**.
+It still does **not** replace cascade — Milestone **12** keeps both finalists
+(P2-G + N-light@64).
 
 ---
 
@@ -116,16 +123,22 @@ Seed **43** on `hub-ats-7e-3fold-v1` (exercises the seed-offset fix). Full write
 
 ---
 
-## 6. One-hop correctness smokes *(blocked — must fix before scaling tricks)*
+## 6. One-hop correctness smokes *(fix applied — rerunning)*
 
-Intended cheap checks (fold 0, ~5 ep) on `flat_region`:
+Intended cheap checks (fold 0, ~5 ep) on `flat_region` with **`rho_hidden=64`**:
 
 1. Seed-gene mask G0 vs G1 (9c only ever tested this on **cascade**).
 2. Multi-seed restarts 42/43/44 (path unproven on one-hop after the seed-offset fix).
 
-**Status:** queue hit `ImportError: cannot import name 'open_betas_for_matrix' from mbs.matrix.store` in `scripts/run_7h_onehop_correctness_smokes.py`. Directory `reports/inspection/stage0_7h_onehop_correctness/` is empty.
+**Status:** queue previously hit `ImportError: open_betas_for_matrix` (wrong import
+from `mbs.matrix.store`). **Fixed:** re-export added on `store.py`, smoke script
+uses keyword `sample_ids=…`, and training uses rho=64. Report lands in
+[`../stage0_7h_onehop_correctness/`](../stage0_7h_onehop_correctness/).
 
-**Interpretation.** These are still the right **validate-before-scale** steps before any multi-trait / multi-restart N-light campaign. Until they pass, do **not** launch “DeepRVAT tricks at nine-pack” or Milestone 12 light-model OOF prep that assumes seed-mask or multi-seed work on one-hop. Fix the import, rerun the two smokes, then decide.
+**Interpretation.** These remain the right **validate-before-scale** steps before
+any multi-trait / multi-restart N-light campaign. Do **not** launch Milestone 12
+light-model OOF prep that assumes seed-mask or multi-seed work on one-hop until
+this report shows stable G0/G1 runs and non-zero multi-seed diversity.
 
 ---
 

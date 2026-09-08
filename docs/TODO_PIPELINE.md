@@ -20,11 +20,11 @@ On-disk `stage0_7g_*` / `run_7g_*` / `stage0_7h_*` IDs stay unchanged.
 8            done     methylation-only full eval + tissue probe          (was 7G)
 9            done     gene-only architecture on ATS (9a–9d screens)      (was 7G′)
 10           ← NOW    pretrained MBS/RBS scale / nine-pack campaign      (was 7H)
-  10a        done     P2-G + m-only full 3-fold (f0 repaired); report refreshed
-  10a+       running  nine-pack vector RBS mean→max (fold1 eval; then max→max)
-  10a++      queued   one-hop correctness: seed-mask + multi-seed (cheap)
-  10b        queued   ATS seed-43 2×2 pooling (after 10a+/++)
-  10c        partial  label_status parquet written; wire heads later
+  10a        done     5-combo pooling grid complete; P2-G scalar max/max LOCKED finalist
+  10a-cap    done     N-light rho_hidden 10→64 **adopted as default** (mbs_e2e)
+  10a-agecov rejected age head tissue+sex conditioning — full ablation, all 3 metrics worse
+  10a-warm   running  vector (region_hidden) warm-started from P2-G checkpoint (LP-FT)
+  10c        next     freeze-and-reuse: disease/cancer frozen-feature probes (labels ready)
   10d        pending  reference checkpoints after finalists chosen
 11           blocked  fold-selected panel (CPU panels running)
 12           blocked  final 5×6 OOF — finalists only (cascade + N-light)
@@ -42,29 +42,47 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
 
 **Priority (before any reference-architecture claim):**
 
-1. ~~**Finish m-only-f0 repair**~~ — done 2026-09-07; report refreshed
-   (m-only tissue F1 **0.273** / age **15.1** / sex **0.742** vs P2-G
-   **0.355 / 13.4 / 0.853**).
-2. **HIGH — nine-pack vector RBS** @ matched 15-ep / 3-fold (`vector-mean-max`
-   in flight: fold0 metrics written, fold1 post-train eval; then fold2 +
-   `vector-max-max`) vs provisional scalar P2-G → `vector_vs_scalar.md`.
-3. **HIGH — one-hop correctness smokes** (ATS fold 0, ~5 ep):
-   - seed-gene mask G0 vs G1 on `flat_region` (never tested on one-hop; 9c was cascade-only)
-   - multi-seed restarts 42/43/44 (seed-offset path unproven on one-hop)
-   Runner: `scripts/run_7h_onehop_correctness_smokes.py`.
-4. **Track B.4** ATS seed-43 2×2 pooling — keep; runs after (2)–(3).
-5. **Demoted / skipped:** ATS light-mean s2 keep-busy (lower value than 2–3).
+1. ~~**5-combo pooling grid**~~ — done 2026-09-08. **P2-G scalar max/max is
+   the locked cascade finalist** (0.355 F1 / 13.431 MAE / 0.853 AUROC), no
+   longer provisional. Full grid in `vector_vs_scalar.md`. **N-light default
+   is now `rho_hidden=64`** (`mbs_e2e` 0.308 / 14.727 / 0.852 vs rho10
+   0.273 / 15.057 / 0.742; do not use stale `external_test` 0.194/20.6).
+2. ~~**Age head tissue+sex conditioning**~~ — done 2026-09-08, **rejected**.
+   Full 3-fold ablation regressed all 3 metrics vs. baseline; not adopted.
+3. **HIGH — one-hop correctness smokes** (seed-mask G0/G1 + multi-seed
+   42/43/44, fold0, ~5 ep, rho=64). Import fix landed; rerun on GPU 0 when
+   free. Blocker before light-model scale / OOF assumptions.
+4. **Vector warm-start (in progress).** LP-FT: transplant the
+   converged P2-G encoder into the `region_hidden` variant, freeze 4
+   epochs, fine-tune 11 at reduced LR — tests whether the from-scratch
+   vector arm's underperformance was an optimization artifact rather than
+   a capacity limit. Fold 0 promising (0.348/12.88/0.949 vs. from-scratch
+   vector's aggregate 0.333/15.408/0.834); folds 1-2 in progress. Configs:
+   `stage0_7h_nine_pack_vector_*_warmstart.yaml`. **Known unaddressed
+   limitation:** `region_rho` never gets a dense gradient even in P2-G's
+   own training (max-pooling routes gradient only to the argmax region per
+   gene) — a stage-1 `region_pool: mean` pretrain-then-transplant is a
+   proposed follow-up if warm-start alone doesn't close the gap.
+5. **NEXT — freeze-and-reuse for disease/cancer** (and wired BMI/ancestry).
+   Standing architecture philosophy (DeepRVAT): freeze a gene-invariant
+   encoder, reuse frozen scores for new traits via lightweight probes /
+   new linear heads, not joint retraining. Disease/cancer already have
+   real case/control labels (12,194 / 9,077 usable). **BMI/ancestry
+   label-prep done** (joined into nine-pack table + `bmi_head` /
+   `ancestry_head` wired; freeze-encoder head-only configs stubbed) —
+   plan [`label-prep-bmi-ancestry-sample-overview.md`](plans/label-prep-bmi-ancestry-sample-overview.md).
+   Brain region labels joined for honesty; **no `brain_head`** (catalogue).
+   Do **not** auto-queue BMI/ancestry GPU until ≥1k-per-arm bar + M10 GPU
+   free. Disease/cancer probe extraction still next for GPU.
+6. **Deferred to after Milestone 12 OOF:** CpGPT embeddings/positional
+   features (region-annotation richness was already tried and
+   underperformed — this is a different, untried form), sex-chromosome-
+   based sex imputation, epigenetic-clock-based (Horvath/CpGPT/MethylGPT)
+   age imputation.
 
 **CPU parallel:**
 
-6. **10c data prep:** disease/cancer `label_status` from Hub `sample_type` via
-   `SAMPLE_TYPE_CASE_CONTROL` — sidecar
-   `sample_phenotype_table_hub_nine_pack_v1.label_status.parquet` +
-   `label_status_census.md` (written). Live training heads remain
-   **age/tissue/sex only** until configs switch. **Blood/brain deferred**;
-   **bmi/ancestry** not joined (future). Script:
-   `scripts/write_nine_pack_label_status.py`.
-7. Milestone **11** CPU `--panels-only` — already running; no conflict.
+6. Milestone **11** CPU `--panels-only` — already running; no conflict.
 
 **After 2–3 converge:**
 
@@ -87,10 +105,13 @@ blood/brain/bmi/ancestry expansion, GEO/ONT.
 | Seed-mask | `G0` beats G1–G3 | — | **Not adopted** |
 | Invalid (do not cite) | pre-fix `mbs_e2e` on P*-G | ~0.67–0.70 | train+val+test leak |
 
-**Refs:** P2-G is a **provisional** ATS cascade reference only (`architecture_locked:
-false`). Nine-pack **vector RBS** (mean→max / max→max) is queued before any
-cascade primary. **N-light** (`m_only`) is a co-equal light-model finalist for
-Milestone **12** OOF — do not OOF all ~9 arms.
+**Refs:** table above is the ATS-scale (13,548-sample) reference; P2-G there
+predates the scale decision below. **At nine-pack scale (34,234 samples),
+P2-G scalar max/max is now the LOCKED cascade finalist** (5-combo pooling
+grid complete, see § 10 / `vector_vs_scalar.md`) — vector RBS (both
+mean→max and max→max) scored worse on every metric from scratch; a
+warm-start retest is in progress. **N-light** (`m_only`) is a co-equal
+light-model finalist for Milestone **12** OOF — do not OOF all ~9 arms.
 **Platform (nine-pack):** HM450 only — no cross-platform claim.
 
 Frozen freezes (do not overwrite): **deepMAT-flat-v0.1** /
@@ -861,34 +882,62 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ### 10a — Nine-pack virtual loader + reference arms
 
-- **Status:** `in_progress` (smoke **done**; full 3-fold **running**)
-- **Done so far:** `RoutedBetas` dense `[:, :n]`; cascade/classical/flat
-  openers; alignment tests; split `hub-nine-pack-3fold-v1`; fold-0 smoke
-  (3 ep): P2-G tissue F1 **0.343** / age MAE **15.0** / sex AUROC **0.891**.
-- **Running:** `scripts/run_7h_nine_pack_smoke.py --phase full`
-  (log `scratch/logs/7h_nine_pack_full.log`).
-- **Done when:** 3/3 folds for P2-G (15 ep) and m-only (16 ep); compact
-  `analysis.md` / `summary.json` refreshed; HM450-only claim documented.
+- **Status:** `done` — **P2-G scalar max/max locked as cascade finalist**
+- **Done:** `RoutedBetas` dense `[:, :n]`; cascade/classical/flat openers;
+  alignment tests; split `hub-nine-pack-3fold-v1`; full 5-combo pooling
+  grid (3-fold, 15 ep): P2-G scalar max/max wins outright (tissue F1
+  **0.355**, age MAE **13.431**, sex AUROC **0.853**) over scalar mean/max,
+  scalar max/mean, vector mean→max, vector max→max — all worse on F1 and
+  MAE. N-light capacity diagnostic (`rho_hidden` 10→64) tested and
+  **rejected** (made both metrics worse). Age head tissue+sex conditioning
+  built, tested, **rejected** (full 3-fold ablation regressed all 3
+  metrics). Full detail: `vector_vs_scalar.md`.
+- **Next:** vector warm-start (LP-FT from the P2-G checkpoint) in progress
+  — see § 10a-warm below.
 
-### 10b — ATS cheap wins (pooling seed-43 + trait census)
+### 10a-warm — Vector warm-start (LP-FT)
 
-- **Status:** trait census **`done`**; seed-43 pooling **`queued`** after 10a
-- **Census:** `trait_adequacy.md` — age/sex PASS; tissue 1/64 ≥1k; blood/brain
-  masks empty; disease/cancer `false≠control`.
-- **Queue:** `scripts/run_7h_next_queue.sh` → `run_7h_ats_pooling_s2.sh`.
+- **Status:** `running`
+- **What:** transplant the converged P2-G `cpg_encoder`/`region_encoder`/
+  `region_rho` into a fresh `gene_aggregation: region_hidden` model
+  (per-fold, matching fold only), freeze 4 epochs while `gene_rho` + trait
+  heads linear-probe, unfreeze and fine-tune jointly at 3e-4 for the
+  remaining 11 epochs. Tests whether vector's from-scratch underperformance
+  was an LP-FT-style optimization artifact rather than a real capacity gap.
+- **Fold 0:** tissue F1 0.348 / age MAE 12.88 / sex AUROC 0.949 — close to
+  P2-G's own fold 0, well above from-scratch vector's aggregate. Folds 1-2
+  in progress.
+- **Known gap not yet addressed:** `region_rho` never gets a *dense*
+  gradient even in P2-G's own training (max-pooling → gradient only to the
+  argmax region per gene per sample). A stage-1 `region_pool: mean`
+  pretrain-then-transplant is proposed as a follow-up if this warm-start
+  doesn't fully close the gap — not yet built.
+- **Configs:** `stage0_7h_nine_pack_vector_{max_max,mean_max}_warmstart.yaml`.
 
-### 10c — Trait expansion hygiene
+### 10c — Freeze-and-reuse for disease/cancer (+ BMI/ancestry heads)
 
-- **Status:** `partial` — `label_status` sidecar written
+- **Status:** `partial` — disease/cancer `label_status` ready; BMI/ancestry
+  **joined + heads wired** (freeze-reuse); brain labels honest / head
+  deferred; GPU arms not launched.
+- **Standing philosophy:** freeze-and-reuse (DeepRVAT) — train a
+  gene-invariant encoder once, freeze it, reuse frozen scores for new
+  traits via lightweight probes / new linear heads rather than joint
+  retraining.
+- **Ready:** `label_status` sidecar
   (`sample_phenotype_table_hub_nine_pack_v1.label_status.parquet` +
-  [`label_status_census.md`](../reports/inspection/stage0_7h_nine_pack_smoke/label_status_census.md));
-  disease/cancer GPU configs not wired yet; blood/brain deferred;
-  bmi/ancestry not joined into nine-pack table.
+  [`label_status_census.md`](../reports/inspection/stage0_7h_nine_pack_smoke/label_status_census.md))
+  — disease 12,194 / cancer 9,077 usable case+control samples.
+  BMI/ancestry: real Hub labels in nine-pack table + `bmi_head` /
+  `ancestry_head`; configs stubbed, **not** queued on GPU 0.
+- **Plan (disease/cancer GPU):** score once with finalized frozen encoder;
+  fit per-fold logistic probes; prefer column selection over seed-mask
+  weight gating for sparse disease panels.
+- **BMI/ancestry / overview plan:**
+  [`plans/label-prep-bmi-ancestry-sample-overview.md`](plans/label-prep-bmi-ancestry-sample-overview.md)
+- **Still deferred:** `brain_head` / `blood_head` (blood sparse; brain =
+  region catalogue). GPU launch gated on ≥1k-per-arm + M10 review.
 - **CPU report:**
   [`reports/inspection/stage0_7h_nine_pack_smoke/trait_hygiene.md`](../reports/inspection/stage0_7h_nine_pack_smoke/trait_hygiene.md)
-- **Done when:** disease/cancer heads train from `label_status` (not pack masks);
-  blood/brain repaired or deferred; tissue collapse policy if expanding heads;
-  no GPU trait arm without ≥1k-per-arm bar.
 
 ### 10d — Reference checkpoint deliverable
 
@@ -896,6 +945,16 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Done when:** documented pretrained checkpoint(s) (MBS ± RBS), input/score
   contract, short association-testing note (CpG→gene multiple-testing
   reduction). See campaign Phase 4.
+
+### Deferred to after Milestone 12 OOF
+
+CpGPT embeddings/positional features (`use_cpgpt_static_features`, off
+everywhere — a different, untried form of annotation enrichment; region-
+level annotation richness was already tried and underperformed), sex-
+chromosome-based sex imputation for the small `sex` pack, epigenetic-
+clock-based (Horvath/CpGPT/MethylGPT) age imputation for age-unlabeled
+samples. Real ideas, deliberately sequenced after the OOF architecture
+decision, not before.
 
 **Hard stop:** do not auto-launch Milestone **11** or **12** from this campaign.
 
@@ -926,8 +985,10 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   (alias stub: [`milestone-13-final-oof.md`](plans/milestone-13-final-oof.md))
 - **Arms policy:** **finalists only** — do **not** run 5×6 across all ~9 Stage A
   arms. Intended product pair:
-  1. **Cascade finalist** — scalar P2-G *or* winning nine-pack **vector RBS**
-     (after `vector_vs_scalar.md`), dual RBS+MBS output
+  1. **Cascade finalist** — **P2-G scalar max/max** (locked, see § 10a /
+     `vector_vs_scalar.md`); vector warm-start still in progress and could
+     supersede it if it clearly beats scalar, otherwise scalar stands.
+     Dual RBS+MBS output.
   2. **Light finalist** — **N-light** one-hop (`m_only` / gene-mean) for cheap
      MBS deployment
 - **Done when:** OOF gene-aggregated RBS / MBS (+ orphan RBS + direct as

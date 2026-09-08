@@ -53,7 +53,7 @@ model:
   phi_hidden_dimension: 64
   phi_layers: 2
   pooling: mean
-  rho_hidden_dimension: 10
+  rho_hidden_dimension: 64
   rho_layers: 2
   type: flat_deepset
 pilot:

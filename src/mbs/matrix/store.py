@@ -222,6 +222,17 @@ def open_betas_zarr(path: Path) -> Any:
     return zarr.open_array(path, mode="r")
 
 
+def open_betas_for_matrix(root: Path) -> Any:
+    """Open betas for a matrix root (materialized or virtual hub store).
+
+    Thin re-export of ``mbs.matrix.virtual_hub_store.open_betas_for_matrix`` so
+    callers can import from ``mbs.matrix.store`` without knowing the routing.
+    """
+    from mbs.matrix.virtual_hub_store import open_betas_for_matrix as _open
+
+    return _open(root)
+
+
 def read_sample_index(path: Path) -> pd.DataFrame:
     return pd.read_parquet(path)
 
