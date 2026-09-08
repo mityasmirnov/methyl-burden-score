@@ -16,4 +16,5 @@ Logistic (binary) / ridge (BMI) on frozen MBS or RBS.
 **Interpretation.** Cancer signal is strong on a frozen encoder that never
 saw a cancer head. Broad disease is only modest — the pack label mixes 28
 diagnoses. BMI is not yet a useful freeze-reuse target (negative R²).
-Individual-disease probes (Alzheimer’s n_cases=945 only ≥600) still pending.
+Individual-disease probes: Alzheimer’s 3-fold AUROC **0.838** (see
+`subtype_and_homogeneity.json`).

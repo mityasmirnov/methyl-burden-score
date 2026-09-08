@@ -29,9 +29,9 @@ On-disk `stage0_7g_*` / `run_7g_*` / `stage0_7h_*` IDs stay unchanged.
   10a-dense  partial  S1 fold 0 done (e2e 0.348/14.52); queue stopped mid fold 1
   10c        done     freeze-reuse: cancer AUROC 0.954; disease 0.586; BMI weak
   10d        pending  reference checkpoints after staged recipe + enet readout
-  10e        in_prog  S1–S4 1-fold smoke on GPU 0 (from S1 fold 0)
+  10e        done      S1–S4 1-fold smoke negative vs P2-G; no staged 3-fold
 11           deferred fold-selected panel Stage B — parallel, not a hard gate on 12
-12           in_prog  N-light 5×6 restarting 30-ep + n>200 disease/cancer heads
+12           in_prog  N-light 5×6 GPU2 f0-r0 ~ep 20/30 (30-ep + n>200 aux)
 13           deferred expression aux after OOF
 14           deferred optional a–f
 ```
@@ -43,8 +43,8 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
 
 ### Next steps (ordered)
 
-**GPU-2 policy:** exclusive N-light 5×6 (`batch_size=1024`, ~85 GB). GPU 0:
-10e S1–S4 1-fold smoke. Milestone **11** Stage B GPU is optional / parallel.
+**GPU-2 policy:** exclusive N-light 5×6 (`batch_size=1024`, ~87 GB). GPU 0:
+free after 10e smoke. Milestone **11** Stage B GPU is optional / parallel.
 
 **Priority:**
 
@@ -53,15 +53,16 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
 3. ~~**Age covariates**~~ — rejected.
 4. ~~**Vector warm-starts**~~ — **both done**. Do not replace P2-G on e2e; re-rank under enet.
 5. ~~**One-hop correctness smokes**~~ — done. G0 ≫ G1; seeds 42/43/44 distinct.
-6. **NOW — Milestone 12 N-light 5×6** on GPU 2: **restarting at 30 epochs**
-   with n>200 disease/cancer aux heads. 16-ep `f0-r0` archived (nested
-   **0.300 / 8.63 / 0.880**). Split `hub-nine-pack-5fold-v1`. Product readout
+6. **NOW — Milestone 12 N-light 5×6** on GPU 2: **f0-r0 ~epoch 20/30** (1/30),
+   30-ep + n>200 disease/cancer aux. Val disease ~0.76 / cancer ~0.85.
+   16-ep archived nested **0.300 / 8.63 / 0.880**. Product readout
    `mbs_enet_nested`.
 7. **CPU:** P2-G nested enet **3/3 folds** — MBS **0.335 / 9.81 / 0.759**;
    RBS tissue similar, age MAE **19.8** (overfits; more features).
-8. ~~**Pack-level freeze-reuse**~~ — cancer AUROC **0.954**; broad disease **0.586**;
-   BMI not useful. Next: Alzheimer’s (945) / subtypes.
-9. **10e S1–S4 1-fold smoke** on GPU 0 (warm from dense S1 fold 0). Then cascade 5×6.
+8. ~~**Pack-level freeze-reuse**~~ — cancer AUROC **0.954**; Alzheimer’s **0.838**;
+   broad disease **0.586**; cancer subtype macro-F1 **0.202**; BMI not useful.
+9. ~~**10e S1–S4 1-fold smoke**~~ — **done, negative** (e2e 0.300/14.97/0.900 vs
+   P2-G 0.364/12.80/0.950). No staged 3-fold. Cascade 5×6 = native P2-G if launched.
 10. **Deferred post-OOF:** CpGPT/positional, sex-chr imputation, clock age imputation.
 
 **Still blocked auto:** cascade 5×6, pack-mask trait heads, blood/brain heads,
@@ -85,10 +86,11 @@ P2-G scalar max/max is the LOCKED cascade finalist** (5-combo grid + age-cov
 reject). Cold vector loses; **max→max warm-start** improves to 0.342 / 13.406 /
 0.851 but still trails P2-G tissue (−0.013) — **not a finalist change**.
 **N-light@64** nested enet 3-fold is **0.368 / 9.88 / 0.803** vs e2e
-**0.308 / 14.73 / 0.852**. Milestone **12 N-light 5×6** is restarting at
-**30 epochs** with n>200 disease/cancer aux heads (16-ep `f0-r0` nested
-**0.300 / 8.63 / 0.880**, plumbing only). Cascade 5×6 still waits on 10e.
-Architecture stays gene-invariant for later EPIC/ONT.
+**0.308 / 14.73 / 0.852**. Milestone **12 N-light 5×6** is **running** at
+**30 epochs** with n>200 disease/cancer aux (`f0-r0` ~ep 20/30). 16-ep
+plumbing nested **0.300 / 8.63 / 0.880**. 10e staged recipe **rejected**.
+Cascade 5×6, if scheduled, is **native P2-G**. Architecture stays
+gene-invariant for later EPIC/ONT.
 Live numbers: [`analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
 **Platform (this OOF):** HM450 nine-pack — no mixed-platform claim yet.
 
@@ -874,8 +876,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
   Age head tissue+sex conditioning built, tested, **rejected** (full
   3-fold ablation regressed all 3 metrics). Full detail: `vector_vs_scalar.md`.
 - **Next:** N-light 5×6 (Milestone 12) on GPU 2 at **30 epochs** with n>200
-  disease/cancer aux heads; cascade 5×6 still waits on 10e. Freeze-reuse 10c
-  remains the path for traits that do **not** clear n>200 in the nine-pack.
+  disease/cancer aux heads; cascade 5×6 = **native P2-G** if scheduled (10e
+  staged recipe rejected). Freeze-reuse remains for traits below n>200.
 
 ### 10a-warm — Vector warm-start (LP-FT)
 
@@ -898,8 +900,8 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 - **Report:** [`../reports/inspection/stage0_7h_nine_pack_smoke/disease_cancer_frozen_probes/analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/disease_cancer_frozen_probes/analysis.md)
 - **3-fold mean:** cancer AUROC **0.954** (MBS) / **0.958** (RBS); broad disease
   **0.586 / 0.585**; BMI MAE ~9.9 y with negative R² (not useful yet).
-- **Still open:** Alzheimer’s individual freeze-reuse probe (now also an
-  encoder aux class); ancestry. Encoder training uses **n>200** classes.
+- **Still open:** ancestry. Alzheimer’s freeze-reuse **done** (AUROC **0.838**).
+  Encoder training uses **n>200** classes.
 - **Standing philosophy:** freeze-and-reuse (DeepRVAT) — train a
   gene-invariant encoder once, freeze it, reuse frozen scores for new
   traits via lightweight probes rather than joint retraining.
@@ -907,9 +909,11 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ### 10e — Staged RBS→MBS training + frozen enet (gates cascade 12 only)
 
-- **Status:** `in_progress` — dense S1 **fold 0 done**; 1-fold S1–S4 smoke on
-  GPU 0 (`stage0-7h-nine-pack-s1s4-smoke-fold0`, warm from S1 fold 0, encoder
-  unfrozen). **N-light 5×6 does not wait on this.**
+- **Status:** `done` (smoke **negative**) — 1-fold S1–S4
+  (`stage0-7h-nine-pack-s1s4-smoke-fold0`) loses to native P2-G fold-0 on
+  e2e and probes (0.300/14.97/0.900 vs 0.364/12.80/0.950). **Do not**
+  regenerate S1 folds 1–2 or run staged 3-fold. Cascade finalist remains
+  **native P2-G scalar max/max**. **N-light 5×6 does not wait on this.**
 - **Plan:** [`plans/milestone-10e-staged-rbs-mbs-training.md`](plans/milestone-10e-staged-rbs-mbs-training.md)
 
 ### 10d — Reference checkpoint deliverable
@@ -930,7 +934,8 @@ samples. Real ideas, deliberately sequenced after the OOF architecture
 decision, not before.
 
 **Hard stop:** do not auto-launch Milestone **11** Stage B GPU or **cascade**
-5×6 from this campaign. N-light 5×6 is already running on GPU 2.
+5×6 from this campaign. N-light 5×6 is already running on GPU 2. Cascade, if
+explicitly scheduled, is **native P2-G** (10e staged recipe rejected).
 
 ---
 
@@ -960,10 +965,11 @@ decision, not before.
 
 ## 12. Final study-grouped OOF (alias: historical Milestone 7)
 
-- **Status:** `in_progress` — **N-light 5×6 restarting GPU 2** at **30 epochs**
-  + n>200 disease/cancer aux heads (16-ep `f0-r0` archived; nested
-  **0.300 / 8.63 / 0.880**). Cascade 5×6 waits on **10e** S1–S4 smoke;
-  P2-G nested is **3/3**. **Does not wait on Milestone 11**
+- **Status:** `in_progress` — **N-light 5×6 running GPU 2** at **30 epochs**
+  + n>200 disease/cancer aux (`f0-r0` ~ep **20/30**, 1/30; val disease ~0.76 /
+  cancer ~0.85). 16-ep archived nested **0.300 / 8.63 / 0.880**. Cascade 5×6
+  uses **native P2-G** (10e staged recipe rejected); **does not wait on
+  Milestone 11**
 - **Plan:** [`plans/milestone-12-final-oof.md`](plans/milestone-12-final-oof.md)
   (alias stub: [`milestone-13-final-oof.md`](plans/milestone-13-final-oof.md))
 - **Arms policy:** **N-light 5×6 first**, then cascade after 10e. Do **not**

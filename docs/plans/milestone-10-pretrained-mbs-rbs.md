@@ -2,7 +2,7 @@
 
 > **Alias:** historical **7H**. Index: [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
 
-**Status:** `in_progress` (GPU 0 + GPU 2 both loaded)
+**Status:** `in_progress` (GPU 2 N-light OOF; GPU 0 free after 10e smoke)
 
 Authoritative running log:
 [`milestone-7h-pretrained-mbs-rbs-campaign.md`](milestone-7h-pretrained-mbs-rbs-campaign.md).
@@ -20,9 +20,9 @@ Latest architecture-decision detail:
 | **10a-rbs-vs-mbs** | **resolved → 10e** | `rbs_linear_probe` beats `mbs_e2e`; OOF co-primary is frozen **enet** on RBS/MBS, not joint e2e alone |
 | **10a-dense-stage1** | **partial** | Fold 0 done (e2e 0.348/14.52, linear age 10.93); queue stopped mid fold 1 to free GPU 2 for N-light OOF |
 | **10a-onehop-smoke** | **done, both pass** | One-hop correctness smokes — first-ever full completion (3rd bug found+fixed). G0 beats G1 (0.335/17.3/0.750 vs 0.146/21.7/0.560), matching 9c. Multi-seed 42/43/44 genuinely distinct (F1 span 0.027, not collapsed) — restart ensembling is trustworthy for Milestone 12 |
-| **10c** | **done** (pack-level) | Cancer AUROC **0.954–0.958**; broad disease **0.585–0.586**; BMI not useful. AD 945 still open |
-| **10d** | pending | Reference checkpoints **after** staged recipe + enet readout |
-| **10e** | **in_progress** | Cascade S1–S4 still gates cascade 5×6; N-light 5×6 unblocked — see [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md) |
+| **10c** | **done** | Cancer pack **0.954**; Alzheimer’s **0.838**; subtype macro-F1 **0.202**; BMI not useful |
+| **10d** | pending | Reference checkpoints after native P2-G + enet readout |
+| **10e** | **done (negative)** | S1–S4 1-fold loses to native P2-G; staged recipe not promoted — see [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md) |
 | deferred | post-OOF | CpGPT/positional embeddings, sex-chromosome sex imputation, epigenetic-clock age imputation — explicitly after Milestone 12 |
 
 ## Priority rationale
@@ -42,10 +42,10 @@ Latest architecture-decision detail:
   types with **n>200** nine-pack disease-tissue samples are **encoder aux
   heads** on Milestone 12 (not freeze-reuse-only). Remaining diagnoses stay
   freeze-reuse / census.
-- **Milestone 12 N-light** is unblocked (30-ep + n>200 aux heads). **Cascade
-  12** still waits on **10e**: do not 5×6 joint `mbs_e2e` as-is. Staged
-  RBS→MBS plus frozen **enet** readouts. Extra Hub packs / 173k samples =
-  freeze-reuse traits, not a bigger joint train.
+- **Milestone 12 N-light** is running (30-ep + n>200 aux). **10e staged
+  recipe rejected** — cascade 5×6, if launched, is **native P2-G** with
+  frozen **enet** readouts. Extra Hub packs / 173k samples = freeze-reuse
+  traits, not a bigger joint train.
 
 ## Runners
 

@@ -1,8 +1,9 @@
 # Pre-OOF training recipe: staged RBS → MBS + frozen-feature heads
 
-> **Status:** `in_progress` (2026-09-08). **Cascade 5×6 still waits on a
-> cheap S1–S4 smoke.** **N-light 5×6 OOF is unblocked** (no region hop; nested
-> enet is the product readout) and starts on GPU 2 after dense-stage1 S1.
+> **Status:** `done` — **negative** (2026-09-08). 1-fold S1–S4 smoke loses to
+> native P2-G; **do not** promote staged recipe to 3-fold / cascade OOF.
+> Cascade finalist remains **native P2-G scalar max/max**. **N-light 5×6**
+> OOF is running on GPU 2 (30-ep + n>200 aux).
 >
 > Parent: [`milestone-10-pretrained-mbs-rbs.md`](milestone-10-pretrained-mbs-rbs.md).
 > Evidence: [`../../reports/inspection/stage0_7h_nine_pack_smoke/vector_vs_scalar.md`](../../reports/inspection/stage0_7h_nine_pack_smoke/vector_vs_scalar.md),
@@ -138,14 +139,15 @@ packs pay off without poisoning the 34k split.
 
 ## Gate before Milestone 12 (split by arm)
 
-**N-light 5×6 (running):** GPU 2 restarting at **30 epochs**, patience 15,
-n>200 disease/cancer aux heads. 16-ep `f0-r0` archived (nested
-**0.300 / 8.63 / 0.880**). Split `hub-nine-pack-5fold-v1`. Runner:
-`scripts/run_12_nlight_oof.sh`.
+**N-light 5×6 (running):** GPU 2 **f0-r0 ~epoch 20/30**, patience 15,
+n>200 disease/cancer aux heads (val disease ~0.76 / cancer ~0.85). 16-ep
+plumbing archived (nested **0.300 / 8.63 / 0.880**). Split
+`hub-nine-pack-5fold-v1`. Runner: `scripts/run_12_nlight_oof.sh`.
 
-**Cascade 5×6 (still gated):**
+**Cascade 5×6 (recipe decided):**
 
 1. Dense S1 **fold 0 done** (queue stopped mid fold 1 to free GPU 2).
 2. P2-G nested enet **3/3** (MBS **0.335 / 9.81 / 0.759**; RBS age 19.8).
-3. 1-fold **S1–S4 smoke** running on GPU 0 from S1 fold 0.
-4. Pack-level freeze-reuse **done** (cancer strong; broad disease modest).
+3. 1-fold **S1–S4 smoke done — negative** (e2e 0.300/14.97/0.900 vs P2-G
+   0.364/12.80/0.950). **No staged 3-fold.** Cascade OOF = **native P2-G**.
+4. Pack-level freeze-reuse **done** (cancer strong; AD 0.838; broad disease modest).

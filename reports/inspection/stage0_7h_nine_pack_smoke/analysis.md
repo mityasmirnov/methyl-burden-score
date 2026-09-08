@@ -1,6 +1,6 @@
 # Milestone 10 — nine-pack campaign analysis
 
-Updated: `2026-09-08T16:20+02:00`
+Updated: `2026-09-08T17:05+02:00`
 
 - Matrix: `matrix-hub-nine-pack-virtual-v1` · Screen split: `hub-nine-pack-3fold-v1` (**34 234**)
 - OOF split: `hub-nine-pack-5fold-v1` · Platform: **HM450 this OOF**; encoder is gene-invariant for later EPIC/ONT
@@ -20,9 +20,9 @@ Updated: `2026-09-08T16:20+02:00`
 | Dense S1 (mean/mean) | **fold 0 done**; fold 1 stopped ~epoch 12/15 | GPU 2 handed to N-light OOF. Fold 0 e2e **0.348 / 14.52**; linear age **10.93** |
 | N-light nested enet (3-fold screen) | **done** | **0.368 / 9.88 / 0.803** vs e2e 0.308 / 14.73 / 0.852 |
 | P2-G nested enet | **3 / 3 folds** | MBS **0.335 / 9.81 / 0.759**; RBS age MAE **19.8** (overfits) |
-| Freeze-reuse P2-G | **done** (pack-level) | Cancer AUROC **0.954 / 0.958** (MBS/RBS); disease **0.586**; BMI not useful |
-| **12 N-light 5×6** | **restarting GPU 2** | **30 ep**, patience 15, n>200 disease/cancer aux. 16-ep `f0-r0` archived: nested **0.300 / 8.63 / 0.880** |
-| 10e S1–S4 1-fold smoke | **train 15/15 GPU 0** | eval pending; warm-start from S1 fold 0 |
+| Freeze-reuse P2-G | **done** | Pack cancer **0.954**; Alzheimer’s **0.838**; cancer subtype macro-F1 **0.202**; BMI not useful |
+| **12 N-light 5×6** | **running GPU 2** | **30 ep** + n>200 aux; `f0-r0` **ep ~19–20/30** (1/30). Val disease ~0.76 / cancer ~0.85. 16-ep archived **0.300 / 8.63 / 0.880** |
+| 10e S1–S4 1-fold smoke | **done (negative)** | fold-0 e2e **0.300 / 14.97 / 0.900** loses to native P2-G **0.364 / 12.80 / 0.950** — no 3-fold staged recipe |
 | Milestone 11 Stage B | deferred parallel | does **not** block OOF |
 
 ---
@@ -126,10 +126,10 @@ Report: `reports/inspection/stage0_7h_onehop_correctness/`.
 
 ## Outlook / next steps
 
-1. Let **N-light 5×6** run on GPU 2 (30-ep + n>200 aux; 16-ep f0-r0 archived).
+1. Let **N-light 5×6** finish on GPU 2 (30-ep + n>200 aux; `f0-r0` ~ep 20/30).
 2. P2-G nested **3/3 done** (MBS **0.335 / 9.81 / 0.759** vs N-light 3-fold **0.368 / 9.88 / 0.803**).
-3. Land 10e 1-fold S1–S4 smoke on GPU 0 (train reached 15/15; eval pending); then decide cascade 5×6.
-4. Alzheimer’s freeze-reuse / disease subtypes still in flight. Cancer pack-level is already strong.
+3. **10e staged S1–S4 smoke negative** — do **not** regenerate S1 folds 1–2. Cascade 5×6, if launched, uses **native P2-G**, not the staged recipe.
+4. Alzheimer’s freeze-reuse **0.838** (3-fold); cancer subtypes distinguishable (macro-F1 0.202). Pack cancer still strong.
 5. Keep encoder gene-invariant for later EPIC/ONT; this OOF stays HM450.
 
 ---

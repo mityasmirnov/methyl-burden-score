@@ -1,0 +1,132 @@
+{
+  "generated": "2026-09-08T14:25:29.888235+00:00",
+  "checkpoint_run_id": "stage0-7h-nine-pack-P2-G",
+  "split_id": "hub-nine-pack-3fold-v1",
+  "alzheimers_vs_control": [
+    {
+      "fold": 0,
+      "n_train": 4708,
+      "n_test": 2483,
+      "auroc": 0.7500955611187381,
+      "auprc": 0.30275656417242436
+    },
+    {
+      "fold": 1,
+      "n_train": 4740,
+      "n_test": 2428,
+      "auroc": 0.8895055590707764,
+      "auprc": 0.041363105697202356
+    },
+    {
+      "fold": 2,
+      "n_train": 3954,
+      "n_test": 2964,
+      "auroc": 0.8753240126543526,
+      "auprc": 0.5633801664567262
+    }
+  ],
+  "cancer_subtypes_kept": [
+    "breast cancer",
+    "prostate cancer",
+    "acute myeloid leukemia",
+    "glioma",
+    "head and neck squamous-cell carcinoma",
+    "stomach cancer",
+    "clear cell renal cell carcinoma",
+    "melanoma",
+    "hepatocellular carcinoma",
+    "thyroid cancer",
+    "sarcoma",
+    "lung squamous cell carcinoma",
+    "lung adenocarcinoma",
+    "kidney renal papillary cell carcinoma",
+    "endometrial cancer",
+    "colorectal cancer",
+    "transitional cell carcinoma",
+    "cervical cancer",
+    "glioblastoma"
+  ],
+  "cancer_subtype_multiclass": [
+    {
+      "fold": 0,
+      "n_train": 3964,
+      "n_test": 1566,
+      "macro_f1": 0.24275008667114095,
+      "n_classes": 19
+    },
+    {
+      "fold": 1,
+      "n_train": 3337,
+      "n_test": 1694,
+      "macro_f1": 0.21005565871877446,
+      "n_classes": 19
+    },
+    {
+      "fold": 2,
+      "n_train": 3116,
+      "n_test": 2879,
+      "macro_f1": 0.15274596464420795,
+      "n_classes": 19
+    }
+  ],
+  "homogeneity": {
+    "disease": [
+      {
+        "fold": 0,
+        "within_case_var": 0.11990158259868622,
+        "within_control_var": 0.12039938569068909,
+        "between_group_var": 0.002189307240769267,
+        "case_more_variable_than_control": false,
+        "separation_over_control_spread": 0.018183707734138164,
+        "separation_over_case_spread": 0.018259202199998784
+      },
+      {
+        "fold": 1,
+        "within_case_var": 0.08604196459054947,
+        "within_control_var": 0.08643092215061188,
+        "between_group_var": 0.0012917241547256708,
+        "case_more_variable_than_control": false,
+        "separation_over_control_spread": 0.014945162247311811,
+        "separation_over_case_spread": 0.015012722697263342
+      },
+      {
+        "fold": 2,
+        "within_case_var": 0.09674843400716782,
+        "within_control_var": 0.09795624762773514,
+        "between_group_var": 0.0012914635008201003,
+        "case_more_variable_than_control": false,
+        "separation_over_control_spread": 0.013184085059363155,
+        "separation_over_case_spread": 0.01334867601809885
+      }
+    ],
+    "cancer": [
+      {
+        "fold": 0,
+        "within_case_var": 0.15791161358356476,
+        "within_control_var": 0.12549524009227753,
+        "between_group_var": 0.022907495498657227,
+        "case_more_variable_than_control": true,
+        "separation_over_control_spread": 0.18253676778348873,
+        "separation_over_case_spread": 0.14506529937099832
+      },
+      {
+        "fold": 1,
+        "within_case_var": 0.1275443285703659,
+        "within_control_var": 0.0893671065568924,
+        "between_group_var": 0.020248671993613243,
+        "case_more_variable_than_control": true,
+        "separation_over_control_spread": 0.22657857878304077,
+        "separation_over_case_spread": 0.15875791750663457
+      },
+      {
+        "fold": 2,
+        "within_case_var": 0.1322726011276245,
+        "within_control_var": 0.09947241842746735,
+        "between_group_var": 0.018247103318572044,
+        "case_more_variable_than_control": true,
+        "separation_over_control_spread": 0.18343882261068528,
+        "separation_over_case_spread": 0.13795074084137915
+      }
+    ]
+  }
+}

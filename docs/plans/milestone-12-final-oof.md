@@ -6,11 +6,13 @@
 > **Renumber note (2026-09-07):** previously stubbed as Milestone **13**;
 > expression auxiliary is now **13** (after OOF).
 
-**Status:** **N-light arm `in_progress`** — GPU 2 **restarting** at **30 epochs**
-with n>200 disease/cancer aux heads. 16-ep plumbing `f0-r0` archived as
+**Status:** **N-light arm `in_progress`** — GPU 2 **running** at **30 epochs**
+with n>200 disease/cancer aux heads (`f0-r0` ~ep **20/30**, 1/30; val
+disease ~0.76 / cancer ~0.85). 16-ep plumbing archived as
 `stage0-12-nlight-oof-ep16-f0-r0` (nested **0.300 / 8.63 / 0.880**; e2e
-0.286 / 17.74 / 0.748; `best_epoch=9` of 14). **Cascade arm `blocked`** until
-10e S1–S4 smoke (GPU 0). P2-G nested is **3/3**. **Does not wait on Milestone 11.**
+0.286 / 17.74 / 0.748). **Cascade arm:** 10e staged S1–S4 smoke **negative** —
+if launched, use **native P2-G** (not staged). P2-G nested **3/3**.
+**Does not wait on Milestone 11.**
 
 Recipe / readout: [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md).
 

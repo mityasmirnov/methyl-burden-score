@@ -662,3 +662,54 @@ bypass it.
   `rbs_linear_probe`/`mbs_enet` decides whether to invest in regenerating
   S1 for folds 1-2 (killed early to free GPU 2 for N-light OOF) and
   running the full 3-fold recipe, or stop here.
+- 2026-09-08: **S1-S4 1-fold smoke: decisive negative result, not promoting
+  to 3-fold.** Fold-0 comparison against P2-G's own fold-0 numbers:
+
+  | Metric | P2-G (native) | S1-S4 smoke |
+  |---|---:|---:|
+  | `mbs_e2e` tissue F1 | 0.364 | 0.300 |
+  | `mbs_e2e` age MAE | 12.80 | 14.97 |
+  | `mbs_e2e` sex AUROC | 0.950 | 0.900 |
+  | `mbs_linear_probe` tissue F1 | 0.338 | 0.302 |
+  | `rbs_linear_probe` tissue F1 | 0.361 | 0.320 |
+
+  The staged recipe (dense-gradient S1 pretrain -> warm-start into vector's
+  `gene_rho`, freeze 4ep/fine-tune 11ep) loses to P2-G's native training on
+  every metric checked, including P2-G's own classical probes -- fails the
+  10e promotion gate ("beat P2-G's e2e AND match/beat its own probes")
+  outright, on the first criterion. **Not regenerating S1 for folds 1-2 or
+  running a full 3-fold version** -- the ~2-3 hours that would cost isn't
+  justified without any positive signal from the cheap 1-fold smoke this
+  gate was specifically designed to provide before committing more GPU
+  time. This closes the S1-S4 staged-recipe exploration as a clean
+  negative; P2-G scalar max/max remains the sole cascade finalist with no
+  outstanding architecture challenger.
+- 2026-09-08: **Freeze-and-reuse follow-ups: final 3-fold results.**
+  (`scripts/run_7h_disease_subtype_and_homogeneity.py`,
+  `subtype_and_homogeneity.json`):
+
+  | Analysis | Result |
+  |---|---|
+  | Alzheimer's vs. control AUROC | **0.838** (folds: 0.750 / 0.890 / 0.875) |
+  | Cancer subtype multiclass (19 classes) macro F1 | **0.202** (vs. ~0.05 chance) |
+  | Disease case/control separation / within-group spread | **1.5%** |
+  | Cancer case/control separation / within-group spread | **19.8%** |
+
+  Alzheimer's alone (0.838) is far stronger than the broad "any disease"
+  label (0.586-0.586 AUROC from the earlier pack-level probe) -- confirms
+  the earlier hypothesis that lumping 28 heterogeneous diagnoses under one
+  binary flag dilutes signal that is otherwise quite strong for individual,
+  well-defined conditions. Cancer subtypes (breast, prostate, AML, glioma,
+  ... 19 kept at n>=200, 6,139 samples) are genuinely distinguishable from
+  each other, not just cancer-vs-normal. The homogeneity diagnostic
+  quantifies *why* cancer's case/control probe works so well and disease's
+  doesn't: cancer's between-group separation is ~13x larger relative to
+  within-group noise than disease's (19.8% vs 1.5%), consistent and stable
+  across all 3 folds -- cancer cases are internally more heterogeneous than
+  cancer controls (consistent with spanning many subtypes), but the
+  case/control gap is still far bigger in absolute terms than for disease.
+- 2026-09-08: **N-light 30-ep OOF progress.** Restarted runner under
+  `stage0_12_nlight_oof.yaml` (30 ep, patience 15, 9+9 aux labels confirmed).
+  `f0-r0` at **~epoch 19–20/30** (1/30). Val disease AUROC ~**0.76**, cancer
+  ~**0.85**. Best val_loss so far epoch 16. Nested enet still pending this
+  restart. GPU 0 free after S1–S4 smoke.
