@@ -873,27 +873,17 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ### 10a-warm — Vector warm-start (LP-FT)
 
-- **Status:** `in_progress` — **max→max complete**; **mean→max fold 2 running**
-- **What:** transplant scalar checkpoint into `gene_aggregation: region_hidden`
-  (per-fold), freeze ~4 ep (heads/gene_rho), fine-tune ~11 ep at 3e-4.
-- **max→max warm (3/3 done):** tissue **0.342** / age **13.406** / sex **0.851**
-  vs cold 0.333 / 15.408 / 0.834 vs P2-G 0.355 / 13.431 / 0.853. Age gap closed;
-  tissue still short of P2-G → **does not dethrone cascade finalist**.
-- **mean→max warm:** f0 0.364 / 12.80 / 0.941; f1 0.307 / 11.99 / 0.915; f2
-  training. Partial n=2 mean tissue ~0.335 — wait for fold 2 before verdict.
-- **Known gap (optional follow-up only):** `region_rho` dense-grad under max
-  pool; stage-1 `region_pool: mean` pretrain-then-transplant not built.
-- **Configs:** `stage0_7h_nine_pack_vector_{max_max,mean_max}_warmstart.yaml`.
-- **After queue exits:** one-hop correctness smokes auto-start (waiter).
+- **Status:** `done` — **max→max and mean→max both complete** (2026-09-08)
+- **max→max warm:** 0.342 / 13.406 / 0.851 (vs cold 0.333 / 15.408 / 0.834; vs P2-G 0.355 / 13.431 / 0.853)
+- **mean→max warm:** 0.345 / 14.578 / 0.862 (vs cold 0.335 / 16.448 / 0.780)
+- **Verdict:** warm-start beats cold vector; **does not replace P2-G** as cascade finalist
+- **Write-up:** `reports/inspection/stage0_7h_nine_pack_smoke/vector_vs_scalar.md`
 
 ### 10a++ — One-hop correctness smokes
 
-- **Status:** `queued` (import fixed; waiting on warm-start GPU queue)
-- **What:** ATS fold 0, ~5 ep, rho=64 — (1) seed-mask G0 vs G1 on
-  `flat_region`; (2) multi-seed 42/43/44 diversity check.
+- **Status:** `in_progress` (GPU 0) — G0 done (~0.335 / 17.3 / 0.75); G1 + multi-seed running
 - **Runner:** `scripts/run_7h_onehop_correctness_smokes.py`
-- **Done when:** report in `reports/inspection/stage0_7h_onehop_correctness/`
-  shows stable trains + non-zero multi-seed tissue span.
+- **Done when:** report under `reports/inspection/stage0_7h_onehop_correctness/`
 
 ### 10c — Freeze-and-reuse for disease/cancer (+ BMI/ancestry heads)
 
