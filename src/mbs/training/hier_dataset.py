@@ -72,6 +72,10 @@ class HierBatch:
     disease_mask: Tensor | None = None
     cancer_target: Tensor | None = None
     cancer_mask: Tensor | None = None
+    bmi_target: Tensor | None = None
+    bmi_mask: Tensor | None = None
+    ancestry_target: Tensor | None = None
+    ancestry_mask: Tensor | None = None
 
     def annotation_masks(self) -> dict[str, Tensor]:
         return annotation_status_masks(self.annotation_status)
@@ -123,6 +127,26 @@ class HierBatch:
                 None
                 if self.cancer_mask is None
                 else self.cancer_mask.to(device, non_blocking=non_blocking)
+            ),
+            bmi_target=(
+                None
+                if self.bmi_target is None
+                else self.bmi_target.to(device, non_blocking=non_blocking)
+            ),
+            bmi_mask=(
+                None
+                if self.bmi_mask is None
+                else self.bmi_mask.to(device, non_blocking=non_blocking)
+            ),
+            ancestry_target=(
+                None
+                if self.ancestry_target is None
+                else self.ancestry_target.to(device, non_blocking=non_blocking)
+            ),
+            ancestry_mask=(
+                None
+                if self.ancestry_mask is None
+                else self.ancestry_mask.to(device, non_blocking=non_blocking)
             ),
         )
 

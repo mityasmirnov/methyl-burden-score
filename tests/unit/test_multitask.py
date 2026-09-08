@@ -146,3 +146,160 @@ def test_sex_module_no_grad_when_masked() -> None:
     result.loss.backward()
     assert heads.sex_head is not None
     assert heads.sex_head.weight.grad is None or torch.all(heads.sex_head.weight.grad == 0)
+
+
+def test_age_head_rejects_unsupported_covariate() -> None:
+    try:
+        MultitaskHeads(4, 3, age_covariates=("nonsense",))
+    except ValueError as exc:
+        assert "age_covariates" in str(exc)
+    else:
+        raise AssertionError("expected ValueError for unsupported age_covariates")
+
+
+def test_age_head_rejects_covariates_with_seed_mask() -> None:
+    age_seed_mask = torch.ones(1, 40, dtype=torch.float32)
+    try:
+        MultitaskHeads(40, 3, age_covariates=("tissue",), age_seed_mask=age_seed_mask)
+    except ValueError as exc:
+        assert "seed" in str(exc).lower()
+    else:
+        raise AssertionError("expected ValueError mixing seed mask with age_covariates")
+
+
+def test_age_head_tissue_and_sex_conditioning_changes_prediction() -> None:
+    n_genes = 4
+    heads = MultitaskHeads(n_genes, 3, sex_enabled=True, age_covariates=("tissue", "sex"))
+    mbs = torch.full((2, n_genes), 0.6)
+    present = torch.ones(2, n_genes, dtype=torch.bool)
+
+    # Same MBS, different tissue/sex -> different age prediction (conditioning has effect).
+    pred_a = heads.forward_age(
+        mbs,
+        present,
+        tissue_index=torch.tensor([0, 1]),
+        sex_index=torch.tensor([0, 0]),
+    )
+    pred_b = heads.forward_age(
+        mbs,
+        present,
+        tissue_index=torch.tensor([0, 0]),
+        sex_index=torch.tensor([0, 0]),
+    )
+    assert not torch.allclose(pred_a[1], pred_b[1])
+
+    # Unknown-bucket index (== n_classes) must not raise (covers samples with a
+    # masked-out tissue/sex label).
+    unknown_pred = heads.forward_age(
+        mbs,
+        present,
+        tissue_index=torch.tensor([3, 3]),
+        sex_index=torch.tensor([2, 2]),
+    )
+    assert torch.isfinite(unknown_pred).all()
+
+
+def test_age_head_conditioning_requires_indices_when_enabled() -> None:
+    n_genes = 4
+    heads = MultitaskHeads(n_genes, 3, age_covariates=("tissue",))
+    mbs = torch.full((1, n_genes), 0.5)
+    present = torch.ones(1, n_genes, dtype=torch.bool)
+    try:
+        heads.forward_age(mbs, present)
+    except ValueError as exc:
+        assert "tissue_index" in str(exc)
+    else:
+        raise AssertionError("expected ValueError when tissue conditioning enabled but unset")
+
+
+def test_age_head_without_covariates_ignores_indices() -> None:
+    """Default (no conditioning) heads must be unaffected by unrelated kwargs."""
+    n_genes = 4
+    heads = MultitaskHeads(n_genes, 3)
+    mbs = torch.full((1, n_genes), 0.5)
+    present = torch.ones(1, n_genes, dtype=torch.bool)
+    pred = heads.forward_age(mbs, present)
+    assert torch.isfinite(pred).all()
+
+
+def test_bmi_ancestry_heads_masked_loss() -> None:
+    n_genes = 4
+    heads = MultitaskHeads(n_genes, 3, bmi_enabled=True, n_ancestry_classes=3)
+    assert heads.bmi_head is not None
+    assert heads.ancestry_head is not None
+    mbs = torch.randn(2, n_genes)
+    present = torch.ones(2, n_genes, dtype=torch.bool)
+    batch = FlatBatch(
+        sample_ids=["a", "b"],
+        cpg_features=torch.zeros(2, 2),
+        cpg_to_gene=torch.zeros(2, dtype=torch.long),
+        n_genes=n_genes,
+        tissue_target=torch.tensor([0, 0], dtype=torch.long),
+        tissue_mask=torch.tensor([False, False]),
+        age_target=None,
+        age_mask=torch.tensor([False, False]),
+        bmi_target=torch.tensor([22.0, 30.0], dtype=torch.float32),
+        bmi_mask=torch.tensor([True, False]),
+        ancestry_target=torch.tensor([1, 2], dtype=torch.long),
+        ancestry_mask=torch.tensor([False, True]),
+    )
+    result = masked_multitask_loss(mbs=mbs, present=present, heads=heads, batch=batch)
+    assert result.metrics["bmi_n"] == 1.0
+    assert result.metrics["ancestry_n"] == 1.0
+    assert result.metrics["bmi_loss"] > 0.0
+    assert result.metrics["ancestry_loss"] > 0.0
+    assert torch.isfinite(result.loss)
+
+
+def test_bmi_mask_off_contributes_zero_bmi_loss() -> None:
+    n_genes = 4
+    heads = MultitaskHeads(n_genes, 2, bmi_enabled=True, n_ancestry_classes=2)
+    mbs = torch.randn(n_genes, requires_grad=True)
+    present = torch.ones(n_genes, dtype=torch.bool)
+    batch = FlatBatch(
+        sample_ids=["s0"],
+        cpg_features=torch.zeros(1, 2),
+        cpg_to_gene=torch.zeros(1, dtype=torch.long),
+        n_genes=n_genes,
+        tissue_target=torch.tensor([0], dtype=torch.long),
+        tissue_mask=torch.tensor([True]),
+        age_target=None,
+        age_mask=torch.tensor([False]),
+        bmi_target=torch.tensor([25.0], dtype=torch.float32),
+        bmi_mask=torch.tensor([False]),
+        ancestry_target=torch.tensor([0], dtype=torch.long),
+        ancestry_mask=torch.tensor([False]),
+    )
+    result = masked_multitask_loss(mbs=mbs, present=present, heads=heads, batch=batch)
+    assert result.metrics["bmi_n"] == 0.0
+    assert result.metrics.get("bmi_loss", 0.0) == 0.0
+
+
+def test_freeze_encoder_head_only_grads() -> None:
+    """DeepRVAT freeze-and-reuse: frozen encoder gets no grad; new heads do."""
+    n_genes = 4
+    encoder = torch.nn.Linear(n_genes, n_genes)
+    heads = MultitaskHeads(n_genes, 2, bmi_enabled=True, n_ancestry_classes=2)
+    for p in encoder.parameters():
+        p.requires_grad_(False)
+    mbs = encoder(torch.randn(1, n_genes))
+    present = torch.ones(1, n_genes, dtype=torch.bool)
+    batch = FlatBatch(
+        sample_ids=["s0"],
+        cpg_features=torch.zeros(1, 2),
+        cpg_to_gene=torch.zeros(1, dtype=torch.long),
+        n_genes=n_genes,
+        tissue_target=torch.tensor([0], dtype=torch.long),
+        tissue_mask=torch.tensor([False]),
+        age_target=None,
+        age_mask=torch.tensor([False]),
+        bmi_target=torch.tensor([24.0], dtype=torch.float32),
+        bmi_mask=torch.tensor([True]),
+        ancestry_target=torch.tensor([1], dtype=torch.long),
+        ancestry_mask=torch.tensor([True]),
+    )
+    result = masked_multitask_loss(mbs=mbs, present=present, heads=heads, batch=batch)
+    result.loss.backward()
+    assert all(p.grad is None for p in encoder.parameters())
+    assert heads.bmi_head is not None and heads.bmi_head.weight.grad is not None
+    assert heads.ancestry_head is not None and heads.ancestry_head.weight.grad is not None

@@ -56,7 +56,15 @@
     "blood_mask": { "type": "boolean", "default": false },
     "brain_label": { "type": ["string", "null"] },
     "brain_mask": { "type": "boolean", "default": false },
+    "bmi": { "type": ["number", "null"] },
+    "bmi_mask": { "type": "boolean", "default": false },
+    "ancestry_label": { "type": ["string", "null"] },
+    "ancestry_class_id": { "type": ["integer", "null"], "minimum": 0 },
+    "ancestry_mask": { "type": "boolean", "default": false },
     "sex": { "type": ["string", "null"] },
+    "sex_label": { "type": ["string", "null"] },
+    "sex_class_id": { "type": ["integer", "null"], "minimum": 0 },
+    "sex_mask": { "type": "boolean", "default": false },
     "covariates_json": { "type": ["string", "null"] }
   },
   "additionalProperties": true

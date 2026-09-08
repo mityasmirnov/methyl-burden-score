@@ -1,6 +1,6 @@
 # deepmat-data-geo-dev-v1
 
-- Generated: `2026-09-07T14:29:50Z`
+- Generated: `2026-09-07T18:11:06Z`
 - Mutates ATS / Hub packs: **false** / **false**
 
 ## Arm counts
@@ -8,9 +8,9 @@
 | arm | n_samples |
 | --- | ---: |
 | `hub_only` | 34090 |
-| `geo_only` | 41166 |
-| `hub_geo` | 75256 |
-| `metadata_only` | 75256 |
+| `geo_only` | 68416 |
+| `hub_geo` | 102506 |
+| `metadata_only` | 102506 |
 
 ## Artifacts
 

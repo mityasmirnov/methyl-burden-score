@@ -54,6 +54,10 @@ class FlatBatch:
     disease_mask: Tensor | None = None
     cancer_target: Tensor | None = None
     cancer_mask: Tensor | None = None
+    bmi_target: Tensor | None = None
+    bmi_mask: Tensor | None = None
+    ancestry_target: Tensor | None = None
+    ancestry_mask: Tensor | None = None
 
     def to(self, device: torch.device | str, *, non_blocking: bool = False) -> FlatBatch:
         sex_mask = self.sex_mask
@@ -96,6 +100,26 @@ class FlatBatch:
                 None
                 if self.cancer_mask is None
                 else self.cancer_mask.to(device, non_blocking=non_blocking)
+            ),
+            bmi_target=(
+                None
+                if self.bmi_target is None
+                else self.bmi_target.to(device, non_blocking=non_blocking)
+            ),
+            bmi_mask=(
+                None
+                if self.bmi_mask is None
+                else self.bmi_mask.to(device, non_blocking=non_blocking)
+            ),
+            ancestry_target=(
+                None
+                if self.ancestry_target is None
+                else self.ancestry_target.to(device, non_blocking=non_blocking)
+            ),
+            ancestry_mask=(
+                None
+                if self.ancestry_mask is None
+                else self.ancestry_mask.to(device, non_blocking=non_blocking)
             ),
         )
 
@@ -145,16 +169,27 @@ def record_to_batch(
     disease_mask: np.ndarray | None = None,
     cancer_target: np.ndarray | None = None,
     cancer_mask: np.ndarray | None = None,
+    bmi_value: float | None = None,
+    bmi_enabled: bool = False,
+    ancestry_class_index: int = 0,
+    ancestry_enabled: bool = False,
 ) -> FlatBatch:
     feats = record.features
     tissue_on = bool(tissue_enabled)
     age_on = bool(age_enabled and age_value is not None)
     sex_on = bool(sex_enabled)
+    bmi_on = bool(bmi_enabled and bmi_value is not None)
+    ancestry_on = bool(ancestry_enabled)
     age_target: Tensor | None = None
     if age_on:
         if age_value is None:
             raise RuntimeError("age_enabled set but age_value is None")
         age_target = torch.tensor([float(age_value)], dtype=torch.float32)
+    bmi_target: Tensor | None = None
+    if bmi_on:
+        if bmi_value is None:
+            raise RuntimeError("bmi_enabled set but bmi_value is None")
+        bmi_target = torch.tensor([float(bmi_value)], dtype=torch.float32)
     dis_t = (
         None
         if disease_target is None
@@ -188,6 +223,10 @@ def record_to_batch(
         disease_mask=dis_m,
         cancer_target=can_t,
         cancer_mask=can_m,
+        bmi_target=bmi_target,
+        bmi_mask=torch.tensor([bmi_on]),
+        ancestry_target=torch.tensor([int(ancestry_class_index)], dtype=torch.long),
+        ancestry_mask=torch.tensor([ancestry_on]),
     )
 
 

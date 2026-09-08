@@ -24,6 +24,11 @@ class SamplePhenotype:
     tissue_mask: bool = False
     sex_mask: bool = False
     sex_class_index: int = 0
+    bmi: float | None = None
+    bmi_mask: bool = False
+    ancestry_class_index: int = 0
+    ancestry_mask: bool = False
+    ancestry_label: str | None = None
 
 
 def load_multitask_phenotypes(
@@ -91,7 +96,9 @@ def load_multitask_phenotypes(
         # Hub-wide cohort may include disease/cancer-only GSMs; longform maps
         # supply multilabel targets. Age/tissue/sex-only requirement is for
         # the ATS freeze path.
-        if not age_mask and not tissue_mask and not sex_mask and not disease_pack and not cancer_pack:
+        if not (
+            age_mask or tissue_mask or sex_mask or disease_pack or cancer_pack
+        ):
             # Still allow ancestry/bmi/blood-only rows (masked heads stay off).
             pass
         age_f: float | None = None
@@ -148,6 +155,32 @@ def load_multitask_phenotypes(
             title = f"age={age_f}"
         else:
             title = sid
+
+        bmi_mask = bool(row.get("bmi_mask", False))
+        bmi_f: float | None = None
+        if bmi_mask:
+            raw_bmi = row.get("bmi")
+            try:
+                bmi_f = float(raw_bmi)  # type: ignore[arg-type]
+            except (TypeError, ValueError) as exc:
+                raise KeyError(f"bmi_mask set but bmi invalid for {sid}") from exc
+            if pd.isna(bmi_f):
+                raise KeyError(f"bmi_mask set but bmi missing for {sid}")
+
+        ancestry_mask = bool(row.get("ancestry_mask", False))
+        ancestry_class_index = 0
+        ancestry_label: str | None = None
+        if ancestry_mask:
+            raw_anc_cid = row.get("ancestry_class_id")
+            if raw_anc_cid is None or (isinstance(raw_anc_cid, float) and pd.isna(raw_anc_cid)):
+                raise KeyError(f"ancestry_mask set but ancestry_class_id missing for {sid}")
+            ancestry_class_index = int(raw_anc_cid)  # type: ignore[arg-type]
+            raw_anc_lab = row.get("ancestry_label")
+            if raw_anc_lab is not None and not (
+                isinstance(raw_anc_lab, float) and pd.isna(raw_anc_lab)
+            ):
+                ancestry_label = str(raw_anc_lab)
+
         phenotypes.append(
             SamplePhenotype(
                 sample_id=sid,
@@ -162,6 +195,11 @@ def load_multitask_phenotypes(
                 tissue_mask=tissue_mask,
                 sex_mask=sex_mask,
                 sex_class_index=sex_class_index,
+                bmi=bmi_f,
+                bmi_mask=bmi_mask,
+                ancestry_class_index=ancestry_class_index,
+                ancestry_mask=ancestry_mask,
+                ancestry_label=ancestry_label,
             )
         )
     return phenotypes, names

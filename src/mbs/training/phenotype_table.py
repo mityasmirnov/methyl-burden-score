@@ -169,6 +169,45 @@ def _age_years(row: dict[str, Any]) -> float | None:
     return None
 
 
+def _bmi_value(row: dict[str, Any] | None) -> float | None:
+    """Numeric BMI from Hub bmi pack (phenotype_value_numeric preferred)."""
+    if row is None:
+        return None
+    for key in ("phenotype_value_numeric", "bmi", "phenotype_value"):
+        raw = row.get(key)
+        if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+            continue
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if pd.isna(value):
+            continue
+        return value
+    return None
+
+
+def _pack_primary_label(row: dict[str, Any] | None) -> str | None:
+    """Categorical primary label from Hub pack ``phenotype_value``."""
+    if row is None:
+        return None
+    raw = row.get("phenotype_value")
+    if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+        return None
+    text = str(raw).strip()
+    return text or None
+
+
+def collapse_ancestry_label(raw: str, *, counts: dict[str, int], min_n: int) -> str:
+    """Map rare ancestry/race strings to ``other`` when below ``min_n``."""
+    text = raw.strip()
+    if not text:
+        return "other"
+    if counts.get(text, 0) >= min_n:
+        return text
+    return "other"
+
+
 def _tissue_label(row: dict[str, Any]) -> str | None:
     for key in ("phenotype_value", "tissue"):
         raw = row.get(key)
@@ -329,6 +368,7 @@ def build_sample_phenotype_rows(
 HUB_UNION_PHENOTYPE_TABLE = "sample_phenotype_table_hub_nine_pack_v1.parquet"
 HUB_UNION_TISSUE_ONTOLOGY = "tissue_ontology_hub_nine_pack_v1.yaml"
 HUB_UNION_SEX_ONTOLOGY = "sex_ontology_hub_nine_pack_v1.yaml"
+HUB_UNION_ANCESTRY_ONTOLOGY = "ancestry_ontology_hub_nine_pack_v1.yaml"
 
 
 @dataclass(frozen=True, slots=True)
@@ -338,6 +378,7 @@ class HubUnionPhenotypeResult:
     sex_ontology_path: Path
     n_samples: int
     stats: dict[str, Any]
+    ancestry_ontology_path: Path | None = None
 
 
 def build_hub_union_phenotype_table(
@@ -348,7 +389,9 @@ def build_hub_union_phenotype_table(
     phenotype_table_path: Path | None = None,
     tissue_ontology_path: Path | None = None,
     sex_ontology_path: Path | None = None,
+    ancestry_ontology_path: Path | None = None,
     min_tissue_n: int = 10,
+    min_ancestry_n: int = 10,
     disease_matrix_id: str = "matrix-hub-disease-full-v1",
     cancer_matrix_id: str = "matrix-hub-cancer-full-v1",
 ) -> HubUnionPhenotypeResult:
@@ -357,7 +400,9 @@ def build_hub_union_phenotype_table(
     Labels are independent of which pack supplies betas. Disease/cancer
     ``*_mask`` columns mean pack membership (longform maps supply per-label
     observation masks; unlabeled stays unknown ≠ control). Blood
-    ``cell_component`` is never used as a pack-wide head.
+    ``cell_component`` is never used as a pack-wide head. BMI/ancestry use
+    real Hub labels; brain region labels set ``brain_mask`` but there is no
+    ``brain_head`` (catalogue, not case/control).
     """
     data_root = data_root.resolve()
     matrices = data_root / "canonical" / "matrices"
@@ -385,6 +430,9 @@ def build_hub_union_phenotype_table(
     age_pheno = age_pheno if age_pheno is not None else empty
     tissue_pheno = tissue_pheno if tissue_pheno is not None else empty
     sex_pheno = sex_pheno if sex_pheno is not None else empty
+    bmi_pheno = _or_empty_frame(_load_pack("bmi"), empty)
+    ancestry_pheno = _or_empty_frame(_load_pack("ancestry"), empty)
+    brain_pheno = _or_empty_frame(_load_pack("brain"), empty)
 
     # Tissue ontology from all available tissue labels across packs.
     tissue_labels: list[str] = []
@@ -397,6 +445,22 @@ def build_hub_union_phenotype_table(
                 tissue_labels.append(lab)
     ontology = build_tissue_ontology(tissue_labels, min_n=min_tissue_n)
     sex_ontology = default_sex_ontology()
+
+    ancestry_raw_counts: dict[str, int] = {}
+    for rec in ancestry_pheno.to_dict(orient="records"):
+        lab = _pack_primary_label(rec)
+        if lab is None:
+            continue
+        ancestry_raw_counts[lab] = ancestry_raw_counts.get(lab, 0) + 1
+    ancestry_collapsed = [
+        collapse_ancestry_label(lab, counts=ancestry_raw_counts, min_n=min_ancestry_n)
+        for lab, n in ancestry_raw_counts.items()
+        for _ in range(n)
+    ]
+    if ancestry_collapsed:
+        ancestry_ontology = build_tissue_ontology(ancestry_collapsed, min_n=1)
+    else:
+        ancestry_ontology = TissueOntology(labels=("other",), min_n=1, label_to_id={"other": 0})
 
     # Membership sets for disease/cancer (presence in pack index, not label).
     def _pack_members(mid: str) -> set[str]:
@@ -412,19 +476,16 @@ def build_hub_union_phenotype_table(
     study_by: dict[str, str] = {}
     platform_by: dict[str, str | None] = {}
 
-    def _or_empty(frame: pd.DataFrame | None) -> pd.DataFrame:
-        return frame if frame is not None else empty
-
     for frame in (
         age_pheno,
         tissue_pheno,
         sex_pheno,
-        _or_empty(_load_pack("disease")),
-        _or_empty(_load_pack("cancer")),
-        _or_empty(_load_pack("blood")),
-        _or_empty(_load_pack("brain")),
-        _or_empty(_load_pack("bmi")),
-        _or_empty(_load_pack("ancestry")),
+        _or_empty_frame(_load_pack("disease"), empty),
+        _or_empty_frame(_load_pack("cancer"), empty),
+        _or_empty_frame(_load_pack("blood"), empty),
+        brain_pheno,
+        bmi_pheno,
+        ancestry_pheno,
     ):
         if frame.empty or "sample_id" not in frame.columns:
             continue
@@ -443,8 +504,14 @@ def build_hub_union_phenotype_table(
         age_pheno=age_pheno,
         tissue_pheno=tissue_pheno,
         sex_pheno=sex_pheno,
+        bmi_pheno=bmi_pheno,
+        ancestry_pheno=ancestry_pheno,
+        brain_pheno=brain_pheno,
         ontology=ontology,
         sex_ontology=sex_ontology,
+        ancestry_ontology=ancestry_ontology,
+        ancestry_raw_counts=ancestry_raw_counts,
+        min_ancestry_n=min_ancestry_n,
         study_by=study_by,
         platform_by=platform_by,
         disease_members=disease_members,
@@ -467,9 +534,20 @@ def build_hub_union_phenotype_table(
         if sex_ontology_path is not None
         else phenotypes_root / HUB_UNION_SEX_ONTOLOGY
     )
+    out_ancestry = (
+        ancestry_ontology_path
+        if ancestry_ontology_path is not None
+        else phenotypes_root / HUB_UNION_ANCESTRY_ONTOLOGY
+    )
     write_sample_phenotype_table(out_table, frame)
     write_tissue_ontology(out_tissue, ontology)
     write_sex_ontology(out_sex, sex_ontology)
+    ancestry_payload = tissue_ontology_to_dict(ancestry_ontology)
+    ancestry_payload["version"] = "ancestry-ontology-v1"
+    ancestry_payload["min_n"] = min_ancestry_n
+    ancestry_payload["collapse"] = "rare_to_other"
+    out_ancestry.parent.mkdir(parents=True, exist_ok=True)
+    out_ancestry.write_text(yaml.safe_dump(ancestry_payload, sort_keys=False), encoding="utf-8")
     stats = {
         "n_samples": len(frame),
         "n_age_masked": int(frame["age_mask"].to_numpy().sum()),
@@ -477,15 +555,24 @@ def build_hub_union_phenotype_table(
         "n_sex_masked": int(frame["sex_mask"].to_numpy().sum()),
         "n_disease_pack": int(frame["disease_mask"].to_numpy().sum()),
         "n_cancer_pack": int(frame["cancer_mask"].to_numpy().sum()),
+        "n_bmi_masked": int(frame["bmi_mask"].to_numpy().sum()),
+        "n_ancestry_masked": int(frame["ancestry_mask"].to_numpy().sum()),
+        "n_brain_masked": int(frame["brain_mask"].to_numpy().sum()),
         "n_tissue_classes": len(ontology.labels),
+        "n_ancestry_classes": len(ancestry_ontology.labels),
     }
     return HubUnionPhenotypeResult(
         phenotype_table_path=out_table,
         tissue_ontology_path=out_tissue,
         sex_ontology_path=out_sex,
+        ancestry_ontology_path=out_ancestry,
         n_samples=len(frame),
         stats=stats,
     )
+
+
+def _or_empty_frame(frame: pd.DataFrame | None, empty: pd.DataFrame) -> pd.DataFrame:
+    return frame if frame is not None else empty
 
 
 def read_sample_index_ids(path: Path) -> list[str]:
@@ -506,7 +593,22 @@ def _build_hub_union_rows(
     platform_by: dict[str, str | None],
     disease_members: set[str],
     cancer_members: set[str],
+    bmi_pheno: pd.DataFrame | None = None,
+    ancestry_pheno: pd.DataFrame | None = None,
+    brain_pheno: pd.DataFrame | None = None,
+    ancestry_ontology: TissueOntology | None = None,
+    ancestry_raw_counts: dict[str, int] | None = None,
+    min_ancestry_n: int = 10,
 ) -> list[dict[str, Any]]:
+    empty = pd.DataFrame(columns=["sample_id"])
+    bmi_pheno = bmi_pheno if bmi_pheno is not None else empty
+    ancestry_pheno = ancestry_pheno if ancestry_pheno is not None else empty
+    brain_pheno = brain_pheno if brain_pheno is not None else empty
+    ancestry_ontology = ancestry_ontology or TissueOntology(
+        labels=("other",), min_n=1, label_to_id={"other": 0}
+    )
+    ancestry_raw_counts = ancestry_raw_counts or {}
+
     age_by = {
         str(r["sample_id"]): r for r in age_pheno.to_dict(orient="records") if "sample_id" in r
     }
@@ -516,6 +618,15 @@ def _build_hub_union_rows(
     sex_by = {
         str(r["sample_id"]): r for r in sex_pheno.to_dict(orient="records") if "sample_id" in r
     }
+    bmi_by = {
+        str(r["sample_id"]): r for r in bmi_pheno.to_dict(orient="records") if "sample_id" in r
+    }
+    ancestry_by = {
+        str(r["sample_id"]): r for r in ancestry_pheno.to_dict(orient="records") if "sample_id" in r
+    }
+    brain_by = {
+        str(r["sample_id"]): r for r in brain_pheno.to_dict(orient="records") if "sample_id" in r
+    }
     rows: list[dict[str, Any]] = []
     for rec in sample_index.to_dict(orient="records"):
         sid = str(rec["sample_id"])
@@ -524,6 +635,9 @@ def _build_hub_union_rows(
         age_row = age_by.get(sid)
         tissue_row = tissue_by.get(sid)
         sex_row = sex_by.get(sid)
+        bmi_row = bmi_by.get(sid)
+        ancestry_row = ancestry_by.get(sid)
+        brain_row = brain_by.get(sid)
 
         age_years = _age_years(age_row) if age_row is not None else None
         if age_years is None and tissue_row is not None:
@@ -556,9 +670,29 @@ def _build_hub_union_rows(
             sex_class_id = sex_ontology.label_to_id[sex_lab]
             sex_mask = True
 
+        bmi_val = _bmi_value(bmi_row)
+        bmi_mask = bmi_val is not None
+
+        ancestry_raw = _pack_primary_label(ancestry_row)
+        ancestry_lab: str | None = None
+        ancestry_class_id: int | None = None
+        ancestry_mask = False
+        if ancestry_raw is not None:
+            ancestry_lab = collapse_ancestry_label(
+                ancestry_raw, counts=ancestry_raw_counts, min_n=min_ancestry_n
+            )
+            if ancestry_lab in ancestry_ontology.label_to_id:
+                ancestry_class_id = ancestry_ontology.label_to_id[ancestry_lab]
+                ancestry_mask = True
+            else:
+                ancestry_lab = None
+
+        brain_lab = _pack_primary_label(brain_row)
+        brain_mask = brain_lab is not None
+
         study_id = study_by.get(sid)
         if study_id is None:
-            for src in (age_row, tissue_row, sex_row):
+            for src in (age_row, tissue_row, sex_row, bmi_row, ancestry_row, brain_row):
                 if src is None:
                     continue
                 raw = src.get("study_id") or src.get("project_id")
@@ -569,7 +703,7 @@ def _build_hub_union_rows(
             raise ValueError(f"missing study_id for sample_id={sid}")
         platform_id = platform_by.get(sid)
         if platform_id is None:
-            for src in (age_row, tissue_row, sex_row):
+            for src in (age_row, tissue_row, sex_row, bmi_row, ancestry_row, brain_row):
                 if src is None:
                     continue
                 platform_id = normalize_platform(src.get("platform"))
@@ -579,7 +713,17 @@ def _build_hub_union_rows(
         disease_mask = sid in disease_members
         cancer_mask = sid in cancer_members
         n_traits = sum(
-            bool(x) for x in (age_mask, tissue_mask, sex_mask, disease_mask, cancer_mask)
+            bool(x)
+            for x in (
+                age_mask,
+                tissue_mask,
+                sex_mask,
+                disease_mask,
+                cancer_mask,
+                bmi_mask,
+                ancestry_mask,
+                brain_mask,
+            )
         )
         if n_traits > 1:
             family = "multi"
@@ -593,6 +737,12 @@ def _build_hub_union_rows(
             family = "disease"
         elif cancer_mask:
             family = "cancer"
+        elif bmi_mask:
+            family = "bmi"
+        elif ancestry_mask:
+            family = "ancestry"
+        elif brain_mask:
+            family = "brain"
         else:
             family = "other"
 
@@ -618,7 +768,13 @@ def _build_hub_union_rows(
                 "disease_mask": disease_mask,
                 "cancer_mask": cancer_mask,
                 "blood_mask": False,
-                "brain_mask": False,
+                "brain_label": brain_lab,
+                "brain_mask": brain_mask,
+                "bmi": bmi_val,
+                "bmi_mask": bmi_mask,
+                "ancestry_label": ancestry_lab,
+                "ancestry_class_id": ancestry_class_id,
+                "ancestry_mask": ancestry_mask,
                 "sex": sex_lab,
             }
         )

@@ -5,13 +5,13 @@
     "tissue"
   ],
   "arm_counts": {
-    "geo_only": 41166,
-    "hub_geo": 75256,
+    "geo_only": 68416,
+    "hub_geo": 102506,
     "hub_only": 34090,
-    "metadata_only": 75256
+    "metadata_only": 102506
   },
   "artifact_version": "geo-dev-release-v1",
-  "created_at": "2026-09-07T14:29:50Z",
+  "created_at": "2026-09-07T18:11:06Z",
   "mutates_ats": false,
   "mutates_hub_packs": false,
   "n_assay_gsm": 155708,
@@ -25,10 +25,10 @@
   ],
   "parent_catalog_release": "deepmat-data-v1",
   "parquet_sha256": {
-    "geo_only": "8597cfcf5f5db7f0c7a390c9a97ea56e5d94e54c1ee8c83ed8e2fcd429131c1f",
-    "hub_geo": "0ef58b8adb7b6e5df344aaa64bc88736e2ecba7c017b33363fb95dffbba12207",
+    "geo_only": "f1b9d0820922dc90a6e1c4e0283ba980666ea641a00ae6883173155eec0ef219",
+    "hub_geo": "ab2aef9d60d9e3c48a3adc29c72845dcced93761edb1120b7afc41911164c3c7",
     "hub_only": "be89b5a7d82f2d65955f2a14e80423358682dbac94540932ce3377e7ded7bed9",
-    "metadata_only": "9ec01f0801f909e3e05ab0178b80bcc05dd88d1536aff8711145062c2e589402"
+    "metadata_only": "29b3efa1cac26359dab3cddbb0d890187c9bc5400a482a868fbc4deb3bef693e"
   },
   "release_id": "deepmat-data-geo-dev-v1"
 }

@@ -1,0 +1,308 @@
+{
+  "ancestry_top": {
+    "African": 72,
+    "African American": 237,
+    "Australian": 10,
+    "Caucasian - European": 144,
+    "Chinese": 167,
+    "East Asian": 74,
+    "European": 24,
+    "Hispanic": 168,
+    "Hispanic - Mexican": 227,
+    "Korean-Asian": 10,
+    "Northern European": 73,
+    "black or African American (not Hispanic or Latino)": 10,
+    "other": 5,
+    "white": 159
+  },
+  "brain_top": {
+    "brain - cerebellum": 300,
+    "brain - dorsolateral prefrontal cortex": 245,
+    "brain - entorhinal cortex": 101,
+    "brain - frontal cortex": 133,
+    "brain - frontal lobe": 155,
+    "brain - hippocampus": 56,
+    "brain - occipital lobe": 124,
+    "brain - prefrontal cortex": 55,
+    "brain - prefrontal cortex neuron": 88,
+    "brain - striatum": 44,
+    "brain - superior temporal gyrus": 179,
+    "brain - temporal lobe": 121
+  },
+  "cpgpt_sample_embedding_status": "unavailable",
+  "created_at": "2026-09-08T11:06:40Z",
+  "disease": {
+    "cancer": {
+      "frac_patients_of_pack": 0.7085,
+      "n_adjacent_normal": 1024,
+      "n_case": 7157,
+      "n_control": 1920,
+      "n_pack": 10101
+    },
+    "frac_patients_of_ninepack": 0.1538,
+    "frac_patients_of_pack": 0.4308,
+    "frac_patients_of_usable": 0.4317,
+    "n_adjacent_normal": 24,
+    "n_case": 5264,
+    "n_control": 6930,
+    "n_disease_labels": 28,
+    "n_nine_pack": 34234,
+    "n_pack": 12218,
+    "n_usable_case_control": 12194,
+    "note": "Disease names come from Hub disease-pack phenotype_value on case rows; controls have sample_type=control and usually no diagnosis string. Train only on label_status in {case, control}.",
+    "top_diseases": [
+      {
+        "disease": "Alzheimer's disease",
+        "n_cases": 945,
+        "pct_of_cases": 17.95
+      },
+      {
+        "disease": "schizophrenia",
+        "n_cases": 536,
+        "pct_of_cases": 10.18
+      },
+      {
+        "disease": "systemic lupus erythematosus",
+        "n_cases": 341,
+        "pct_of_cases": 6.48
+      },
+      {
+        "disease": "Parkinson's disease",
+        "n_cases": 333,
+        "pct_of_cases": 6.33
+      },
+      {
+        "disease": "ulcerative colitis",
+        "n_cases": 258,
+        "pct_of_cases": 4.9
+      },
+      {
+        "disease": "multiple sclerosis",
+        "n_cases": 228,
+        "pct_of_cases": 4.33
+      },
+      {
+        "disease": "rheumatoid arthritis",
+        "n_cases": 225,
+        "pct_of_cases": 4.27
+      },
+      {
+        "disease": "psoriasis",
+        "n_cases": 211,
+        "pct_of_cases": 4.01
+      },
+      {
+        "disease": "stroke",
+        "n_cases": 204,
+        "pct_of_cases": 3.88
+      },
+      {
+        "disease": "childhood asthma",
+        "n_cases": 202,
+        "pct_of_cases": 3.84
+      },
+      {
+        "disease": "intellectual disability and congenital anomalies",
+        "n_cases": 200,
+        "pct_of_cases": 3.8
+      },
+      {
+        "disease": "Crohn's disease",
+        "n_cases": 197,
+        "pct_of_cases": 3.74
+      },
+      {
+        "disease": "asthma",
+        "n_cases": 194,
+        "pct_of_cases": 3.69
+      },
+      {
+        "disease": "preeclampsia",
+        "n_cases": 179,
+        "pct_of_cases": 3.4
+      },
+      {
+        "disease": "Huntington's disease",
+        "n_cases": 170,
+        "pct_of_cases": 3.23
+      },
+      {
+        "disease": "systemic insulin resistance",
+        "n_cases": 115,
+        "pct_of_cases": 2.18
+      },
+      {
+        "disease": "respiratory allergy",
+        "n_cases": 104,
+        "pct_of_cases": 1.98
+      },
+      {
+        "disease": "type 2 diabetes",
+        "n_cases": 92,
+        "pct_of_cases": 1.75
+      },
+      {
+        "disease": "panic disorder",
+        "n_cases": 89,
+        "pct_of_cases": 1.69
+      },
+      {
+        "disease": "Silver Russell syndrome",
+        "n_cases": 79,
+        "pct_of_cases": 1.5
+      },
+      {
+        "disease": "Graves' disease",
+        "n_cases": 73,
+        "pct_of_cases": 1.39
+      },
+      {
+        "disease": "spina bifida",
+        "n_cases": 59,
+        "pct_of_cases": 1.12
+      },
+      {
+        "disease": "Down syndrome",
+        "n_cases": 54,
+        "pct_of_cases": 1.03
+      },
+      {
+        "disease": "autism spectrum disorder",
+        "n_cases": 48,
+        "pct_of_cases": 0.91
+      },
+      {
+        "disease": "Sjogren's syndrome",
+        "n_cases": 48,
+        "pct_of_cases": 0.91
+      },
+      {
+        "disease": "Kabuki syndrome",
+        "n_cases": 40,
+        "pct_of_cases": 0.76
+      },
+      {
+        "disease": "nephrogenic rest",
+        "n_cases": 22,
+        "pct_of_cases": 0.42
+      },
+      {
+        "disease": "systemic sclerosis",
+        "n_cases": 18,
+        "pct_of_cases": 0.34
+      }
+    ]
+  },
+  "figures": [
+    "reports/inspection/deepmat_data_v1/sample_overview/figures/lane_membership.png",
+    "reports/inspection/deepmat_data_v1/sample_overview/figures/hub_pack_membership.png",
+    "reports/inspection/deepmat_data_v1/sample_overview/figures/phenotype_coverage.png",
+    "reports/inspection/deepmat_data_v1/sample_overview/figures/tissue_top.png",
+    "reports/inspection/deepmat_data_v1/sample_overview/figures/platform.png",
+    "reports/inspection/deepmat_data_v1/sample_overview/figures/disease_top.png"
+  ],
+  "hub_pack_membership": {
+    "age": 8374,
+    "ancestry": 1380,
+    "blood": 3402,
+    "bmi": 2070,
+    "brain": 1997,
+    "cancer": 10101,
+    "disease": 12218,
+    "sex": 2978,
+    "tissue": 5323
+  },
+  "id_convention": {
+    "geo_gpl_id": "GPL (platform)",
+    "sample_id": "GSM (or TCGA/ArrayExpress when not GEO)",
+    "study_id": "GSE (series)"
+  },
+  "lane": {
+    "hub_and_ewas": 30334,
+    "in_ewas_db": 169176,
+    "in_geo_soft": 90751,
+    "in_hub_baseline": 34234
+  },
+  "n_samples": 173076,
+  "pdf": "reports/inspection/deepmat_data_v1/sample_overview/sample_overview_dashboard.pdf",
+  "phenotype_coverage": {
+    "age_years": 58054,
+    "ancestry_label": 1380,
+    "bmi": 2070,
+    "brain_label": 1997,
+    "cell_component": 3280,
+    "pubmed_ids": 159483,
+    "sex": 82833,
+    "tissue": 167756
+  },
+  "platform_source": {
+    "datahub_metadata_json": 2142,
+    "ewas_db_n_probes": 3527,
+    "explicit": 167357,
+    "sample_id_935k_hint": 3,
+    "unresolved": 47
+  },
+  "platform_top": {
+    "EPIC": 56711,
+    "EPICv2": 6415,
+    "HM450": 109903,
+    "unknown": 47
+  },
+  "sex_top": {
+    "F": 5904,
+    "Female": 36151,
+    "M": 6581,
+    "Male": 34189,
+    "m": 8
+  },
+  "species_source": {
+    "ewas_datahub_assumed_human": 1175,
+    "geo_series_taxon": 68567,
+    "geo_soft": 90751,
+    "hub_baseline_assumed_human": 6269,
+    "project_namespace_human": 6314
+  },
+  "species_status": {
+    "human": 172721,
+    "non_human": 355
+  },
+  "tissue_top": {
+    "CD14+ monocyte": 1624,
+    "CD4+ T cell": 1098,
+    "bone marrow": 1544,
+    "brain": 3828,
+    "brain - glioblastoma tissue": 988,
+    "brain - tumor": 11452,
+    "breast": 3519,
+    "buccal epithelium": 1140,
+    "cord blood": 2882,
+    "kidney": 2056,
+    "leukocyte": 7456,
+    "liver": 2470,
+    "lung": 3108,
+    "peripheral blood mononuclear cell": 7440,
+    "placenta": 1721,
+    "prostate gland": 1154,
+    "saliva": 1798,
+    "sarcoma": 1504,
+    "semen": 2100,
+    "whole blood": 35741
+  },
+  "top_studies": {
+    "CPTAC-3": 1998,
+    "GSE105018": 1658,
+    "GSE109379": 1104,
+    "GSE130051": 1501,
+    "GSE140686": 1504,
+    "GSE145361": 1889,
+    "GSE147740": 1128,
+    "GSE157131": 1218,
+    "GSE185920": 1471,
+    "GSE197678": 2922,
+    "GSE210255": 1394,
+    "GSE224124": 1107,
+    "GSE55763": 2711,
+    "GSE56046": 1202,
+    "GSE90496": 2801
+  }
+}

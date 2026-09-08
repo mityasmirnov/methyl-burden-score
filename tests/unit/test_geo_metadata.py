@@ -10,6 +10,7 @@ import pandas as pd
 from mbs.geo_metadata import (
     GEO_SOURCE_FAMILY,
     build_geo_frame_from_soft,
+    build_geo_frame_from_soft_path,
     catalog_platform_from_gpl,
     characteristics_to_phenotypes,
     classify_species,
@@ -18,6 +19,7 @@ from mbs.geo_metadata import (
     map_geo_tissue,
     merge_geo_sample_metadata,
     parse_family_soft,
+    parse_family_soft_path,
 )
 from mbs.training.phenotype_table import TissueOntology
 
@@ -160,6 +162,46 @@ def test_parse_family_soft_samples() -> None:
     assert by_id["GSM001"]["taxon_id"] == 9606
     assert by_id["GSM_MOUSE"]["species_status"] == "non_human"
     assert by_id["GSM_MOUSE"]["taxon_id"] == 10090
+
+
+def test_parse_family_soft_path_skips_embedded_tables(tmp_path: Path) -> None:
+    """Huge !sample_table_* blocks must not enter sample characteristics."""
+    soft = tmp_path / "GSE_BIG_family.soft"
+    table_lines = "\n".join(f"cg{i:06d}\t0.{i % 10}" for i in range(50_000))
+    soft.write_text(
+        "\n".join(
+            [
+                "^SERIES = GSE_BIG",
+                "!Series_geo_accession = GSE_BIG",
+                "!Series_pubmed_id = 999",
+                "^SAMPLE = GSM_BIG1",
+                "!Sample_geo_accession = GSM_BIG1",
+                "!Sample_source_name_ch1 = Whole Blood",
+                "!Sample_characteristics_ch1 = age: 40",
+                "!Sample_platform_id = GPL13534",
+                "!sample_table_begin",
+                "ID_REF\tVALUE",
+                table_lines,
+                "!sample_table_end",
+                "^SAMPLE = GSM_BIG2",
+                "!Sample_geo_accession = GSM_BIG2",
+                "!Sample_characteristics_ch1 = tissue: whole blood",
+                "!Sample_characteristics_ch1 = age: 41",
+                "!Sample_platform_id = GPL13534",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    series, samples = parse_family_soft_path(soft)
+    assert series["study_id"] == "GSE_BIG"
+    assert len(samples) == 2
+    by_id = {s["sample_id"]: s for s in samples}
+    assert by_id["GSM_BIG1"]["age"] == 40.0
+    assert "cg000000" not in json.dumps(by_id["GSM_BIG1"]["characteristics_raw"])
+    frame = build_geo_frame_from_soft_path(
+        soft, fetched_at="2026-01-01T00:00:00Z", soft_sha256="deadbeef"
+    )
+    assert len(frame) == 2
 
 
 def test_classify_species() -> None:

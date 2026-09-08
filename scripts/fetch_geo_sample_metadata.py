@@ -11,12 +11,11 @@ import pandas as pd
 
 from mbs.annotation.manifest import sha256_file, utc_now_iso, write_json
 from mbs.geo_metadata import (
-    build_geo_frame_from_soft,
+    build_geo_frame_from_soft_path,
     consolidate_geo_sample_rows,
     download_family_soft,
     load_geo_frame,
     load_geo_tissue_aliases,
-    read_cached_soft,
     resolve_tissue_ontology_path,
     species_census,
     write_geo_parquet,
@@ -29,6 +28,8 @@ DEFAULT_STUDIES = Path("configs/data/geo_backfill_pilot_gse.txt")
 
 def _report_subdir(studies_file: Path) -> str:
     name = studies_file.name.lower()
+    if "next" in name:
+        return "geo_backfill_next"
     if "batch" in name:
         return "geo_backfill_batch"
     return "geo_backfill_pilot"
@@ -90,7 +91,7 @@ def main() -> None:
     per_study: list[dict[str, object]] = []
     fetched_at = utc_now_iso()
 
-    for gse in study_ids:
+    for idx, gse in enumerate(study_ids, start=1):
         cache_path = paths.cache_root / "geo" / gse / f"{gse}_family.soft.gz"
         try:
             if args.from_cache_only:
@@ -99,18 +100,20 @@ def main() -> None:
                     per_study.append(
                         {"study_id": gse, "download_status": "fail", "error": "cache missing"}
                     )
+                    sys.stdout.write(f"[{idx}/{len(study_ids)}] fail {gse}: cache missing\n")
+                    sys.stdout.flush()
                     continue
                 digest = sha256_file(cache_path)
-                text = read_cached_soft(cache_path)
             else:
+                sys.stdout.write(f"[{idx}/{len(study_ids)}] fetch {gse} …\n")
+                sys.stdout.flush()
                 cache_path, digest = download_family_soft(
                     gse,
                     cache_root=paths.cache_root,
                     force=args.force,
                 )
-                text = read_cached_soft(cache_path)
-            frame = build_geo_frame_from_soft(
-                text,
+            frame = build_geo_frame_from_soft_path(
+                cache_path,
                 fetched_at=fetched_at,
                 soft_sha256=digest,
                 ontology=ontology,
@@ -149,11 +152,24 @@ def main() -> None:
             )
             if not frame.empty:
                 frames.append(frame)
-            sys.stdout.write(f"ok {gse} n_samples={len(frame)}\n")
+            sys.stdout.write(f"[{idx}/{len(study_ids)}] ok {gse} n_samples={len(frame)}\n")
+            sys.stdout.flush()
         except OSError as exc:
             failures.append({"study_id": gse, "error": str(exc)})
             per_study.append({"study_id": gse, "download_status": "fail", "error": str(exc)})
-            sys.stdout.write(f"fail {gse}: {exc}\n")
+            sys.stdout.write(f"[{idx}/{len(study_ids)}] fail {gse}: {exc}\n")
+            sys.stdout.flush()
+        except Exception as exc:  # noqa: BLE001 — per-study isolation for crawl
+            failures.append({"study_id": gse, "error": f"{type(exc).__name__}: {exc}"})
+            per_study.append(
+                {
+                    "study_id": gse,
+                    "download_status": "fail",
+                    "error": f"{type(exc).__name__}: {exc}",
+                }
+            )
+            sys.stdout.write(f"[{idx}/{len(study_ids)}] fail {gse}: {type(exc).__name__}: {exc}\n")
+            sys.stdout.flush()
 
     if not frames:
         raise SystemExit("no GEO samples fetched")

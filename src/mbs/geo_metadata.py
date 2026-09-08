@@ -8,8 +8,10 @@ import os
 import re
 import time
 import urllib.request
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import Any, Protocol, TextIO, cast
 
 import duckdb
 import pandas as pd
@@ -105,8 +107,11 @@ _SAMPLE_TYPE_KEYS = frozenset(
 _CANCER_KEY_RE = re.compile(r"cancer|tumor|tumour|malignan|carcinoma|neoplasm", re.I)
 _BATCH_KEY_RE = re.compile(r"^batch|batch id|batch_id|lot|plate", re.I)
 _TREATMENT_KEY_RE = re.compile(r"^treatment|therapy|drug|medication", re.I)
-_SOFT_TABLE_BEGIN = re.compile(r"^!(?:Sample_|Series_)?(?:platform|sample)_table_begin", re.I)
-_SOFT_TABLE_END = re.compile(r"^!(?:Sample_|Series_)?(?:platform|sample)_table_end", re.I)
+# Match any SOFT embedded table marker (!sample_table_begin, !platform_table_begin, …).
+_SOFT_TABLE_BEGIN = re.compile(r"^!.*_table_begin\b", re.I)
+_SOFT_TABLE_END = re.compile(r"^!.*_table_end\b", re.I)
+_SOFT_DOWNLOAD_TIMEOUT_S = 1800
+_SOFT_DOWNLOAD_CHUNK = 8 * 1024 * 1024
 _AGE_UNIT_RE = re.compile(
     r"(\d+(?:\.\d+)?)\s*(years?|yrs?|y|months?|mos?|mo|weeks?|wks?|w|days?|d)\b",
     re.I,
@@ -201,13 +206,17 @@ def _is_blank(value: object) -> bool:
     return text == "" or text.lower() in {"nan", "none", "na", "<na>"}
 
 
-def _parse_soft_blocks(text: str) -> tuple[dict[str, str], list[dict[str, list[str]]]]:
-    """Parse family SOFT; skip embedded platform/sample tables."""
+def _parse_soft_blocks(lines: Iterable[str]) -> tuple[dict[str, str], list[dict[str, list[str]]]]:
+    """Parse family SOFT lines; skip embedded platform/sample data tables.
+
+    Accepts any line iterable so callers can stream gzip without loading the
+    full decompressed SOFT (often multi-GB methylation tables) into RAM.
+    """
     series: dict[str, str] = {}
     samples: list[dict[str, list[str]]] = []
     current: dict[str, list[str]] | None = None
     in_table = False
-    for raw_line in text.splitlines():
+    for raw_line in lines:
         line = raw_line.strip()
         if not line:
             continue
@@ -242,6 +251,17 @@ def _parse_soft_blocks(text: str) -> tuple[dict[str, str], list[dict[str, list[s
     if current:
         samples.append(current)
     return series, samples
+
+
+@contextmanager
+def open_soft_text(path: Path) -> Iterator[TextIO]:
+    """Open a family SOFT (plain or .gz) as a text stream."""
+    if path.suffix == ".gz" or path.name.endswith(".soft.gz"):
+        with gzip.open(path, "rt", encoding="utf-8", errors="replace") as handle:
+            yield cast(TextIO, handle)
+    else:
+        with path.open("rt", encoding="utf-8", errors="replace") as handle:
+            yield handle
 
 
 def _normalize_key(key: str) -> str:
@@ -744,8 +764,20 @@ def _sample_field(sample: dict[str, list[str]], *names: str) -> str | None:
 
 
 def parse_family_soft(text: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    """Parse family SOFT into series metadata and per-GSM sample records."""
-    series_raw, sample_blocks = _parse_soft_blocks(text)
+    """Parse family SOFT text into series metadata and per-GSM sample records."""
+    return _records_from_soft_blocks(_parse_soft_blocks(text.splitlines()))
+
+
+def parse_family_soft_path(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Stream-parse a cached family SOFT path (skips embedded data tables)."""
+    with open_soft_text(path) as handle:
+        return _records_from_soft_blocks(_parse_soft_blocks(handle))
+
+
+def _records_from_soft_blocks(
+    parsed: tuple[dict[str, str], list[dict[str, list[str]]]],
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    series_raw, sample_blocks = parsed
     series_id = series_raw.get("Series_geo_accession") or series_raw.get("geo_accession")
     pubmed_raw = series_raw.get("Series_pubmed_id") or series_raw.get("pubmed_id") or ""
     pubmed_ids = sorted(
@@ -818,20 +850,30 @@ def download_family_soft(
         return cache_path, sha256_file(cache_path)
     url = family_soft_url(gse_id)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
+    partial = cache_path.with_name(cache_path.name + ".partial")
     req = urllib.request.Request(url, headers={"User-Agent": NCBI_AGENT})  # noqa: S310
-    with urllib.request.urlopen(req, timeout=120) as resp:  # noqa: S310
-        data = resp.read()
-    cache_path.write_bytes(data)
+    try:
+        with urllib.request.urlopen(req, timeout=_SOFT_DOWNLOAD_TIMEOUT_S) as resp:  # noqa: S310
+            with partial.open("wb") as out:
+                while True:
+                    chunk = resp.read(_SOFT_DOWNLOAD_CHUNK)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+        partial.replace(cache_path)
+    except Exception:
+        if partial.is_file():
+            partial.unlink(missing_ok=True)
+        raise
     if delay_s > 0:
         time.sleep(delay_s)
     return cache_path, sha256_file(cache_path)
 
 
 def read_cached_soft(path: Path) -> str:
-    if path.suffix == ".gz":
-        with gzip.open(path, "rt", encoding="utf-8", errors="replace") as handle:
-            return handle.read()
-    return path.read_text(encoding="utf-8", errors="replace")
+    """Load a full SOFT as text (tests / small files only; prefer stream APIs)."""
+    with open_soft_text(path) as handle:
+        return handle.read()
 
 
 def build_geo_frame_from_soft(
@@ -844,6 +886,42 @@ def build_geo_frame_from_soft(
 ) -> pd.DataFrame:
     """Build one-row-per-GSM frame ready for Parquet export."""
     _, samples = parse_family_soft(text)
+    return _geo_frame_from_samples(
+        samples,
+        fetched_at=fetched_at,
+        soft_sha256=soft_sha256,
+        ontology=ontology,
+        aliases=aliases,
+    )
+
+
+def build_geo_frame_from_soft_path(
+    path: Path,
+    *,
+    fetched_at: str,
+    soft_sha256: str,
+    ontology: TissueOntologyLike | None = None,
+    aliases: dict[str, str] | None = None,
+) -> pd.DataFrame:
+    """Stream-parse a cached family SOFT into a one-row-per-GSM frame."""
+    _, samples = parse_family_soft_path(path)
+    return _geo_frame_from_samples(
+        samples,
+        fetched_at=fetched_at,
+        soft_sha256=soft_sha256,
+        ontology=ontology,
+        aliases=aliases,
+    )
+
+
+def _geo_frame_from_samples(
+    samples: list[dict[str, Any]],
+    *,
+    fetched_at: str,
+    soft_sha256: str,
+    ontology: TissueOntologyLike | None = None,
+    aliases: dict[str, str] | None = None,
+) -> pd.DataFrame:
     alias_map = aliases if aliases is not None else load_geo_tissue_aliases()
     tissue_stats = {"mapped": 0, "unmapped": 0, "ambiguous": 0, "empty": 0}
     rows: list[dict[str, Any]] = []

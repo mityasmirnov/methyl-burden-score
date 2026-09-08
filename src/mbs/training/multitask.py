@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import torch
@@ -15,6 +16,10 @@ from mbs.training.hier_dataset import HierBatch
 # ADR 0011: a provided seed mask that selects too few genes is a config error,
 # not a valid tiny panel. Fail closed below this many genes per trait row.
 MIN_SEED_GENES = 32
+
+# EWAS's three canonical covariates (age/tissue/sex); age can optionally
+# condition on the other two via a learned embedding (see ``age_covariates``).
+AGE_COVARIATE_NAMES = ("tissue", "sex")
 
 
 def _prepare_seed_mask(mask: Tensor, *, n_outputs: int, n_genes: int, trait: str) -> Tensor:
@@ -56,6 +61,19 @@ class MultitaskHeads(nn.Module):
     When a mask is provided the head becomes a :class:`SeedMaskedLinearHead` so
     only selected genes contribute gradients; when it is ``None`` age/sex keep a
     dense ``nn.Linear`` (backward compatible) and tissue keeps its all-ones mask.
+
+    ``age_covariates``: age, tissue, and sex are the three EWAS-standard
+    covariates. Epigenetic age is well known to be tissue- (and to a lesser
+    extent sex-) dependent, but the dense age head otherwise sees only the
+    shared gene MBS vector. When non-empty, the listed ground-truth covariates
+    (looked up from the batch's own tissue/sex labels, not this head's own
+    tissue/sex predictions -- the tissue head is far from perfect and
+    conditioning on its guesses would propagate its errors into age) are
+    embedded and concatenated onto the MBS vector before the age linear layer.
+    A dedicated "unknown" embedding row (index ``n_classes``) covers samples
+    whose covariate label is masked out. Requires a dense age head: seed-masked
+    age heads are deliberately gene-only per ADR 0011, so mixing in a
+    non-gene-indexed embedding there is rejected rather than silently allowed.
     """
 
     def __init__(
@@ -71,7 +89,12 @@ class MultitaskHeads(nn.Module):
         sex_enabled: bool = False,
         n_disease_labels: int = 0,
         n_cancer_labels: int = 0,
+        n_ancestry_classes: int = 0,
+        bmi_enabled: bool = False,
         neutral_score: float = 0.5,
+        age_covariates: Sequence[str] = (),
+        age_tissue_embedding_dim: int = 8,
+        age_sex_embedding_dim: int = 4,
     ) -> None:
         super().__init__()
         self.n_genes = n_genes
@@ -80,7 +103,29 @@ class MultitaskHeads(nn.Module):
         self.sex_enabled = bool(sex_enabled)
         self.n_disease_labels = int(n_disease_labels)
         self.n_cancer_labels = int(n_cancer_labels)
+        self.n_ancestry_classes = int(n_ancestry_classes)
+        self.bmi_enabled = bool(bmi_enabled)
         self.neutral_score = float(neutral_score)
+
+        self.age_covariates = tuple(age_covariates)
+        unknown = set(self.age_covariates) - set(AGE_COVARIATE_NAMES)
+        if unknown:
+            raise ValueError(f"unsupported age_covariates: {sorted(unknown)}")
+        if self.age_covariates and age_seed_mask is not None:
+            raise ValueError(
+                "age_covariates conditioning requires a dense age head "
+                "(age_seed_mask must be None); seed-masked age is gene-only per ADR 0011"
+            )
+
+        age_extra_dim = 0
+        self.age_tissue_embedding: nn.Embedding | None = None
+        if "tissue" in self.age_covariates:
+            self.age_tissue_embedding = nn.Embedding(n_tissue_classes + 1, age_tissue_embedding_dim)
+            age_extra_dim += age_tissue_embedding_dim
+        self.age_sex_embedding: nn.Embedding | None = None
+        if "sex" in self.age_covariates:
+            self.age_sex_embedding = nn.Embedding(self.n_sex_classes + 1, age_sex_embedding_dim)
+            age_extra_dim += age_sex_embedding_dim
 
         # Age: masked head only when a mask is supplied; else dense (compat).
         self.age_head: SeedMaskedLinearHead | nn.Linear
@@ -90,7 +135,7 @@ class MultitaskHeads(nn.Module):
                 n_genes, 1, age_mask, neutral_score=self.neutral_score
             )
         else:
-            self.age_head = nn.Linear(n_genes, 1)
+            self.age_head = nn.Linear(n_genes + age_extra_dim, 1)
 
         # Tissue: always a masked head; ``tissue_seed_mask`` wins over the
         # ``seed_mask`` alias, and an all-ones mask is the dense default.
@@ -125,6 +170,10 @@ class MultitaskHeads(nn.Module):
         self.cancer_head = (
             nn.Linear(n_genes, self.n_cancer_labels) if self.n_cancer_labels > 0 else None
         )
+        self.bmi_head = nn.Linear(n_genes, 1) if self.bmi_enabled else None
+        self.ancestry_head = (
+            nn.Linear(n_genes, self.n_ancestry_classes) if self.n_ancestry_classes > 0 else None
+        )
         with torch.no_grad():
             _init_trait_head(self.age_head)
             self.tissue_head.gene_weight.normal_(0.0, 0.05)
@@ -136,14 +185,43 @@ class MultitaskHeads(nn.Module):
             if self.cancer_head is not None:
                 self.cancer_head.weight.normal_(0.0, 0.05)
                 self.cancer_head.bias.zero_()
+            if self.bmi_head is not None:
+                self.bmi_head.weight.normal_(0.0, 0.05)
+                self.bmi_head.bias.zero_()
+            if self.ancestry_head is not None:
+                self.ancestry_head.weight.normal_(0.0, 0.05)
+                self.ancestry_head.bias.zero_()
+            if self.age_tissue_embedding is not None:
+                self.age_tissue_embedding.weight.normal_(0.0, 0.05)
+            if self.age_sex_embedding is not None:
+                self.age_sex_embedding.weight.normal_(0.0, 0.05)
 
     def _centered(self, mbs: Tensor, present: Tensor) -> Tensor:
         return center_mask_scores(mbs, present, neutral_score=self.neutral_score)
 
-    def forward_age(self, mbs: Tensor, present: Tensor) -> Tensor:
+    def forward_age(
+        self,
+        mbs: Tensor,
+        present: Tensor,
+        *,
+        tissue_index: Tensor | None = None,
+        sex_index: Tensor | None = None,
+    ) -> Tensor:
         if isinstance(self.age_head, SeedMaskedLinearHead):
             return self.age_head(mbs, present).squeeze(-1)
-        return self.age_head(self._centered(mbs, present)).squeeze(-1)
+        x = self._centered(mbs, present)
+        extras: list[Tensor] = []
+        if self.age_tissue_embedding is not None:
+            if tissue_index is None:
+                raise ValueError("age tissue conditioning enabled but tissue_index is None")
+            extras.append(self.age_tissue_embedding(tissue_index.to(torch.long)))
+        if self.age_sex_embedding is not None:
+            if sex_index is None:
+                raise ValueError("age sex conditioning enabled but sex_index is None")
+            extras.append(self.age_sex_embedding(sex_index.to(torch.long)))
+        if extras:
+            x = torch.cat([x, *extras], dim=-1)
+        return self.age_head(x).squeeze(-1)
 
     def forward_tissue(self, mbs: Tensor, present: Tensor) -> Tensor:
         return self.tissue_head(mbs, present)
@@ -165,6 +243,16 @@ class MultitaskHeads(nn.Module):
             raise RuntimeError("cancer head is disabled")
         return self.cancer_head(self._centered(mbs, present))
 
+    def forward_bmi(self, mbs: Tensor, present: Tensor) -> Tensor:
+        if self.bmi_head is None:
+            raise RuntimeError("bmi head is disabled")
+        return self.bmi_head(self._centered(mbs, present)).squeeze(-1)
+
+    def forward_ancestry(self, mbs: Tensor, present: Tensor) -> Tensor:
+        if self.ancestry_head is None:
+            raise RuntimeError("ancestry head is disabled")
+        return self.ancestry_head(self._centered(mbs, present))
+
 
 @dataclass(frozen=True, slots=True)
 class MultitaskLossResult:
@@ -183,6 +271,8 @@ def masked_multitask_loss(
     lambda_sex: float = 1.0,
     lambda_disease: float = 1.0,
     lambda_cancer: float = 1.0,
+    lambda_bmi: float = 1.0,
+    lambda_ancestry: float = 1.0,
     huber_delta: float = 1.0,
     age_loss: str = "huber",
     class_weights: Tensor | None = None,
@@ -231,6 +321,8 @@ def masked_multitask_loss(
         "sex_n": 0.0,
         "disease_n": 0.0,
         "cancer_n": 0.0,
+        "bmi_n": 0.0,
+        "ancestry_n": 0.0,
     }
 
     age_n = int(age_mask.sum().item())
@@ -314,7 +406,48 @@ def masked_multitask_loss(
             cancer_n = int(cmask.sum().item())
             metrics["cancer_n"] = float(cancer_n)
 
-    if age_n == 0 and tissue_n == 0 and sex_n == 0 and disease_n == 0 and cancer_n == 0:
+    bmi_n = 0
+    if batch.bmi_mask is not None and heads.bmi_head is not None:
+        bmask = batch.bmi_mask.reshape(-1).to(device=device, dtype=torch.bool)
+        if bmask.any():
+            if batch.bmi_target is None:
+                raise RuntimeError("bmi_mask set but bmi_target is None")
+            pred = heads.forward_bmi(mbs_b, present_b)
+            target = batch.bmi_target.reshape(-1).to(device=device, dtype=pred.dtype)
+            pred_on = pred[bmask]
+            target_on = target[bmask]
+            if age_loss == "mse":
+                bmi_term = F.mse_loss(pred_on, target_on)
+            else:
+                bmi_term = F.huber_loss(pred_on, target_on, delta=huber_delta)
+            total = total + float(lambda_bmi) * bmi_term
+            metrics["bmi_loss"] = float(bmi_term.detach().item())
+            bmi_n = int(bmask.sum().item())
+            metrics["bmi_n"] = float(bmi_n)
+
+    ancestry_n = 0
+    if batch.ancestry_mask is not None and heads.ancestry_head is not None:
+        amask = batch.ancestry_mask.reshape(-1).to(device=device, dtype=torch.bool)
+        if amask.any():
+            if batch.ancestry_target is None:
+                raise RuntimeError("ancestry_mask set but ancestry_target is None")
+            logits = heads.forward_ancestry(mbs_b, present_b)
+            targets = batch.ancestry_target.reshape(-1).to(device=device)
+            ancestry_term = F.cross_entropy(logits[amask], targets[amask])
+            total = total + float(lambda_ancestry) * ancestry_term
+            metrics["ancestry_loss"] = float(ancestry_term.detach().item())
+            ancestry_n = int(amask.sum().item())
+            metrics["ancestry_n"] = float(ancestry_n)
+
+    if (
+        age_n == 0
+        and tissue_n == 0
+        and sex_n == 0
+        and disease_n == 0
+        and cancer_n == 0
+        and bmi_n == 0
+        and ancestry_n == 0
+    ):
         total = total + (mbs_b.sum() * 0.0)
 
     metrics["loss"] = float(total.detach().item())

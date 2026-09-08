@@ -206,14 +206,15 @@ def test_hub_union_unknown_ne_control(workspace: Path) -> None:
     assert by["GSM_AGE"]["cancer_mask"] is False or by["GSM_AGE"]["cancer_mask"] == False  # noqa: E712
 
 
-def test_build_hub_union_rows_disease_only_no_age() -> None:
-    ontology = build_tissue_ontology(["blood", "brain"], min_n=1)
+def test_build_hub_union_rows_bmi_ancestry_brain() -> None:
+    ontology = build_tissue_ontology(["blood"], min_n=1)
     sex_ontology = default_sex_ontology()
+    ancestry_ontology = build_tissue_ontology(["European", "other"], min_n=1)
     sample_index = pd.DataFrame(
         {
-            "row_index": [0],
-            "sample_id": ["GSM_X"],
-            "source_sample_id": ["GSM_X"],
+            "row_index": [0, 1, 2],
+            "sample_id": ["GSM_BMI", "GSM_ANC", "GSM_BRN"],
+            "source_sample_id": ["GSM_BMI", "GSM_ANC", "GSM_BRN"],
         }
     )
     rows = _build_hub_union_rows(
@@ -222,17 +223,39 @@ def test_build_hub_union_rows_disease_only_no_age() -> None:
         age_pheno=pd.DataFrame(columns=["sample_id"]),
         tissue_pheno=pd.DataFrame(columns=["sample_id"]),
         sex_pheno=pd.DataFrame(columns=["sample_id"]),
+        bmi_pheno=pd.DataFrame(
+            [{"sample_id": "GSM_BMI", "phenotype_value_numeric": 24.5, "study_id": "GSE1"}]
+        ),
+        ancestry_pheno=pd.DataFrame(
+            [{"sample_id": "GSM_ANC", "phenotype_value": "European", "study_id": "GSE2"}]
+        ),
+        brain_pheno=pd.DataFrame(
+            [
+                {
+                    "sample_id": "GSM_BRN",
+                    "phenotype_value": "brain - cerebellum",
+                    "study_id": "GSE3",
+                }
+            ]
+        ),
         ontology=ontology,
         sex_ontology=sex_ontology,
-        study_by={"GSM_X": "GSE1"},
-        platform_by={"GSM_X": "HM450"},
-        disease_members={"GSM_X"},
+        ancestry_ontology=ancestry_ontology,
+        ancestry_raw_counts={"European": 100},
+        min_ancestry_n=10,
+        study_by={},
+        platform_by={},
+        disease_members=set(),
         cancer_members=set(),
     )
-    assert len(rows) == 1
-    assert rows[0]["age_mask"] is False
-    assert rows[0]["disease_mask"] is True
-    assert rows[0]["cancer_mask"] is False
+    by = {r["sample_id"]: r for r in rows}
+    assert by["GSM_BMI"]["bmi_mask"] is True
+    assert by["GSM_BMI"]["bmi"] == 24.5
+    assert by["GSM_ANC"]["ancestry_mask"] is True
+    assert by["GSM_ANC"]["ancestry_label"] == "European"
+    assert by["GSM_BRN"]["brain_mask"] is True
+    assert by["GSM_BRN"]["brain_label"] == "brain - cerebellum"
+
 
 
 def test_metadata_only_holdout_not_insample() -> None:

@@ -1,13 +1,27 @@
 # Milestone 10c — trait expansion hygiene
 
-Policy + census only. **Does not** rewrite phenotype parquet or launch trait GPU.
-Nine-pack samples: **34234**.
+Policy + census. Nine-pack samples: **34234**.
+
+BMI/ancestry labels are now **joined** into
+`sample_phenotype_table_hub_nine_pack_v1.parquet` with real masks; heads are
+wired for DeepRVAT freeze-and-reuse (GPU not queued). Brain region labels are
+honest; **no `brain_head`**. Blood still deferred.
 
 ## Locked policy
 
-1. **Disease/cancer case≠control:** use Hub `sample_type` mapped through `mbs.datahub_census.SAMPLE_TYPE_CASE_CONTROL` (`control`→control, `disease tissue`→case, `adjacent normal`→adjacent_normal). Train masked heads only on rows with `label_status ∈ {case, control}`. Pack-membership `disease_mask`/`cancer_mask` false means **unknown / not in pack**, **not** control. Diagnosis strings in `phenotype_value` remain multilabel targets.
-2. **Blood/brain:** **defer** trait heads. Packs exist but nine-pack `blood_mask`/`brain_mask` are hardcoded false; sidecars label every row `sample_type=control` (pack catalogue, not case/control).
-3. **Tissue:** do **not** expand the tissue CE head — only `whole blood` ≥1k among 64 labels. Any collapse map is a later ADR/config.
+1. **Disease/cancer case≠control:** use Hub `sample_type` mapped through
+   `mbs.datahub_census.SAMPLE_TYPE_CASE_CONTROL`. Train masked heads only on
+   rows with `label_status ∈ {case, control}`. Pack-membership
+   `disease_mask`/`cancer_mask` false means **unknown / not in pack**, **not**
+   control.
+2. **BMI:** real numeric Hub labels (`bmi` + `bmi_mask`); regression head
+   ready for freeze-encoder reuse. GPU gated on M10 review.
+3. **Ancestry:** real `race` labels collapsed rare→`other` (`min_n=10`);
+   CE head ready. No class currently meets ≥1k-per-arm GPU bar.
+4. **Brain:** region labels joined (`brain_label` + `brain_mask`); **defer
+   head** (catalogue, 100% `sample_type=control`).
+5. **Blood:** **defer** head (sparse `cell_component`; pack ≠ trait).
+6. **Tissue:** do **not** expand the tissue CE head — only `whole blood` ≥1k.
 
 ## Disease / cancer census (sample_type → label_status)
 
@@ -16,24 +30,25 @@ Nine-pack samples: **34234**.
 | disease | 12218 | 5264 | 6930 | 24 | yes | 12218 |
 | cancer | 10101 | 7157 | 1920 | 1024 | yes | 10101 |
 
-### sample_type raw counts
+## BMI / ancestry / brain (post label-prep)
 
-- disease: `{'control': 6930, 'disease tissue': 5264, 'adjacent normal': 24}`
-- cancer: `{'disease tissue': 7157, 'control': 1920, 'adjacent normal': 1024}`
-
-## Blood / brain
-
-- blood pack n=3402; nine-pack `blood_mask` true=0; sample_type={'control': 3402} → **defer_head**
-- brain pack n=1997; nine-pack `brain_mask` true=0; sample_type={'control': 1997} → **defer_head**
+| Family | Hub pack n | nine-pack mask_true | Head | Note |
+|--------|-----------:|--------------------:|------|------|
+| bmi | 2070 | 2070 | `bmi_head` wired | continuous; freeze-reuse |
+| ancestry | 1380 | 1380 | `ancestry_head` wired | 14 classes after collapse; all &lt;1k |
+| brain | 1997 | 1997 | **defer_head** | region catalogue |
+| blood | 3402 | 0 | **defer_head** | mask still false |
 
 ## Tissue collapse
 
 - labeled=13457; labels=64
 - ≥1k: `{'whole blood': 2070}`
-- top5: `{'whole blood': 2070, 'leukocyte': 934, 'CD14+ monocyte': 724, 'saliva': 629, 'breast': 595}`
 - decision: **do_not_expand_tissue_ce**
 
-## Next (out of this slice)
+## Next
 
-- Implement policy in a new phenotype table / longform label_status columns (not now).
-- After 10a+10b review, only then consider disease/cancer GPU with explicit case/control masks.
+- Disease/cancer freeze-and-reuse probes (GPU after M10 encoder finalist).
+- BMI/ancestry head-only configs stubbed — **do not auto-queue** until
+  ≥1k policy exception or collapse ADR + GPU free.
+- Full-catalog sample overview: `sample_overview_hub_geo_v1` +
+  `docs/plans/label-prep-bmi-ancestry-sample-overview.md`.
