@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-09-07T15:30:15Z",
+  "generated_at": "2026-09-09T08:58:48Z",
   "n_catalog_gse": 1718,
   "n_series_enriched": 1718,
-  "n_with_overall_design": 111,
+  "n_with_overall_design": 271,
   "n_with_summary": 1718,
   "n_with_title": 1718,
   "sources": {
-    "ncbi_esummary": 1607,
-    "ncbi_esummary+soft_header": 111
+    "ncbi_esummary": 1447,
+    "ncbi_esummary+soft_header": 271
   }
 }

@@ -156,7 +156,7 @@ class TissueOntologyLike(Protocol):
 
 
 def family_soft_url(gse_id: str) -> str:
-    """NCBI FTP URL for a series family SOFT file."""
+    """NCBI FTP URL for a series family SOFT file (includes methylation tables)."""
     gse = gse_id.strip().upper()
     if not gse.startswith("GSE"):
         raise ValueError(f"not a GSE accession: {gse_id!r}")
@@ -169,9 +169,43 @@ def family_soft_url(gse_id: str) -> str:
     )
 
 
+def family_soft_brief_url(gse_id: str) -> str:
+    """NCBI Accession Display CGI: family SOFT metadata only (no data tables).
+
+    Official ``view=brief`` / ``targ=all`` — see GEO download help. Typically
+    KB–MB vs multi-GB FTP ``*_family.soft.gz`` that embeds BeadChip tables.
+    """
+    gse = gse_id.strip().upper()
+    if not gse.startswith("GSE"):
+        raise ValueError(f"not a GSE accession: {gse_id!r}")
+    suffix = gse.removeprefix("GSE")
+    if not suffix.isdigit():
+        raise ValueError(f"not a GSE accession: {gse_id!r}")
+    return (
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
+        f"?acc={gse}&targ=all&view=brief&form=text"
+    )
+
+
 def cache_soft_path(cache_root: Path, gse_id: str) -> Path:
     gse = gse_id.strip().upper()
     return cache_root / "geo" / gse / f"{gse}_family.soft.gz"
+
+
+def cache_soft_brief_path(cache_root: Path, gse_id: str) -> Path:
+    gse = gse_id.strip().upper()
+    return cache_root / "geo" / gse / f"{gse}_family.brief.soft.gz"
+
+
+def resolve_cached_family_soft(cache_root: Path, gse_id: str) -> Path | None:
+    """Prefer brief metadata cache; fall back to full FTP family SOFT."""
+    brief = cache_soft_brief_path(cache_root, gse_id)
+    if brief.is_file():
+        return brief
+    full = cache_soft_path(cache_root, gse_id)
+    if full.is_file():
+        return full
+    return None
 
 
 def geo_parquet_path(data_root: Path) -> Path:
@@ -517,7 +551,16 @@ def remap_geo_tissue_frame(
     from_sn: list[bool] = []
 
     for rec in df.to_dict(orient="records"):
-        structured = rec.get("tissue_raw") or rec.get("tissue")
+        tissue_raw_val = rec.get("tissue_raw")
+        tissue_val = rec.get("tissue")
+        # Prefer tissue_raw when present; never treat pandas NA as a candidate
+        # (``nan or x`` is ``nan`` because NaN is truthy in Python).
+        if not _is_blank(tissue_raw_val):
+            structured = tissue_raw_val
+        elif not _is_blank(tissue_val):
+            structured = tissue_val
+        else:
+            structured = None
         status_old = str(rec.get("tissue_map_status") or "")
         structured_blank = _is_blank(structured)
         should_remap = force or status_old in {"empty", "unmapped", "ambiguous"} or structured_blank
@@ -530,6 +573,14 @@ def remap_geo_tissue_frame(
                 candidates.append(str(structured))
             if not _is_blank(sn) and str(sn) not in candidates:
                 candidates.append(str(sn))
+            # Already-mapped ontology labels may live only in ``tissue`` when
+            # ``tissue_raw`` is null — keep them as candidates under --force.
+            if (
+                force
+                and not _is_blank(tissue_val)
+                and str(tissue_val) not in candidates
+            ):
+                candidates.append(str(tissue_val))
             # Also try tissue_raw from characteristics even if status was mapped to organ
             # under an older alias (force path).
             best: str | None = None
@@ -559,7 +610,7 @@ def remap_geo_tissue_frame(
                 mapped_ont.append(None)
             mapped_status.append(best_status if best is not None else "empty")
         else:
-            mapped_raw.append(rec.get("tissue_raw") or structured)
+            mapped_raw.append(rec.get("tissue_raw") if not _is_blank(rec.get("tissue_raw")) else structured)
             mapped_tissue.append(rec.get("tissue"))
             mapped_ont.append(rec.get("tissue_ontology_id"))
             mapped_status.append("mapped")
@@ -843,14 +894,81 @@ def download_family_soft(
     cache_root: Path,
     delay_s: float = NCBI_DELAY_S,
     force: bool = False,
+    view: str = "brief",
 ) -> tuple[Path, str]:
-    """Download and cache family SOFT; return path and sha256 of cached gzip."""
-    cache_path = cache_soft_path(cache_root, gse_id)
+    """Download and cache family SOFT; return path and sha256 of cached file.
+
+    Default ``view="brief"`` uses the GEO Accession Display CGI (metadata only).
+    ``view="full"`` downloads the FTP ``*_family.soft.gz`` (includes data tables).
+    If brief download fails, falls back to the FTP full soft once.
+    """
+    gse = gse_id.strip().upper()
+    if view not in {"brief", "full"}:
+        raise ValueError(f"unsupported GEO soft view: {view!r}")
+
+    if view == "brief":
+        brief_path = cache_soft_brief_path(cache_root, gse)
+        if brief_path.is_file() and not force:
+            return brief_path, sha256_file(brief_path)
+        try:
+            return _download_soft_brief(gse, cache_root=cache_root, delay_s=delay_s)
+        except OSError:
+            # Fall through to FTP full soft.
+            pass
+
+    cache_path = cache_soft_path(cache_root, gse)
     if cache_path.is_file() and not force:
         return cache_path, sha256_file(cache_path)
-    url = family_soft_url(gse_id)
+    return _download_soft_ftp_full(gse, cache_root=cache_root, delay_s=delay_s)
+
+
+def _download_soft_brief(
+    gse: str,
+    *,
+    cache_root: Path,
+    delay_s: float,
+) -> tuple[Path, str]:
+    cache_path = cache_soft_brief_path(cache_root, gse)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     partial = cache_path.with_name(cache_path.name + ".partial")
+    url = family_soft_brief_url(gse)
+    req = urllib.request.Request(url, headers={"User-Agent": NCBI_AGENT})  # noqa: S310
+    try:
+        with urllib.request.urlopen(req, timeout=_SOFT_DOWNLOAD_TIMEOUT_S) as resp:  # noqa: S310
+            # CGI returns uncompressed SOFT text; store gzip for parity with FTP cache.
+            with gzip.open(partial, "wb") as out:
+                while True:
+                    chunk = resp.read(_SOFT_DOWNLOAD_CHUNK)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+        # Reject empty / HTML error pages posing as success.
+        if not partial.is_file() or partial.stat().st_size < 64:
+            raise OSError(f"GEO brief soft too small for {gse}")
+        with gzip.open(partial, "rt", encoding="utf-8", errors="replace") as handle:
+            head = handle.read(200)
+        if "^SERIES" not in head and "^SAMPLE" not in head and "!Series_" not in head:
+            raise OSError(f"GEO brief soft missing SERIES/SAMPLE markers for {gse}")
+        partial.replace(cache_path)
+    except Exception:
+        if partial.is_file():
+            partial.unlink(missing_ok=True)
+        raise
+    if delay_s > 0:
+        time.sleep(delay_s)
+    return cache_path, sha256_file(cache_path)
+
+
+def _download_soft_ftp_full(
+    gse: str,
+    *,
+    cache_root: Path,
+    delay_s: float,
+) -> tuple[Path, str]:
+    cache_path = cache_soft_path(cache_root, gse)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    partial = cache_path.with_name(cache_path.name + ".partial")
+    url = family_soft_url(gse)
     req = urllib.request.Request(url, headers={"User-Agent": NCBI_AGENT})  # noqa: S310
     try:
         with urllib.request.urlopen(req, timeout=_SOFT_DOWNLOAD_TIMEOUT_S) as resp:  # noqa: S310

@@ -1,6 +1,6 @@
 # Trait eligibility (deepmat-data-v1)
 
-- Generated: `2026-09-07T18:10:38Z`
+- Generated: `2026-09-09T09:15:00Z`
 
 | Family | Phenotype | Task | n | studies | core | aux | ext | Reason |
 | --- | --- | --- | ---: | ---: | --- | --- | --- | --- |
@@ -38,11 +38,11 @@
 | `ewas_datahub_repository` | `age` | continuous | 61078 | 469 | True | True | False |  |
 | `ewas_datahub_repository` | `disease` | binary_or_multilabel | 67283 | 892 | False | True | True | need ≥200 cases, ≥200 controls, ≥3 studies (unknown≠control) |
 | `ewas_datahub_repository` | `tissue` | multiclass | 122130 | 1286 | True | True | False |  |
-| `geo_metadata_backfill` | `age` | continuous | 32969 | 80 | True | True | False |  |
-| `geo_metadata_backfill` | `cancer` | binary_or_multilabel | 3438 | 14 | True | True | True |  |
-| `geo_metadata_backfill` | `disease` | binary_or_multilabel | 10516 | 47 | True | True | True |  |
-| `geo_metadata_backfill` | `sex` | binary | 52413 | 132 | False | True | False | sex is auxiliary biological / QC, not a core burden target |
-| `geo_metadata_backfill` | `tissue` | multiclass | 50317 | 111 | True | True | False |  |
+| `geo_metadata_backfill` | `age` | continuous | 48990 | 385 | True | True | False |  |
+| `geo_metadata_backfill` | `cancer` | binary_or_multilabel | 5146 | 66 | True | True | True |  |
+| `geo_metadata_backfill` | `disease` | binary_or_multilabel | 17633 | 335 | True | True | True |  |
+| `geo_metadata_backfill` | `sex` | binary | 84126 | 841 | False | True | False | sex is auxiliary biological / QC, not a core burden target |
+| `geo_metadata_backfill` | `tissue` | multiclass | 50924 | 409 | True | True | False |  |
 | `sex` | `age` | continuous | 1617 | 95 | True | True | False |  |
 | `sex` | `bmi` | continuous | 440 | 21 | False | True | False | need ≥1000 samples, ≥5 studies, range across >1 study |
 | `sex` | `sex` | binary | 2978 | 161 | False | True | False | sex is auxiliary biological / QC, not a core burden target |

@@ -1,8 +1,8 @@
 # Next GEO backfill GSE list
 
-- Generated: `2026-09-08T15:01:32Z`
-- Candidates (≥50 GSM, not fetched): **345**
-- Selected: **100** → `configs/data/geo_backfill_next_gse.txt`
+- Generated: `2026-09-08T15:02:40Z`
+- Candidates (≥1 GSM, not fetched): **1345**
+- Selected: **1345** → `configs/data/geo_backfill_remain_all_gse.txt`
 
 | study_id | n_assay | soft | age | tissue_mapped | score |
 | --- | ---: | --- | ---: | ---: | ---: |

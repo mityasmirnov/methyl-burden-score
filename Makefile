@@ -24,8 +24,8 @@ help:
 	  'catalog-init   Create dirs and apply sql/*.sql to the default DuckDB catalog' \
 	  'catalog-build  Build the DuckDB catalog from SQL and Parquet inputs' \
 	  'seed-atlas-gse-map  Refresh GSE↔Atlas map from NCBI GEO PubMed IDs' \
-	  'fetch-geo-sample-metadata  Fetch pilot GEO SOFT → geo_sample_metadata.parquet' \
-	  'fetch-geo-sample-metadata-batch  Fetch batch-50 GEO SOFT list' \
+	  'fetch-geo-sample-metadata  Fetch pilot GEO brief SOFT → geo_sample_metadata.parquet' \
+	  'fetch-geo-sample-metadata-batch  Fetch batch-50 GEO brief SOFT list' \
 	  'remap-geo-tissue  Remap GEO tissue from source_name + aliases (no SOFT reparse)' \
 	  'enrich-geo-series-metadata  GEO series title/summary/design → study.metadata_json' \
 	  'write-geo-next-gse-list  Rank next GEO crawl GSEs from EWAS_db' \
@@ -98,11 +98,11 @@ seed-atlas-gse-map:
 
 fetch-geo-sample-metadata:
 	uv run python scripts/fetch_geo_sample_metadata.py \
-	  --studies-file configs/data/geo_backfill_pilot_gse.txt
+	  --studies-file configs/data/geo_backfill_pilot_gse.txt --view brief
 
 fetch-geo-sample-metadata-batch:
 	uv run python scripts/fetch_geo_sample_metadata.py \
-	  --studies-file configs/data/geo_backfill_batch50_gse.txt
+	  --studies-file configs/data/geo_backfill_batch50_gse.txt --view brief
 
 remap-geo-tissue:
 	uv run python scripts/remap_geo_tissue.py --force

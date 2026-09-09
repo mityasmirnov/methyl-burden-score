@@ -15,11 +15,13 @@ from mbs.geo_metadata import (
     characteristics_to_phenotypes,
     classify_species,
     consolidate_geo_sample_rows,
+    family_soft_brief_url,
     family_soft_url,
     map_geo_tissue,
     merge_geo_sample_metadata,
     parse_family_soft,
     parse_family_soft_path,
+    remap_geo_tissue_frame,
 )
 from mbs.training.phenotype_table import TissueOntology
 
@@ -45,6 +47,10 @@ def test_family_soft_url() -> None:
     url = family_soft_url("GSE197678")
     assert url.endswith("GSE197678/soft/GSE197678_family.soft.gz")
     assert "GSE197nnn" in url
+    brief = family_soft_brief_url("GSE197678")
+    assert "acc=GSE197678" in brief
+    assert "view=brief" in brief
+    assert "targ=all" in brief
 
 
 def test_catalog_platform_from_gpl() -> None:
@@ -202,6 +208,30 @@ def test_parse_family_soft_path_skips_embedded_tables(tmp_path: Path) -> None:
         soft, fetched_at="2026-01-01T00:00:00Z", soft_sha256="deadbeef"
     )
     assert len(frame) == 2
+
+
+def test_remap_geo_tissue_force_keeps_mapped_when_raw_is_na() -> None:
+    """pandas NA in tissue_raw must not erase an already-mapped tissue label."""
+    ont = _mini_ontology()
+    aliases = {"whole blood": "whole blood", "blood": "whole blood"}
+    df = pd.DataFrame(
+        [
+            {
+                "sample_id": "GSM_NA",
+                "study_id": "GSE_X",
+                "source_name": "unrelated string",
+                "tissue_raw": float("nan"),
+                "tissue": "whole blood",
+                "tissue_ontology_id": "1",
+                "tissue_map_status": "mapped",
+                "tissue_from_source_name_fallback": False,
+            }
+        ]
+    )
+    out, stats = remap_geo_tissue_frame(df, ontology=ont, aliases=aliases, force=True)
+    assert out.loc[0, "tissue_map_status"] == "mapped"
+    assert out.loc[0, "tissue"] == "whole blood"
+    assert stats["tissue_map_status_after"].get("mapped") == 1
 
 
 def test_classify_species() -> None:

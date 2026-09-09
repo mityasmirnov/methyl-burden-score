@@ -1,6 +1,6 @@
 # Improve labels and study context beyond Hub packs
 
-**Status:** Wave 1 + Wave 2a **done** (2026-09-07); Wave 2b list next  
+**Status:** Wave 1–2c **done** (catalog-wide GEO sample metadata, 2026-09-09)  
 **Parent:** [`data-infrastructure-improvements.md`](data-infrastructure-improvements.md) §2  
 **Related:** [`geo-metadata-backfill-ewas-db.md`](geo-metadata-backfill-ewas-db.md),
 [`geo-enriched-training-release.md`](geo-enriched-training-release.md),
@@ -68,43 +68,89 @@ make enrich-geo-series-metadata
 MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
 ```
 
-## Wave 2b — next audited GEO crawl list (**done** list 2026-09-08)
+## Wave 2b — next audited GEO crawl (**done** 2026-09-08)
 
 ```bash
 make write-geo-next-gse-list
 # → configs/data/geo_backfill_next_gse.txt (100 GSE)
-# → reports/inspection/deepmat_data_v1/geo_backfill_next/
+uv run python scripts/fetch_geo_sample_metadata.py \
+  --studies-file configs/data/geo_backfill_next_gse.txt --view brief
+make enrich-geo-series-metadata
+MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
 ```
 
-**2026-09-08:** **440** candidates (≥50 GSM, not yet fetched); **100** selected.
-Top: `GSE51057` (329 assay, SOFT cached), then high-N uncached series. Fetch still
-gated — list only.
+**List (2026-09-08):** **440** candidates (≥50 GSM); **100** selected.
+
+**Fetch (same day):** **100/100** ok, **0** failures via NCBI Accession Display
+``view=brief`` (metadata-only SOFT; KB–MB vs multi-GB FTP ``*_family.soft.gz``).
+Default fetch mode is now ``--view brief`` (FTP ``full`` kept as fallback).
+
+| Metric | Value |
+|--------|------:|
+| GEO parquet GSM | **111 195** (305 studies) |
+| Next-100 GSM added | **19 363** |
+| Next-100 with age / sex / tissue mapped | **7 855** / **11 945** / **6 111** |
+| Species (parquet) | human **110 838**; non-human **357** (quarantined at merge) |
+| Series `overall_design` (SOFT brief) | **267** / 1 718 (was 111) |
+
+Artifacts: `reports/inspection/deepmat_data_v1/geo_backfill_next/fetch_status.json`,
+`cache/geo/*/GSE*_family.brief.soft.gz`.
+
+## Wave 2c — remaining catalog GSE (**done** 2026-09-09)
+
+Prior remain-all crawl (2026-09-08) brought parquet to ~1 639 studies / 162k GSM.
+Final gap: **79** catalog GSE missing as primary `study_id`:
+
+```bash
+# configs/data/geo_backfill_catalog_remain_gse.txt
+uv run python scripts/fetch_geo_sample_metadata.py \
+  --studies-file configs/data/geo_backfill_catalog_remain_gse.txt --view brief
+make enrich-geo-series-metadata
+MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release
+```
+
+| Metric | Value |
+|--------|------:|
+| Fetch | **79/79** ok, **0** failures |
+| GEO parquet | **170 338** GSM / **1 707** primary studies |
+| Catalog GSE | **1 718** |
+| Primary-study gap | **11** related/sub-series (100% GSM overlap via `study_ids`) |
+| age / sex / tissue mapped | **64 727** / **110 430** / **70 244** |
+| Series `overall_design` | **271** / 1 718 |
+
+GEO **sample metadata** for catalog GSE is complete. Remaining data-population
+work is EWAS_db **assay** mirror (`mirror_complete=false`, ~1 695/1 989 studies).
+
+Report: `reports/inspection/deepmat_data_v1/geo_backfill_remain/analysis.md`.
 
 ## Wave 2 (remaining, gated)
 
 | Item | Gate |
 |------|------|
-| Fetch next GSE list (SOFT download) | Wave 2b list reviewed |
 | Disease/cancer from tumor source_name + case/control pairing report | Per-study audit green |
 | GEO-dev matrix convert + age/tissue train arms | Milestone 10/11 allow |
 | Platform-null residual fill (`geo_platform_gap_priority_gse.txt`) | Ops parallel |
-| overall_design for more studies | Needs family SOFT cache (download) |
+| EWAS_db assay mirror completion / failure retry | Download ops |
 
 ## Non-goals
 
 - Treating Atlas cohort fields as sample labels
 - ComBat / study ID as encoder features
 - Claiming GEO disease ready for training
-- Full EWAS_db SOFT crawl in this wave
+- Treating GEO metadata complete as EWAS_db assay mirror complete
 
 ## Commands
 
 ```bash
 source scripts/activate_data_environment.sh
-# Rebuild phenotypes from cached SOFT (no FTP)
+# Preferred: metadata-only brief SOFT (no methylation tables)
+uv run python scripts/fetch_geo_sample_metadata.py \
+  --studies-file configs/data/geo_backfill_next_gse.txt --view brief
+# Rebuild phenotypes from cache only
 uv run python scripts/fetch_geo_sample_metadata.py \
   --studies-file configs/data/geo_backfill_batch50_gse.txt \
   --from-cache-only
+make enrich-geo-series-metadata
 make seed-atlas-gse-map
 make catalog-refresh-release
 ```

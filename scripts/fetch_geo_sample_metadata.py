@@ -16,6 +16,7 @@ from mbs.geo_metadata import (
     download_family_soft,
     load_geo_frame,
     load_geo_tissue_aliases,
+    resolve_cached_family_soft,
     resolve_tissue_ontology_path,
     species_census,
     write_geo_parquet,
@@ -28,8 +29,12 @@ DEFAULT_STUDIES = Path("configs/data/geo_backfill_pilot_gse.txt")
 
 def _report_subdir(studies_file: Path) -> str:
     name = studies_file.name.lower()
+    if "remain" in name:
+        return "geo_backfill_remain_all"
     if "next" in name:
         return "geo_backfill_next"
+    if "all" in name:
+        return "geo_backfill_all"
     if "batch" in name:
         return "geo_backfill_batch"
     return "geo_backfill_pilot"
@@ -52,6 +57,12 @@ def main() -> None:
         "--force",
         action="store_true",
         help="Re-download cached SOFT even if present",
+    )
+    parser.add_argument(
+        "--view",
+        choices=("brief", "full"),
+        default="brief",
+        help="GEO SOFT amount: brief=metadata-only CGI (default); full=FTP with tables",
     )
     parser.add_argument(
         "--from-cache-only",
@@ -92,10 +103,10 @@ def main() -> None:
     fetched_at = utc_now_iso()
 
     for idx, gse in enumerate(study_ids, start=1):
-        cache_path = paths.cache_root / "geo" / gse / f"{gse}_family.soft.gz"
         try:
             if args.from_cache_only:
-                if not cache_path.is_file():
+                cache_path = resolve_cached_family_soft(paths.cache_root, gse)
+                if cache_path is None:
                     failures.append({"study_id": gse, "error": "cache missing"})
                     per_study.append(
                         {"study_id": gse, "download_status": "fail", "error": "cache missing"}
@@ -105,12 +116,13 @@ def main() -> None:
                     continue
                 digest = sha256_file(cache_path)
             else:
-                sys.stdout.write(f"[{idx}/{len(study_ids)}] fetch {gse} …\n")
+                sys.stdout.write(f"[{idx}/{len(study_ids)}] fetch {gse} ({args.view}) …\n")
                 sys.stdout.flush()
                 cache_path, digest = download_family_soft(
                     gse,
                     cache_root=paths.cache_root,
                     force=args.force,
+                    view=args.view,
                 )
             frame = build_geo_frame_from_soft_path(
                 cache_path,
