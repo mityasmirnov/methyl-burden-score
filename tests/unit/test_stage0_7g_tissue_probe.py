@@ -256,6 +256,76 @@ def test_cascade_warm_start_vector_from_scalar(tmp_path: Path) -> None:
     assert any_changed, "expected encoder weights to continue updating after unfreeze"
 
 
+def test_cascade_staged_s3_freeze_and_s4_gene_rho_heads(tmp_path: Path) -> None:
+    """S3 keeps encoder frozen for all epochs; S4 can restore gene_rho + heads."""
+    tables = make_synthetic_cascade_tables(seed=11)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, max(3, (n * 2) // 3), dtype=np.int64)
+    test_idx = np.arange(train_idx[-1] + 1, n, dtype=np.int64)
+    if test_idx.size == 0:
+        test_idx = train_idx.copy()
+    common_kwargs = dict(
+        assignment=assignment,
+        betas=tables["betas"],
+        train_idx=train_idx,
+        test_idx=test_idx,
+        ages=tables["ages"],
+        tissue=tables["tissue"],
+        sex=tables["sex"],
+        study_ids=tables["study_ids"],
+        sample_ids=tables["sample_ids"],
+        class_names=tables["class_names"],
+        seed=0,
+        device_str="cpu",
+    )
+    s2_dir = tmp_path / "s2"
+    train_cascade_on_arrays(
+        **common_kwargs,
+        out_dir=s2_dir,
+        max_epochs=1,
+        gene_aggregation="scalar_rbs",
+    )
+    s2_ckpt = s2_dir / "best.pt"
+    s3_dir = tmp_path / "s3"
+    s3 = train_cascade_on_arrays(
+        **common_kwargs,
+        out_dir=s3_dir,
+        max_epochs=2,
+        gene_aggregation="region_hidden",
+        warm_start_encoder_checkpoint=s2_ckpt,
+        freeze_encoder_epochs=2,
+    )
+    assert s3["freeze_encoder_epochs"] == 2
+    import torch
+
+    s2_state = torch.load(s2_ckpt, map_location="cpu", weights_only=False)["model"]
+    s3_state = torch.load(s3_dir / "best.pt", map_location="cpu", weights_only=False)["model"]
+    for k in s2_state:
+        if k.startswith(CASCADE_ENCODER_PREFIXES) and k in s3_state:
+            assert torch.equal(s2_state[k], s3_state[k]), k
+    s4_dir = tmp_path / "s4"
+    s4 = train_cascade_on_arrays(
+        **common_kwargs,
+        out_dir=s4_dir,
+        max_epochs=1,
+        gene_aggregation="region_hidden",
+        warm_start_encoder_checkpoint=s3_dir / "best.pt",
+        warm_start_include_gene_rho=True,
+        warm_start_include_heads=True,
+        freeze_encoder_epochs=0,
+        lr=3e-4,
+    )
+    assert s4["warm_start_include_gene_rho"] is True
+    assert s4["warm_start_heads_tensors_loaded"] > 0
+    assert s4["warm_start_encoder_tensors_loaded"] > 0
+
+
 def test_cascade_warm_start_rejects_missing_checkpoint(tmp_path: Path) -> None:
     tables = make_synthetic_cascade_tables(seed=10)
     assignment = build_cascade_assignment(

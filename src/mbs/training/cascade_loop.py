@@ -550,20 +550,34 @@ CASCADE_ENCODER_PREFIXES = (
 )
 
 
-def _load_encoder_warm_start(model: CascadeDeepSet, checkpoint_path: Path) -> int:
-    """Copy the CpG/region encoder from ``checkpoint_path`` into ``model`` in place.
+def _warm_start_key_prefixes(*, include_gene_rho: bool) -> tuple[str, ...]:
+    if include_gene_rho:
+        return CASCADE_ENCODER_PREFIXES + ("gene_rho.",)
+    return CASCADE_ENCODER_PREFIXES
 
-    Only keys under ``CASCADE_ENCODER_PREFIXES`` with a matching shape are
-    copied; ``gene_rho`` and any trait heads are left at their fresh init.
-    Returns the number of tensors copied (fails loudly if zero -- a silent
-    no-op here would look like warm-starting worked when it didn't).
+
+def _load_encoder_warm_start(
+    model: CascadeDeepSet,
+    checkpoint_path: Path,
+    *,
+    include_gene_rho: bool = False,
+) -> int:
+    """Copy encoder weights from ``checkpoint_path`` into ``model`` in place.
+
+    By default only keys under ``CASCADE_ENCODER_PREFIXES`` are copied
+    (``gene_rho`` and trait heads stay at fresh init — LP-FT / S1→S2/S3).
+    Set ``include_gene_rho=True`` for S3→S4 continuity so the trained gene
+    hop is preserved. Returns the number of tensors copied (fails loudly
+    if zero — a silent no-op would look like warm-starting worked when it
+    didn't).
     """
+    prefixes = _warm_start_key_prefixes(include_gene_rho=include_gene_rho)
     ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     src_state = ckpt.get("model", ckpt)
     dst_state = model.state_dict()
     copied = 0
     for key, value in src_state.items():
-        if not key.startswith(CASCADE_ENCODER_PREFIXES):
+        if not key.startswith(prefixes):
             continue
         if key not in dst_state:
             raise ValueError(f"warm-start checkpoint key {key!r} not found in model")
@@ -579,6 +593,34 @@ def _load_encoder_warm_start(model: CascadeDeepSet, checkpoint_path: Path) -> in
             f"warm-start checkpoint {checkpoint_path} contained no matching encoder keys"
         )
     model.load_state_dict(dst_state)
+    return copied
+
+
+def _load_heads_warm_start(heads: torch.nn.Module, checkpoint_path: Path) -> int:
+    """Copy matching trait-head tensors from a cascade checkpoint (S3→S4)."""
+    ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    src_state = ckpt.get("heads")
+    if not isinstance(src_state, dict):
+        raise ValueError(
+            f"warm-start heads requested but checkpoint {checkpoint_path} has no heads state"
+        )
+    dst_state = heads.state_dict()
+    copied = 0
+    for key, value in src_state.items():
+        if key not in dst_state:
+            continue
+        if dst_state[key].shape != value.shape:
+            raise ValueError(
+                f"warm-start heads shape mismatch for {key!r}: "
+                f"checkpoint={tuple(value.shape)} model={tuple(dst_state[key].shape)}"
+            )
+        dst_state[key] = value
+        copied += 1
+    if copied == 0:
+        raise ValueError(
+            f"warm-start checkpoint {checkpoint_path} contained no matching heads keys"
+        )
+    heads.load_state_dict(dst_state)
     return copied
 
 
@@ -933,11 +975,17 @@ def train_cascade_on_arrays(
     warm_start_encoder_checkpoint: Path | None = None,
     freeze_encoder_epochs: int = 0,
     fine_tune_learning_rate: float | None = None,
+    warm_start_include_gene_rho: bool = False,
+    warm_start_include_heads: bool = False,
 ) -> dict[str, Any]:
     """Train CascadeDeepSet + MBS heads; write scores; evaluate; return metrics.
 
     ``include_mbs_enet``: when False, skip inline ``mbs_enet`` / ``rbs_enet`` (Stage A
     screen default — run ``scripts/eval_mbs_enet_from_scores.py`` post-hoc).
+
+    ``warm_start_include_gene_rho`` / ``warm_start_include_heads``: for staged
+    S3→S4 continuity (preserve trained ``gene_rho`` and trait heads). Default
+    False keeps legacy LP-FT behaviour (encoder-only warm-start).
     """
     score_dir = out_dir / "scores"
     manifest_path = score_dir / "score_manifest.json"
@@ -1009,12 +1057,30 @@ def train_cascade_on_arrays(
         if meta is not None
     }
     n_encoder_keys_loaded = 0
+    n_heads_keys_loaded = 0
     if warm_start_encoder_checkpoint is not None:
-        n_encoder_keys_loaded = _load_encoder_warm_start(model, warm_start_encoder_checkpoint)
+        n_encoder_keys_loaded = _load_encoder_warm_start(
+            model,
+            warm_start_encoder_checkpoint,
+            include_gene_rho=bool(warm_start_include_gene_rho),
+        )
         print(
             f"[cascade] {out_dir.name} warm-started {n_encoder_keys_loaded} encoder tensors "
+            f"(include_gene_rho={bool(warm_start_include_gene_rho)}) "
             f"from {warm_start_encoder_checkpoint}",
             flush=True,
+        )
+        if warm_start_include_heads:
+            n_heads_keys_loaded = _load_heads_warm_start(heads, warm_start_encoder_checkpoint)
+            print(
+                f"[cascade] {out_dir.name} warm-started {n_heads_keys_loaded} heads tensors "
+                f"from {warm_start_encoder_checkpoint}",
+                flush=True,
+            )
+    elif warm_start_include_heads or warm_start_include_gene_rho:
+        raise ValueError(
+            "warm_start_include_heads / warm_start_include_gene_rho require "
+            "warm_start_encoder_checkpoint"
         )
     freeze_encoder_epochs = max(0, int(freeze_encoder_epochs))
     if freeze_encoder_epochs > 0 and warm_start_encoder_checkpoint is None:
@@ -1624,6 +1690,9 @@ def train_cascade_on_arrays(
             str(warm_start_encoder_checkpoint) if warm_start_encoder_checkpoint else None
         ),
         "warm_start_encoder_tensors_loaded": n_encoder_keys_loaded,
+        "warm_start_include_gene_rho": bool(warm_start_include_gene_rho),
+        "warm_start_include_heads": bool(warm_start_include_heads),
+        "warm_start_heads_tensors_loaded": n_heads_keys_loaded,
         "freeze_encoder_epochs": freeze_encoder_epochs,
         "checkpoint_selection_mode": checkpoint_selection_mode,
         "n_optimizer_steps": int(n_optimizer_steps),
@@ -1765,12 +1834,24 @@ def run_cascade_hub(
     run_id: str,
     device_str: str = "cpu",
     max_folds: int | None = None,
+    fold_indices: list[int] | None = None,
+    seed_override: int | None = None,
     max_train_samples: int | None = None,
     report_dir: Path | None = None,
     skip_if_done: bool = True,
     eval_only: bool = False,
 ) -> CascadeTrainResult:
-    """Train cascade on frozen 7E folds; write scores + report."""
+    """Train cascade on frozen 7E folds; write scores + report.
+
+    ``fold_indices``: explicit fold indices to run (e.g. ``[3]`` for just
+    fold 3), as opposed to ``max_folds``' fixed "first N" prefix slice --
+    needed for a 5x6 OOF runner that trains one specific (fold, restart)
+    combination per invocation. Mutually exclusive with ``max_folds``.
+    ``seed_override``: use this exact seed for every fold processed in this
+    call instead of the config's ``experiment.seed + fold_i`` convention --
+    for the same OOF runner's restart seeds (42..47), which are independent
+    of fold index.
+    """
     pilot = config.get("pilot", {})
     matrix_id = str(pilot.get("matrix_id", "matrix-hub-age-tissue-sex-full-v1"))
     graph_id = str(pilot.get("graph_id", "graph-grch38-gencode38-cgi-tile-v2"))
@@ -1809,8 +1890,17 @@ def run_cascade_hub(
     freeze_encoder_epochs = int(model_cfg.get("freeze_encoder_epochs", 0) or 0)
     fine_tune_lr_raw = model_cfg.get("fine_tune_learning_rate")
     fine_tune_learning_rate = None if fine_tune_lr_raw is None else float(fine_tune_lr_raw)
+    warm_start_include_gene_rho = bool(model_cfg.get("warm_start_include_gene_rho", False))
+    warm_start_include_heads = bool(model_cfg.get("warm_start_include_heads", False))
     if freeze_encoder_epochs > 0 and not warm_start_encoder_checkpoint_template:
         raise ValueError("model.freeze_encoder_epochs requires model.warm_start_encoder_checkpoint")
+    if (warm_start_include_gene_rho or warm_start_include_heads) and not (
+        warm_start_encoder_checkpoint_template
+    ):
+        raise ValueError(
+            "model.warm_start_include_gene_rho / warm_start_include_heads require "
+            "model.warm_start_encoder_checkpoint"
+        )
     training_cfg = config.get("training", {})
     age_loss_weight = float(training_cfg.get("age_loss_weight", 1.0))
     tissue_loss_weight = float(training_cfg.get("tissue_loss_weight", 1.0))
@@ -1876,9 +1966,15 @@ def run_cascade_hub(
     if not folds_path.is_file():
         raise FileNotFoundError(f"frozen folds missing: {folds_path}")
     pack = load_frozen_folds(folds_path)
-    folds = list(pack["folds"])
-    if max_folds is not None:
-        folds = folds[: int(max_folds)]
+    all_folds = list(pack["folds"])
+    if fold_indices is not None:
+        if max_folds is not None:
+            raise ValueError("fold_indices and max_folds are mutually exclusive")
+        selected_folds = [(i, all_folds[i]) for i in fold_indices]
+    elif max_folds is not None:
+        selected_folds = list(enumerate(all_folds[: int(max_folds)]))
+    else:
+        selected_folds = list(enumerate(all_folds))
 
     print(f"[cascade] loading matrix/graph max_loci={max_loci}", flush=True)
     matrix_paths = matrix_store_paths(data_root / "canonical" / "matrices" / matrix_id)
@@ -1942,7 +2038,7 @@ def run_cascade_hub(
         rows = np.asarray([row_by_id[sid] for sid in kept], dtype=np.int64)
         return betas_all[rows], kept
 
-    for fold_i, fold in enumerate(folds):
+    for fold_i, fold in selected_folds:
         train_ids = [s for s in fold["train_sample_ids"] if s in row_by_id and s in ph_by_id]
         external_test_ids = fold.get("external_test_sample_ids") or []
         validation_ids = fold.get("validation_sample_ids") or []
@@ -2028,7 +2124,7 @@ def run_cascade_hub(
             class_names=list(class_names) if class_names else ["A", "B"],
             out_dir=fold_out,
             max_epochs=max_epochs,
-            seed=seed + fold_i,
+            seed=(seed_override if seed_override is not None else seed + fold_i),
             device_str=device_str,
             lr=lr,
             age_mask=age_mask,
@@ -2071,6 +2167,8 @@ def run_cascade_hub(
             ),
             freeze_encoder_epochs=freeze_encoder_epochs,
             fine_tune_learning_rate=fine_tune_learning_rate,
+            warm_start_include_gene_rho=warm_start_include_gene_rho,
+            warm_start_include_heads=warm_start_include_heads,
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
         fold_summaries.append(metrics)

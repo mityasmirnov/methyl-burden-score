@@ -3,6 +3,10 @@
 Post–Stage 0 modules (epimutation AE, ComBat-met) are outlined in
 [`STRATEGIC_PLAN.md`](STRATEGIC_PLAN.md); they are not Stage 0 prerequisites.
 
+**Benchmarks (setups tested + numbers):** see the master ledger
+[`ARCHITECTURE_BENCHMARKS.md`](ARCHITECTURE_BENCHMARKS.md) — cascade/N-light
+locks, nine-pack grid, nested enet, 10e staged FAIL, freeze-reuse.
+
 **Milestone numbers:** gene-only selection = **9** (was 7G′ Stage A); fold panel
 = **11** (was 7G′ Stage B); final OOF = **12** (was “Milestone 7”); expression
 continue/finetune = **13** (was 7G″, after OOF). Index:

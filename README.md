@@ -10,6 +10,8 @@ Deep Set family). The Python package remains `methyl-burden-score` with the
 Primary open data source: CNCB **EWAS Data Hub** (EWAS Atlas for association
 checks). Authoritative progress:
 [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
+**Architectures / setups tested + performance comparison (master ledger):**
+[`docs/ARCHITECTURE_BENCHMARKS.md`](docs/ARCHITECTURE_BENCHMARKS.md).
 Milestone numbers (8, 9, 10, …):
 [`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md).
 
@@ -17,12 +19,13 @@ Milestone numbers (8, 9, 10, …):
 HM450 **65k-prefix** validation, ~2.6k genes — not the ~20k-gene product).
 Product readout: frozen nested enet (`mbs_enet_nested`), not joint `mbs_e2e`.
 
-**After N-light — GATE G1–G4 blocks cascade OOF:** (G1) DeepRVAT gene
-utilization / optional Milestone **11** panel; (G2) CpGPT/positional probe;
-(G3) platform robustness ([`12c`](docs/plans/milestone-12c-platform-robustness.md));
-(G4) fair **10e** S1→S2→S3→S4 + **10d** checkpoint. Then cascade 5×6 on the
-G1 panel (native **P2-G** unless 10e flips it). Expression is **Milestone 13**.
-Checklist: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
+**After N-light — GATE blocks cascade OOF:** (G1) DeepRVAT gene utilization /
+optional Milestone **11** panel; (G2) CpGPT/positional probe; (G3) platform
+robustness ([`12c`](docs/plans/milestone-12c-platform-robustness.md));
+(G4) **10e done (FAIL)** → cascade recipe stays **native P2-G**; **10d**
+checkpoint still pending. Then cascade 5×6 on the G1 panel. Expression is
+**Milestone 13**. Checklist: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
+Benchmarks: [`docs/ARCHITECTURE_BENCHMARKS.md`](docs/ARCHITECTURE_BENCHMARKS.md).
 
 Programme docs: [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md),
 [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md),
@@ -45,8 +48,9 @@ Do **not** retrain frozen **deepMAT-flat-v0.1** / **hierarchical-v0.1**.
 3. CpGs are organized into biologically typed regions before gene-level
    aggregation (**RBS → gene MBS**); leftover CpGs stay **direct** ([ADR 0009](docs/adr/0009-drop-tbs-scores.md) — **no tile/TBS scores**).
 4. Every reported training-sample score is obtained by study-grouped
-   cross-fitting (Milestone **12**; N-light 65k first; cascade only after
-   GATE G1–G4; Milestone **11** is a G1 gene-set option, not a block on N-light).
+  cross-fitting (Milestone **12**; N-light 65k first; cascade only after
+  GATE G1–G3 + 10d, with native **P2-G** recipe; Milestone **11** is a G1
+  gene-set option, not a block on N-light).
 
 ## Stage 0 scope
 
@@ -60,11 +64,11 @@ Stage 0 implements:
 - **RBS → gene cascade + direct leftover** topology (**7F**; no TBS);
 - gene-only architecture selection on `explicit_only` (**Milestone 9** — done);
 - pretrained / nine-pack scale campaign (**Milestone 10** — topology locked;
-  **10e**/**10d** remain GATE G4);
+  **10e** staged recipe **rejected**; **10d** still GATE);
 - fold-selected panel (**Milestone 11** — G1 gene-set option; not a block on
   N-light 65k);
 - study-grouped OOF (**Milestone 12** — N-light 5×6 **NOW**; cascade blocked on
-  GATE G1–G4: 12b gene util, CpGPT, 12c platform, fair 10e+10d);
+  GATE G1–G3 + 10d; cascade recipe = native **P2-G**);
 - expression continue-train / finetune after OOF (**Milestone 13** — deferred;
   download expression data first);
 - static CpGPT sequence-adapter features exported offline;
@@ -140,6 +144,8 @@ follows the orientation contract ([ADR 0008](docs/adr/0008-score-identifiability
 
 End-to-end docs: [`docs/SCORING_PIPELINE.md`](docs/SCORING_PIPELINE.md),
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md),
+[`docs/ARCHITECTURE_BENCHMARKS.md`](docs/ARCHITECTURE_BENCHMARKS.md)
+(setups tested + performance comparison),
 [`docs/ANNOTATION_GRAPH.md`](docs/ANNOTATION_GRAPH.md).
 Probe coverage: [`docs/PROBE_ANNOTATION_COVERAGE.md`](docs/PROBE_ANNOTATION_COVERAGE.md).
 Data inventory: [`docs/DATA_CATALOG.md`](docs/DATA_CATALOG.md).

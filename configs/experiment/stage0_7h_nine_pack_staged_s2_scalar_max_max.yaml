@@ -1,0 +1,54 @@
+# 10e Stage S2 — scalarize RBS with product max pooling; NO gene MBS hop.
+#
+# Warm-start from dense S1 (mean/mean scalar_rbs). Freeze S1 encoder for 4
+# epochs while heads adapt to max/max aggregation, then fine-tune encoder
+# @ 3e-4. gene_aggregation stays scalar_rbs (MBS = max over region RBS).
+#
+# This is the stage the truncated s1s4-smoke skipped.
+split_id: hub-nine-pack-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+milestone: 7H-nine-pack-staged-s2-scalar-max-max
+report_dir: reports/inspection/stage0_7h_nine_pack_smoke/_staging_staged_s2_fold0
+cv_budget:
+  max_loci: 65536
+  max_epochs: 15
+experiment:
+  name: stage0_7h_nine_pack_staged_s2_scalar_max_max
+  seed: 42
+  stage: 0
+pilot:
+  mode: multitask_hub
+  matrix_id: matrix-hub-nine-pack-virtual-v1
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+  tissue_ontology: canonical/phenotypes/tissue_ontology_hub_nine_pack_v1.yaml
+  split_id: hub-nine-pack-3fold-v1
+model:
+  topology: rbs_gene_direct
+  tbs_arm: false
+  cpg_pool: max
+  region_pool: max
+  gene_aggregation: scalar_rbs
+  gene_allocation: explicit_only
+  cpg_hidden_dim: 64
+  region_hidden_dim: 32
+  dropout: 0.1
+  warm_start_encoder_checkpoint: artifacts/runs/stage0-7h-nine-pack-dense-stage1-mean-mean/fold_{fold_id}/best.pt
+  freeze_encoder_epochs: 4
+  fine_tune_learning_rate: 0.0003
+training:
+  max_epochs: 15
+  # Cap batch on shared GPU 0 (full occupy only GPU 2 / N-light).
+  batch_size: 32
+  gpu_share: 2
+  learning_rate: 0.001
+  tissue_loss_weight: 3.0
+  age_loss_weight: 0.3
+  sex_loss_weight: 1.0
+  gene_linked_only: true
+  primary_evaluation: mbs_e2e
+  stage_a_include_mbs_enet: false
+  checkpoint_selection: validation_tissue_macro_f1_then_age_mae
+  gradient_clip_norm: 2.0
+device:
+  torch_device: cuda

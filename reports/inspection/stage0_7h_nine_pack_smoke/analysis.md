@@ -1,6 +1,6 @@
 # Milestone 10 — nine-pack campaign analysis
 
-Updated: `2026-09-08T17:05+02:00`
+Updated: `2026-09-09T13:05+02:00`
 
 - Matrix: `matrix-hub-nine-pack-virtual-v1` · Screen split: `hub-nine-pack-3fold-v1` (**34 234**)
 - OOF split: `hub-nine-pack-5fold-v1` · Platform: **HM450 this OOF**; **65k-prefix ~2.6k genes** (not ~20k product). Encoder weights are gene-invariant; transfer unproven.
@@ -24,7 +24,8 @@ Updated: `2026-09-08T17:05+02:00`
 | Freeze-reuse P2-G | **done** | Pack cancer **0.954**; Alzheimer’s **0.838**; cancer subtype macro-F1 **0.202**; BMI not useful |
 | **12 N-light 5×6** | **running GPU 2** | **HM450 65k-prefix validation** (~2.6k genes), not 20k-gene product |
 | **12b full gene panel** | pending | ~19.6k genes; within-gene CpG sample; product cascade OOF uses this |
-| 10e S1–S4 1-fold smoke | **done (negative)** | fold-0 e2e **0.300 / 14.97 / 0.900** loses to native P2-G **0.364 / 12.80 / 0.950** — no 3-fold staged recipe |
+| 10e truncated “S1–S4” | **done (negative)** | S1→vector LP-FT **skipped S2**; e2e **0.300** vs P2-G **0.364** |
+| 10e true S1→S2→S3→S4 | **done (FAIL gate)** | fair fold-0 e2e **0.298 / 15.32 / 0.901**; nested **0.298 / 11.03 / 0.787** vs P2-G **0.364 / 12.80 / 0.950** nested **0.331 / 9.89 / 0.848** — **no staged 3-fold**; GPU0 batch-capped |
 | Milestone 11 Stage B | deferred parallel | does **not** block OOF |
 
 ---
@@ -34,10 +35,10 @@ Updated: `2026-09-08T17:05+02:00`
 | Decision | Status |
 |----------|--------|
 | Cascade *topology* | **P2-G** (scalar max/max still the best *joint-e2e* arm) |
-| How to *train* cascade before product OOF | Native P2-G (S1–S4 **rejected**). 65k 5×6 = arm comparison; **product** cascade = 12b full gene-linked graph |
+| How to *train* cascade before product OOF | **Native P2-G** (fair S1→S2→S3→S4 **rejected**). 65k 5×6 = arm comparison; **product** cascade = 12b full gene-linked graph |
 | Light *encoder* | **N-light@64** |
 | Light *product readout* | **`mbs_enet_nested` 3-fold 0.368 / 9.88 / 0.803** — no longer trails cascade e2e |
-| Milestone **12** | **N-light 5×6 first**; cascade still gated on 10e; **not gated on 11** |
+| Milestone **12** | **N-light 5×6 first**; cascade recipe locked native P2-G; still wait GATE G1–G3 |
 | Cold / warm vector | Warm closes gap; **neither replaces P2-G topology** |
 | Age covariates | **Rejected** |
 
@@ -87,7 +88,10 @@ This table chose the **topology**. It does **not** choose the OOF training recip
 
 Then freeze the encoder and fit **enet / logistic** on RBS and MBS for ATS and extra traits.
 
-Cheap **1-fold** S1–S4 smoke still gates **cascade** 5×6. **N-light 5×6 does not wait.** Dense stage-1 (GPU 2) is **S1 only**.
+Cheap **1-fold** true S1→S2→S3→S4 smoke **done — FAIL** vs P2-G; cascade
+training recipe stays **native P2-G**. Truncated LP-FT (S2 skipped) was also
+negative. **N-light 5×6 does not wait.** GPU 0 jobs stay batch-capped (only
+GPU 2 may fill).
 
 ---
 
@@ -130,7 +134,10 @@ Report: `reports/inspection/stage0_7h_onehop_correctness/`.
 
 1. Let **N-light 5×6** finish on GPU 2 (30-ep + n>200 aux; 65k-prefix validation).
 2. P2-G nested **3/3 done** (MBS **0.335 / 9.81 / 0.759** vs N-light 3-fold **0.368 / 9.88 / 0.803**).
-3. **10e staged S1–S4 smoke negative** — do **not** regenerate S1 folds 1–2. A 65k-matched native-P2-G 5×6 is arm comparison only. **Product cascade OOF = 12b** (~20k genes).
+3. **10e fair S1→S2→S3→S4 FAIL** — cascade training recipe = **native P2-G**;
+   no staged 3-fold. Truncated LP-FT was also negative. A 65k-matched
+   native-P2-G 5×6 is arm comparison only. **Product cascade OOF = 12b**
+   (~20k genes). GPU 0 smokes stay batch-capped (only GPU 2 may fill).
 4. Alzheimer’s freeze-reuse **0.838** (3-fold); cancer subtypes distinguishable (macro-F1 0.202). Pack cancer still strong.
 5. This OOF stays HM450 65k-prefix. Gene-invariance is architectural until 12b + holdout-gene / platform tests.
 

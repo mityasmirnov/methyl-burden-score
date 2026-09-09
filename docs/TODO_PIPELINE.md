@@ -27,15 +27,15 @@ finishing, fill Results + Verdict in the same change set that flips status
 10           campaign pretrained MBS/RBS scale (was 7H); topology locked
   10a–10c    done     P2-G lock; N-light@64; warms; freeze-reuse
   10a-dense  partial  S1 fold 0 done; queue stopped for N-light OOF
-  10e        in_prog  GATE G4 — fair S1→S2→S3→S4 re-test (truncated ≠ reject)
-  10d        pending  GATE G4 — reference checkpoint after fair 10e + OOF
+  10e        done      GATE G4 — fair S1→S2→S3→S4 FAIL; native P2-G; no 3-fold
+  10d        pending  GATE G4 — reference checkpoint after OOF finalist
 11           gate-G1  fold-selected gene panel — in scope for G1 gene-set choice
 12           ← NOW    N-light 5×6 HM450 65k-prefix validation (GPU2)
-  GATE       pending  after N-light — blocks cascade OOF (G1–G4)
+  GATE       pending  after N-light — blocks cascade OOF (G1–G3; G4 10e done)
   12b / G1   pending  gene utilization (DeepRVAT sampler; vs M11 panel)
   G2         pending  positional / CpGPT probe (N-light + cascade)
   12c / G3   pending  platform robustness (CpG dropout; EPIC later)
-  THEN       blocked  12 cascade 5×6 on G1 panel (native P2-G unless 10e flips)
+  THEN       blocked  12 cascade 5×6 on G1 panel (**native P2-G**; 10e rejected)
 13           deferred expression aux after OOF
 14           deferred optional a–f
 ```
@@ -47,9 +47,9 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
 
 ### Next steps (NOW → GATE → THEN)
 
-**GPU-2:** exclusive N-light 5×6 (`batch_size=1024`, ~87 GB). **GPU 0:** 12b
-probes (dense full-width smoke → CpGPT 65k ablation). Do **not** auto-start
-cascade 5×6.
+**GPU-2:** exclusive N-light 5×6 (`batch_size=1024`, ~87 GB — may fill).
+**GPU 0:** keep spare VRAM (12b probes / 10e smokes; batch-capped). Do **not**
+auto-start cascade 5×6.
 
 **NOW — Milestone 12 N-light 5×6** (HM450 **65k-prefix** gene-linked
 validation, ~2.6k genes — **not** the ~20k-gene product). Product readout
@@ -63,15 +63,15 @@ validation, ~2.6k genes — **not** the ~20k-gene product). Product readout
 | **G1** | **12b** gene utilization (+ **11** fork) | Does DeepRVAT within-gene sampling + minibatch gather train a usable ~20k (or M11) gene MBS without dense 482k load? | Recipe smoke; gene-set verdict (all represented vs M11 fold-selected); coverage report |
 | **G2** | Positional / CpGPT | Do CpGPT (or DNA-LM) static embeddings improve N-light and/or cascade vs matched baseline? | Matched smokes; promote only if nested/e2e wins |
 | **G3** | **12c** platform robustness | Does HM450 CpG/platform-mask dropout preserve MBS; path to EPIC membership? | Dropout smoke + invariance note; EPIC data optional follow-on |
-| **G4** | **10e** + **10d** | Does fair S1→S2→S3→S4 beat native P2-G? What checkpoint contract do we ship? | Honest 10e verdict; 10d package after finalist known |
+| **G4** | **10e** + **10d** | Does fair S1→S2→S3→S4 beat native P2-G? What checkpoint contract do we ship? | **10e done (FAIL)**; 10d package after finalist known |
 
 Waive a GATE item only with an explicit **Verdict** written here (not by
 silently launching cascade). A 65k-matched cascade “for architecture
 comparison” is **not** auto-queued.
 
-**THEN — 12 cascade 5×6** on the **G1** panel (native **P2-G** unless fair
-**10e** flips the recipe). Nested enet product readout. Milestone **13**
-expression after OOF scores exist.
+**THEN — 12 cascade 5×6** on the **G1** panel (**native P2-G**; fair **10e**
+rejected). Nested enet product readout. Milestone **13** expression after OOF
+scores exist.
 
 **Reference (done, do not reopen as blockers):** P2-G topology lock; N-light@64;
 warms; pack freeze-reuse (cancer 0.954 / Alzheimer’s 0.838); P2-G nested enet
@@ -96,10 +96,10 @@ P2-G scalar max/max is the LOCKED cascade *topology* finalist** (5-combo grid
 0.342 / 13.406 / 0.851 but still trails P2-G tissue (−0.013) — **not a
 finalist change**. **N-light@64** nested enet 3-fold is **0.368 / 9.88 /
 0.803** vs e2e **0.308 / 14.73 / 0.852**. Milestone **12 N-light 5×6** is
-**running** (30-ep + n>200 aux). Truncated 10e smoke (S2 skipped) lost to
-P2-G; **full S1→S2→S3→S4 is GATE G4** (not closed). **Cascade 5×6 is blocked
-on GATE G1–G4**, not auto-queued. Architecture stays gene-invariant for
-later EPIC/ONT.
+**running** (30-ep + n>200 aux). Fair 10e S1→S2→S3→S4 fold-0 **FAIL** vs P2-G
+(e2e **0.298** vs **0.364**; nested **0.298** vs **0.331**) — cascade recipe
+stays **native P2-G**. **Cascade 5×6 is blocked on GATE G1–G3 + 10d**, not
+auto-queued. Architecture stays gene-invariant for later EPIC/ONT.
 Live numbers: [`analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
 **Platform (this OOF):** HM450 nine-pack — no mixed-platform claim yet.
 
@@ -918,58 +918,57 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ### 10e — Staged RBS→MBS training + frozen enet (**GATE G4**)
 
-- **Status:** `in_progress` (**incomplete / reopen**) — truncated smoke ≠
-  full recipe; correct S1→S2→S3→S4 1-fold re-test required before verdict
-- **Gate role:** part of **G4**; cascade stays **native P2-G** until a fair
-  smoke passes (and G1–G3 are closed).
+- **Status:** `done` — **fair recipe rejected** (2026-09-09). No staged 3-fold.
+- **Gate role:** **G4 / 10e closed**. Cascade topology+recipe = **native
+  P2-G**. Remaining G4 work is **10d** after OOF finalist. G1–G3 still block
+  cascade OOF launch.
 - **Question:** Does staged RBS→MBS beat native P2-G under nested enet /
   probes (and e2e diagnostic)?
 - **Approaches tested:**
-  1. **Dense S1** mean/mean + `scalar_rbs` fold 0 only
-     (`stage0-7h-nine-pack-dense-stage1-mean-mean`) — preferred plan was
-     **vector** dense S1; this run is imperfect but reusable.
-  2. **Truncated “S1–S4”** = S1 → vector max/max LP-FT (**S2 never ran**)
-     via `stage0_7h_nine_pack_vector_max_max_from_dense_stage1.yaml` →
-     `stage0-7h-nine-pack-s1s4-smoke-fold0`.
-  3. **True S1→S2→S3→S4** 1-fold smoke (S2 = freeze+scalarize max/max,
-     no gene hop; S3 = freeze RBS + train `gene_rho`; S4 = FT @ ~3e-4) —
-     configs under `stage0_7h_nine_pack_staged_s{2,3,4}_*` +
-     `scripts/run_7h_staged_s1s4_fold0.py` — **not yet closed**.
-- **How (truncated smoke):** fold 0 only; freeze 4 ep then FT; no nested
-  enet on the smoke job. Queue `run_7h_dense_stage1_queue.sh` never
-  finished scalar/vector 3-fold transplants.
-- **Results (fold 0, nine-pack):**
+  1. Dense S1 mean/mean + `scalar_rbs` fold 0
+     (`stage0-7h-nine-pack-dense-stage1-mean-mean`) — imperfect vs preferred
+     vector-dense S1.
+  2. Truncated S1 → vector max/max LP-FT (**S2 skipped**) →
+     `stage0-7h-nine-pack-s1s4-smoke-fold0` (negative).
+  3. **True S1→S2→S3→S4** fold-0 on GPU 0 (batch 32 / `gpu_share=2`; GPU 2
+     untouched): S2/S3/S4 run ids `stage0-7h-nine-pack-staged-s{2,3,4}-fold0`
+     via `scripts/run_7h_staged_s1s4_fold0.py`.
+- **How (fair smoke):** reuse S1 → S2 freeze 4 + FT scalar max/max (no gene
+  hop) → S3 freeze encoder 6 ep + train `gene_rho` → S4 FT @ 3e-4 (8 ep,
+  warm-start gene_rho+heads). Nested enet post-hoc. Gate:
+  [`../reports/inspection/stage0_7h_nine_pack_smoke/staged_s1s4_fold0_gate.json`](../reports/inspection/stage0_7h_nine_pack_smoke/staged_s1s4_fold0_gate.json).
+- **Results (fold 0):**
 
   | Run | Readout | Tissue F1 | Age MAE | Sex AUROC |
   |-----|---------|----------:|--------:|----------:|
-  | S1 dense mean/mean | `mbs_e2e` | **0.348** | 14.52 | 0.875 |
-  | S1 | `mbs_linear_probe` | 0.329 | **10.93** | 0.858 |
-  | S1 | `rbs_linear_probe` | 0.323 | 10.95 | 0.912 |
-  | Truncated “S1–S4” | `mbs_e2e` | **0.300** | 14.97 | 0.900 |
-  | Truncated smoke | `mbs_lin` / `rbs_lin` | 0.302 / 0.320 | 11.30 / 11.24 | 0.858 / 0.913 |
-  | Native P2-G fold 0 | `mbs_e2e` | **0.364** | **12.80** | **0.950** |
-  | Native P2-G 3-fold | `mbs_e2e` | **0.355** | **13.43** | **0.853** |
-  | Native P2-G 3-fold | `mbs_enet_nested` | **0.335** | **9.81** | 0.759 |
+  | S1 dense mean/mean | `mbs_e2e` | 0.348 | 14.52 | 0.875 |
+  | Truncated LP-FT | `mbs_e2e` | 0.300 | 14.97 | 0.900 |
+  | **Fair S4** | `mbs_e2e` | **0.298** | 15.32 | 0.901 |
+  | Fair S4 | `mbs_lin` / `rbs_lin` | 0.298 / 0.322 | 12.00 / 10.86 | 0.851 / 0.919 |
+  | Fair S4 | `mbs_enet_nested` | **0.298** | 11.03 | 0.787 |
+  | Fair S4 | `rbs_enet_nested` | 0.354 | 14.79 | 0.869 |
+  | Native P2-G f0 | `mbs_e2e` | **0.364** | **12.80** | **0.950** |
+  | Native P2-G f0 | `mbs_enet_nested` | **0.331** | **9.89** | 0.848 |
+  | Native P2-G 3-fold | `mbs_enet_nested` | 0.335 | 9.81 | 0.759 |
 
-- **Verdict / open:** Truncated smoke **fails** the written gate vs P2-G
-  fold-0 and is **weak negative evidence against naive transplant only**.
-  It does **not** falsify full S1→S2→S3→S4. Cascade default stays **native
-  P2-G** until a correct smoke passes. Promote to 3-fold staged **only** if
-  the fair smoke beats P2-G e2e **and** match-or-beats own probes/enet.
-  **N-light 5×6 does not wait** on G4.
+- **Verdict:** Fair S1→S2→S3→S4 **FAIL** (e2e and nested trail P2-G; probes
+  do not rescue). **No staged 3-fold.** Cascade = **native P2-G**. Caveat:
+  S1 was scalar-mean not preferred vector-dense; gap is large enough that
+  this is still an honest reject of the staged recipe as tested.
+  **N-light 5×6 does not wait.**
 - **Plan / detail:**
   [`plans/milestone-10e-staged-rbs-mbs-training.md`](plans/milestone-10e-staged-rbs-mbs-training.md),
   [`../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md)
 
 ### 10d — Reference checkpoint deliverable (**GATE G4**)
 
-- **Status:** `pending` (after fair 10e + N-light completeness; cascade
-  finalist when known)
+- **Status:** `pending` (after N-light completeness; cascade finalist =
+  native P2-G pending OOF)
 - **Question:** What deployable pretrained MBS/RBS package + contract do we ship?
 - **Approaches tested:** none yet (deliverable track).
 - **Results:** `pending`.
-- **Verdict:** blocked on honest **10e** verdict + OOF finalist + association-
-  testing note.
+- **Verdict:** **10e closed (reject staged)**; still blocked on OOF finalist +
+  association-testing note.
 - **Done when:** documented pretrained checkpoint(s) (MBS ± RBS), input/score
   contract, short association-testing note (CpG→gene multiple-testing
   reduction). See campaign Phase 4.
@@ -981,30 +980,36 @@ clock-based (Horvath/CpGPT/MethylGPT) age imputation for age-unlabeled
 samples. **Positional / CpGPT encoder enrichment is GATE G2**, not deferred
 past cascade.
 
-**Hard stop:** do not auto-launch **cascade** 5×6 from truncated 10e or
-before GATE G1–G4. N-light 5×6 owns GPU 2.
+**Hard stop:** do not auto-launch **cascade** 5×6 before GATE G1–G3 (+ 10d).
+Fair 10e is closed (native P2-G). N-light 5×6 owns GPU 2 (may fill). GPU 0
+must keep spare VRAM.
 
 ---
 
 ## 11. Fold-selected panel + full model (alias: 7G′ Stage B) — **GATE G1 option**
 
-- **Status:** `pending` for G1 gene-set decision (CPU prep may continue anytime;
-  full Stage B GPU still scheduled explicitly)
+- **Status:** `pending` for G1 gene-set decision (CPU dry-run panels + classical
+  **done**; full Stage B GPU still scheduled explicitly)
 - **Plan:** [`plans/milestone-11-fold-selected-panel.md`](plans/milestone-11-fold-selected-panel.md)
 - **Runner:** `scripts/run_7g_prime_stage_b.py`
 - **Question:** As a DeepRVAT-style gene panel, does fold-selected genes
   (ADR 0012: discovery CpGs → seed genes → all linked CpGs) match or beat
   “all ~19.6k represented genes” under nested enet for product cascade?
-- **Approaches tested:** Stage B runners/panels exist; G1 comparison smoke
-  vs 12b all-genes **not run yet**.
-- **Results:** `pending` (G1).
-- **Verdict:** does **not** block **N-light 65k** (Milestone 12 NOW); **is in
+- **Approaches tested:** CPU 3-fold ATS panels (`n_repeats=1`) + `C-mvalue-enetS`;
+  Atlas overlap screen; G1 vs 12b all-genes smoke **not run**.
+- **Results:** overview
+  [`reports/inspection/stage0_7g_prime_matched_probe/analysis.md`](../reports/inspection/stage0_7g_prime_matched_probe/analysis.md)
+  (`cpu_panel_overview.json`). **3 panels**; traits age/sex/tissue; 65k → 2 658
+  genes; ~33–35k panel CpGs / ~1.2–1.3k genes per fold; **717** genes ∩ all folds;
+  classical mean age r **0.894** / sex AUROC **0.891** / tissue bal-acc **0.437**;
+  Atlas age+sex enriched, tissue Atlas sparse.
+- **Verdict:** CPU prep ready for G1 discussion; **not** a G1 lock (need
+  `n_repeats=5` + gene-set smoke). Does **not** block **N-light 65k**; **is in
   scope for GATE G1** before product cascade. Not architecture selection
   (locked in **10**).
 - **Role:** sparsity / fold-safe **panel product** + classical `C-mvalue-enetS`
   comparator; optional gene-set fork for **12b**.
-- **CPU prep:** `--panels-only` / `--classical-only` / `--folds` may continue anytime;
-  orphan census under
+- **CPU prep:** panels + classical dry-run complete; orphan census under
   `reports/inspection/stage0_7g_prime_matched_probe/orphan_rbs_census.md`.
 - **Preferred thinner GPU matrix (when scheduled):** panels + `C-mvalue-enetS` +
   finalists-on-S (`N-cascade-S` = P2-G params, `N-light` on same panel) ± fusion
@@ -1030,8 +1035,8 @@ before GATE G1–G4. N-light 5×6 owns GPU 2.
 - **Verdict:** open — 65k-prefix **validation** only; **not** the ~20k-gene
   product (**12b** / G1).
 - **Scope (this track):** **65k-prefix validation** (~2 646 gene-linked genes).
-- **Cascade policy:** **blocked on GATE G1–G4**. Default topology **native
-  P2-G** unless fair **10e** flips it. Do **not** 5×6 joint `mbs_e2e` as the
+- **Cascade policy:** **blocked on GATE G1–G3** (+ 10d). Topology+recipe =
+  **native P2-G** (fair **10e** rejected). Do **not** 5×6 joint `mbs_e2e` as the
   product score. No auto 65k-matched cascade queue.
 - **Plan:** [`plans/milestone-12-final-oof.md`](plans/milestone-12-final-oof.md)
   (alias stub: [`milestone-13-final-oof.md`](plans/milestone-13-final-oof.md))
@@ -1039,7 +1044,7 @@ before GATE G1–G4. N-light 5×6 owns GPU 2.
   on the **G1** panel. Extra traits: encoder aux for disease/cancer **n>200**;
   n≥600 freeze-reuse for BMI/ancestry.
 - **Depends on:** N-light: (7A)–(7F), **8**, **9**, **10** N-light@64, one-hop
-  smokes, 3-fold nested enet. Cascade: **GATE G1–G4**.
+  smokes, 3-fold nested enet. Cascade: **GATE G1–G3** (+ 10d; 10e done).
 - **Done when (N-light arm):** OOF MBS, age/tissue/sex, leakage controls,
   orientation-aligned scores (ADR 0008), no TBS (ADR 0009); protocol **5×6**;
   report states 65k-prefix scope + completeness gate.
@@ -1066,7 +1071,7 @@ before GATE G1–G4. N-light 5×6 owns GPU 2.
     **not started**.
 - **Results:** `pending` (dense smoke val_loss climb noted in session logs).
 - **Verdict:** open — do not mark `done` for scaffolding / dense smokes.
-- **Cascade OOF:** product-scale = G1 panel (native P2-G unless 10e flips).
+- **Cascade OOF:** product-scale = G1 panel (**native P2-G**; 10e rejected).
 - **Hard stop:** do not retarget the in-flight 65k 5×6 to 12b; do not treat
   dense `max_loci: null` as G1 acceptance.
 

@@ -1,0 +1,67 @@
+{
+  "updated_utc": "2026-09-09T11:02:37.431975+00:00",
+  "s1_checkpoint": "/data/projects/methyl-burden-score/artifacts/runs/stage0-7h-nine-pack-dense-stage1-mean-mean/fold_0/best.pt",
+  "s1_note": "scalar mean/mean dense S1 fold0 (imperfect vs preferred vector-dense)",
+  "stages": {
+    "s2": "stage0-7h-nine-pack-staged-s2-fold0",
+    "s3": "stage0-7h-nine-pack-staged-s3-fold0",
+    "s4": "stage0-7h-nine-pack-staged-s4-fold0"
+  },
+  "gate_e2e_tissue_and_age": "FAIL / hold native P2-G",
+  "rows": [
+    {
+      "name": "S4 mbs_e2e",
+      "tissue_f1": 0.2983502040007066,
+      "age_mae": 15.316306346502191,
+      "sex_auroc": 0.9006693338864707
+    },
+    {
+      "name": "S4 mbs_linear_probe",
+      "tissue_f1": 0.29766386255917865,
+      "age_mae": 11.99515178887453,
+      "sex_auroc": 0.8512348334494222
+    },
+    {
+      "name": "S4 rbs_linear_probe",
+      "tissue_f1": 0.32241334100303715,
+      "age_mae": 10.86157603425503,
+      "sex_auroc": 0.9189277098417827
+    },
+    {
+      "name": "S4 mbs_enet_nested",
+      "tissue_f1": 0.2976756380919142,
+      "age_mae": 11.030911509022928,
+      "sex_auroc": 0.786564707521888
+    },
+    {
+      "name": "S4 rbs_enet_nested",
+      "tissue_f1": 0.35371552893544334,
+      "age_mae": 14.78704817130839,
+      "sex_auroc": 0.8694402093743334
+    },
+    {
+      "name": "P2-G f0 mbs_e2e",
+      "tissue_f1": 0.36363491876843274,
+      "age_mae": 12.796308918815143,
+      "sex_auroc": 0.9496811792587474
+    },
+    {
+      "name": "P2-G f0 mbs_linear_probe",
+      "tissue_f1": 0.33761173191115773,
+      "age_mae": 11.162832970279961,
+      "sex_auroc": 0.9077342110353595
+    },
+    {
+      "name": "P2-G f0 rbs_linear_probe",
+      "tissue_f1": 0.36091279441322816,
+      "age_mae": 11.837216476340187,
+      "sex_auroc": 0.9126801631109566
+    },
+    {
+      "name": "P2-G f0 mbs_enet_nested",
+      "tissue_f1": 0.33136438047602995,
+      "age_mae": 9.88561558853353,
+      "sex_auroc": 0.8481164407977554
+    }
+  ]
+}
