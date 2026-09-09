@@ -28,7 +28,7 @@ Do not recursively dump `$MBS_DATA_ROOT` into chat; use these reports.
 | Unique GSM / studies / primary column | Present (+ sample-count figure) |
 | Converted matrices + multitask masks | Present (5d evidence) |
 | Trait harmonization rules | Present |
-| EWAS_db per-study progress | **Study walk complete** (1989/1989); post-hook shell bug fixed; GSM failure retry **complete** (**0** missing) — [`ewas_db_download_failures.md`](../reports/inspection/deepmat_data_v1/ewas_db_download_failures.md), [`ewas_db_empty_studies.md`](../reports/inspection/deepmat_data_v1/ewas_db_empty_studies.md) |
+| EWAS_db per-study progress | **Index walk 1989/1989**; GSM WARN retries **0** missing; **empty-dir refill running** (162 GSE + 49 non-GSM) — [`DATA_POPULATION.md`](DATA_POPULATION.md), [`data_population_inventory.md`](../reports/inspection/deepmat_data_v1/data_population_inventory.md) |
 | Disease / cancer / blood / brain / BMI / ancestry full matrices | **7B done** (`matrix-hub-*-full-v1` + stage0_7b report) |
 | Harmonized DuckDB release | **7A done** (`deepmat-data-v1/`); refresh via `make catalog-refresh-release` |
 | Unique GSM vs pack-row sum | Memberships ≠ people; 7A census + refresh follow-ons |
@@ -67,12 +67,12 @@ ADR: [`adr/0002-ewas-datahub-primary-source.md`](adr/0002-ewas-datahub-primary-s
 | **all `raw/`** | **997.30 GiB** |
 
 `EWAS_db` study dirs on disk: **1 989 / 1 989** advertised (walk finished
-2026-09-07). Catalog ingest (2026-09-07): **1 695** studies /
-**170 641** sample `.txt` (GSM + non-GSM TCGA/ArrayExpress/…;
-dirs without usable `.txt` skipped; `(.+?)` artifacts ignored). Most of
-`ewas_datahub/` is per-study `EWAS_db` text (~1.8 TiB). Hub profile zips are
-~73 GiB total. GSM failure retry **complete** (**0** still missing). Failures
-audit: `reports/inspection/deepmat_data_v1/ewas_db_download_failures.*`.
+2026-09-07; **~1.7 TiB** mid empty-dir refill 2026-09-09). Catalog ingest still
+at last refresh (**170 641** assay files / **173 076** samples) until
+post-refill `catalog-refresh-release`. Empty-dir refill: **162** GSE + **49**
+non-GSM — [`DATA_POPULATION.md`](DATA_POPULATION.md). GSM WARN retries
+**complete** (**0** still missing). Failures audit:
+`reports/inspection/deepmat_data_v1/ewas_db_download_failures.*`.
 Post-download hook runs catalog refresh automatically (see
 [`EWAS_DATA.md`](EWAS_DATA.md)).
 
@@ -219,16 +219,17 @@ Wave-1 training focus: age, tissue (+ sex in 5d). Disease/cancer heads follow
 
 ## Known gaps
 
-- **EWAS_db ingest incomplete** (catalog 2026-09-07: **1 695**/1 989 study
-  dirs with sample `.txt`; study walk 1989/1989 done; GSM failure retry
-  cleared — **0** missing; empty dirs remain — not a Milestone **10** gate). See
-  [`plans/data-infrastructure-improvements.md`](plans/data-infrastructure-improvements.md).
+- **EWAS_db empty-dir refill** (2026-09-09): index walk **1989/1989**; historical
+  GSM retries **0** missing; recoverable empties = **162** GSE + **49** non-GSM
+  (~30k files) via `make refill-ewas-db-empty`. Catalog still **173 076** /
+  **1 763** until post-refill `catalog-refresh-release`. Not a Milestone **10**
+  gate. Snapshot: [`DATA_POPULATION.md`](DATA_POPULATION.md).
 - Blood primary phenotype sparsity; do not treat as pack-wide cell-type labels
   without another column strategy.
 - Registry `sample_count: null` on most pack entries until convert registers N
   (refresh after 7B: prefer unique GSM from full-matrix sample indexes).
 - 7A census (`reports/inspection/deepmat_data_v1/`) matches live DuckDB
-  (**173 076** samples / **1 763** studies as of 2026-09-07). Ignore the hyphen
+  (**173 076** samples / **1 763** studies as of 2026-09-09). Ignore the hyphen
   CLI-default dir if N≈5 (test fixture leak).
 - `v_replicate_groups` is empty; `locus`/`gene`/`region` DuckDB tables are empty
   by design (graph stays on disk).
@@ -238,7 +239,7 @@ Wave-1 training focus: age, tissue (+ sex in 5d). Disease/cancer heads follow
   chrom×context regions; inspection `annotation_graph_cgi_tile_v2/`).
 - Hub baseline packs are **450K-only** (`sample_info.platform == "450K"`). EPIC
   is not missing from the converter; it is absent from these zips.
-- Final OOF (Milestone 7) is **blocked until 7A–7E′**; **do not retrain v0.1**.
+- Final OOF (Milestone **12**) is **blocked until Milestone 11**; **do not retrain v0.1**.
 
 ## Proposed improvements
 
@@ -253,6 +254,8 @@ Prioritized plan:
 
 ## Related
 
+- Population snapshot: [`DATA_POPULATION.md`](DATA_POPULATION.md) +
+  [`data_population_inventory.md`](../reports/inspection/deepmat_data_v1/data_population_inventory.md)
 - Probe assignment rates: [`PROBE_ANNOTATION_COVERAGE.md`](PROBE_ANNOTATION_COVERAGE.md)
 - Scoring flow: [`SCORING_PIPELINE.md`](SCORING_PIPELINE.md)
 - Plan: [`plans/post-v0-scientific-programme.md`](plans/post-v0-scientific-programme.md)

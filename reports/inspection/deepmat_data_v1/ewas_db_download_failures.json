@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-07T14:23:14Z",
+  "generated_at": "2026-09-09T09:32:17Z",
   "log_path": "/data/projects/methyl-burden-score/artifacts/logs/downloads/ewas_datahub_EWAS_db.log",
   "ewas_db_root": "/data/projects/methyl-burden-score/data/raw/ewas_datahub/EWAS_db",
   "n_studies_with_failures": 1818,

@@ -1,0 +1,1517 @@
+{
+  "generated_at": "2026-09-09T09:39:26.923754Z",
+  "n_empty_dirs": 340,
+  "need_gsm_refill": [
+    {
+      "study": "GSE102119",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 146,
+      "remote_gsm": 146
+    },
+    {
+      "study": "GSE107143",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 16,
+      "remote_gsm": 16
+    },
+    {
+      "study": "GSE110724",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 21,
+      "remote_gsm": 21
+    },
+    {
+      "study": "GSE110776",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 24,
+      "remote_gsm": 24
+    },
+    {
+      "study": "GSE110778",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 24,
+      "remote_gsm": 24
+    },
+    {
+      "study": "GSE110828",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 157,
+      "remote_gsm": 157
+    },
+    {
+      "study": "GSE112047",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 47,
+      "remote_gsm": 47
+    },
+    {
+      "study": "GSE112812",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 48,
+      "remote_gsm": 48
+    },
+    {
+      "study": "GSE117087",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 24,
+      "remote_gsm": 24
+    },
+    {
+      "study": "GSE117130",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 212,
+      "remote_gsm": 212
+    },
+    {
+      "study": "GSE120357",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 26,
+      "remote_gsm": 26
+    },
+    {
+      "study": "GSE152006",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 6,
+      "remote_gsm": 6
+    },
+    {
+      "study": "GSE152026",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 448,
+      "remote_gsm": 448
+    },
+    {
+      "study": "GSE152027",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 800,
+      "remote_gsm": 800
+    },
+    {
+      "study": "GSE152035",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 55,
+      "remote_gsm": 55
+    },
+    {
+      "study": "GSE152204",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 89,
+      "remote_gsm": 89
+    },
+    {
+      "study": "GSE152245",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 4,
+      "remote_gsm": 4
+    },
+    {
+      "study": "GSE152380",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 90,
+      "remote_gsm": 90
+    },
+    {
+      "study": "GSE152427",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 57,
+      "remote_gsm": 57
+    },
+    {
+      "study": "GSE156358",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 12,
+      "remote_gsm": 12
+    },
+    {
+      "study": "GSE156374",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 96,
+      "remote_gsm": 96
+    },
+    {
+      "study": "GSE156669",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 12,
+      "remote_gsm": 12
+    },
+    {
+      "study": "GSE156792",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 109,
+      "remote_gsm": 109
+    },
+    {
+      "study": "GSE157896",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 1019,
+      "remote_gsm": 1019
+    },
+    {
+      "study": "GSE157973",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 138,
+      "remote_gsm": 138
+    },
+    {
+      "study": "GSE157989",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 16,
+      "remote_gsm": 16
+    },
+    {
+      "study": "GSE158063",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 915,
+      "remote_gsm": 915
+    },
+    {
+      "study": "GSE165180",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 118,
+      "remote_gsm": 118
+    },
+    {
+      "study": "GSE165357",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 6,
+      "remote_gsm": 6
+    },
+    {
+      "study": "GSE165687",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 28,
+      "remote_gsm": 28
+    },
+    {
+      "study": "GSE190540",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 90,
+      "remote_gsm": 90
+    },
+    {
+      "study": "GSE190908",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 155,
+      "remote_gsm": 155
+    },
+    {
+      "study": "GSE190931",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 1038,
+      "remote_gsm": 1038
+    },
+    {
+      "study": "GSE191277",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 7,
+      "remote_gsm": 7
+    },
+    {
+      "study": "GSE191297",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 85,
+      "remote_gsm": 85
+    },
+    {
+      "study": "GSE192353",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 62,
+      "remote_gsm": 62
+    },
+    {
+      "study": "GSE192451",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 10,
+      "remote_gsm": 10
+    },
+    {
+      "study": "GSE202097",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 144,
+      "remote_gsm": 144
+    },
+    {
+      "study": "GSE211483",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 40,
+      "remote_gsm": 40
+    },
+    {
+      "study": "GSE211508",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 5,
+      "remote_gsm": 5
+    },
+    {
+      "study": "GSE211591",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 28,
+      "remote_gsm": 28
+    },
+    {
+      "study": "GSE46394",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 49,
+      "remote_gsm": 34
+    },
+    {
+      "study": "GSE46419",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 6,
+      "remote_gsm": 6
+    },
+    {
+      "study": "GSE46573",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 22,
+      "remote_gsm": 22
+    },
+    {
+      "study": "GSE49031",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 944,
+      "remote_gsm": 944
+    },
+    {
+      "study": "GSE54115",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 18,
+      "remote_gsm": 18
+    },
+    {
+      "study": "GSE54335",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 4,
+      "remote_gsm": 4
+    },
+    {
+      "study": "GSE54375",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 2,
+      "remote_gsm": 2
+    },
+    {
+      "study": "GSE54399",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 70,
+      "remote_gsm": 70
+    },
+    {
+      "study": "GSE54415",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 24,
+      "remote_gsm": 24
+    },
+    {
+      "study": "GSE54719",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 41,
+      "remote_gsm": 41
+    },
+    {
+      "study": "GSE54767",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 12,
+      "remote_gsm": 12
+    },
+    {
+      "study": "GSE54776",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 14,
+      "remote_gsm": 14
+    },
+    {
+      "study": "GSE54840",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 27,
+      "remote_gsm": 27
+    },
+    {
+      "study": "GSE54880",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 284,
+      "remote_gsm": 284
+    },
+    {
+      "study": "GSE54882",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 305,
+      "remote_gsm": 305
+    },
+    {
+      "study": "GSE54939",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 24,
+      "remote_gsm": 24
+    },
+    {
+      "study": "GSE54966",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 8,
+      "remote_gsm": 8
+    },
+    {
+      "study": "GSE55006",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 12,
+      "remote_gsm": 12
+    },
+    {
+      "study": "GSE56719",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 24,
+      "remote_gsm": 24
+    },
+    {
+      "study": "GSE57107",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 48,
+      "remote_gsm": 48
+    },
+    {
+      "study": "GSE59038",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 24,
+      "remote_gsm": 24
+    },
+    {
+      "study": "GSE59065",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 296,
+      "remote_gsm": 296
+    },
+    {
+      "study": "GSE59091",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 195,
+      "remote_gsm": 195
+    },
+    {
+      "study": "GSE60274",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 77,
+      "remote_gsm": 77
+    },
+    {
+      "study": "GSE60316",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 6,
+      "remote_gsm": 6
+    },
+    {
+      "study": "GSE61044",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 36,
+      "remote_gsm": 36
+    },
+    {
+      "study": "GSE61107",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 48,
+      "remote_gsm": 48
+    },
+    {
+      "study": "GSE61151",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 188,
+      "remote_gsm": 188
+    },
+    {
+      "study": "GSE61160",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 51,
+      "remote_gsm": 51
+    },
+    {
+      "study": "GSE61195",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 21,
+      "remote_gsm": 21
+    },
+    {
+      "study": "GSE61257",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 32,
+      "remote_gsm": 32
+    },
+    {
+      "study": "GSE61258",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 79,
+      "remote_gsm": 79
+    },
+    {
+      "study": "GSE61259",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 26,
+      "remote_gsm": 26
+    },
+    {
+      "study": "GSE61278",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 110,
+      "remote_gsm": 110
+    },
+    {
+      "study": "GSE61380",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 33,
+      "remote_gsm": 33
+    },
+    {
+      "study": "GSE61431",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 87,
+      "remote_gsm": 87
+    },
+    {
+      "study": "GSE61441",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 92,
+      "remote_gsm": 92
+    },
+    {
+      "study": "GSE61446",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 67,
+      "remote_gsm": 67
+    },
+    {
+      "study": "GSE61450",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 71,
+      "remote_gsm": 71
+    },
+    {
+      "study": "GSE61452",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 60,
+      "remote_gsm": 60
+    },
+    {
+      "study": "GSE61461",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 21,
+      "remote_gsm": 21
+    },
+    {
+      "study": "GSE61467",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 56,
+      "remote_gsm": 56
+    },
+    {
+      "study": "GSE61496",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 312,
+      "remote_gsm": 312
+    },
+    {
+      "study": "GSE61653",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 128,
+      "remote_gsm": 128
+    },
+    {
+      "study": "GSE62053",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 8,
+      "remote_gsm": 8
+    },
+    {
+      "study": "GSE62086",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 3,
+      "remote_gsm": 3
+    },
+    {
+      "study": "GSE62111",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 8,
+      "remote_gsm": 8
+    },
+    {
+      "study": "GSE63347",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 71,
+      "remote_gsm": 71
+    },
+    {
+      "study": "GSE63366",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 16,
+      "remote_gsm": 16
+    },
+    {
+      "study": "GSE64096",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 40,
+      "remote_gsm": 40
+    },
+    {
+      "study": "GSE64316",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 20,
+      "remote_gsm": 20
+    },
+    {
+      "study": "GSE64380",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 100,
+      "remote_gsm": 100
+    },
+    {
+      "study": "GSE67530",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 144,
+      "remote_gsm": 144
+    },
+    {
+      "study": "GSE67619",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 20,
+      "remote_gsm": 20
+    },
+    {
+      "study": "GSE67705",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 284,
+      "remote_gsm": 284
+    },
+    {
+      "study": "GSE67733",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 12,
+      "remote_gsm": 12
+    },
+    {
+      "study": "GSE67748",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 20,
+      "remote_gsm": 20
+    },
+    {
+      "study": "GSE67749",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 33,
+      "remote_gsm": 33
+    },
+    {
+      "study": "GSE67751",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 92,
+      "remote_gsm": 92
+    },
+    {
+      "study": "GSE67767",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 18,
+      "remote_gsm": 18
+    },
+    {
+      "study": "GSE70645",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 4,
+      "remote_gsm": 4
+    },
+    {
+      "study": "GSE70737",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 24,
+      "remote_gsm": 24
+    },
+    {
+      "study": "GSE72364",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 12,
+      "remote_gsm": 12
+    },
+    {
+      "study": "GSE72495",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 25,
+      "remote_gsm": 25
+    },
+    {
+      "study": "GSE72556",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 96,
+      "remote_gsm": 96
+    },
+    {
+      "study": "GSE72778",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 467,
+      "remote_gsm": 467
+    },
+    {
+      "study": "GSE72867",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 69,
+      "remote_gsm": 69
+    },
+    {
+      "study": "GSE72872",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 250,
+      "remote_gsm": 250
+    },
+    {
+      "study": "GSE73832",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 133,
+      "remote_gsm": 133
+    },
+    {
+      "study": "GSE73894",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 219,
+      "remote_gsm": 219
+    },
+    {
+      "study": "GSE73895",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 60,
+      "remote_gsm": 60
+    },
+    {
+      "study": "GSE73901",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 36,
+      "remote_gsm": 36
+    },
+    {
+      "study": "GSE73938",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 30,
+      "remote_gsm": 30
+    },
+    {
+      "study": "GSE73948",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 26,
+      "remote_gsm": 26
+    },
+    {
+      "study": "GSE73949",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 17,
+      "remote_gsm": 17
+    },
+    {
+      "study": "GSE74013",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 48,
+      "remote_gsm": 48
+    },
+    {
+      "study": "GSE74797",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 8,
+      "remote_gsm": 8
+    },
+    {
+      "study": "GSE74845",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 216,
+      "remote_gsm": 216
+    },
+    {
+      "study": "GSE74877",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 24,
+      "remote_gsm": 24
+    },
+    {
+      "study": "GSE75008",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 80,
+      "remote_gsm": 80
+    },
+    {
+      "study": "GSE75041",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 66,
+      "remote_gsm": 66
+    },
+    {
+      "study": "GSE75704",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 166,
+      "remote_gsm": 166
+    },
+    {
+      "study": "GSE75937",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 15,
+      "remote_gsm": 15
+    },
+    {
+      "study": "GSE76056",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 22,
+      "remote_gsm": 22
+    },
+    {
+      "study": "GSE76171",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 124,
+      "remote_gsm": 124
+    },
+    {
+      "study": "GSE76263",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 2,
+      "remote_gsm": 2
+    },
+    {
+      "study": "GSE76269",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 493,
+      "remote_gsm": 493
+    },
+    {
+      "study": "GSE76285",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 80,
+      "remote_gsm": 80
+    },
+    {
+      "study": "GSE76372",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 9,
+      "remote_gsm": 9
+    },
+    {
+      "study": "GSE76938",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 136,
+      "remote_gsm": 136
+    },
+    {
+      "study": "GSE77036",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 4,
+      "remote_gsm": 4
+    },
+    {
+      "study": "GSE78875",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 36,
+      "remote_gsm": 36
+    },
+    {
+      "study": "GSE78904",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 96,
+      "remote_gsm": 96
+    },
+    {
+      "study": "GSE79064",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 18,
+      "remote_gsm": 18
+    },
+    {
+      "study": "GSE80071",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 24,
+      "remote_gsm": 24
+    },
+    {
+      "study": "GSE80226",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 6,
+      "remote_gsm": 6
+    },
+    {
+      "study": "GSE80241",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 17,
+      "remote_gsm": 17
+    },
+    {
+      "study": "GSE80243",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 8,
+      "remote_gsm": 8
+    },
+    {
+      "study": "GSE80261",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 216,
+      "remote_gsm": 216
+    },
+    {
+      "study": "GSE80283",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 183,
+      "remote_gsm": 183
+    },
+    {
+      "study": "GSE80310",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 24,
+      "remote_gsm": 24
+    },
+    {
+      "study": "GSE81961",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 40,
+      "remote_gsm": 40
+    },
+    {
+      "study": "GSE82084",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 36,
+      "remote_gsm": 36
+    },
+    {
+      "study": "GSE82218",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 55,
+      "remote_gsm": 55
+    },
+    {
+      "study": "GSE83691",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 26,
+      "remote_gsm": 26
+    },
+    {
+      "study": "GSE83917",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 160,
+      "remote_gsm": 160
+    },
+    {
+      "study": "GSE83933",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 39,
+      "remote_gsm": 39
+    },
+    {
+      "study": "GSE83944",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 48,
+      "remote_gsm": 48
+    },
+    {
+      "study": "GSE84003",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 12,
+      "remote_gsm": 12
+    },
+    {
+      "study": "GSE86829",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 15,
+      "remote_gsm": 15
+    },
+    {
+      "study": "GSE86831",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 15,
+      "remote_gsm": 15
+    },
+    {
+      "study": "GSE97687",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 10,
+      "remote_gsm": 10
+    },
+    {
+      "study": "GSE97784",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 24,
+      "remote_gsm": 24
+    },
+    {
+      "study": "GSE97853",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 8,
+      "remote_gsm": 8
+    },
+    {
+      "study": "GSE99029",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 57,
+      "remote_gsm": 57
+    },
+    {
+      "study": "GSE99036",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 32,
+      "remote_gsm": 32
+    },
+    {
+      "study": "GSE99716",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 7,
+      "remote_gsm": 7
+    },
+    {
+      "study": "GSE99755",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 67,
+      "remote_gsm": 67
+    },
+    {
+      "study": "GSE99788",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 18,
+      "remote_gsm": 18
+    },
+    {
+      "study": "GSE99863",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 257,
+      "remote_gsm": 257
+    },
+    {
+      "study": "GSE99994",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "remote_txt": 82,
+      "remote_gsm": 82
+    }
+  ],
+  "need_non_gsm_txt": [
+    {
+      "study": "CGCI-HTMCP-CC",
+      "bucket": "consortium_other",
+      "local_txt": 120,
+      "remote_txt": 120,
+      "remote_gsm": 0
+    },
+    {
+      "study": "CPTAC-3",
+      "bucket": "consortium_other",
+      "local_txt": 1998,
+      "remote_txt": 1998,
+      "remote_gsm": 0
+    },
+    {
+      "study": "E-MTAB-1274",
+      "bucket": "ArrayExpress",
+      "local_txt": 20,
+      "remote_txt": 20,
+      "remote_gsm": 0
+    },
+    {
+      "study": "E-MTAB-1866",
+      "bucket": "ArrayExpress",
+      "local_txt": 648,
+      "remote_txt": 648,
+      "remote_gsm": 0
+    },
+    {
+      "study": "E-MTAB-3161",
+      "bucket": "ArrayExpress",
+      "local_txt": 24,
+      "remote_txt": 24,
+      "remote_gsm": 0
+    },
+    {
+      "study": "E-MTAB-4059",
+      "bucket": "ArrayExpress",
+      "local_txt": 54,
+      "remote_txt": 54,
+      "remote_gsm": 0
+    },
+    {
+      "study": "E-MTAB-6421",
+      "bucket": "ArrayExpress",
+      "local_txt": 106,
+      "remote_txt": 106,
+      "remote_gsm": 0
+    },
+    {
+      "study": "E-MTAB-6988",
+      "bucket": "ArrayExpress",
+      "local_txt": 158,
+      "remote_txt": 158,
+      "remote_gsm": 0
+    },
+    {
+      "study": "ENCODE",
+      "bucket": "consortium_other",
+      "local_txt": 154,
+      "remote_txt": 154,
+      "remote_gsm": 0
+    },
+    {
+      "study": "GSE84399",
+      "bucket": "GSE",
+      "local_txt": 1,
+      "remote_txt": 1,
+      "remote_gsm": 0
+    },
+    {
+      "study": "GSE88940",
+      "bucket": "GSE",
+      "local_txt": 20,
+      "remote_txt": 20,
+      "remote_gsm": 0
+    },
+    {
+      "study": "HCMI-CMDC",
+      "bucket": "other",
+      "local_txt": 0,
+      "remote_txt": 449,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TARGET-ALL-P3",
+      "bucket": "consortium_other",
+      "local_txt": 0,
+      "remote_txt": 112,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TARGET-AML",
+      "bucket": "consortium_other",
+      "local_txt": 0,
+      "remote_txt": 197,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TARGET-NBL",
+      "bucket": "consortium_other",
+      "local_txt": 175,
+      "remote_txt": 175,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TARGET-OS",
+      "bucket": "consortium_other",
+      "local_txt": 86,
+      "remote_txt": 86,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-ACC",
+      "bucket": "TCGA",
+      "local_txt": 80,
+      "remote_txt": 80,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-BLCA",
+      "bucket": "TCGA",
+      "local_txt": 440,
+      "remote_txt": 440,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-BRCA",
+      "bucket": "TCGA",
+      "local_txt": 895,
+      "remote_txt": 895,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-CESC",
+      "bucket": "TCGA",
+      "local_txt": 312,
+      "remote_txt": 312,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-CHOL",
+      "bucket": "TCGA",
+      "local_txt": 45,
+      "remote_txt": 45,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-COAD",
+      "bucket": "TCGA",
+      "local_txt": 343,
+      "remote_txt": 343,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-DLBC",
+      "bucket": "TCGA",
+      "local_txt": 48,
+      "remote_txt": 48,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-ESCA",
+      "bucket": "TCGA",
+      "local_txt": 202,
+      "remote_txt": 202,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-GBM",
+      "bucket": "TCGA",
+      "local_txt": 155,
+      "remote_txt": 155,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-HNSC",
+      "bucket": "TCGA",
+      "local_txt": 580,
+      "remote_txt": 580,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-KICH",
+      "bucket": "TCGA",
+      "local_txt": 66,
+      "remote_txt": 66,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-KIRC",
+      "bucket": "TCGA",
+      "local_txt": 485,
+      "remote_txt": 485,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-KIRP",
+      "bucket": "TCGA",
+      "local_txt": 321,
+      "remote_txt": 321,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-LAML",
+      "bucket": "TCGA",
+      "local_txt": 194,
+      "remote_txt": 194,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-LGG",
+      "bucket": "TCGA",
+      "local_txt": 534,
+      "remote_txt": 534,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-LIHC",
+      "bucket": "TCGA",
+      "local_txt": 430,
+      "remote_txt": 430,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-LUAD",
+      "bucket": "TCGA",
+      "local_txt": 560,
+      "remote_txt": 560,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-LUSC",
+      "bucket": "TCGA",
+      "local_txt": 412,
+      "remote_txt": 412,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-MESO",
+      "bucket": "TCGA",
+      "local_txt": 87,
+      "remote_txt": 87,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-OV",
+      "bucket": "TCGA",
+      "local_txt": 10,
+      "remote_txt": 10,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-PAAD",
+      "bucket": "TCGA",
+      "local_txt": 195,
+      "remote_txt": 195,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-PCPG",
+      "bucket": "TCGA",
+      "local_txt": 187,
+      "remote_txt": 187,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-PRAD",
+      "bucket": "TCGA",
+      "local_txt": 553,
+      "remote_txt": 553,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-READ",
+      "bucket": "TCGA",
+      "local_txt": 106,
+      "remote_txt": 106,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-SARC",
+      "bucket": "TCGA",
+      "local_txt": 269,
+      "remote_txt": 269,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-SKCM",
+      "bucket": "TCGA",
+      "local_txt": 475,
+      "remote_txt": 475,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-STAD",
+      "bucket": "TCGA",
+      "local_txt": 397,
+      "remote_txt": 397,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-TGCT",
+      "bucket": "TCGA",
+      "local_txt": 156,
+      "remote_txt": 156,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-THCA",
+      "bucket": "TCGA",
+      "local_txt": 571,
+      "remote_txt": 571,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-THYM",
+      "bucket": "TCGA",
+      "local_txt": 126,
+      "remote_txt": 126,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-UCEC",
+      "bucket": "TCGA",
+      "local_txt": 485,
+      "remote_txt": 485,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-UCS",
+      "bucket": "TCGA",
+      "local_txt": 57,
+      "remote_txt": 57,
+      "remote_gsm": 0
+    },
+    {
+      "study": "TCGA-UVM",
+      "bucket": "TCGA",
+      "local_txt": 80,
+      "remote_txt": 80,
+      "remote_gsm": 0
+    }
+  ],
+  "probe_errors": [
+    {
+      "study": "GSE166067",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "error": "<urlopen error [Errno 111] Connection refused>"
+    },
+    {
+      "study": "GSE166212",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "error": "<urlopen error [Errno 111] Connection refused>"
+    },
+    {
+      "study": "GSE166503",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "error": "<urlopen error [Errno 111] Connection refused>"
+    },
+    {
+      "study": "GSE166587",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "error": "<urlopen error [Errno 111] Connection refused>"
+    },
+    {
+      "study": "GSE166844",
+      "bucket": "GSE",
+      "local_txt": 0,
+      "error": "<urlopen error [Errno 111] Connection refused>"
+    }
+  ]
+}

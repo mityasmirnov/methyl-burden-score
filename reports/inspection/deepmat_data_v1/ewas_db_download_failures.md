@@ -1,6 +1,6 @@
 # EWAS_db download failures
 
-- Generated: `2026-09-07T14:23:14Z`
+- Generated: `2026-09-09T09:32:17Z`
 - Log: `/data/projects/methyl-burden-score/artifacts/logs/downloads/ewas_datahub_EWAS_db.log`
 - EWAS_db root: `/data/projects/methyl-burden-score/data/raw/ewas_datahub/EWAS_db`
 - Studies with ≥1 logged failure: **1818**

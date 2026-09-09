@@ -38,14 +38,22 @@ download_study() {
   local dest="$TARGET/EWAS_db/${study}"
   mkdir -p "$dest"
   printf '=== EWAS_db/%s -> %s ===\n' "$study" "$dest"
-  mapfile -t files < <(list_hrefs "$root_url" | grep -Ev '/$' | grep -E '^GSM[0-9]+\.txt$' || true)
-  if [[ "${#files[@]}" -eq 0 ]]; then
-    printf 'ERROR: no files listed for %s at %s\n' "$study" "$root_url" >&2
+  mapfile -t all_files < <(list_hrefs "$root_url" | grep -Ev '/$' | grep -E '\.txt$' | grep -Ev '^\(\.\+' || true)
+  mapfile -t files < <(printf '%s\n' "${all_files[@]:-}" | grep -E '^GSM[0-9]+\.txt$' || true)
+  if [[ ${#files[@]} -eq 0 || -z "${files[0]:-}" ]]; then
+    mapfile -t files < <(printf '%s\n' "${all_files[@]:-}" | grep -Ev '^\s*$' || true)
+    if [[ ${#files[@]} -gt 0 && -n "${files[0]:-}" ]]; then
+      printf '  note: no GSM*.txt; fetching %s non-GSM sample txt\n' "${#files[@]}"
+    fi
+  fi
+  if [[ ${#files[@]} -eq 0 || -z "${files[0]:-}" ]]; then
+    printf 'ERROR: no sample .txt listed for %s at %s\n' "$study" "$root_url" >&2
     return 1
   fi
   printf 'Found %s files\n' "${#files[@]}"
   local i=0
   for f in "${files[@]}"; do
+    [[ -z "$f" ]] && continue
     i=$((i + 1))
     printf '  [%s/%s] %s\n' "$i" "${#files[@]}" "$f"
     wget -c --tries=3 --retry-connrefused --waitretry=10 --timeout=60 --read-timeout=120 -q \

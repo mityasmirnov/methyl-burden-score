@@ -8,7 +8,7 @@ SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
 CACHE_ROOT ?= $(PROJECT_ROOT)/cache
 ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
-.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build seed-atlas-gse-map fetch-geo-sample-metadata fetch-geo-sample-metadata-batch remap-geo-tissue enrich-geo-series-metadata fetch-ewas-datahub-census catalog-refresh-release summarize-ewas-db-failures retry-ewas-db-failures write-geo-next-gse-list agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info 7b-status 7b-convert-bg
+.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build seed-atlas-gse-map fetch-geo-sample-metadata fetch-geo-sample-metadata-batch remap-geo-tissue enrich-geo-series-metadata fetch-ewas-datahub-census catalog-refresh-release summarize-ewas-db-failures retry-ewas-db-failures refill-ewas-db-empty data-population-inventory write-geo-next-gse-list agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info 7b-status 7b-convert-bg
 
 help:
 	@printf '%s\n' \
@@ -31,6 +31,10 @@ help:
 	  'write-geo-next-gse-list  Rank next GEO crawl GSEs from EWAS_db' \
 	  'fetch-ewas-datahub-census  Paginate CNCB repository API → sample census Parquet' \
 	  'catalog-refresh-release  Seed Atlas map + deepmat-data-v1 + phenotype census' \
+	  'summarize-ewas-db-failures  Audit EWAS_db wget WARNs → retry manifest' \
+	  'retry-ewas-db-failures  Retry missing GSM from failure manifest' \
+	  'refill-ewas-db-empty  Refill empty EWAS_db dirs (LIST=configs/data/ewas_db_refill_empty_gse.txt)' \
+	  'data-population-inventory  Write catalog/GEO/EWAS_db coverage report' \
 	  '7b-status      Refresh + print Milestone 7B Hub matrix convert progress' \
 	  '7b-convert-bg  Background 7B convert watcher (progress docs + finalize)' \
 	  'agent-context  Print a concise context summary for coding agents' \
@@ -127,6 +131,13 @@ summarize-ewas-db-failures:
 
 retry-ewas-db-failures:
 	bash scripts/retry_ewas_db_download_failures.sh
+
+refill-ewas-db-empty:
+	bash scripts/refill_ewas_db_empty_studies.sh \
+	  $(or $(LIST),configs/data/ewas_db_refill_empty_gse.txt)
+
+data-population-inventory:
+	uv run python scripts/write_data_population_inventory.py
 
 7b-status:
 	bash scripts/status_7b_hub_matrices.sh
