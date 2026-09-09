@@ -752,3 +752,11 @@ bypass it.
   shared `φ/ρ`, keep all genes, sample CpGs *within* gene, canonical
   present-mask — do **not** dense-load 482k. Product cascade OOF = that
   panel; queued 65k cascade 5×6 remains a matched-budget arm comparison.
+- 2026-09-09: **GPU 0 occupied by 12b probes** (not free after 10e). N-light
+  dense full-width smoke (`max_loci: null`) in flight; takeover waiter queues
+  CpGPT 65k N-light ablation and kills the wrapper before cascade full-width
+  (cascade `int(max_loci)` cannot take `null` yet). Product 12b recipe
+  (sampler + minibatch gather) still unbuilt — dense smoke is gene-count
+  go/no-go only. Docs inventory updated: within-gene invariance (not
+  coordinate dependence); two-axis DeepRVAT batching; optional M11 gene-panel
+  fork. See `milestone-12b-full-gene-panel.md` § inventory / §2b / §2c / §3.

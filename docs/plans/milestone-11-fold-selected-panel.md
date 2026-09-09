@@ -38,6 +38,12 @@ on that same panel (`N-cascade-S`, light-on-S), optional fusion ablations, and
 
 **Does not block:** Milestone **12** (gene-linked finalist OOF).
 
+**12b gene-set option:** a fold-selected gene list (this milestone / ADR 0012:
+discovery CpGs → seed genes → all linked CpGs of those genes) is a valid
+DeepRVAT-style training-set alternative to “all ~19.6k represented genes” in
+[`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md) §2c.
+Still deferred; still not a gate on the 65k Milestone **12** 5×6.
+
 ## Arm matrix (identical panel per fold)
 
 From [`configs/experiment/stage0_7g_prime_stage_b.yaml`](../../configs/experiment/stage0_7g_prime_stage_b.yaml):

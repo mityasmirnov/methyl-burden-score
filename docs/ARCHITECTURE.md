@@ -123,10 +123,15 @@ Stage B; gene-only runs then restrict packed edges to `gene_cols`.
 
 **That prefix is a compute cap, not the product genome.** Current N-light
 OOF therefore sees ~2.6k genes. Expanding to the full gene-linked matrix
-(~19.6k genes, 374k columns) must **not** dense-load 482k loci; use the
-DeepRVAT-style within-gene CpG sampler in
-[`plans/milestone-12b-full-gene-panel.md`](plans/milestone-12b-full-gene-panel.md).
-Encoder `φ`/`ρ` stay gene-ID-free; the linear/enet readout does not.
+(~19.6k genes, 374k columns) must **not** dense-load 482k loci. Today both
+`loop.py` and `cascade_loop.py` still do `betas[:, :n_cols]` into RAM — that
+is the path Milestone **12b** must replace with a DeepRVAT-style within-gene
+CpG sampler + minibatch row×column gather
+([`plans/milestone-12b-full-gene-panel.md`](plans/milestone-12b-full-gene-panel.md)).
+The sampler is **unbuilt**; dense full-width / CpGPT smokes are probes only.
+Encoder `φ`/`ρ` stay gene-ID-free (within-gene permutation/cardinality
+invariant; no coordinate in the forward pass); the linear/enet readout does
+not.
 
 ### Compute: use GPU for real training
 

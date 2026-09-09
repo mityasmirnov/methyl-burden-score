@@ -90,3 +90,24 @@ Narrative: [ADR 0007](../adr/0007-crossfit-prerequisites.md),
 [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md)
 (full gene-linked ~20k-gene sampler; cascade OOF on that graph). Expression
 continue/finetune remains Milestone **13**.
+
+## Completeness gate (added 2026-09-08)
+
+Neither `run_12_nlight_oof.py` nor `run_12_cascade_oof.py` validated, before
+declaring the campaign done, that all `folds x 6 restarts` jobs actually have
+*valid* (present AND finite) primary metrics -- an existing `metrics.json`
+was treated as "completed" even if its nested-enet subprocess (run with
+`check=False`) failed silently. `scripts/check_12_oof_completeness.py` is the
+missing read-only gate: run it against a run-prefix before reporting a 5x6 as
+finished. Also documented (not yet fixed, doesn't need to be): checkpoint
+*selection* uses `validation_tissue_macro_f1_then_age_mae`, computed before
+nested enet ever runs -- `primary_evaluation: mbs_enet_nested` describes the
+reported readout, not what picked the checkpoint. See the NOTE comments in
+both `stage0_12_nlight_oof.yaml` and `stage0_12_cascade_oof.yaml`.
+
+**12b:** product recipe (within-gene CpG sampler + minibatch gather) is still
+`pending` and correctly sequenced *after* this 5×6. **Probes started** on
+GPU 0 (dense full-width N-light smoke; CpGPT 65k N-light ablation queued) —
+do not treat those as recipe acceptance. See inventory in
+[`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md).
+Does not block the in-flight N-light run or a 65k-matched cascade comparison.

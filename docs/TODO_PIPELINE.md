@@ -32,7 +32,7 @@ On-disk `stage0_7g_*` / `run_7g_*` / `stage0_7h_*` IDs stay unchanged.
   10e        done      S1–S4 1-fold smoke negative vs P2-G; no staged 3-fold
 11           deferred fold-selected panel Stage B — parallel, not a hard gate on 12
 12           in_prog  N-light 5×6 = HM450 65k-prefix validation (not 20k-gene product)
-  12b        pending  full-graph ~20k-gene DeepRVAT sampler; cascade OOF should use this
+  12b        pending  product recipe (sampler) not built; probes started on GPU0
 13           deferred expression aux after OOF
 14           deferred optional a–f
 ```
@@ -44,8 +44,11 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
 
 ### Next steps (ordered)
 
-**GPU-2 policy:** exclusive N-light 5×6 (`batch_size=1024`, ~87 GB). GPU 0:
-free after 10e smoke. Milestone **11** Stage B GPU is optional / parallel.
+**GPU-2 policy:** exclusive N-light 5×6 (`batch_size=1024`, ~87 GB). **GPU 0:**
+occupied by 12b probes (N-light full-width gene-expansion smoke → CpGPT 65k
+N-light ablation via takeover waiter; cascade full-width deferred /
+currently unlaunchable with `max_loci: null`). Milestone **11** Stage B GPU
+is optional / parallel.
 
 **Priority:**
 
@@ -57,17 +60,26 @@ free after 10e smoke. Milestone **11** Stage B GPU is optional / parallel.
 6. **NOW — Milestone 12 N-light 5×6** on GPU 2: **HM450 65k-prefix
    gene-linked validation** (~2.6k genes), not the ~20k-gene product.
    `f0-r0` in flight (30-ep + n>200 aux). Product readout `mbs_enet_nested`.
-7. **After this 5×6:** [`plans/milestone-12b-full-gene-panel.md`](plans/milestone-12b-full-gene-panel.md)
-   — gene-linked columns from the **full** 482k matrix (~19.6k genes),
-   within-gene CpG sampling, canonical present-mask. **Cascade 5×6 should
-   use that graph**, not another 65k prefix.
+7. **After this 5×6 (three distinct tracks — do not conflate):**
+   - **65k validation complete** → report with completeness gate
+     (`scripts/check_12_oof_completeness.py`); optional 65k-matched cascade
+     5×6 is architecture comparison only.
+   - **12b product recipe** (still `pending`): within-gene CpG sampler +
+     minibatch column gather — **not** the in-flight dense `max_loci: null`
+     smoke. See [`plans/milestone-12b-full-gene-panel.md`](plans/milestone-12b-full-gene-panel.md).
+     Cascade **product** OOF should use that graph, not another 65k prefix.
+   - **Optional gene-set fork:** Milestone **11** fold-selected genes
+     (DeepRVAT gene-panel style) vs all ~19.6k represented genes — pick later;
+     both stay gene-invariant.
 8. **CPU:** P2-G nested enet **3/3 folds** — MBS **0.335 / 9.81 / 0.759**;
    RBS tissue similar, age MAE **19.8** (overfits; more features).
 9. ~~**Pack-level freeze-reuse**~~ — cancer AUROC **0.954**; Alzheimer’s **0.838**;
    broad disease **0.586**; cancer subtype macro-F1 **0.202**; BMI not useful.
 10. ~~**10e S1–S4 1-fold smoke**~~ — **done, negative**. Cascade = native P2-G
     on the **12b** panel if launched.
-11. **Deferred post-OOF:** CpGPT/positional, sex-chr imputation, clock age imputation.
+11. **12b probes (GPU 0, not the product recipe):** N-light dense full-width
+    smoke (`max_loci: null`); CpGPT 65k N-light ablation queued after it.
+    CpGPT/positional as *product* default remains post-recipe.
 
 **Still blocked auto:** cascade 5×6, pack-mask trait heads, blood/brain heads,
 mixing EPIC/ONT into this HM450 OOF.
@@ -950,6 +962,11 @@ explicitly scheduled, is **native P2-G** (10e staged recipe rejected).
 - **Runner:** `scripts/run_7g_prime_stage_b.py`
 - **Role after Milestone 10:** sparsity / fold-safe **panel product** and classical
   `C-mvalue-enetS` comparator — **not** architecture selection (that locked in **10**).
+- **12b gene-set option:** a fold-selected gene list (ADR 0012: discovery CpGs →
+  seed genes → all linked CpGs of those genes) is a valid DeepRVAT-style
+  training-set alternative to “all ~19.6k represented genes” in
+  [`plans/milestone-12b-full-gene-panel.md`](plans/milestone-12b-full-gene-panel.md).
+  Still deferred; still not a gate on the 65k Milestone **12** 5×6.
 - **CPU prep:** `--panels-only` / `--classical-only` / `--folds` may continue anytime;
   orphan census under
   `reports/inspection/stage0_7g_prime_matched_probe/orphan_rbs_census.md`.
@@ -1001,14 +1018,25 @@ explicitly scheduled, is **native P2-G** (10e staged recipe rejected).
 
 ## 12b. Full-graph gene panel (DeepRVAT-style)
 
-- **Status:** `pending` — **after** the 65k N-light 5×6 finishes
+- **Status:** `pending` for the **product recipe** (sampler / minibatch gather).
+  Probes started on GPU 0 — do **not** mark this milestone `in_progress` or
+  `done` for scaffolding / dense smokes alone.
 - **Plan:** [`plans/milestone-12b-full-gene-panel.md`](plans/milestone-12b-full-gene-panel.md)
-- **Intent:** train/score **all graph genes** (~19.6k with HM450 links; 19 937
-  in `genes.parquet`) without loading the 482k dense prefix. Shared `φ`/`ρ`,
-  sample batches, **within-gene CpG sampling**, canonical present-mask.
+- **Intent:** train/score graph genes (~19.6k with HM450 links; 19 937 in
+  `genes.parquet`) with shared `φ`/`ρ`, **within-gene CpG sampling**, canonical
+  present-mask, and DeepRVAT-style **two-axis** minibatch gather — **without**
+  dense-loading `[n_samples, n_universe]`. Optional gene-set fork: all
+  represented genes vs Milestone **11** fold-selected genes.
+- **Probes (started, not the recipe):**
+  - N-light dense full-width smoke (`max_loci: null`) — go/no-go on gene count
+    under the old loader; sustained val_loss climb noted in session logs.
+  - CpGPT 65k N-light ablation (N-light `static_dim` plumbing only) — queued
+    after the dense smoke via takeover waiter; cascade full-width deferred
+    (`cascade_loop` `int(max_loci)` cannot take `null` yet).
 - **Cascade OOF:** product-scale = this panel (native P2-G). A 65k-matched
   cascade 5×6 (queued vs N-light) is architecture comparison only, not 12b.
-- **Hard stop:** do not retarget the in-flight 65k 5×6 to 12b.
+- **Hard stop:** do not retarget the in-flight 65k 5×6 to 12b; do not treat
+  the dense `max_loci: null` smoke as 12b acceptance.
 
 ---
 

@@ -2,7 +2,7 @@
 
 > **Alias:** historical **7H**. Index: [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
 
-**Status:** `in_progress` (GPU 2 N-light OOF; GPU 0 free after 10e smoke)
+**Status:** `in_progress` (GPU 2 N-light OOF; GPU 0 on 12b probes)
 
 Authoritative running log:
 [`milestone-7h-pretrained-mbs-rbs-campaign.md`](milestone-7h-pretrained-mbs-rbs-campaign.md).
@@ -23,7 +23,8 @@ Latest architecture-decision detail:
 | **10c** | **done** | Cancer pack **0.954**; Alzheimer’s **0.838**; subtype macro-F1 **0.202**; BMI not useful |
 | **10d** | pending | Reference checkpoints after native P2-G + enet readout |
 | **10e** | **done (negative)** | S1–S4 1-fold loses to native P2-G; staged recipe not promoted — see [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md) |
-| deferred | post-OOF | CpGPT/positional embeddings, sex-chromosome sex imputation, epigenetic-clock age imputation — explicitly after Milestone 12 |
+| deferred | post-recipe | Sex-chromosome sex imputation, epigenetic-clock age imputation — after Milestone 12 / 12b recipe |
+| **12b probe** | **queued GPU0** | CpGPT 65k N-light ablation (`stage0_12b_cpgpt_nlight_smoke`) — isolated probe after dense gene-expansion smoke; **not** “strictly after Milestone 12” and **not** the 12b product recipe |
 
 ## Priority rationale
 
