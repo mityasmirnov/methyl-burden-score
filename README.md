@@ -13,14 +13,21 @@ checks). Authoritative progress:
 Milestone numbers (8, 9, 10, …):
 [`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md).
 
-**Current gate (2026-09-08):** **Milestone 12 N-light 5×6** is running on GPU 2
-(f0-r0, batch 1024). Product readout is frozen nested enet, not joint `mbs_e2e`.
-Cascade 5×6 still waits on **10e** S1–S4 (GPU 0 smoke). Fold-selected panel
-(**Milestone 11**) is **deferred parallel**. Expression is **Milestone 13**.
+**Current gate (2026-09-09):** **Milestone 12 N-light 5×6** is **NOW** (GPU 2;
+HM450 **65k-prefix** validation, ~2.6k genes — not the ~20k-gene product).
+Product readout: frozen nested enet (`mbs_enet_nested`), not joint `mbs_e2e`.
+
+**After N-light — GATE G1–G4 blocks cascade OOF:** (G1) DeepRVAT gene
+utilization / optional Milestone **11** panel; (G2) CpGPT/positional probe;
+(G3) platform robustness ([`12c`](docs/plans/milestone-12c-platform-robustness.md));
+(G4) fair **10e** S1→S2→S3→S4 + **10d** checkpoint. Then cascade 5×6 on the
+G1 panel (native **P2-G** unless 10e flips it). Expression is **Milestone 13**.
+Checklist: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
 
 Programme docs: [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md),
 [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md),
 [`docs/plans/milestone-10-pretrained-mbs-rbs.md`](docs/plans/milestone-10-pretrained-mbs-rbs.md),
+[`docs/plans/milestone-12b-full-gene-panel.md`](docs/plans/milestone-12b-full-gene-panel.md),
 [`docs/plans/milestone-9-gene-only-architecture.md`](docs/plans/milestone-9-gene-only-architecture.md).
 ADRs: [0002](docs/adr/0002-ewas-datahub-primary-source.md) (Hub primary),
 [0007](docs/adr/0007-crossfit-prerequisites.md) (OOF = Milestone **12**),
@@ -38,8 +45,8 @@ Do **not** retrain frozen **deepMAT-flat-v0.1** / **hierarchical-v0.1**.
 3. CpGs are organized into biologically typed regions before gene-level
    aggregation (**RBS → gene MBS**); leftover CpGs stay **direct** ([ADR 0009](docs/adr/0009-drop-tbs-scores.md) — **no tile/TBS scores**).
 4. Every reported training-sample score is obtained by study-grouped
-   cross-fitting (Milestone **12**; N-light arm first, cascade after **10e**;
-   **11** is parallel, not a hard gate).
+   cross-fitting (Milestone **12**; N-light 65k first; cascade only after
+   GATE G1–G4; Milestone **11** is a G1 gene-set option, not a block on N-light).
 
 ## Stage 0 scope
 
@@ -52,10 +59,12 @@ Stage 0 implements:
 - flat CpG-to-gene Deep Set and hierarchical residual-path baselines (v0.1 freezes);
 - **RBS → gene cascade + direct leftover** topology (**7F**; no TBS);
 - gene-only architecture selection on `explicit_only` (**Milestone 9** — done);
-- pretrained / nine-pack scale campaign (**Milestone 10** — current);
-- fold-selected panel + full model (**Milestone 11** — deferred parallel);
-- study-grouped OOF cross-fitting (**Milestone 12** — N-light 5×6 in progress;
-  cascade still gated on 10e);
+- pretrained / nine-pack scale campaign (**Milestone 10** — topology locked;
+  **10e**/**10d** remain GATE G4);
+- fold-selected panel (**Milestone 11** — G1 gene-set option; not a block on
+  N-light 65k);
+- study-grouped OOF (**Milestone 12** — N-light 5×6 **NOW**; cascade blocked on
+  GATE G1–G4: 12b gene util, CpGPT, 12c platform, fair 10e+10d);
 - expression continue-train / finetune after OOF (**Milestone 13** — deferred;
   download expression data first);
 - static CpGPT sequence-adapter features exported offline;
@@ -204,8 +213,10 @@ Never committed:
 
 ## Status
 
-Milestones **1–7G′ Stage A** are done. Authoritative checklist:
-[`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
+Milestones **1–9** (through gene-only Stage A) are done; **10** topology is
+locked (P2-G + N-light@64). Authoritative checklist:
+[`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md)
+([`MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md)).
 
 | Done | What shipped |
 |------|----------------|
@@ -214,8 +225,8 @@ Milestones **1–7G′ Stage A** are done. Authoritative checklist:
 | Flat / hier deepMAT v0.1 | Frozen phenotype baselines (do not overwrite) |
 | 7A–7E′ | Release + census; architecture corrections; Level-1 MAD; 3×2 CV; Hub multitask hygiene |
 | **7F** | RBS→gene cascade + direct leftover; **no TBS** ([ADR 0009](docs/adr/0009-drop-tbs-scores.md)) |
-| **7G** | Methylation-only full eval; classical vs cascade on ATS folds |
-| **7G′ Stage A** | Gene-only `explicit_only` panel; test-only `mbs_e2e`; DeepRVAT screen (pooling / vector / one-hop / annotations) |
+| **8** / **9** | Methylation-only eval; gene-only `explicit_only` + DeepRVAT screen |
+| **10a–10c** | Nine-pack P2-G lock; N-light@64; warms; freeze-reuse (cancer AUROC 0.954) |
 
 **Trustworthy Stage A numbers** (`explicit_only`, test split):
 
@@ -223,15 +234,16 @@ Milestones **1–7G′ Stage A** are done. Authoritative checklist:
 |-----|----------------:|-------|
 | `C-mvalue-enet-G` | **0.388** | Classical leader on same 51 375 CpGs |
 | `P2-G` `mbs_enet` | 0.385 | Frozen MBS + elastic-net heads |
-| `P2-G` `mbs_e2e` | **0.373** | **Locked cascade** (max/max, 15 ep) |
+| `P2-G` `mbs_e2e` | **0.373** | **Locked cascade topology** (max/max, 15 ep) |
 | Screen / one-hop | ≤0.359 / ~0.12 | No Tier-2 promote; prefer M-only annotations |
 
-Report:
-[`reports/inspection/stage0_7g_gene_only_probe/analysis.md`](reports/inspection/stage0_7g_gene_only_probe/analysis.md).
+Nine-pack N-light@64 nested enet 3-fold: **0.368 / 9.88 / 0.803**. Reports:
+[`reports/inspection/stage0_7g_gene_only_probe/analysis.md`](reports/inspection/stage0_7g_gene_only_probe/analysis.md),
+[`reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
 
-**Next — 7G′ Stage B GPU:** fold-safe `C-mvalue-enetS`, `N-cascade-S`,
-`N-light-type`, post-hoc fusion arms, `direct_cpg.zarr`. Runner:
-`scripts/run_7g_prime_stage_b.py`. Milestone **7** OOF starts only after Stage B.
+**NOW → GATE → THEN:** finish N-light 65k 5×6 → GATE G1–G4 (12b / CpGPT /
+12c / fair 10e+10d) → cascade 5×6 on the G1 panel. Do **not** auto-launch
+cascade. Expression = Milestone **13**.
 
 Public model name remains **deepMAT**; package/CLI stay `mbs` /
 `methyl-burden-score`.
