@@ -1,10 +1,24 @@
-# 12b. Full-graph gene panel (DeepRVAT-style) — after 65k OOF
+# 12b. Full-graph gene panel (DeepRVAT-style) — GATE G1
 
 > **Status:** `pending` for the **product recipe** (sampler / minibatch gather).
-> Probes started on GPU 0 — do **not** mark this milestone done for dense
-> smokes or CpGPT plumbing alone. Do **not** change the in-flight N-light 5×6.
+> **GATE G1** — blocks product cascade. Probes started on GPU 0 — do **not**
+> mark this milestone done for dense smokes or CpGPT plumbing alone. Do **not**
+> change the in-flight N-light 5×6.
 > Parent: [`milestone-12-final-oof.md`](milestone-12-final-oof.md).
 > Index: [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
+
+## Question / Approaches / Results / Verdict
+
+- **Question:** Can we train/score ~19.6k (or Milestone **11** fold-selected)
+  gene MBS with shared `φ`/`ρ`, within-gene CpG sampling, and minibatch
+  row×column gather — without dense-loading `[n_samples, n_universe]` — and
+  does that beat 65k-prefix nested enet?
+- **Approaches tested / in flight:** dense full-width N-light smoke
+  (`max_loci: null`, anti-pattern); CpGPT 65k N-light ablation (**GATE G2**
+  probe); product sampler/gather **not started**; all-genes vs M11 gene-set
+  smoke **not started**.
+- **Results:** `pending` (dense smoke val_loss climb noted in session logs).
+- **Verdict:** open — dense/CpGPT probes ≠ G1 acceptance.
 
 **Key conclusion:** the encoder is **weight-shared across genes**, but the
 current experiment is **not** a whole-genome or cross-platform model. It is an
@@ -13,9 +27,9 @@ architecture *can* be applied to unseen genes; that generalization has **not**
 been demonstrated.
 
 The running N-light 5×6 is an **HM450 representation-validation run**, not the
-final ~20k-gene deepMAT product. Cascade 5×6, if launched, should **not** copy
-the 65k prefix by default — it should follow this plan (full gene-linked graph
-+ within-gene CpG sampling).
+final ~20k-gene deepMAT product. Cascade 5×6, if launched after GATE G1–G4,
+should **not** copy the 65k prefix — it should follow this plan (G1 panel +
+within-gene CpG sampling).
 
 ## Implemented vs not (inventory, 2026-09-09)
 
@@ -29,7 +43,7 @@ the 65k prefix by default — it should follow this plan (full gene-linked graph
 | Within-gene CpG sampler (`max_cpgs_per_gene`) | **Not started** |
 | Minibatch row×column gather (no dense preload) | **Not started** — both trainers still `betas[:, :n_cols]` |
 | Canonical ~20k-gene present-mask training index | **Not started** |
-| Role-gated embeddings / platform dropout / ONT adapter / gene-holdout | **Not started** (post-5×6) |
+| Role-gated embeddings / platform dropout / ONT adapter / gene-holdout | **Not started** — platform dropout is **12c / G3**; rest post-GATE |
 | N-light dense full-width smoke (`max_loci: null`) | **Probe running** — not the recipe |
 | Cascade full-width smoke YAML | **Unlaunchable** — `cascade_loop` does `int(max_loci)`; `null` → `TypeError` |
 | CpGPT 65k N-light ablation | **Queued** after dense smoke (takeover waiter) |

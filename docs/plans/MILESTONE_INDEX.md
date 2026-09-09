@@ -27,13 +27,18 @@ are **historical aliases** — do not rename on-disk run trees.
 | **10a++** | done | One-hop seed-mask + multi-seed smokes | 7H correctness |
 | **10b** | done | ATS seed-43 pooling | 7H Track B |
 | **10c** | **done** (pack-level) | Freeze-reuse cancer/disease/BMI probes | 7H Track C |
-| **10d** | pending | Reference checkpoint(s) after staged recipe + enet | 7H Track D / Phase 4 |
-| **10e** | **done (negative)** | S1–S4 1-fold smoke loses to native P2-G; no staged 3-fold | pre-OOF recipe |
-| **11** | deferred | Fold-selected panel Stage B (**parallel; does not block 12**) | **7G′ Stage B** |
-| **12** | **in_progress** | N-light 5×6 GPU2 (HM450 **65k-prefix** validation; 30-ep + n>200) | historical **Milestone 7** |
-| **12b** | pending | Full-graph ~20k-gene panel — **recipe** (sampler/gather) pending; **probes** started (dense smoke + CpGPT); cascade product OOF should use this | after 12 65k OOF |
+| **10d** | pending | Reference checkpoint(s) — **GATE G4** after fair 10e + OOF | 7H Track D / Phase 4 |
+| **10e** | **in_progress / reopen** | Fair S1→S2→S3→S4 smoke — truncated ≠ reject; **GATE G4** | pre-OOF recipe |
+| **11** | pending (G1) | Fold-selected panel — in scope for **GATE G1** gene-set; does not block N-light 65k | **7G′ Stage B** |
+| **12** | **in_progress ← NOW** | N-light 5×6 GPU2 (HM450 **65k-prefix** validation) | historical **Milestone 7** |
+| **GATE** | pending | Post–N-light G1–G4 **blocks cascade OOF** | see TODO_PIPELINE |
+| **12b** | pending | Gene utilization (**GATE G1**) — DeepRVAT sampler; probes ≠ recipe | after 12 65k OOF |
+| **12c** | pending | Platform robustness (**GATE G3**) — CpG/platform-mask dropout; EPIC later | after 12 65k OOF |
 | **13** | deferred | Expression aux (continue/finetune **after** OOF; download first) | **7G″** |
 | **14** | deferred | Optional Stage 1+ layers (a–f only) | historical **§8 Optional** |
+
+**G2** (positional / CpGPT probe) lives under 12b probe host + TODO gate table;
+no separate milestone number.
 
 ## Plan file aliases
 
@@ -42,10 +47,11 @@ are **historical aliases** — do not rename on-disk run trees.
 | [`milestone-8-methylation-eval.md`](milestone-8-methylation-eval.md) | `milestone-7g-methylation-eval.md` + tissue probe |
 | [`milestone-9-gene-only-architecture.md`](milestone-9-gene-only-architecture.md) | `milestone-7g-prime-*.md` family |
 | [`milestone-10-pretrained-mbs-rbs.md`](milestone-10-pretrained-mbs-rbs.md) | `milestone-7h-pretrained-mbs-rbs-campaign.md` |
-| [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md) | pre-OOF staged recipe (gates cascade 12; N-light unblocked) |
-| [`milestone-11-fold-selected-panel.md`](milestone-11-fold-selected-panel.md) | Stage B sections of `milestone-7g-prime-matched-probe-lightweight.md` |
+| [`milestone-10e-staged-rbs-mbs-training.md`](milestone-10e-staged-rbs-mbs-training.md) | GATE G4 staged recipe (N-light unblocked) |
+| [`milestone-11-fold-selected-panel.md`](milestone-11-fold-selected-panel.md) | Stage B; G1 gene-set option |
 | [`milestone-12-final-oof.md`](milestone-12-final-oof.md) | ADR 0007 + programme § final OOF |
-| [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md) | expand beyond 65k prefix; ~20k genes; probes vs recipe inventory |
+| [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md) | GATE G1 gene utilization |
+| [`milestone-12c-platform-robustness.md`](milestone-12c-platform-robustness.md) | GATE G3 platform dropout / EPIC path |
 | [`milestone-13-expression-auxiliary.md`](milestone-13-expression-auxiliary.md) | `milestone-7g-double-prime-expression-auxiliary.md` (+ download) |
 
 Legacy redirects (old numbers):

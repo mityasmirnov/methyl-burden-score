@@ -1,14 +1,20 @@
 # Pre-OOF training recipe: staged RBS → MBS + frozen-feature heads
 
-> **Status:** `done` — **negative** (2026-09-08). 1-fold S1–S4 smoke loses to
-> native P2-G; **do not** promote staged recipe to 3-fold / cascade OOF.
-> Cascade finalist remains **native P2-G scalar max/max**. **N-light 5×6**
-> OOF is running on GPU 2 (30-ep + n>200 aux).
+> **Status:** `incomplete` / **reopen** — **GATE G4**. The labeled “S1–S4” job
+> was a **truncated smoke** (S1 fold-0 dense mean/mean → vector max/max LP-FT).
+> **S2 (freeze + scalarize, no gene hop) never ran.** That truncated job
+> loses to native P2-G fold-0 (e2e **0.300** vs **0.364**) and is weak
+> negative evidence against the *naive transplant*, **not** a closed reject
+> of the full S1→S2→S3→S4 recipe. Correct 1-fold re-test required before
+> promoting or rejecting staged training. Cascade default stays **native
+> P2-G** until that smoke finishes; cascade launch also waits on GATE G1–G3.
+> **N-light 5×6** owns GPU 2 (30-ep + n>200 aux); run the fair smoke off GPU 2.
 >
 > Parent: [`milestone-10-pretrained-mbs-rbs.md`](milestone-10-pretrained-mbs-rbs.md).
 > Evidence: [`../../reports/inspection/stage0_7h_nine_pack_smoke/vector_vs_scalar.md`](../../reports/inspection/stage0_7h_nine_pack_smoke/vector_vs_scalar.md),
 > ATS table in [`../TODO_PIPELINE.md`](../TODO_PIPELINE.md),
-> [`../../reports/inspection/stage0_7g_gene_only_probe/analysis.md`](../../reports/inspection/stage0_7g_gene_only_probe/analysis.md).
+> [`../../reports/inspection/stage0_7g_gene_only_probe/analysis.md`](../../reports/inspection/stage0_7g_gene_only_probe/analysis.md),
+> live board [`../../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](../../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
 
 ## Why joint e2e is the wrong OOF recipe
 
@@ -144,11 +150,13 @@ n>200 disease/cancer aux heads (val disease ~0.76 / cancer ~0.85). 16-ep
 plumbing archived (nested **0.300 / 8.63 / 0.880**). Split
 `hub-nine-pack-5fold-v1`. Runner: `scripts/run_12_nlight_oof.sh`.
 
-**Cascade 5×6 (recipe decided):**
+**Cascade 5×6 (recipe still gated on fair 10e):**
 
 1. Dense S1 **fold 0 done** (queue stopped mid fold 1 to free GPU 2).
 2. P2-G nested enet **3/3** (MBS **0.335 / 9.81 / 0.759**; RBS age 19.8).
-3. 1-fold **S1–S4 smoke done — negative**. **No staged 3-fold.** Native P2-G
-   65k 5×6 = matched comparison to N-light; **product cascade = 12b**
-   ([`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md)).
+3. Truncated 1-fold smoke (S2 skipped) **negative vs P2-G** — does **not**
+   close the full recipe. Correct S1→S2→S3→S4 fold-0 smoke must finish
+   before 3-fold staged or locking “staged worse than P2-G.” Until then,
+   native P2-G 65k 5×6 = matched comparison to N-light; **product cascade
+   = 12b** ([`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md)).
 4. Pack-level freeze-reuse **done** (cancer strong; AD 0.838; broad disease modest).

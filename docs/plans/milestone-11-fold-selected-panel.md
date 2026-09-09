@@ -2,7 +2,9 @@
 
 > **Alias:** historical **7G′ Stage B**. Index: [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
 
-**Status:** `deferred` (parallel / optional — **does not hard-block Milestone 12**)
+**Status:** `pending` for **GATE G1** gene-set decision (CPU prep anytime;
+full Stage B GPU still scheduled explicitly). Does **not** hard-block
+Milestone **12 N-light 65k**; **is in scope before product cascade**.
 
 Parent brief:
 [`milestone-7g-prime-matched-probe-lightweight.md`](milestone-7g-prime-matched-probe-lightweight.md)
@@ -12,11 +14,23 @@ Related: [`milestone-7h-fold-safe-probe-panel-benchmark.md`](milestone-7h-fold-s
 
 **Runner:** `scripts/run_7g_prime_stage_b.py`
 
-## Policy (2026-09-08)
+## Question / Approaches / Results / Verdict
+
+- **Question:** As a DeepRVAT-style gene panel, does fold-selected genes
+  (ADR 0012) match or beat “all ~19.6k represented genes” under nested enet
+  for product cascade?
+- **Approaches tested:** Stage B panel/classical runners exist; G1 comparison
+  smoke vs 12b all-genes **not run**.
+- **Results:** `pending` (G1).
+- **Verdict:** open for G1; not an architecture re-lock (P2-G + N-light@64
+  locked in **10**).
+
+## Policy (2026-09-09)
 
 Milestone **10** locked the architecture finalists (**P2-G** cascade +
-**N-light@64**). Milestone **11** is no longer the architecture gate and **no
-longer blocks** Milestone **12** finalist OOF on the gene-linked path.
+**N-light@64**). Milestone **11** does **not** block **N-light 65k** OOF.
+It **does** participate in **GATE G1** gene-set choice before product cascade
+(see [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md) §2c).
 
 **11 remains valuable** as a **sparsity / fold-safe panel product** track:
 classical `C-mvalue-enetS` on outer-train-selected loci, plus finalists retrained
@@ -35,14 +49,15 @@ on that same panel (`N-cascade-S`, light-on-S), optional fusion ablations, and
 - Matched `C-mvalue-enetS` / finalist-on-S (`N-cascade-S`, light) / optional fusion
 - `direct_cpg.zarr` when direct loci exist (`n_direct > 0`)
 - Report under `reports/inspection/stage0_7g_prime_matched_probe/`
+- For **G1**: written gene-set verdict (adopt M11 panel vs all represented genes)
 
-**Does not block:** Milestone **12** (gene-linked finalist OOF).
+**Does not block:** Milestone **12 N-light** 65k validation.
 
 **12b gene-set option:** a fold-selected gene list (this milestone / ADR 0012:
 discovery CpGs → seed genes → all linked CpGs of those genes) is a valid
 DeepRVAT-style training-set alternative to “all ~19.6k represented genes” in
 [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md) §2c.
-Still deferred; still not a gate on the 65k Milestone **12** 5×6.
+Still deferred for implementation; in scope for GATE G1 before product cascade.
 
 ## Arm matrix (identical panel per fold)
 
@@ -65,10 +80,10 @@ Panel: `max_seeds: 10000`, split `hub-ats-7e-3fold-v1`, matrix
 # Write fold_panels only (CPU dry-run may use --panel-repeats 1; production: 5)
 uv run python -u scripts/run_7g_prime_stage_b.py --device cpu --panels-only --folds 0 --panel-repeats 1
 
-# Classical enetS after panels exist
-uv run python -u scripts/run_7g_prime_stage_b.py --device cpu --classical-only --folds 0
+# Classical enetS after panels exist (partial --folds merges into existing JSON)
+uv run python -u scripts/run_7g_prime_stage_b.py --device cpu --classical-only --folds 0,1,2
 
-# Or: wait for fold-0 panel, then classical + folds 1–2 (BLAS threads capped)
+# Or: wait for fold-0 panel → panels 1–2 → classical all folds (BLAS threads capped)
 PANEL_REPEATS=1 bash scripts/run_stage_b_cpu_chain.sh
 ```
 
@@ -78,10 +93,11 @@ Stability selection univariate-prefilters to **4096** columns before the enet
 grid (same screen as gene-seed panels); meta records `n_cols_after_prefilter`.
 
 `--panels-only` and `--classical-only` are mutually exclusive. Panels-only
-writes `fold_panels/manifest.json` and does **not** regenerate the full Stage B
-report. Classical-only loads existing `fold_*_panel.json` and writes
-`per_arm/C-mvalue-enetS.json`. `--panel-repeats` sets stability-selection
-repeats (default 5; dry-run `1` is recorded in the panel JSON/manifest).
+writes `fold_panels/manifest.json` (merges fold rows on re-run) and does **not**
+regenerate the full Stage B report. Classical-only loads existing
+`fold_*_panel.json` and writes `per_arm/C-mvalue-enetS.json` (merges fold rows).
+`--panel-repeats` sets stability-selection repeats (default 5; dry-run `1` is
+recorded in the panel JSON/manifest).
 Lock input:
 `reports/inspection/stage0_7g_gene_only_probe/lock_recommendation.json`
 (update when promoting: cascade finalist **P2-G**, light **N-light@64**,

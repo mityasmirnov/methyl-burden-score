@@ -6,13 +6,26 @@
 > **Renumber note (2026-09-07):** previously stubbed as Milestone **13**;
 > expression auxiliary is now **13** (after OOF).
 
-**Status:** **N-light arm `in_progress`** — GPU 2 **running** at **30 epochs**
-with n>200 disease/cancer aux heads (`f0-r0` ~ep **20/30**, 1/30; val
-disease ~0.76 / cancer ~0.85). 16-ep plumbing archived as
-`stage0-12-nlight-oof-ep16-f0-r0` (nested **0.300 / 8.63 / 0.880**; e2e
-0.286 / 17.74 / 0.748). **Cascade arm:** 10e staged S1–S4 smoke **negative** —
-if launched, use **native P2-G** (not staged). P2-G nested **3/3**.
-**Does not wait on Milestone 11.**
+**Status:** **N-light arm `in_progress` ← NOW** — GPU 2 **running** at **30
+epochs** with n>200 disease/cancer aux. 16-ep plumbing archived
+(`stage0-12-nlight-oof-ep16-f0-r0`; nested **0.300 / 8.63 / 0.880**).
+
+**Question:** Under nested enet, does N-light@64 hold on study-grouped 5×6 at
+the **65k-prefix** HM450 panel?
+
+**Approaches tested:** `stage0_12_nlight_oof.yaml` / `run_12_nlight_oof.sh`;
+30-ep + n>200 aux; product readout `mbs_enet_nested`.
+
+**Results:** `pending` until `scripts/check_12_oof_completeness.py` shows
+30/30 finite neural + nested.
+
+**Verdict:** open — 65k **validation** only.
+
+**Cascade arm:** **blocked on post–N-light GATE G1–G4** (gene utilization,
+positional/CpGPT, platform robustness, fair 10e + 10d). Default topology
+**native P2-G** unless fair **10e** flips it. No auto 65k-matched cascade
+queue. Does **not** wait on Milestone 11 for *N-light*; **11 is in scope for
+G1** before product cascade.
 
 **Scope lock:** this 5×6 is **HM450, first-65 536-locus, gene-linked**
 (~2 646 genes / 51 375 CpG columns). Shared `φ`/`ρ` are gene-invariant
@@ -20,8 +33,7 @@ if launched, use **native P2-G** (not staged). P2-G nested **3/3**.
 ~17k graph genes, EPIC, or ONT. Do **not** treat the checkpoint as the
 ~20k-gene product. Plan:
 [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md).
-Cascade 5×6 (native P2-G) should use that full gene-linked graph, not
-copy this prefix.
+Cascade 5×6 (native P2-G) should use the **G1** panel, not copy this prefix.
 
 **Protocol:** 5 outer folds × up to 6 restarts; orientation-aligned scores
 ([ADR 0008](../adr/0008-score-identifiability.md)); no TBS
@@ -44,9 +56,9 @@ encoder supervision / diagnostic only.
    **n>200** (exact 200 excluded). Nine-pack 3-fold nested already
    **0.368 / 9.88 / 0.803** vs e2e **0.308 / 14.73 / 0.852** — do not 5×6
    e2e-only.
-2. **Cascade (later)** — native **P2-G** (10e staged recipe rejected). Prefer
-   the **full gene-linked graph** (12b), not another 65k-prefix 5×6. Rank vs
-   N-light under nested enet.
+2. **Cascade (THEN — after GATE G1–G4)** — native **P2-G** unless fair **10e**
+   flips the recipe. On the **G1** gene panel (12b recipe ± M11), not another
+   65k-prefix 5×6. Rank vs N-light under nested enet.
 
 **Encoder aux (n>200, this OOF):** nine-pack `disease tissue` classes above
 200 samples, with pack-matched `control` as negatives (adjacent-normal
@@ -105,9 +117,11 @@ nested enet ever runs -- `primary_evaluation: mbs_enet_nested` describes the
 reported readout, not what picked the checkpoint. See the NOTE comments in
 both `stage0_12_nlight_oof.yaml` and `stage0_12_cascade_oof.yaml`.
 
-**12b:** product recipe (within-gene CpG sampler + minibatch gather) is still
-`pending` and correctly sequenced *after* this 5×6. **Probes started** on
-GPU 0 (dense full-width N-light smoke; CpGPT 65k N-light ablation queued) —
-do not treat those as recipe acceptance. See inventory in
+**12b / GATE:** product recipe (within-gene CpG sampler + minibatch gather) is
+**G1** and correctly sequenced *after* this 5×6. **G2** (CpGPT/positional),
+**G3** ([`milestone-12c-platform-robustness.md`](milestone-12c-platform-robustness.md)),
+and **G4** (fair 10e + 10d) also block cascade. **Probes started** on GPU 0
+(dense full-width N-light; CpGPT 65k ablation) — do not treat those as recipe
+acceptance. See inventory in
 [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md).
-Does not block the in-flight N-light run or a 65k-matched cascade comparison.
+Does not block the in-flight N-light run.
