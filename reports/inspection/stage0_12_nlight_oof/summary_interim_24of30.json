@@ -1,0 +1,584 @@
+{
+  "updated": "2026-09-10T10:45+02:00",
+  "status": "in_progress",
+  "completed_jobs": 24,
+  "total_jobs": 30,
+  "in_progress": "f4-r0",
+  "scope": "HM450 65k-prefix gene-linked; n_genes=2646",
+  "product_readout": "mbs_enet_nested",
+  "reference_3fold_nested": {
+    "tissue_macro_f1": 0.368,
+    "age_mae": 9.88,
+    "sex_auroc": 0.803
+  },
+  "overall_24": {
+    "nested": {
+      "tissue_macro_f1_mean": 0.3248240054032356,
+      "tissue_macro_f1_sd": 0.030928069763161405,
+      "age_mae_mean": 9.791799569160181,
+      "age_mae_sd": 0.920378698757261,
+      "sex_auroc_mean": 0.8308001198300228,
+      "sex_auroc_sd": 0.05712577450241567
+    },
+    "e2e": {
+      "tissue_macro_f1_mean": 0.31885092363234996,
+      "tissue_macro_f1_sd": 0.04174741322764451,
+      "age_mae_mean": 15.174993578849977,
+      "age_mae_sd": 2.790601597095828,
+      "sex_auroc_mean": 0.8144920754223263,
+      "sex_auroc_sd": 0.09414675181337703
+    },
+    "val_aux_at_best_epoch": {
+      "disease_auroc_mean": 0.7984009096919389,
+      "cancer_auroc_mean": 0.8694676077644498
+    }
+  },
+  "per_fold_restart_mean": [
+    {
+      "fold": 0,
+      "n_restarts": 6,
+      "nested_tissue_macro_f1": 0.30676332754458063,
+      "nested_age_mae": 9.623529436679377,
+      "nested_sex_auroc": 0.894025932233542,
+      "e2e_tissue_macro_f1": 0.32026285474555877,
+      "e2e_age_mae": 15.37608761022044,
+      "e2e_sex_auroc": 0.882088787815952
+    },
+    {
+      "fold": 1,
+      "n_restarts": 6,
+      "nested_tissue_macro_f1": 0.37184958828256015,
+      "nested_age_mae": 10.084642539917976,
+      "nested_sex_auroc": 0.7631344414754687,
+      "e2e_tissue_macro_f1": 0.3803198310782236,
+      "e2e_age_mae": 12.613284249331189,
+      "e2e_sex_auroc": 0.7579838884373449
+    },
+    {
+      "fold": 2,
+      "n_restarts": 6,
+      "nested_tissue_macro_f1": 0.32387900458092184,
+      "nested_age_mae": 8.974247389536224,
+      "nested_sex_auroc": 0.8521828053857953,
+      "e2e_tissue_macro_f1": 0.28902125432947057,
+      "e2e_age_mae": 17.477464206495302,
+      "e2e_sex_auroc": 0.7539170896223317
+    },
+    {
+      "fold": 3,
+      "n_restarts": 6,
+      "nested_tissue_macro_f1": 0.29680410120487966,
+      "nested_age_mae": 10.484778910507147,
+      "nested_sex_auroc": 0.8138573002252848,
+      "e2e_tissue_macro_f1": 0.28579975437614685,
+      "e2e_age_mae": 15.233138249352969,
+      "e2e_sex_auroc": 0.863978535813676
+    }
+  ],
+  "runs": [
+    {
+      "run": "stage0-12-nlight-oof-f0-r0",
+      "fold": 0,
+      "restart": 0,
+      "best_epoch": 20,
+      "nested": {
+        "tissue_macro_f1": 0.2947741069006467,
+        "age_mae": 9.072002166280182,
+        "sex_auroc": 0.8720250053539196
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.31884763009015515,
+        "age_mae": 14.544952126452374,
+        "sex_auroc": 0.8038582214109191
+      },
+      "val_at_best": {
+        "disease_auroc": 0.76066391615506,
+        "cancer_auroc": 0.8524419585841999,
+        "val_loss": 20.849786819055787
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f0-r1",
+      "fold": 0,
+      "restart": 1,
+      "best_epoch": 27,
+      "nested": {
+        "tissue_macro_f1": 0.3226805558200223,
+        "age_mae": 9.50243283356285,
+        "sex_auroc": 0.8816046121892602
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.3267550466499455,
+        "age_mae": 13.979897275157297,
+        "sex_auroc": 0.9159138885772852
+      },
+      "val_at_best": {
+        "disease_auroc": 0.7781156598848474,
+        "cancer_auroc": 0.828770221370796,
+        "val_loss": 25.513840539716238
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f0-r2",
+      "fold": 0,
+      "restart": 2,
+      "best_epoch": 16,
+      "nested": {
+        "tissue_macro_f1": 0.30242261034728213,
+        "age_mae": 10.40056649173829,
+        "sex_auroc": 0.8854295203227986
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.29073290659339684,
+        "age_mae": 21.77226724177042,
+        "sex_auroc": 0.8643177406799308
+      },
+      "val_at_best": {
+        "disease_auroc": 0.7571058864469856,
+        "cancer_auroc": 0.793130055342699,
+        "val_loss": 25.62414763698187
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f0-r3",
+      "fold": 0,
+      "restart": 3,
+      "best_epoch": 27,
+      "nested": {
+        "tissue_macro_f1": 0.3140446345909737,
+        "age_mae": 9.818238593125114,
+        "sex_auroc": 0.906826842343215
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.3385310605961983,
+        "age_mae": 15.99231269144778,
+        "sex_auroc": 0.9298177627754719
+      },
+      "val_at_best": {
+        "disease_auroc": 0.7833530743895682,
+        "cancer_auroc": 0.8303504910904337,
+        "val_loss": 27.63068984642168
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f0-r4",
+      "fold": 0,
+      "restart": 4,
+      "best_epoch": 30,
+      "nested": {
+        "tissue_macro_f1": 0.3003352446517737,
+        "age_mae": 9.47384388380812,
+        "sex_auroc": 0.9114026589434252
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.3218599484647307,
+        "age_mae": 12.563097868018463,
+        "sex_auroc": 0.9257515033466247
+      },
+      "val_at_best": {
+        "disease_auroc": 0.7923076868319474,
+        "cancer_auroc": 0.834384312473393,
+        "val_loss": 31.147954056416367
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f0-r5",
+      "fold": 0,
+      "restart": 5,
+      "best_epoch": 29,
+      "nested": {
+        "tissue_macro_f1": 0.3063228129567854,
+        "age_mae": 9.4740926515617,
+        "sex_auroc": 0.9068669542486325
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.32485053607892617,
+        "age_mae": 13.403998458476313,
+        "sex_auroc": 0.8528736101054807
+      },
+      "val_at_best": {
+        "disease_auroc": 0.7694018663992573,
+        "cancer_auroc": 0.8366022015447303,
+        "val_loss": 26.999444776213338
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f1-r0",
+      "fold": 1,
+      "restart": 0,
+      "best_epoch": 28,
+      "nested": {
+        "tissue_macro_f1": 0.3623967227943425,
+        "age_mae": 10.071807174556799,
+        "sex_auroc": 0.7743806321262057
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.3769472417055208,
+        "age_mae": 12.694877412421102,
+        "sex_auroc": 0.7892142957064362
+      },
+      "val_at_best": {
+        "disease_auroc": 0.8596292815371762,
+        "cancer_auroc": 0.8585489308845711,
+        "val_loss": 44.987469405789014
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f1-r1",
+      "fold": 1,
+      "restart": 1,
+      "best_epoch": 27,
+      "nested": {
+        "tissue_macro_f1": 0.3755262652984607,
+        "age_mae": 9.990924536407771,
+        "sex_auroc": 0.6813538883251967
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.37252358070219016,
+        "age_mae": 13.322227967887898,
+        "sex_auroc": 0.7047436912218074
+      },
+      "val_at_best": {
+        "disease_auroc": 0.8430190058479532,
+        "cancer_auroc": 0.933212780587348,
+        "val_loss": 35.758389295030085
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f1-r2",
+      "fold": 1,
+      "restart": 2,
+      "best_epoch": 26,
+      "nested": {
+        "tissue_macro_f1": 0.3828391696880825,
+        "age_mae": 10.254290379101278,
+        "sex_auroc": 0.7769985249562179
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.3792257901789991,
+        "age_mae": 13.44432672549533,
+        "sex_auroc": 0.7870543216303749
+      },
+      "val_at_best": {
+        "disease_auroc": 0.9088836675020886,
+        "cancer_auroc": 0.9155202510868601,
+        "val_loss": 43.37052257534076
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f1-r3",
+      "fold": 1,
+      "restart": 3,
+      "best_epoch": 27,
+      "nested": {
+        "tissue_macro_f1": 0.3784707226477977,
+        "age_mae": 10.019455792291772,
+        "sex_auroc": 0.791920018274252
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.3970344448866197,
+        "age_mae": 12.123936049854882,
+        "sex_auroc": 0.7764549013774749
+      },
+      "val_at_best": {
+        "disease_auroc": 0.8941624895572264,
+        "cancer_auroc": 0.9147010025729748,
+        "val_loss": 38.38821321602282
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f1-r4",
+      "fold": 1,
+      "restart": 4,
+      "best_epoch": 21,
+      "nested": {
+        "tissue_macro_f1": 0.38005488925124925,
+        "age_mae": 8.670219037036095,
+        "sex_auroc": 0.7894728267894866
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.37929155757365457,
+        "age_mae": 13.037597675391648,
+        "sex_auroc": 0.7399124181687147
+      },
+      "val_at_best": {
+        "disease_auroc": 0.9142345446950709,
+        "cancer_auroc": 0.8623133484162895,
+        "val_loss": 39.57997958587165
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f1-r5",
+      "fold": 1,
+      "restart": 5,
+      "best_epoch": 27,
+      "nested": {
+        "tissue_macro_f1": 0.35180976001542846,
+        "age_mae": 11.501158320114138,
+        "sex_auroc": 0.7646807583814538
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.3768963714223574,
+        "age_mae": 11.056739664936275,
+        "sex_auroc": 0.7505237025192615
+      },
+      "val_at_best": {
+        "disease_auroc": 0.9063492063492063,
+        "cancer_auroc": 0.9087111835684499,
+        "val_loss": 35.07234288956547
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f2-r0",
+      "fold": 2,
+      "restart": 0,
+      "best_epoch": 12,
+      "nested": {
+        "tissue_macro_f1": 0.3319907372987331,
+        "age_mae": 7.576851887032187,
+        "sex_auroc": 0.8716062096458239
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.27092394806158315,
+        "age_mae": 19.116963451946567,
+        "sex_auroc": 0.533894187670575
+      },
+      "val_at_best": {
+        "disease_auroc": 0.550660742766006,
+        "cancer_auroc": 0.9069470987258663,
+        "val_loss": 27.384535982760852
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f2-r1",
+      "fold": 2,
+      "restart": 1,
+      "best_epoch": 20,
+      "nested": {
+        "tissue_macro_f1": 0.34673486369440887,
+        "age_mae": 8.903164817075794,
+        "sex_auroc": 0.8605513512077754
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.29983406497642995,
+        "age_mae": 16.543614677289572,
+        "sex_auroc": 0.8261480673158013
+      },
+      "val_at_best": {
+        "disease_auroc": 0.8085668717247665,
+        "cancer_auroc": 0.9357943363966068,
+        "val_loss": 26.4593861764712
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f2-r2",
+      "fold": 2,
+      "restart": 2,
+      "best_epoch": 29,
+      "nested": {
+        "tissue_macro_f1": 0.32558602009320753,
+        "age_mae": 9.901381862387606,
+        "sex_auroc": 0.8527259335828641
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.2855931724597596,
+        "age_mae": 14.075088821551995,
+        "sex_auroc": 0.88972699161762
+      },
+      "val_at_best": {
+        "disease_auroc": 0.848037707906129,
+        "cancer_auroc": 0.9565652519388467,
+        "val_loss": 26.9040571535435
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f2-r3",
+      "fold": 2,
+      "restart": 3,
+      "best_epoch": 17,
+      "nested": {
+        "tissue_macro_f1": 0.3079632551933982,
+        "age_mae": 9.293257147315954,
+        "sex_auroc": 0.8528988602885025
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.2621149759426081,
+        "age_mae": 21.517447601619192,
+        "sex_auroc": 0.6641647169757028
+      },
+      "val_at_best": {
+        "disease_auroc": 0.6943210298473457,
+        "cancer_auroc": 0.9127083681818414,
+        "val_loss": 24.261937034097805
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f2-r4",
+      "fold": 2,
+      "restart": 4,
+      "best_epoch": 27,
+      "nested": {
+        "tissue_macro_f1": 0.32369364675547463,
+        "age_mae": 8.673827584328942,
+        "sex_auroc": 0.8704947751233452
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.31409182896442556,
+        "age_mae": 14.338013042349134,
+        "sex_auroc": 0.8713538749969564
+      },
+      "val_at_best": {
+        "disease_auroc": 0.8594412166780588,
+        "cancer_auroc": 0.9482061605912977,
+        "val_loss": 27.667624103468178
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f2-r5",
+      "fold": 2,
+      "restart": 5,
+      "best_epoch": 24,
+      "nested": {
+        "tissue_macro_f1": 0.30730550445030846,
+        "age_mae": 9.497001039076865,
+        "sex_auroc": 0.8048197024664606
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.3015695355720172,
+        "age_mae": 19.273657644215366,
+        "sex_auroc": 0.7382146991573351
+      },
+      "val_at_best": {
+        "disease_auroc": 0.6429625199362041,
+        "cancer_auroc": 0.935749666491257,
+        "val_loss": 21.323913403257187
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f3-r0",
+      "fold": 3,
+      "restart": 0,
+      "best_epoch": 28,
+      "nested": {
+        "tissue_macro_f1": 0.2885069120901373,
+        "age_mae": 12.190961428623565,
+        "sex_auroc": 0.7819949103829844
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.23555188833641666,
+        "age_mae": 16.015735153292983,
+        "sex_auroc": 0.7580200810031805
+      },
+      "val_at_best": {
+        "disease_auroc": null,
+        "cancer_auroc": 0.7025781463380617,
+        "val_loss": 63.54560368410393
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f3-r1",
+      "fold": 3,
+      "restart": 1,
+      "best_epoch": 27,
+      "nested": {
+        "tissue_macro_f1": 0.31222540629020906,
+        "age_mae": 9.799391428754834,
+        "sex_auroc": 0.7601963167572223
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.2803912102793501,
+        "age_mae": 17.6464679850066,
+        "sex_auroc": 0.8482173916644581
+      },
+      "val_at_best": {
+        "disease_auroc": null,
+        "cancer_auroc": 0.8418771741214893,
+        "val_loss": 54.195750352614255
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f3-r2",
+      "fold": 3,
+      "restart": 2,
+      "best_epoch": 30,
+      "nested": {
+        "tissue_macro_f1": 0.27969569493976115,
+        "age_mae": 10.844980382380792,
+        "sex_auroc": 0.8095110406175456
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.2930307763339353,
+        "age_mae": 14.247413240710411,
+        "sex_auroc": 0.8895870949840976
+      },
+      "val_at_best": {
+        "disease_auroc": null,
+        "cancer_auroc": 0.8189295021917973,
+        "val_loss": 46.38535661954037
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f3-r3",
+      "fold": 3,
+      "restart": 3,
+      "best_epoch": 30,
+      "nested": {
+        "tissue_macro_f1": 0.2977710210994621,
+        "age_mae": 9.769698068165686,
+        "sex_auroc": 0.8458739522594753
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.3142567632923296,
+        "age_mae": 14.932610796292344,
+        "sex_auroc": 0.9268346847667638
+      },
+      "val_at_best": {
+        "disease_auroc": null,
+        "cancer_auroc": 0.8450142064880298,
+        "val_loss": 51.30845001201149
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f3-r4",
+      "fold": 3,
+      "restart": 4,
+      "best_epoch": 22,
+      "nested": {
+        "tissue_macro_f1": 0.29924844897292807,
+        "age_mae": 9.857206516861414,
+        "sex_auroc": 0.8048055261065465
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.29978266452946123,
+        "age_mae": 15.231273435051648,
+        "sex_auroc": 0.8985715735157699
+      },
+      "val_at_best": {
+        "disease_auroc": null,
+        "cancer_auroc": 0.8032754206836703,
+        "val_loss": 49.746170138457245
+      }
+    },
+    {
+      "run": "stage0-12-nlight-oof-f3-r5",
+      "fold": 3,
+      "restart": 5,
+      "best_epoch": 27,
+      "nested": {
+        "tissue_macro_f1": 0.30337712383678006,
+        "age_mae": 10.446435638256595,
+        "sex_auroc": 0.8807620552279354
+      },
+      "e2e": {
+        "tissue_macro_f1": 0.2917852234853883,
+        "age_mae": 13.32532888576383,
+        "sex_auroc": 0.8626403889477869
+      },
+      "val_at_best": {
+        "disease_auroc": null,
+        "cancer_auroc": 0.8908905166752867,
+        "val_loss": 45.341162590734065
+      }
+    }
+  ]
+}

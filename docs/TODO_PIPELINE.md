@@ -30,7 +30,7 @@ finishing, fill Results + Verdict in the same change set that flips status
   10e        done      GATE G4 — fair S1→S2→S3→S4 FAIL; native P2-G; no 3-fold
   10d        pending  GATE G4 — reference checkpoint after OOF finalist
 11           gate-G1  fold-selected gene panel — in scope for G1 gene-set choice
-12           ← NOW    N-light 5×6 HM450 65k-prefix validation (GPU2)
+12           ← NOW    N-light 5×6 24/30 done (f4 in flight; GPU2)
   GATE       pending  after N-light — blocks cascade OOF (G1–G3; G4 10e done)
   12b / G1   pending  gene utilization (DeepRVAT sampler; vs M11 panel)
   G2         pending  positional / CpGPT probe (N-light + cascade)
@@ -47,13 +47,14 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
 
 ### Next steps (NOW → GATE → THEN)
 
-**GPU-2:** exclusive N-light 5×6 (`batch_size=1024`, ~87 GB — may fill).
-**GPU 0:** keep spare VRAM (12b probes / 10e smokes; batch-capped). Do **not**
-auto-start cascade 5×6.
+**GPU-2:** exclusive N-light 5×6 (`batch_size=1024`, ~84–87 GB reserved;
+SM util bursty). **GPU 1:** often filled by unrelated vLLM. **GPU 0:** keep
+spare VRAM (12b probes). Do **not** auto-start cascade 5×6.
 
 **NOW — Milestone 12 N-light 5×6** (HM450 **65k-prefix** gene-linked
 validation, ~2.6k genes — **not** the ~20k-gene product). Product readout
-`mbs_enet_nested`. When finished: run
+`mbs_enet_nested`. **24/30** complete (interim nested **0.325 / 9.79 /
+0.831**); f4 in flight. When finished: run
 `scripts/check_12_oof_completeness.py` (30/30 neural + nested, finite).
 
 **GATE — after N-light completes (hard block on cascade OOF):**
@@ -96,7 +97,8 @@ P2-G scalar max/max is the LOCKED cascade *topology* finalist** (5-combo grid
 0.342 / 13.406 / 0.851 but still trails P2-G tissue (−0.013) — **not a
 finalist change**. **N-light@64** nested enet 3-fold is **0.368 / 9.88 /
 0.803** vs e2e **0.308 / 14.73 / 0.852**. Milestone **12 N-light 5×6** is
-**running** (30-ep + n>200 aux). Fair 10e S1→S2→S3→S4 fold-0 **FAIL** vs P2-G
+**24/30** (interim nested **0.325 / 9.79 / 0.831**; see
+`reports/inspection/stage0_12_nlight_oof/`). Fair 10e S1→S2→S3→S4 fold-0 **FAIL** vs P2-G
 (e2e **0.298** vs **0.364**; nested **0.298** vs **0.331**) — cascade recipe
 stays **native P2-G**. **Cascade 5×6 is blocked on GATE G1–G3 + 10d**, not
 auto-queued. Architecture stays gene-invariant for later EPIC/ONT.
@@ -1023,17 +1025,24 @@ must keep spare VRAM.
 
 ## 12. Final study-grouped OOF (alias: historical Milestone 7) — **← NOW**
 
-- **Status:** `in_progress` — **N-light 5×6 running GPU 2** (30-ep + n>200 aux)
+- **Status:** `in_progress` — **N-light 5×6 on GPU 2** (30-ep + n>200 aux);
+  **24/30** done, **f4-r0** training
 - **Question:** Under nested enet, does N-light@64 hold on study-grouped 5×6
   at the **65k-prefix** HM450 panel?
 - **Approaches tested:** `configs/experiment/stage0_12_nlight_oof.yaml`,
-  `scripts/run_12_nlight_oof.sh`; 16-ep plumbing archived; 30-ep + n>200 aux
-  in flight; product readout `mbs_enet_nested`.
-- **Results:** `pending` until completeness gate
-  (`scripts/check_12_oof_completeness.py`) shows 30/30 finite neural + nested.
-  Plumbing nested (16-ep): **0.300 / 8.63 / 0.880**.
-- **Verdict:** open — 65k-prefix **validation** only; **not** the ~20k-gene
-  product (**12b** / G1).
+  `scripts/run_12_nlight_oof.sh`; 16-ep plumbing archived; 30-ep + n>200 aux;
+  product readout `mbs_enet_nested`.
+- **Results (interim 24/30, not gated):** nested **0.325 ± 0.031 / 9.79 ± 0.92 /
+  0.831 ± 0.057**; e2e diagnostic **0.319 / 15.17 / 0.814**. Fold means:
+  f0 0.307, f1 **0.372**, f2 0.324, f3 0.297. Vs 3-fold nested ref
+  **0.368 / 9.88 / 0.803**: tissue ~−0.04 (fold variance), age/sex hold.
+  Val aux @ best epoch: disease ~0.80, cancer ~0.87 AUROC. Plumbing 16-ep:
+  **0.300 / 8.63 / 0.880**. Report:
+  [`reports/inspection/stage0_12_nlight_oof/analysis.md`](../reports/inspection/stage0_12_nlight_oof/analysis.md).
+  Completeness still **INCOMPLETE** (6 missing).
+- **Verdict:** open — interim looks **plausible / on-track** (nested≻e2e on
+  age; no collapse); final call after 30/30 + gate. 65k-prefix **validation**
+  only; **not** the ~20k-gene product (**12b** / G1).
 - **Scope (this track):** **65k-prefix validation** (~2 646 gene-linked genes).
 - **Cascade policy:** **blocked on GATE G1–G3** (+ 10d). Topology+recipe =
   **native P2-G** (fair **10e** rejected). Do **not** 5×6 joint `mbs_e2e` as the

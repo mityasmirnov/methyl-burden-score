@@ -708,6 +708,15 @@ bypass it.
   across all 3 folds -- cancer cases are internally more heterogeneous than
   cancer controls (consistent with spanning many subtypes), but the
   case/control gap is still far bigger in absolute terms than for disease.
+- 2026-09-10: **N-light 5×6 interim (24/30).** Folds 0–3 complete; **f4-r0**
+  training. Product nested mean **0.325 / 9.79 / 0.831** vs 3-fold ref
+  **0.368 / 9.88 / 0.803** (tissue softer, driven by fold spread: f1 0.372 vs
+  f3 0.297). Nested still dominates e2e on age. Completeness gate
+  INCOMPLETE (6 missing). Report
+  `reports/inspection/stage0_12_nlight_oof/analysis.md`. GPU 2 holds
+  ~84 GB with bursty SM util; GPU 1 often occupied by vLLM; GPU 0 idle.
+  Cascade remains **GATE-blocked** (G1–G3) despite any earlier auto-waiter
+  notes — do not treat N-light finish as cascade start.
 - 2026-09-08: **N-light 30-ep OOF progress.** Restarted runner under
   `stage0_12_nlight_oof.yaml` (30 ep, patience 15, 9+9 aux labels confirmed).
   `f0-r0` at **~epoch 19–20/30** (1/30). Val disease AUROC ~**0.76**, cancer
