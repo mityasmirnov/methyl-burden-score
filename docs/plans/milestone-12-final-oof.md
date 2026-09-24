@@ -6,9 +6,10 @@
 > **Renumber note (2026-09-07):** previously stubbed as Milestone **13**;
 > expression auxiliary is now **13** (after OOF).
 
-**Status:** **N-light arm `in_progress` ← NOW** — GPU 2 at **30 epochs** +
-n>200 aux; **24/30** complete (folds 0–3); **f4** in flight. 16-ep plumbing
-archived (`stage0-12-nlight-oof-ep16-f0-r0`; nested **0.300 / 8.63 / 0.880**).
+**Status:** **N-light arm `done`** — GPU 2 at **30 epochs** + n>200 aux;
+**30/30** complete, `check_12_oof_completeness.py` → **COMPLETE**. Cascade
+arm still `blocked` on GATE G1–G3 (← NOW). 16-ep plumbing archived
+(`stage0-12-nlight-oof-ep16-f0-r0`; nested **0.300 / 8.63 / 0.880**).
 
 **Question:** Under nested enet, does N-light@64 hold on study-grouped 5×6 at
 the **65k-prefix** HM450 panel?
@@ -16,13 +17,16 @@ the **65k-prefix** HM450 panel?
 **Approaches tested:** `stage0_12_nlight_oof.yaml` / `run_12_nlight_oof.sh`;
 30-ep + n>200 aux; product readout `mbs_enet_nested`.
 
-**Results (interim 24/30):** nested **0.325 / 9.79 / 0.831** (tissue / age MAE
-/ sex AUROC); e2e **0.319 / 15.17 / 0.814**. Vs 3-fold nested ref
+**Results (FINAL, 30/30):** nested **0.316 / 9.59 / 0.822** (tissue / age MAE
+/ sex AUROC); e2e **0.308 / 15.50 / 0.791**. Vs 3-fold nested ref
 **0.368 / 9.88 / 0.803**. Report:
 [`../../reports/inspection/stage0_12_nlight_oof/analysis.md`](../../reports/inspection/stage0_12_nlight_oof/analysis.md).
-Final numbers `pending` until `check_12_oof_completeness.py` is 30/30.
+`check_12_oof_completeness.py --run-prefix stage0-12-nlight-oof --n-folds 5` →
+**COMPLETE**.
 
-**Verdict:** open — interim on-track; 65k **validation** only.
+**Verdict:** **N-light 5×6 closed** — nested enet confirmed as product
+readout; age/sex hold or beat the 3-fold ref, tissue is a soft miss driven
+by fold variance (fold 4 weakest, no collapse). 65k **validation** only.
 
 **Cascade arm:** **blocked on post–N-light GATE G1–G4** (gene utilization,
 positional/CpGPT, platform robustness, fair 10e + 10d). Default topology

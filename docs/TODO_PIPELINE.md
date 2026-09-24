@@ -990,59 +990,55 @@ must keep spare VRAM.
 
 ## 11. Fold-selected panel + full model (alias: 7G′ Stage B) — **GATE G1 option**
 
-- **Status:** `pending` for G1 gene-set decision (CPU dry-run panels + classical
-  **done**; full Stage B GPU still scheduled explicitly)
+- **Status:** `pending` for G1 gene-set decision (ATS CPU dry-run **done**;
+  **trait-universe** catalog/reselect in progress; Stage B GPU still explicit)
 - **Plan:** [`plans/milestone-11-fold-selected-panel.md`](plans/milestone-11-fold-selected-panel.md)
-- **Runner:** `scripts/run_7g_prime_stage_b.py`
+- **Runners:** `scripts/run_7g_prime_stage_b.py` (legacy ATS panels);
+  `scripts/run_trait_universe_catalog.py` +
+  `scripts/run_trait_universe_fold_reselect.py` (scalable A→B→C)
+- **Config:** `configs/experiment/stage0_11_trait_universe.yaml`
 - **Question:** As a DeepRVAT-style gene panel, does fold-selected genes
   (ADR 0012: discovery CpGs → seed genes → all linked CpGs) match or beat
   “all ~19.6k represented genes” under nested enet for product cascade?
 - **Approaches tested:** CPU 3-fold ATS panels (`n_repeats=1`) + `C-mvalue-enetS`;
-  Atlas overlap screen; G1 vs 12b all-genes smoke **not run**.
-- **Results:** overview
-  [`reports/inspection/stage0_7g_prime_matched_probe/analysis.md`](../reports/inspection/stage0_7g_prime_matched_probe/analysis.md)
-  (`cpu_panel_overview.json`). **3 panels**; traits age/sex/tissue; 65k → 2 658
-  genes; ~33–35k panel CpGs / ~1.2–1.3k genes per fold; **717** genes ∩ all folds;
-  classical mean age r **0.894** / sex AUROC **0.891** / tissue bal-acc **0.437**;
-  Atlas age+sex enriched, tissue Atlas sparse.
-- **Verdict:** CPU prep ready for G1 discussion; **not** a G1 lock (need
-  `n_repeats=5` + gene-set smoke). Does **not** block **N-light 65k**; **is in
-  scope for GATE G1** before product cascade. Not architecture selection
-  (locked in **10**).
-- **Role:** sparsity / fold-safe **panel product** + classical `C-mvalue-enetS`
-  comparator; optional gene-set fork for **12b**.
-- **CPU prep:** panels + classical dry-run complete; orphan census under
-  `reports/inspection/stage0_7g_prime_matched_probe/orphan_rbs_census.md`.
-- **Preferred thinner GPU matrix (when scheduled):** panels + `C-mvalue-enetS` +
-  finalists-on-S (`N-cascade-S` = P2-G params, `N-light` on same panel) ± fusion
-  ablations — not the full historical Stage A arm soup.
-- **Done when (Stage B product):** fold-safe panels, matched classical/finalist-on-S
-  report, `direct_cpg.zarr` when direct loci exist; report under
-  `reports/inspection/stage0_7g_prime_matched_probe/`.
+  Atlas overlap; **three-stage trait universe** (catalog_universe → restrict →
+  internal_fold reselect) on nine-pack gene-linked + disease/cancer; G1 vs 12b
+  all-genes smoke **not run**.
+- **Results:** ATS overview
+  [`reports/inspection/stage0_7g_prime_matched_probe/analysis.md`](../reports/inspection/stage0_7g_prime_matched_probe/analysis.md).
+  Trait-universe: `reports/inspection/stage0_11_trait_universe/` (fill when runs
+  complete).
+- **Verdict:** CPU prep ready for G1 discussion; **not** a G1 lock. Does **not**
+  block **N-light 65k**; **is in scope for GATE G1**. Not architecture selection
+  (locked in **10**). ADR 0011: `catalog_universe` ≠ CV panel.
+- **Role:** sparsity / fold-safe **panel product** + classical comparator;
+  optional gene-set fork for **12b**.
 - **Hard stop:** do not auto-launch full Stage B GPU from the Milestone 10 keeper.
 
 ---
 
 ## 12. Final study-grouped OOF (alias: historical Milestone 7) — **← NOW**
 
-- **Status:** `in_progress` — **N-light 5×6 on GPU 2** (30-ep + n>200 aux);
-  **24/30** done, **f4-r0** training
+- **Status:** `done` for the **N-light 5×6 arm** — GPU 2 30-ep + n>200 aux;
+  **30/30** complete, `check_12_oof_completeness.py` → **COMPLETE**. Cascade
+  arm still `blocked` on GATE G1–G3.
 - **Question:** Under nested enet, does N-light@64 hold on study-grouped 5×6
   at the **65k-prefix** HM450 panel?
 - **Approaches tested:** `configs/experiment/stage0_12_nlight_oof.yaml`,
   `scripts/run_12_nlight_oof.sh`; 16-ep plumbing archived; 30-ep + n>200 aux;
   product readout `mbs_enet_nested`.
-- **Results (interim 24/30, not gated):** nested **0.325 ± 0.031 / 9.79 ± 0.92 /
-  0.831 ± 0.057**; e2e diagnostic **0.319 / 15.17 / 0.814**. Fold means:
-  f0 0.307, f1 **0.372**, f2 0.324, f3 0.297. Vs 3-fold nested ref
-  **0.368 / 9.88 / 0.803**: tissue ~−0.04 (fold variance), age/sex hold.
-  Val aux @ best epoch: disease ~0.80, cancer ~0.87 AUROC. Plumbing 16-ep:
-  **0.300 / 8.63 / 0.880**. Report:
+- **Results (FINAL, 30/30):** nested **0.316 ± 0.034 / 9.59 ± 0.93 /
+  0.822 ± 0.054**; e2e diagnostic **0.308 / 15.50 / 0.791**. Fold means:
+  f0 0.307, f1 **0.372**, f2 0.324, f3 0.297, f4 0.279. Vs 3-fold nested ref
+  **0.368 / 9.88 / 0.803**: tissue ~−0.05 (fold variance, f4 weakest, no
+  collapse), age/sex hold or beat ref. Val aux @ best epoch: disease
+  **0.737** (24/30 — fold 3 had no val positives), cancer **0.858** (30/30).
+  Plumbing 16-ep: **0.300 / 8.63 / 0.880**. Report:
   [`reports/inspection/stage0_12_nlight_oof/analysis.md`](../reports/inspection/stage0_12_nlight_oof/analysis.md).
-  Completeness still **INCOMPLETE** (6 missing).
-- **Verdict:** open — interim looks **plausible / on-track** (nested≻e2e on
-  age; no collapse); final call after 30/30 + gate. 65k-prefix **validation**
-  only; **not** the ~20k-gene product (**12b** / G1).
+- **Verdict:** **N-light 5×6 closed.** Nested enet confirmed as product
+  readout (age/sex hold, tissue soft miss from fold variance, not failure).
+  65k-prefix **validation** only; **not** the ~20k-gene product (**12b** /
+  G1).
 - **Scope (this track):** **65k-prefix validation** (~2 646 gene-linked genes).
 - **Cascade policy:** **blocked on GATE G1–G3** (+ 10d). Topology+recipe =
   **native P2-G** (fair **10e** rejected). Do **not** 5×6 joint `mbs_e2e` as the
