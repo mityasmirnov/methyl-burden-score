@@ -39,8 +39,8 @@ finishing, fill Results + Verdict in the same change set that flips status
   G2         **YES**  positional / CpGPT probe — user-decided (age-primary);
                        6-restart confirmation run in flight on GPU0
   12c / G3   pending  platform robustness (CpG dropout; EPIC later) — not started
-  10d        partial  MBS side unblocked; CpGPT 5x6 OOF queued as candidate
-                       reference checkpoint; RBS/cascade side waits on cascade OOF
+  10d        pending  ships from the cascade OOF finalist; do NOT rerun the
+                       N-light 5x6 (closed light benchmark, marginal delta)
   THEN       blocked  12 cascade 5×6 on G1 panel (**native P2-G**; 10e rejected)
 13           deferred expression aux after OOF
 14           deferred optional a–f
@@ -56,11 +56,12 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
 **GPU-2:** free (N-light 5×6 finished 2026-09-24; no longer exclusive).
 **GPU 1:** often filled by unrelated vLLM (not ours). **GPU 0:** chained queue,
 no idle gap (auto-launch waiters): (1) G2 6-restart confirmation smoke
-[running] → (2) **CpGPT N-light 5×6 OOF** (`stage0_12_nlight_oof_cpgpt.yaml`,
-identical protocol to the closed non-CpGPT 5×6, CpGPT the only change —
-this becomes the candidate **10d reference checkpoint** if it holds) →
-(3) full gene-linked-width (374k-col) CpGPT smoke (regularization bumped
-for the earlier full-width overfit). Do **not** auto-start cascade 5×6.
+[running] → (2) **CpGPT architecture sweep** (6 variants, φ/ρ 64→512,
+`scripts/run_12b_cpgpt_arch_sweep.py`; CpGPT lifts per-CpG input 24→**152**
+dims while φ/ρ stayed 64, so capacity is the suspected bottleneck) →
+(3) full gene-linked-width (374k-col) CpGPT smoke. Ranked on `mbs_e2e`
+**age MAE**; nested enet only on winners. Do **not** auto-start cascade 5×6
+until CpGPT is wired into `cascade_loop.py` (see 12b).
 
 **NOW — Milestone 11 / GATE G1** (fold-selected gene panel / trait-universe
 gene-set choice). Two tracks in flight: (1) legacy ATS CPU panels —
@@ -979,23 +980,22 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 ### 10d — Reference checkpoint deliverable (**GATE G4**)
 
-- **Status:** `pending` — MBS side unblocked (N-light OOF done, 30/30);
-  RBS/cascade side still waits on cascade OOF. **Direction (2026-09-24):**
-  user wants the MBS reference checkpoint to be the **CpGPT-enabled** model,
-  not the plain 65k-prefix one, given the G2 age/sex win — see the CpGPT
-  N-light 5×6 OOF queued on GPU0 (`reports/inspection/stage0_12_nlight_oof_cpgpt/`).
-  This is a scope change from "package what we have" to "the reference
-  checkpoint depends on that campaign landing (and, ideally, the tissue
-  regression resolving)."
+- **Status:** `pending` — ships from the **cascade OOF finalist**, not from
+  the N-light 5×6. **Direction (2026-09-24):** the reference checkpoint should
+  be **CpGPT-enabled**, but the way to get there is cascade OOF with CpGPT —
+  **not** a rerun of the N-light 5×6. The N-light 5×6 is a *closed light
+  benchmark* (30/30, nested 0.316/9.59/0.822); re-running it with CpGPT was
+  considered and **rejected** (marginal delta for a multi-day campaign;
+  CpGPT's effect is adequately established by smokes).
 - **Question:** What deployable pretrained MBS/RBS package + contract do we ship?
-- **Approaches tested:** none yet (deliverable track). CpGPT full 5×6 OOF
-  in flight as the candidate checkpoint source.
-- **Results:** `pending` — waiting on the CpGPT 5×6 OOF campaign.
-- **Verdict:** **10e closed (reject staged)**; still blocked on OOF finalist +
-  association-testing note + (new) the CpGPT 5×6 confirmation.
+- **Approaches tested:** none yet (deliverable track).
+- **Results:** `pending` — waits on cascade OOF (which waits on CpGPT
+  cascade plumbing, see **12b**).
+- **Verdict:** **10e closed (reject staged)**; blocked on cascade OOF
+  finalist + association-testing note.
 - **Done when:** documented pretrained checkpoint(s) (MBS ± RBS, CpGPT
-  variant if it holds), input/score contract, short association-testing
-  note (CpG→gene multiple-testing reduction). See campaign Phase 4.
+  variant), input/score contract, short association-testing note (CpG→gene
+  multiple-testing reduction). See campaign Phase 4.
 
 ### Deferred after GATE / OOF (not G2)
 
@@ -1070,9 +1070,19 @@ must keep spare VRAM.
   65k-prefix **validation** only; **not** the ~20k-gene product (**12b** /
   G1).
 - **Scope (this track):** **65k-prefix validation** (~2 646 gene-linked genes).
-- **Cascade policy:** **blocked on GATE G1–G3** (+ 10d). Topology+recipe =
-  **native P2-G** (fair **10e** rejected). Do **not** 5×6 joint `mbs_e2e` as the
-  product score. No auto 65k-matched cascade queue.
+- **Do NOT rerun this 5×6** (decision 2026-09-24): it is a *light benchmark*,
+  already closed. A CpGPT-enabled N-light 5×6 was queued and then **cancelled
+  before launch** — marginal expected delta for a multi-day campaign. CpGPT's
+  effect is established by **smokes**, not by re-running OOF per configuration.
+- **CpGPT validation policy:** smoke/sweep evidence (fold 0, fixed budget,
+  ranked on `mbs_e2e` age MAE) is enough to decide *whether to carry CpGPT
+  into a build*. Full OOF is spent **once**, on the product arm (cascade),
+  not once per feature variant.
+- **Cascade policy:** topology+recipe = **native P2-G** (fair **10e**
+  rejected). Cascade OOF is the **next big campaign** and is where CpGPT
+  should land — but it needs CpGPT plumbing in `cascade_loop.py` first
+  (**none exists today**; see **12b**). Do **not** 5×6 joint `mbs_e2e` as the
+  product score.
 - **Plan:** [`plans/milestone-12-final-oof.md`](plans/milestone-12-final-oof.md)
   (alias stub: [`milestone-13-final-oof.md`](plans/milestone-13-final-oof.md))
 - **Arms policy:** **N-light 5×6 first** on the **65k prefix**. Cascade **THEN**
@@ -1110,6 +1120,17 @@ must keep spare VRAM.
     dropout 0.1→0.3 / weight_decay 1e-4→1e-3 to address the earlier
     full-width overfit, auto-launches via waiter once the multi-restart
     exits — see `scratch/logs/12b_cpgpt_full_width_smoke_gpu0.log`).
+  - **CpGPT in cascade (`cascade_loop.py`) — NOT STARTED, blocks cascade OOF.**
+    `grep -n "static\|cpgpt" src/mbs/training/cascade_loop.py` → **zero hits**.
+    `_dense_cpg_features`/`_dense_cpg_features_batch` hardcode `[..., 1]`
+    (M-value only) and `model.cpg_encoder(feats.reshape(B * n_edges, 1))`
+    hardcodes input dim **1**. Mirroring the flat_region fix (append CpGPT as
+    trailing columns, 1 → 129) is the concrete task.
+  - CpGPT **architecture sweep** (φ/ρ 64→512, 6 variants) — **in flight on
+    GPU0** (`scripts/run_12b_cpgpt_arch_sweep.py`, ledger under
+    `reports/inspection/stage0_12b_cpgpt_arch_sweep/`). Rationale: CpGPT
+    lifts per-CpG input **24 → 152** dims while φ/ρ stayed **64**, so the
+    65k G2 probe may be *understating* CpGPT by starving it of capacity.
   - Product recipe (within-gene sampler + gather) — **not started**.
   - Gene-set fork smoke: all represented genes vs Milestone **11** panel —
     **not started**.
@@ -1128,6 +1149,17 @@ must keep spare VRAM.
   Still needs the multi-restart re-run (in flight) before locking that in,
   same discipline as the P2-G warm-start precedent.
 - **Cascade OOF:** product-scale = G1 panel (**native P2-G**; 10e rejected).
+- **Full-scale hypothesis (user, 2026-09-24):** the real payoff is expected at
+  **full scale — gene-agnostic, full gene set *plus non-coding CpGs*** — not at
+  the 65k prefix. Concrete architectural consequence: **cascade is the arm that
+  can express this and N-light is not.** N-light runs `gene_linked_only: true`
+  and *discards* every non-gene-linked CpG; cascade (P2-G) already carries the
+  `orphan_rbs` + direct-locus path (ADR 0004) that covers exactly those
+  non-coding sites. So "full scale" = cascade at full column width with CpGPT,
+  which is why cascade OOF (not another N-light run) is the product campaign.
+  **Not yet tested** — the full-width smokes to date are gene-linked-only and
+  N-light; no full-width cascade-with-orphans run exists.
+
 - **Hard stop:** do not retarget the in-flight 65k 5×6 to 12b; do not treat
   dense `max_loci: null` as G1 acceptance.
 
