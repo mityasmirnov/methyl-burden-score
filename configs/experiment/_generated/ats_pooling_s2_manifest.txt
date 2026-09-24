@@ -1,0 +1,4 @@
+configs/experiment/_generated/stage0_7h_ats_p2_s2.yaml	stage0-7h-ats-P2-G-s2
+configs/experiment/_generated/stage0_7h_ats_mean_max_s2.yaml	stage0-7h-ats-scalar-mean-max-s2
+configs/experiment/_generated/stage0_7h_ats_max_mean_s2.yaml	stage0-7h-ats-scalar-max-mean-s2
+configs/experiment/_generated/stage0_7h_ats_vector_mean_max_s2.yaml	stage0-7h-ats-vector-mean-max-s2

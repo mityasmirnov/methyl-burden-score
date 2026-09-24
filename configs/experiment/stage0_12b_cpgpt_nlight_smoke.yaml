@@ -1,0 +1,101 @@
+# Milestone 12b probe: does concatenating precomputed CpGPT2M sequence-adapter
+# embeddings (128-dim, DNA-LM derived, data/canonical/static_features/
+# cpgpt2m_adapter_128_v1, 1,076,246/1,082,522 loci mapped) onto the current
+# best N-light architecture (flat_region, m_only, 65,536-prefix) move
+# mbs_e2e at all? Isolated ablation vs. stage0_7h_nine_pack_m_only_wide.yaml
+# (same split/fold/epochs/scale) -- CpGPT is the only variable that changes.
+# Requires new plumbing added 2026-09-08: flat_region_input_dim(static_dim=),
+# build_flat_region_base_features(static_block=), gather_flat_region_features
+# (static_dim=) in src/mbs/training/flat_region_features.py -- CpGPT is
+# appended as trailing columns after the fixed 24-wide annotation block, so
+# it survives the m_only ablation mask untouched (see
+# apply_flat_region_feature_mode) and is safe to combine with any
+# flat_region_feature_mode. Not yet wired into the P2-G cascade encoder
+# (cascade_loop.py has no static-feature plumbing at all) -- that is a
+# separate follow-up if this shows signal.
+split_id: hub-nine-pack-3fold-v1
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+cv_budget:
+  max_loci: 65536
+  max_epochs: 16
+experiment:
+  name: stage0_12b_cpgpt_nlight_smoke
+  seed: 42
+  stage: 0
+features:
+  methylation:
+    beta: true
+    epsilon: 0.001
+    m_value: true
+    robust_deviation: false
+  static_feature_set: cpgpt2m_adapter_128_v1
+heads:
+  age:
+    enabled: true
+    huber_delta: 1.0
+    linear: true
+    loss: huber
+    target_standardization: train_fold
+  sex:
+    enabled: true
+    linear: true
+    loss: cross_entropy
+    n_classes: 2
+  tissue:
+    class_weighting: train_fold_balanced
+    enabled: true
+    linear: true
+    loss: cross_entropy
+    ontology: harmonized
+loss:
+  lambda_age: 0.3
+  lambda_sex: 1.0
+  lambda_tissue: 3.0
+model:
+  topology: flat_region
+  flat_region_feature_mode: m_only
+  gene_allocation: explicit_only
+  encoder:
+    activation: gelu
+    cpg_hidden_dim: 64
+    dropout: 0.1
+    layer_norm: true
+  neutral_score: 0.5
+  output_activation: sigmoid
+  phi_hidden_dimension: 64
+  phi_layers: 2
+  pooling: mean
+  rho_hidden_dimension: 64
+  rho_layers: 2
+  type: flat_deepset
+pilot:
+  auto_split: false
+  graph_id: graph-grch38-gencode38-cgi-tile-v2
+  matrix_id: matrix-hub-nine-pack-virtual-v1
+  mode: multitask_hub
+  sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+  split_id: hub-nine-pack-3fold-v1
+  static_feature_set: cpgpt2m_adapter_128_v1
+  tissue_ontology: canonical/phenotypes/tissue_ontology_hub_nine_pack_v1.yaml
+stage0:
+  use_cpgpt_static_features: true
+training:
+  batch_size: auto
+  batch_token_budget: 16000000
+  early_stopping_patience: 5
+  gene_linked_only: true
+  gene_allocation: explicit_only
+  primary_evaluation: mbs_e2e
+  stage_a_include_mbs_enet: false
+  stage_a_defer_cpu_probes: true
+  checkpoint_selection: validation_tissue_macro_f1_then_age_mae
+  stage_a_per_epoch_eval: true
+  gradient_clip_norm: 2.0
+  learning_rate: 0.001
+  max_epochs: 16
+  optimizer: adamw
+  precision: bf16-mixed
+  require_cuda: true
+  weight_decay: 0.0001
+device:
+  torch_device: cuda

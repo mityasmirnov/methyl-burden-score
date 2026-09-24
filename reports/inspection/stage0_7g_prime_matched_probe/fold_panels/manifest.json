@@ -1,0 +1,29 @@
+{
+  "mode": "panels_only",
+  "split_id": "hub-ats-7e-3fold-v1",
+  "matrix_id": "matrix-hub-age-tissue-sex-full-v1",
+  "graph_id": "graph-grch38-gencode38-cgi-tile-v2",
+  "max_loci": 65536,
+  "max_seeds": 10000,
+  "n_repeats": 1,
+  "folds": [
+    {
+      "fold": 0,
+      "panel_artifact": "/data/projects/methyl-burden-score/reports/inspection/stage0_7g_prime_matched_probe/fold_panels/fold_0_panel.json",
+      "n_seed": 3410,
+      "n_panel": 32731
+    },
+    {
+      "fold": 1,
+      "panel_artifact": "/data/projects/methyl-burden-score/reports/inspection/stage0_7g_prime_matched_probe/fold_panels/fold_1_panel.json",
+      "n_seed": 3408,
+      "n_panel": 34784
+    },
+    {
+      "fold": 2,
+      "panel_artifact": "/data/projects/methyl-burden-score/reports/inspection/stage0_7g_prime_matched_probe/fold_panels/fold_2_panel.json",
+      "n_seed": 3419,
+      "n_panel": 35182
+    }
+  ]
+}

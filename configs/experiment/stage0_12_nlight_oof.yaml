@@ -131,6 +131,12 @@ training:
   early_stopping_patience: 15
   gene_linked_only: true
   gene_allocation: explicit_only
+  # NOTE (2026-09-08 review): mbs_enet_nested is the *reported* readout, not
+  # the checkpoint-selection criterion -- that's checkpoint_selection below,
+  # fit BEFORE nested enet ever runs. Nested enet cannot correct a suboptimal
+  # epoch choice; it only reads out whichever checkpoint tissue-F1/age-MAE
+  # picked. See scripts/check_12_oof_completeness.py for the completeness
+  # gate this OOF should pass before being reported as a finished 5x6.
   primary_evaluation: mbs_enet_nested
   stage_a_include_mbs_enet: false
   stage_a_defer_cpu_probes: true

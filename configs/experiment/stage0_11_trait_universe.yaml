@@ -1,0 +1,72 @@
+# Milestone 11 — per-trait gene universe (catalog → restrict → fold-safe reselect)
+# Leakage: stages A/B = catalog_universe; stage C = internal_fold (ADR 0011).
+# Do not train neural Stage B from this config alone.
+
+matrix_id: matrix-hub-nine-pack-virtual-v1
+graph_id: graph-grch38-gencode38-cgi-tile-v2
+split_id: hub-nine-pack-3fold-v1
+gene_allocation: explicit_only
+# Full HM450 gene-linked (no 65k prefix).
+max_loci: null
+
+sample_phenotype_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.parquet
+# Prefer label_status join when present (disease/cancer case≠control).
+label_status_table: canonical/phenotypes/sample_phenotype_table_hub_nine_pack_v1.label_status.parquet
+
+report_dir: reports/inspection/stage0_11_trait_universe
+
+selection:
+  # Loose univariate EWAS (not SGD stability).
+  nominal_p: 0.05
+  # If nominal keeps too few genes after expand, keep top-N genes by |score|.
+  min_genes_per_trait: 200
+  top_n_genes_fallback: 500
+  # Column chunk width when streaming betas (never dense-load 482k).
+  col_chunk: 4096
+  # Beta → M-value clip epsilon (same as classical path).
+  m_value_epsilon: 1.0e-5
+
+atlas:
+  associations_tsv: data/raw/ewas_atlas/EWAS_Atlas_associations.tsv
+  encoding: latin-1
+  # Union Atlas-mapped genes with internal hits (Atlas may be larger).
+  union_with_internal: true
+
+traits:
+  - id: age
+    kind: continuous
+    y_column: age
+    mask_column: age_mask
+  - id: sex
+    kind: binary
+    y_column: sex_class_id
+    mask_column: sex_mask
+  - id: tissue
+    kind: multiclass
+    y_column: tissue_label
+    mask_column: tissue_mask
+    # Catalog only — do not expand tissue CE head (10c).
+  - id: disease_binary
+    kind: binary
+    y_column: disease_is_case
+    mask_column: disease_case_control_mask
+    label_status_required: true
+  - id: cancer_binary
+    kind: binary
+    y_column: cancer_is_case
+    mask_column: cancer_case_control_mask
+    label_status_required: true
+
+# Individual disease / cancer subtypes: ≥2 studies and n≥200 labeled.
+# Resolved at runtime from phenotype_value among pack members with case/control.
+individual_traits:
+  enabled: true
+  min_n: 200
+  min_studies: 2
+  family: disease  # disease pack phenotypes with n≥200 (Alzheimer’s, …)
+  # Cancer subtypes optional follow-on; start with disease list from freeze-reuse.
+  include_cancer_subtypes: false
+
+blood_brain:
+  # Deferred heads (10c) — do not catalog as trainable traits.
+  skip: true

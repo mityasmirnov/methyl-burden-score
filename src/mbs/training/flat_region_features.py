@@ -83,13 +83,23 @@ def flat_region_input_dim(
     n_gene_roles: int = len(GENE_ROLES),
     n_cpg_contexts: int = len(CPG_CONTEXTS),
     n_regulatory: int = len(REGULATORY_CHANNELS),
+    static_dim: int = 0,
 ) -> int:
-    """M-value + gene-role + CGI context + regulatory multi-hot + flags + observed."""
+    """M-value + gene-role + CGI context + regulatory multi-hot + flags + observed.
+
+    ``static_dim`` appends an optional per-CpG static embedding block (e.g.
+    CpGPT sequence-adapter output) after the fixed annotation layout below.
+    Appended, not inserted, so the base 24-wide annotation block (and its
+    ``m_only``/``anno_only``/... ablation modes) is untouched regardless of
+    whether a static block is present -- see ``apply_flat_region_feature_mode``.
+    """
     del n_region_types  # legacy kwarg ignored; dim is fixed by channel tables
     if n_gene_roles <= 0 or n_cpg_contexts <= 0:
         raise ValueError("gene-role and cpg-context dims must be positive")
-    # M + roles + contexts + regulatory + 3 presence flags + observed
-    return 1 + int(n_gene_roles) + int(n_cpg_contexts) + int(n_regulatory) + 3 + 1
+    if static_dim < 0:
+        raise ValueError("static_dim must be >= 0")
+    # M + roles + contexts + regulatory + 3 presence flags + observed + static
+    return 1 + int(n_gene_roles) + int(n_cpg_contexts) + int(n_regulatory) + 3 + 1 + int(static_dim)
 
 
 def count_other_gene_edges(
@@ -277,6 +287,7 @@ def gather_flat_region_features(
     base_features: np.ndarray | None = None,
     feature_mode: FlatRegionFeatureMode = "full",
     reg_permute_seed: int | None = None,
+    static_dim: int = 0,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return ``(features [n_obs_edges, dim], cpg_to_gene [n_obs_edges])``.
 
@@ -288,9 +299,17 @@ def gather_flat_region_features(
     returning features. Intended for N2 negative-control ablations only.
     This permutation is applied to the full edge set before the observed
     filter, so the shuffled assignments are consistent across samples.
+
+    ``static_dim``: width of an optional per-CpG static embedding block (e.g.
+    CpGPT) appended after the base annotation layout in ``base_features``
+    (see ``build_flat_region_base_features``). Only meaningful together with
+    ``base_features`` -- there is no per-sample source for a static block in
+    the from-scratch branch below, so ``static_dim > 0`` without
+    ``base_features`` raises.
     """
     betas = np.asarray(beta_row, dtype=np.float32).reshape(-1)
-    dim = flat_region_input_dim()
+    base_dim = flat_region_input_dim()
+    dim = base_dim + int(static_dim)
     n_edges = index.n_edges
     if n_edges == 0:
         return np.zeros((0, dim), dtype=np.float32), np.zeros(0, dtype=np.int64)
@@ -307,9 +326,12 @@ def gather_flat_region_features(
                 f"base_features shape {feats.shape} != expected {(n_edges, dim)}"
             )
         feats[:, 0] = m_vals
-        feats[:, -1] = obs.astype(np.float32)
+        feats[:, base_dim - 1] = obs.astype(np.float32)
+        feats[:, :base_dim] = apply_flat_region_feature_mode(feats[:, :base_dim], feature_mode)
     else:
-        feats = np.zeros((n_edges, dim), dtype=np.float32)
+        if static_dim:
+            raise ValueError("static_dim > 0 requires base_features (no per-sample static source)")
+        feats = np.zeros((n_edges, base_dim), dtype=np.float32)
         feats[:, 0] = m_vals
         offset = 1
         role_ids = np.asarray(index.edge_role_id, dtype=np.int64)
@@ -328,6 +350,7 @@ def gather_flat_region_features(
         feats[:, offset + 1] = index.edge_context_present.astype(np.float32)
         feats[:, offset + 2] = index.edge_regulatory_present.astype(np.float32)
         feats[:, -1] = obs.astype(np.float32)
+        feats = apply_flat_region_feature_mode(feats, feature_mode)
     if reg_permute_seed is not None:
         # N2 negative control: shuffle regulatory multi-hot rows across edges.
         # ponytail: simple row-wise shuffle; no stratum keys in current index.
@@ -336,7 +359,6 @@ def gather_flat_region_features(
         rng = np.random.default_rng(reg_permute_seed)
         perm = rng.permutation(feats.shape[0])
         feats[:, reg_start_off:flags_start_off] = feats[perm, reg_start_off:flags_start_off]
-    feats = apply_flat_region_feature_mode(feats, feature_mode)
     if not np.any(obs):
         return np.zeros((0, dim), dtype=np.float32), np.zeros(0, dtype=np.int64)
     return feats[obs], genes[obs]
@@ -411,12 +433,22 @@ def build_flat_region_base_features(
     index: FlatRegionGeneIndex,
     *,
     feature_mode: FlatRegionFeatureMode = "full",
+    static_block: np.ndarray | None = None,
 ) -> np.ndarray:
-    """Annotation-only feature template (M-value/observed filled per sample)."""
+    """Annotation-only feature template (M-value/observed filled per sample).
+
+    ``static_block``, if given, is an ``[n_edges, static_dim]`` per-CpG
+    embedding (e.g. CpGPT sequence-adapter output, edge-aligned via
+    ``static_by_col[index.edge_col_index]``) appended as trailing columns
+    after the fixed annotation layout. It is untouched by ``feature_mode``
+    ablations, which only ever act on the base 24-wide block.
+    """
     dim = flat_region_input_dim()
     n_edges = index.n_edges
     feats = np.zeros((n_edges, dim), dtype=np.float32)
     if n_edges == 0:
+        if static_block is not None:
+            return np.zeros((0, dim + static_block.shape[1]), dtype=np.float32)
         return feats
     offset = 1
     role_ids = np.asarray(index.edge_role_id, dtype=np.int64)
@@ -434,4 +466,11 @@ def build_flat_region_base_features(
     feats[:, offset] = index.edge_role_present.astype(np.float32)
     feats[:, offset + 1] = index.edge_context_present.astype(np.float32)
     feats[:, offset + 2] = index.edge_regulatory_present.astype(np.float32)
-    return apply_flat_region_feature_mode(feats, feature_mode)
+    feats = apply_flat_region_feature_mode(feats, feature_mode)
+    if static_block is None:
+        return feats
+    if static_block.shape[0] != n_edges:
+        raise ValueError(
+            f"static_block rows {static_block.shape[0]} != n_edges {n_edges}"
+        )
+    return np.concatenate([feats, np.asarray(static_block, dtype=np.float32)], axis=1)

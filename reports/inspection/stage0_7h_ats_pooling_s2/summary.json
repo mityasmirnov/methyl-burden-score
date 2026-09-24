@@ -1,0 +1,149 @@
+{
+  "generated_at": "2026-09-08T00:48:18.420993+00:00",
+  "seed": 43,
+  "split_id": "hub-ats-7e-3fold-v1",
+  "matrix_id": "matrix-hub-age-tissue-sex-full-v1",
+  "note": "Genuine second-seed confirmation of cascade 2\u00d72 pooling (Track B.4).",
+  "arms": [
+    {
+      "arm": "P2-G-s2",
+      "run_id": "stage0-7h-ats-P2-G-s2",
+      "n_folds": 3,
+      "folds": [
+        {
+          "fold": 0,
+          "eval_split": "test",
+          "tissue_f1": 0.31776018686401497,
+          "age_mae": 20.95190682785853,
+          "sex_auroc": 0.7371572500412513,
+          "best_epoch": 14
+        },
+        {
+          "fold": 1,
+          "eval_split": "test",
+          "tissue_f1": 0.41676777656282027,
+          "age_mae": 16.835523302843495,
+          "sex_auroc": 0.8485061491528411,
+          "best_epoch": 14
+        },
+        {
+          "fold": 2,
+          "eval_split": "test",
+          "tissue_f1": 0.40344260437920465,
+          "age_mae": 19.96519549024651,
+          "sex_auroc": 0.7098669955446055,
+          "best_epoch": 12
+        }
+      ],
+      "tissue_f1_mean": 0.3793235226020133,
+      "tissue_f1_sd": 0.05373009662956951,
+      "age_mae_mean": 19.250875206982844,
+      "sex_auroc_mean": 0.7651767982462326
+    },
+    {
+      "arm": "scalar-mean-max-s2",
+      "run_id": "stage0-7h-ats-scalar-mean-max-s2",
+      "n_folds": 3,
+      "folds": [
+        {
+          "fold": 0,
+          "eval_split": "test",
+          "tissue_f1": 0.2891430990699263,
+          "age_mae": 26.720260603053138,
+          "sex_auroc": 0.709513040270997,
+          "best_epoch": 5
+        },
+        {
+          "fold": 1,
+          "eval_split": "test",
+          "tissue_f1": 0.3799884109774674,
+          "age_mae": 18.57497125972733,
+          "sex_auroc": 0.6882757414244483,
+          "best_epoch": 5
+        },
+        {
+          "fold": 2,
+          "eval_split": "test",
+          "tissue_f1": 0.38725021765437617,
+          "age_mae": 21.30423205044332,
+          "sex_auroc": 0.7205795933680665,
+          "best_epoch": 12
+        }
+      ],
+      "tissue_f1_mean": 0.35212724256725664,
+      "tissue_f1_sd": 0.054666582188046306,
+      "age_mae_mean": 22.19982130440793,
+      "sex_auroc_mean": 0.7061227916878373
+    },
+    {
+      "arm": "scalar-max-mean-s2",
+      "run_id": "stage0-7h-ats-scalar-max-mean-s2",
+      "n_folds": 3,
+      "folds": [
+        {
+          "fold": 0,
+          "eval_split": "test",
+          "tissue_f1": 0.3026552545512957,
+          "age_mae": 22.58958496657854,
+          "sex_auroc": 0.6811072178490428,
+          "best_epoch": 16
+        },
+        {
+          "fold": 1,
+          "eval_split": "test",
+          "tissue_f1": 0.3919620851738464,
+          "age_mae": 18.552828323493458,
+          "sex_auroc": 0.783593049526642,
+          "best_epoch": 11
+        },
+        {
+          "fold": 2,
+          "eval_split": "test",
+          "tissue_f1": 0.36553126832577676,
+          "age_mae": 21.32983798351485,
+          "sex_auroc": 0.6441523328428806,
+          "best_epoch": 9
+        }
+      ],
+      "tissue_f1_mean": 0.3533828693503063,
+      "tissue_f1_sd": 0.04587608524287625,
+      "age_mae_mean": 20.824083757862283,
+      "sex_auroc_mean": 0.7029508667395218
+    },
+    {
+      "arm": "vector-mean-max-s2",
+      "run_id": "stage0-7h-ats-vector-mean-max-s2",
+      "n_folds": 3,
+      "folds": [
+        {
+          "fold": 0,
+          "eval_split": "test",
+          "tissue_f1": 0.2832378194205173,
+          "age_mae": 24.021425457910674,
+          "sex_auroc": 0.6695231994202167,
+          "best_epoch": 7
+        },
+        {
+          "fold": 1,
+          "eval_split": "test",
+          "tissue_f1": 0.353105517322704,
+          "age_mae": 18.700285580513334,
+          "sex_auroc": 0.6660325215532986,
+          "best_epoch": 6
+        },
+        {
+          "fold": 2,
+          "eval_split": "test",
+          "tissue_f1": 0.39083945533853537,
+          "age_mae": 22.48440912591573,
+          "sex_auroc": 0.6396828516027517,
+          "best_epoch": 9
+        }
+      ],
+      "tissue_f1_mean": 0.3423942640272522,
+      "tissue_f1_sd": 0.05459465379895659,
+      "age_mae_mean": 21.735373388113246,
+      "sex_auroc_mean": 0.6584128575254223
+    }
+  ]
+}

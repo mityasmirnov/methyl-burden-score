@@ -17,19 +17,19 @@
     "n_fields": 269
   },
   "vs_catalog": {
-    "n_overlap": 157402,
-    "census_not_in_catalog": 22915,
-    "catalog_not_in_census": 15674,
+    "n_overlap": 169367,
+    "census_not_in_catalog": 10950,
+    "catalog_not_in_census": 16484,
     "hub_samples_in_census": 34234
   },
   "merge_stats": {
     "n_census_rows": 180317,
-    "n_samples_matched": 157402,
-    "n_platform_filled": 157402,
-    "n_tissue_filled": 122712,
-    "n_sample_type_filled": 143774,
-    "n_phenotype_rows_added": 250491,
-    "n_studies_platform_set": 942,
+    "n_samples_matched": 169367,
+    "n_platform_filled": 169367,
+    "n_tissue_filled": 134671,
+    "n_sample_type_filled": 155290,
+    "n_phenotype_rows_added": 273825,
+    "n_studies_platform_set": 1002,
     "enabled": true,
     "parquet_path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/ewas_datahub_sample_census.parquet"
   },

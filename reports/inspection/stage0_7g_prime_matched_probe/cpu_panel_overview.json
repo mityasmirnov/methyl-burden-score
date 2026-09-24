@@ -1,0 +1,377 @@
+{
+  "report_id": "stage0_7g_prime_matched_probe_cpu_panels",
+  "as_of": "2026-09-09",
+  "scope": {
+    "split_id": "hub-ats-7e-3fold-v1",
+    "matrix_id": "matrix-hub-age-tissue-sex-full-v1",
+    "graph_id": "graph-grch38-gencode38-cgi-tile-v2",
+    "max_loci": 65536,
+    "n_loci_matrix_full": 482379,
+    "traits": [
+      "age",
+      "sex",
+      "tissue"
+    ],
+    "n_folds_panels": 3,
+    "panel_repeats_dry_run": 1,
+    "production_panel_repeats": 5,
+    "prefilter_max_cols": 4096,
+    "selector": "study_grouped_multitask_enet_stability",
+    "arms_completed": [
+      "C-mvalue-enetS"
+    ],
+    "arms_not_run": [
+      "N-cascade-S",
+      "N-light-type",
+      "fusion"
+    ],
+    "note": "CPU dry-run panels (n_repeats=1) + classical enetS. Not Stage B neural."
+  },
+  "universe": {
+    "n_cpgs_scored": 65536,
+    "probe_id_column": "probe_id",
+    "n_genes_in_assignment": 2658,
+    "n_genes_touched_by_any_scored_col": 2658
+  },
+  "atlas": {
+    "source": "data/raw/ewas_atlas/EWAS_Atlas_associations.tsv",
+    "encoding": "latin-1",
+    "trait_match_rules": {
+      "age": "age/aging/chronological age (+ age * excluding macular/maternal/gestational)",
+      "sex": "sex/gender token",
+      "tissue": "tissue|cell type|leukocyte|blood cell substring"
+    },
+    "n_association_rows_matched": {
+      "age": 46961,
+      "sex": 48753,
+      "tissue": 1264
+    },
+    "n_unique_probes_matched_raw": {
+      "age": 33121,
+      "sex": 21713,
+      "tissue": 1264
+    },
+    "n_unique_probes_in_65k_universe": {
+      "age": 3197,
+      "sex": 1377,
+      "tissue": 124
+    },
+    "n_matched_trait_labels": {
+      "age": 3,
+      "sex": 8,
+      "tissue": 4
+    },
+    "mean_panel_overlap_fraction_of_set": {
+      "age": 0.06574703066253505,
+      "sex": 0.023144623927048136,
+      "tissue": 0.0018763988949014841
+    },
+    "mean_panel_hypergeom_p": {
+      "age": 3.0195591230863555e-76,
+      "sex": 0.0003842291925922736,
+      "tissue": 0.5503584127636273
+    }
+  },
+  "folds": [
+    {
+      "fold": 0,
+      "n_train_samples": 8163,
+      "n_seed_cpgs": 3410,
+      "n_panel_cpgs": 32731,
+      "n_repeats": 1,
+      "seed_cols_by_task": {
+        "age": 3333,
+        "sex": 43,
+        "tissue": 34
+      },
+      "n_seed_genes": 1035,
+      "n_panel_genes": 1207,
+      "selection_meta_lite": {
+        "age": {
+          "n_cols_after_prefilter": 4096,
+          "n_passing_min_frequency": 0,
+          "sparsity_ok": false
+        },
+        "sex": {
+          "n_cols_after_prefilter": 4096,
+          "n_passing_min_frequency": 43,
+          "sparsity_ok": true
+        },
+        "tissue": {
+          "n_cols_after_prefilter": 4096,
+          "n_passing_min_frequency": 34,
+          "sparsity_ok": true
+        }
+      },
+      "atlas_overlap": {
+        "age_seed": {
+          "n_atlas_in_universe": 3197,
+          "n_set": 3410,
+          "n_overlap": 1001,
+          "fraction_of_set": 0.29354838709677417,
+          "fraction_of_atlas": 0.31310603690960276,
+          "hypergeom_p_enrichment": 0.0
+        },
+        "age_panel": {
+          "n_atlas_in_universe": 3197,
+          "n_set": 32731,
+          "n_overlap": 2273,
+          "fraction_of_set": 0.06944486877883352,
+          "fraction_of_atlas": 0.7109790428526744,
+          "hypergeom_p_enrichment": 6.5782253162014935e-137
+        },
+        "sex_seed": {
+          "n_atlas_in_universe": 1377,
+          "n_set": 3410,
+          "n_overlap": 110,
+          "fraction_of_set": 0.03225806451612903,
+          "fraction_of_atlas": 0.07988380537400146,
+          "hypergeom_p_enrichment": 6.92989174426887e-06
+        },
+        "sex_panel": {
+          "n_atlas_in_universe": 1377,
+          "n_set": 32731,
+          "n_overlap": 785,
+          "fraction_of_set": 0.02398337967064862,
+          "fraction_of_atlas": 0.570079883805374,
+          "hypergeom_p_enrichment": 6.47123874974077e-08
+        },
+        "tissue_seed": {
+          "n_atlas_in_universe": 124,
+          "n_set": 3410,
+          "n_overlap": 0,
+          "fraction_of_set": 0.0,
+          "fraction_of_atlas": 0.0,
+          "hypergeom_p_enrichment": 1.0
+        },
+        "tissue_panel": {
+          "n_atlas_in_universe": 124,
+          "n_set": 32731,
+          "n_overlap": 57,
+          "fraction_of_set": 0.001741468332773212,
+          "fraction_of_atlas": 0.4596774193548387,
+          "hypergeom_p_enrichment": 0.8355026042138736
+        }
+      }
+    },
+    {
+      "fold": 1,
+      "n_train_samples": 7207,
+      "n_seed_cpgs": 3408,
+      "n_panel_cpgs": 34784,
+      "n_repeats": 1,
+      "seed_cols_by_task": {
+        "age": 3333,
+        "sex": 34,
+        "tissue": 50
+      },
+      "n_seed_genes": 1106,
+      "n_panel_genes": 1272,
+      "selection_meta_lite": {
+        "age": {
+          "n_cols_after_prefilter": 4096,
+          "n_passing_min_frequency": 0,
+          "sparsity_ok": false
+        },
+        "sex": {
+          "n_cols_after_prefilter": 4096,
+          "n_passing_min_frequency": 34,
+          "sparsity_ok": true
+        },
+        "tissue": {
+          "n_cols_after_prefilter": 4096,
+          "n_passing_min_frequency": 50,
+          "sparsity_ok": true
+        }
+      },
+      "atlas_overlap": {
+        "age_seed": {
+          "n_atlas_in_universe": 3197,
+          "n_set": 3408,
+          "n_overlap": 486,
+          "fraction_of_set": 0.1426056338028169,
+          "fraction_of_atlas": 0.1520175164216453,
+          "hypergeom_p_enrichment": 7.1982315701176e-105
+        },
+        "age_panel": {
+          "n_atlas_in_universe": 3197,
+          "n_set": 34784,
+          "n_overlap": 2196,
+          "fraction_of_set": 0.06313247470101196,
+          "fraction_of_atlas": 0.6868939630903973,
+          "hypergeom_p_enrichment": 9.058677369259066e-76
+        },
+        "sex_seed": {
+          "n_atlas_in_universe": 1377,
+          "n_set": 3408,
+          "n_overlap": 147,
+          "fraction_of_set": 0.043133802816901406,
+          "fraction_of_atlas": 0.10675381263616558,
+          "hypergeom_p_enrichment": 1.8729363121612934e-16
+        },
+        "sex_panel": {
+          "n_atlas_in_universe": 1377,
+          "n_set": 34784,
+          "n_overlap": 790,
+          "fraction_of_set": 0.022711591536338546,
+          "fraction_of_atlas": 0.5737109658678287,
+          "hypergeom_p_enrichment": 0.0006704348864479595
+        },
+        "tissue_seed": {
+          "n_atlas_in_universe": 124,
+          "n_set": 3408,
+          "n_overlap": 7,
+          "fraction_of_set": 0.0020539906103286387,
+          "fraction_of_atlas": 0.056451612903225805,
+          "hypergeom_p_enrichment": 0.4672518621486031
+        },
+        "tissue_panel": {
+          "n_atlas_in_universe": 124,
+          "n_set": 34784,
+          "n_overlap": 68,
+          "fraction_of_set": 0.001954921803127875,
+          "fraction_of_atlas": 0.5483870967741935,
+          "hypergeom_p_enrichment": 0.3814289344179525
+        }
+      }
+    },
+    {
+      "fold": 2,
+      "n_train_samples": 7631,
+      "n_seed_cpgs": 3419,
+      "n_panel_cpgs": 35182,
+      "n_repeats": 1,
+      "seed_cols_by_task": {
+        "age": 3333,
+        "sex": 45,
+        "tissue": 45
+      },
+      "n_seed_genes": 1150,
+      "n_panel_genes": 1302,
+      "selection_meta_lite": {
+        "age": {
+          "n_cols_after_prefilter": 4096,
+          "n_passing_min_frequency": 0,
+          "sparsity_ok": false
+        },
+        "sex": {
+          "n_cols_after_prefilter": 4096,
+          "n_passing_min_frequency": 45,
+          "sparsity_ok": true
+        },
+        "tissue": {
+          "n_cols_after_prefilter": 4096,
+          "n_passing_min_frequency": 45,
+          "sparsity_ok": true
+        }
+      },
+      "atlas_overlap": {
+        "age_seed": {
+          "n_atlas_in_universe": 3197,
+          "n_set": 3419,
+          "n_overlap": 670,
+          "fraction_of_set": 0.1959637320854051,
+          "fraction_of_atlas": 0.20957147325617767,
+          "hypergeom_p_enrichment": 1.831669677744488e-226
+        },
+        "age_panel": {
+          "n_atlas_in_universe": 3197,
+          "n_set": 35182,
+          "n_overlap": 2275,
+          "fraction_of_set": 0.06466374850775965,
+          "fraction_of_atlas": 0.7116046293400062,
+          "hypergeom_p_enrichment": 2.1767985052975774e-95
+        },
+        "sex_seed": {
+          "n_atlas_in_universe": 1377,
+          "n_set": 3419,
+          "n_overlap": 165,
+          "fraction_of_set": 0.048259725065808716,
+          "fraction_of_atlas": 0.11982570806100218,
+          "hypergeom_p_enrichment": 3.449933383102108e-23
+        },
+        "sex_panel": {
+          "n_atlas_in_universe": 1377,
+          "n_set": 35182,
+          "n_overlap": 800,
+          "fraction_of_set": 0.02273890057415724,
+          "fraction_of_atlas": 0.5809731299927379,
+          "hypergeom_p_enrichment": 0.0004821879789413638
+        },
+        "tissue_seed": {
+          "n_atlas_in_universe": 124,
+          "n_set": 3419,
+          "n_overlap": 10,
+          "fraction_of_set": 0.0029248318221702253,
+          "fraction_of_atlas": 0.08064516129032258,
+          "hypergeom_p_enrichment": 0.11398516815269104
+        },
+        "tissue_panel": {
+          "n_atlas_in_universe": 124,
+          "n_set": 35182,
+          "n_overlap": 68,
+          "fraction_of_set": 0.0019328065488033654,
+          "fraction_of_atlas": 0.5483870967741935,
+          "hypergeom_p_enrichment": 0.4341436996590559
+        }
+      }
+    }
+  ],
+  "cross_fold_overlap": {
+    "seed_jaccard": {
+      "01": 0.07777426493834967,
+      "02": 0.12153062900312038,
+      "12": 0.5565435476516188
+    },
+    "panel_cpg_jaccard": {
+      "01": 0.5857897827363476,
+      "02": 0.6062297485868356,
+      "12": 0.7886340977068793
+    },
+    "panel_gene_jaccard": {
+      "01": 0.4782349433512224,
+      "02": 0.4997011356843993,
+      "12": 0.72751677852349
+    },
+    "n_genes_intersection_all_folds": 717,
+    "n_genes_union_all_folds": 1776,
+    "n_panel_cpg_intersection_all_folds": 23097,
+    "n_panel_cpg_union_all_folds": 44373
+  },
+  "classical_enetS": [
+    {
+      "fold": 0,
+      "age_pearson_r": 0.8941115087197192,
+      "age_mae": 8.969770538330573,
+      "sex_auroc": 0.8515317991076774,
+      "tissue_balanced_accuracy": 0.42208284343610447,
+      "tissue_macro_f1": 0.36767405358798516,
+      "tissue_n_classes_scored": 38
+    },
+    {
+      "fold": 1,
+      "age_pearson_r": 0.8766828953778906,
+      "age_mae": 8.051889558835404,
+      "sex_auroc": 0.9278510838247803,
+      "tissue_balanced_accuracy": 0.46587849356584005,
+      "tissue_macro_f1": 0.3949146373444826,
+      "tissue_n_classes_scored": 39
+    },
+    {
+      "fold": 2,
+      "age_pearson_r": 0.9116460519852158,
+      "age_mae": 7.906801896475948,
+      "sex_auroc": 0.8921604120459293,
+      "tissue_balanced_accuracy": 0.4237234042145882,
+      "tissue_macro_f1": 0.39314936854582827,
+      "tissue_n_classes_scored": 42
+    }
+  ],
+  "classical_enetS_mean": {
+    "age_pearson_r": 0.8941468186942751,
+    "sex_auroc": 0.8905144316594624,
+    "tissue_balanced_accuracy": 0.43722824707217756,
+    "tissue_macro_f1": 0.3852460198260987
+  },
+  "orphan_rbs_census_ref": "reports/inspection/stage0_7g_prime_matched_probe/orphan_rbs_census.md"
+}

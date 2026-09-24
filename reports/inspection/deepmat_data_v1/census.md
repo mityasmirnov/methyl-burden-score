@@ -1,7 +1,7 @@
 # Phenotype census (deepmat-data-v1)
 
-- Generated: `2026-09-09T09:14:57Z`
-- Unique GSM (`sample`): **173076**
+- Generated: `2026-09-09T14:34:36Z`
+- Unique GSM (`sample`): **185851**
 - Pack membership row sum: **47843**
 - Pack row sum counts Hub membership only; unique GSM also includes EWAS_db-only samples. Pack row sum can exceed unique Hub GSMs when samples appear in multiple packs.
 
@@ -35,8 +35,8 @@ Rows: 50 (capped at 50 in report).
 
 ## EWAS_db ingest
 
-- Local studies: `1695` / advertised `1989` (mirror_complete=False)
-- Local GSM files: `170641`
+- Local studies: `1860` / advertised `1989` (mirror_complete=False)
+- Local GSM files: `187324`
 
 ## Donor / replicate (when present)
 
@@ -79,7 +79,7 @@ Hub sample-info currently lacks donor columns for most packs; counts stay 0 unti
 | `GSE106648` | 279 | 16.0 | 66.0 | 41.50928381962865 |
 | `GSE107038` | 40 | 13.0 | 90.0 | 59.17 |
 | `GSE107080` | 405 | 25.0 | 75.0 | 47.89135802469136 |
-| `GSE107143` | 1 | 42.0 | 42.0 | 42.0 |
+| `GSE107143` | 16 | 32.0 | 88.0 | 62.903225806451616 |
 | `GSE107211` | 15 | 0.008213552361396304 | 0.008213552361396304 | 0.008213552361396302 |
 | `GSE107226` | 12 | 47.0 | 72.0 | 59.75 |
 | `GSE107459` | 127 | 18.1945 | 35.6658 | 25.265448875239848 |
@@ -94,13 +94,13 @@ Hub sample-info currently lacks donor columns for most packs; counts stay 0 unti
 | `GSE110007` | 31 | 32.0 | 78.0 | 55.45161290322581 |
 | `GSE110554` | 37 | 19.0 | 59.0 | 32.5945945945946 |
 | `GSE110555` | 6 | 33.0 | 56.0 | 42.833333333333336 |
+| `GSE110776` | 24 | 39.0 | 73.0 | 53.166666666666664 |
+| `GSE110778` | 24 | 38.0 | 74.0 | 56.75 |
 | `GSE111165` | 147 | 5.0 | 61.0 | 32.524193548387096 |
 | `GSE111223` | 259 | 36.0 | 88.0 | 68.68345323741008 |
 | `GSE111396` | 61 | 43.0 | 83.0 | 65.39344262295081 |
 | `GSE111428` | 6 | 1.33 | 18.0 | 7.471666666666667 |
 | `GSE111629` | 571 | 35.0 | 92.0 | 69.01621621621622 |
-| `GSE111933` | 92 | 45.0 | 85.0 | 67.78260869565217 |
-| `GSE112179` | 100 | 23.0 | 77.0 | 47.63 |
 | … | (450 more studies) | | | |
 
 ## Within-study BMI ranges

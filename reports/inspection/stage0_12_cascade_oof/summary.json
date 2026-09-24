@@ -1,0 +1,20 @@
+{
+  "split_id": "hub-nine-pack-5fold-v1",
+  "n_folds": 5,
+  "n_restarts": 6,
+  "run_prefix": "stage0-12-cascade-oof-smoketest",
+  "primary_evaluation": "mbs_enet_nested",
+  "rows": [
+    {
+      "run_id": "stage0-12-cascade-oof-smoketest-f0-r0",
+      "fold": 0,
+      "restart": 0,
+      "nested_tissue_f1": null,
+      "nested_age_mae": null,
+      "nested_sex_auroc": null,
+      "e2e_tissue_f1": 0.24447967062831194,
+      "e2e_age_mae": 21.27990636984098,
+      "e2e_sex_auroc": 0.7996818242078749
+    }
+  ]
+}

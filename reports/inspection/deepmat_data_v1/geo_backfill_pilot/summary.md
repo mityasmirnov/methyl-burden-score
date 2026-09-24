@@ -1,15 +1,15 @@
 # GEO backfill pilot summary
 
-- Generated: `2026-09-09T09:14:46Z`
+- Generated: `2026-09-09T14:34:23Z`
 - GEO parquet GSM in: **170338**
-- Catalog samples touched (EWAS_db-only): **140319**
+- Catalog samples touched (EWAS_db-only): **144685**
 - Hub-skipped GSM (already complete): **18605**
 - Hub GSM with GEO fill-missing: **9360**
 - Species-quarantined GSM (non-human/unknown): **560**
-- GEO GSM not in catalog: **10854**
-- Phenotype rows added: **206819**
-- Samples with ≥1 observed GEO phenotype: **100561**
-- Samples with `metadata_json.geo`: **140319**
+- GEO GSM not in catalog: **6488**
+- Phenotype rows added: **212105**
+- Samples with ≥1 observed GEO phenotype: **103458**
+- Samples with `metadata_json.geo`: **144685**
 - Multi-study GSM (membership): **2370**
 
 ## Invariants
@@ -20,41 +20,41 @@
 
 ## Tissue ontology
 
-- mapped / unmapped / ambiguous / empty: **66437** / **92479** / **0** / **8**
+- mapped / unmapped / ambiguous / empty: **67995** / **95287** / **0** / **8**
 - Unmapped examples: `mucosa`, `tumor`, `intestinal metaplasia biopsy from gastric antrum`, `intestinal metaplasia biopsy from gastric body`, `intestinal metaplasia biopsy from gastric cardia`, `mild intestinal metaplasia biopsy from gastric antrum`, `normal biopsy from gastric antrum`, `normal biopsy from gastric body`, `normal biopsy from gastric cardia`, `HUVEC`, `UC-WBC`, `B-cells`, `CD4 T-cells`, `CD8 T-cells`, `Granulocytes`, `Monocytes`, `brain tumor`, `Tissue core or slide`, `blood pellet`, `EBV transformed lymphoblastoid`
 
 ## Phenotypes by id
 
 | phenotype_id | rows | observed | unique GSM |
 | --- | ---: | ---: | ---: |
-| `age` | 48990 | 48990 | 48990 |
-| `cancer` | 5146 | 5146 | 5146 |
-| `disease` | 17633 | 17633 | 17633 |
-| `sex` | 84126 | 84126 | 84126 |
-| `tissue` | 50924 | 50924 | 50924 |
+| `age` | 49978 | 49978 | 49978 |
+| `cancer` | 5223 | 5223 | 5223 |
+| `disease` | 18159 | 18159 | 18159 |
+| `sex` | 86263 | 86263 | 86263 |
+| `tissue` | 52482 | 52482 | 52482 |
 
 ## Label status
 
 | phenotype_id | label_status | n |
 | --- | --- | ---: |
-| `age` | `observed` | 48990 |
-| `cancer` | `case` | 4541 |
-| `cancer` | `control` | 605 |
-| `disease` | `case` | 7192 |
-| `disease` | `control` | 10441 |
-| `sex` | `observed` | 84126 |
-| `tissue` | `observed` | 50924 |
+| `age` | `observed` | 49978 |
+| `cancer` | `case` | 4609 |
+| `cancer` | `control` | 614 |
+| `disease` | `case` | 7199 |
+| `disease` | `control` | 10960 |
+| `sex` | `observed` | 86263 |
+| `tissue` | `observed` | 52482 |
 
 ## Eligibility (`source_family=geo_metadata_backfill`)
 
 | phenotype_id | n | cases | controls | core | aux |
 | --- | ---: | ---: | ---: | --- | --- |
-| `age` | 48990 | None | None | True | True |
-| `cancer` | 5146 | 4541 | 605 | True | True |
-| `disease` | 17633 | 7192 | 10441 | True | True |
-| `sex` | 84126 | None | None | False | True |
+| `age` | 49978 | None | None | True | True |
+| `cancer` | 5223 | 4609 | 614 | True | True |
+| `disease` | 18159 | 7199 | 10960 | True | True |
+| `sex` | 86263 | None | None | False | True |
   - `sex` not core: sex is auxiliary biological / QC, not a core burden target
-| `tissue` | 50924 | None | None | True | True |
+| `tissue` | 52482 | None | None | True | True |
 
 ## Per study (merge)
 
@@ -143,6 +143,7 @@
 | `GSE106727` | 18 | 18 |
 | `GSE106902` | 6 | 10 |
 | `GSE107080` | 405 | 1215 |
+| `GSE107143` | 15 | 52 |
 | `GSE107211` | 15 | 35 |
 | `GSE107226` | 12 | 28 |
 | `GSE107298` | 394 | 0 |
@@ -204,7 +205,7 @@
 | `GSE111933` | 92 | 276 |
 | `GSE111942` | 43 | 12 |
 | `GSE112012` | 2 | 2 |
-| `GSE112047` | 24 | 0 |
+| `GSE112047` | 47 | 0 |
 | `GSE112067` | 16 | 0 |
 | `GSE112179` | 100 | 200 |
 | `GSE112306` | 6 | 0 |
@@ -1129,7 +1130,7 @@
 | `GSE45958` | 24 | 48 |
 | `GSE46168` | 14 | 0 |
 | `GSE46306` | 44 | 19 |
-| `GSE46573` | 6 | 0 |
+| `GSE46573` | 22 | 6 |
 | `GSE46648` | 3 | 6 |
 | `GSE46650` | 12 | 0 |
 | `GSE47512` | 1 | 3 |
@@ -1139,7 +1140,7 @@
 | `GSE47915` | 8 | 16 |
 | `GSE48300` | 25 | 36 |
 | `GSE48472` | 19 | 8 |
-| `GSE49031` | 53 | 0 |
+| `GSE49031` | 942 | 86 |
 | `GSE49149` | 167 | 501 |
 | `GSE49177` | 9 | 9 |
 | `GSE49377` | 46 | 90 |
@@ -1195,15 +1196,15 @@
 | `GSE53840` | 34 | 66 |
 | `GSE53841` | 4 | 8 |
 | `GSE53849` | 23 | 11 |
-| `GSE54399` | 28 | 0 |
+| `GSE54399` | 70 | 42 |
 | `GSE54503` | 132 | 124 |
 | `GSE54643` | 14 | 42 |
 | `GSE54670` | 12 | 12 |
-| `GSE54719` | 3 | 0 |
-| `GSE54776` | 7 | 0 |
-| `GSE54880` | 4 | 0 |
-| `GSE54882` | 19 | 0 |
-| `GSE54939` | 1 | 0 |
+| `GSE54719` | 41 | 0 |
+| `GSE54776` | 14 | 7 |
+| `GSE54880` | 279 | 275 |
+| `GSE54882` | 305 | 858 |
+| `GSE54939` | 24 | 23 |
 | `GSE55438` | 48 | 0 |
 | `GSE55491` | 24 | 15 |
 | `GSE55571` | 7 | 16 |
@@ -1222,7 +1223,7 @@
 | `GSE56596` | 45 | 0 |
 | `GSE56600` | 227 | 411 |
 | `GSE56621` | 12 | 0 |
-| `GSE57107` | 21 | 0 |
+| `GSE57107` | 48 | 27 |
 | `GSE57204` | 54 | 0 |
 | `GSE57318` | 6 | 0 |
 | `GSE57342` | 338 | 0 |
@@ -1240,7 +1241,8 @@
 | `GSE58885` | 179 | 8 |
 | `GSE58888` | 143 | 128 |
 | `GSE58999` | 87 | 87 |
-| `GSE59091` | 139 | 0 |
+| `GSE59065` | 49 | 49 |
+| `GSE59091` | 195 | 56 |
 | `GSE59134` | 21 | 8 |
 | `GSE59157` | 95 | 168 |
 | `GSE59250` | 434 | 85 |
@@ -1260,7 +1262,7 @@
 | `GSE60132` | 70 | 210 |
 | `GSE60185` | 285 | 730 |
 | `GSE60225` | 18 | 0 |
-| `GSE60274` | 3 | 0 |
+| `GSE60274` | 61 | 109 |
 | `GSE60446` | 12 | 0 |
 | `GSE60655` | 36 | 0 |
 | `GSE60753` | 199 | 178 |
@@ -1270,10 +1272,15 @@
 | `GSE60885` | 17 | 0 |
 | `GSE60923` | 16 | 0 |
 | `GSE61107` | 1 | 0 |
-| `GSE61160` | 24 | 0 |
-| `GSE61278` | 53 | 0 |
-| `GSE61441` | 59 | 59 |
-| `GSE61653` | 11 | 22 |
+| `GSE61151` | 114 | 228 |
+| `GSE61160` | 51 | 27 |
+| `GSE61195` | 9 | 18 |
+| `GSE61257` | 17 | 51 |
+| `GSE61259` | 16 | 48 |
+| `GSE61278` | 110 | 158 |
+| `GSE61441` | 92 | 158 |
+| `GSE61496` | 200 | 398 |
+| `GSE61653` | 128 | 373 |
 | `GSE61744` | 2 | 0 |
 | `GSE62003` | 4 | 4 |
 | `GSE62177` | 6 | 0 |
@@ -1290,6 +1297,7 @@
 | `GSE63179` | 8 | 24 |
 | `GSE63267` | 14 | 0 |
 | `GSE63315` | 47 | 0 |
+| `GSE63347` | 11 | 22 |
 | `GSE63409` | 74 | 60 |
 | `GSE63421` | 6 | 0 |
 | `GSE63499` | 60 | 24 |
@@ -1297,9 +1305,9 @@
 | `GSE63695` | 78 | 156 |
 | `GSE63704` | 129 | 15 |
 | `GSE63849` | 6 | 3 |
-| `GSE64096` | 37 | 0 |
-| `GSE64316` | 14 | 0 |
-| `GSE64380` | 1 | 0 |
+| `GSE64096` | 40 | 3 |
+| `GSE64316` | 20 | 6 |
+| `GSE64380` | 100 | 117 |
 | `GSE64491` | 8 | 16 |
 | `GSE64495` | 80 | 314 |
 | `GSE64509` | 4 | 8 |
@@ -1350,6 +1358,9 @@
 | `GSE67444` | 36 | 46 |
 | `GSE67477` | 7 | 18 |
 | `GSE67484` | 2 | 6 |
+| `GSE67530` | 35 | 70 |
+| `GSE67705` | 86 | 256 |
+| `GSE67751` | 69 | 207 |
 | `GSE67919` | 2 | 4 |
 | `GSE68060` | 120 | 0 |
 | `GSE68134` | 41 | 41 |
@@ -1398,15 +1409,16 @@
 | `GSE72277` | 60 | 180 |
 | `GSE72338` | 19 | 36 |
 | `GSE72354` | 34 | 34 |
-| `GSE72364` | 2 | 0 |
-| `GSE72556` | 1 | 0 |
+| `GSE72364` | 12 | 20 |
+| `GSE72556` | 3 | 2 |
 | `GSE72680` | 12 | 36 |
 | `GSE72773` | 148 | 444 |
 | `GSE72774` | 317 | 1062 |
 | `GSE72775` | 171 | 513 |
 | `GSE72776` | 3 | 10 |
 | `GSE72777` | 14 | 42 |
-| `GSE72872` | 96 | 0 |
+| `GSE72778` | 57 | 114 |
+| `GSE72872` | 247 | 0 |
 | `GSE73103` | 203 | 609 |
 | `GSE73115` | 180 | 338 |
 | `GSE73270` | 11 | 1 |
@@ -1419,10 +1431,12 @@
 | `GSE73745` | 24 | 6 |
 | `GSE73747` | 59 | 24 |
 | `GSE73801` | 585 | 1093 |
-| `GSE73894` | 216 | 0 |
+| `GSE73832` | 129 | 201 |
+| `GSE73894` | 219 | 6 |
+| `GSE73895` | 51 | 51 |
 | `GSE73901` | 36 | 0 |
 | `GSE73949` | 17 | 0 |
-| `GSE74013` | 5 | 0 |
+| `GSE74013` | 48 | 0 |
 | `GSE74071` | 28 | 0 |
 | `GSE74104` | 267 | 180 |
 | `GSE74167` | 42 | 0 |
@@ -1434,9 +1448,9 @@
 | `GSE74609` | 9 | 18 |
 | `GSE74693` | 10 | 20 |
 | `GSE74738` | 79 | 63 |
-| `GSE74845` | 175 | 0 |
-| `GSE75008` | 22 | 0 |
-| `GSE75041` | 12 | 0 |
+| `GSE74845` | 215 | 0 |
+| `GSE75008` | 80 | 0 |
+| `GSE75041` | 65 | 0 |
 | `GSE75067` | 188 | 188 |
 | `GSE75073` | 7 | 0 |
 | `GSE75133` | 15 | 0 |
@@ -1449,14 +1463,14 @@
 | `GSE75443` | 12 | 0 |
 | `GSE75537` | 108 | 0 |
 | `GSE75546` | 12 | 24 |
-| `GSE76056` | 21 | 0 |
-| `GSE76269` | 59 | 0 |
-| `GSE76285` | 61 | 0 |
+| `GSE76056` | 22 | 3 |
+| `GSE76269` | 492 | 245 |
+| `GSE76285` | 80 | 38 |
 | `GSE76394` | 79 | 0 |
 | `GSE76398` | 77 | 2 |
 | `GSE76503` | 48 | 94 |
 | `GSE76709` | 8 | 0 |
-| `GSE76938` | 12 | 0 |
+| `GSE76938` | 73 | 60 |
 | `GSE77056` | 47 | 165 |
 | `GSE77135` | 21 | 42 |
 | `GSE77201` | 6 | 0 |
@@ -1487,6 +1501,7 @@
 | `GSE78975` | 96 | 130 |
 | `GSE79009` | 125 | 0 |
 | `GSE79056` | 36 | 14 |
+| `GSE79064` | 11 | 15 |
 | `GSE79122` | 73 | 71 |
 | `GSE79144` | 138 | 27 |
 | `GSE79185` | 61 | 12 |
@@ -1498,6 +1513,9 @@
 | `GSE79695` | 44 | 0 |
 | `GSE79969` | 4 | 8 |
 | `GSE80017` | 16 | 18 |
+| `GSE80261` | 112 | 224 |
+| `GSE80283` | 150 | 150 |
+| `GSE80310` | 13 | 26 |
 | `GSE80368` | 4 | 0 |
 | `GSE80377` | 4 | 4 |
 | `GSE80417` | 675 | 1986 |
@@ -1526,16 +1544,19 @@
 | `GSE81797` | 2 | 0 |
 | `GSE81846` | 16 | 20 |
 | `GSE81939` | 9 | 9 |
+| `GSE82084` | 26 | 26 |
+| `GSE82218` | 30 | 90 |
 | `GSE82273` | 730 | 1460 |
 | `GSE83334` | 18 | 41 |
 | `GSE83379` | 18 | 0 |
 | `GSE83424` | 63 | 189 |
 | `GSE83458` | 1 | 0 |
-| `GSE83691` | 7 | 0 |
+| `GSE83691` | 26 | 0 |
 | `GSE83750` | 6 | 0 |
 | `GSE83751` | 5 | 0 |
 | `GSE83842` | 10 | 10 |
 | `GSE83917` | 160 | 0 |
+| `GSE84003` | 10 | 34 |
 | `GSE84207` | 330 | 330 |
 | `GSE84274` | 24 | 30 |
 | `GSE84395` | 39 | 94 |
@@ -1567,7 +1588,7 @@
 | `GSE86402` | 6 | 0 |
 | `GSE86409` | 79 | 158 |
 | `GSE86648` | 39 | 0 |
-| `GSE86833` | 15 | 0 |
+| `GSE86833` | 30 | 0 |
 | `GSE87016` | 23 | 55 |
 | `GSE87053` | 21 | 42 |
 | `GSE87056` | 31 | 92 |
@@ -1669,15 +1690,16 @@
 | `GSE99553` | 84 | 84 |
 | `GSE99624` | 42 | 136 |
 | `GSE99650` | 2 | 0 |
+| `GSE99863` | 166 | 332 |
 
 ## Census delta
 
 - Unique GSM before (disk census): **173076**
-- Unique GSM after: **173076**
+- Unique GSM after: **185851**
 - GEO phenotype rows before merge (in-memory): **0**
-- GEO observed rows in previous disk census: **155733**
-- GEO observed phenotype rows after: **206819**
-- Authoritative phenotype rows added this merge: **206819**
+- GEO observed rows in previous disk census: **206819**
+- GEO observed phenotype rows after: **212105**
+- Authoritative phenotype rows added this merge: **212105**
 
 > **Dirty disk baseline:** previous `census.json` already had GEO rows. That does **not** mean this merge added zero — use `n_phenotype_rows_added` / in-memory before_merge (0 on a full rebuild).
 

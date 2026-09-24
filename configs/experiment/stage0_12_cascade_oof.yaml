@@ -47,6 +47,13 @@ training:
   age_loss_weight: 0.3
   sex_loss_weight: 1.0
   gene_linked_only: true
+  # NOTE (2026-09-08 review): the reported product readout for this OOF is
+  # mbs_enet_nested / rbs_enet_nested (post-hoc, via eval_mbs_enet_from_scores.py
+  # --nested), not mbs_e2e below -- mbs_e2e only decides checkpoint_selection
+  # (which epoch's weights get kept). Nested enet is fit afterward and cannot
+  # influence that choice. See scripts/check_12_oof_completeness.py for the
+  # completeness gate this OOF should pass before being reported as a
+  # finished 5x6.
   primary_evaluation: mbs_e2e
   stage_a_include_mbs_enet: false
   stage_a_defer_cpu_probes: true

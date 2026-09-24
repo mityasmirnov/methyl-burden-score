@@ -12,19 +12,64 @@ Parent brief:
 [`milestone-7g-prime-pre-stage-b.md`](milestone-7g-prime-pre-stage-b.md).
 Related: [`milestone-7h-fold-safe-probe-panel-benchmark.md`](milestone-7h-fold-safe-probe-panel-benchmark.md).
 
-**Runner:** `scripts/run_7g_prime_stage_b.py`
+**Runner (legacy Stage B):** `scripts/run_7g_prime_stage_b.py`  
+**Runner (scalable universe):** `scripts/run_trait_universe_catalog.py` +
+`scripts/run_trait_universe_fold_reselect.py`  
+**Config:** [`configs/experiment/stage0_11_trait_universe.yaml`](../../configs/experiment/stage0_11_trait_universe.yaml)
+
+## Three-stage gene universe (2026-09-10)
+
+The 65k elastic-net stability path does not scale to ~374k gene-linked CpGs ×
+many traits. Replace discovery with **loose univariate EWAS** in three stages:
+
+| Stage | Leakage (ADR 0011) | What |
+|-------|--------------------|------|
+| **A** catalog | `catalog_universe` | Gene-linked CpGs only; all-data univariate EWAS per trait; **union** EWAS Atlas genes |
+| **B** restrict | `catalog_universe` | Keep CpGs of genes associated with **any** trait → working universe ≪ 482k |
+| **C** fold-safe | `internal_fold` | Outer-train only: reselect + expand seeds → sibling gene CpGs |
+
+**Invariant:** CV / models train on **C**, never on A. Folds reselect independently
+(gene sets differ but may overlap). Encoder stays gene-permutation invariant.
+Selection stays **loose** (nominal p &lt; 0.05 + gene floors). Disease/cancer:
+case≠control via `label_status`; unknowns stay unknown (10c).
+
+```bash
+uv run python -u scripts/run_trait_universe_catalog.py \
+  --config configs/experiment/stage0_11_trait_universe.yaml
+uv run python -u scripts/run_trait_universe_fold_reselect.py \
+  --config configs/experiment/stage0_11_trait_universe.yaml
+```
+
+Report: `reports/inspection/stage0_11_trait_universe/`.
 
 ## Question / Approaches / Results / Verdict
 
 - **Question:** As a DeepRVAT-style gene panel, does fold-selected genes
   (ADR 0012) match or beat “all ~19.6k represented genes” under nested enet
   for product cascade?
-- **Approaches tested:** Stage B panel/classical runners exist; G1 comparison
-  smoke vs 12b all-genes **not run**.
-- **Results:** `pending` (G1).
-- **Verdict:** open for G1; not an architecture re-lock (P2-G + N-light@64
-  locked in **10**).
-
+- **Approaches tested:**
+  - CPU Stage B: 3-fold ATS panels (`n_repeats=1` dry-run) + classical
+    `C-mvalue-enetS`; 4096-col univariate prefilter; CLI split modes.
+  - EWAS Atlas overlap screen on panel CpGs (validation only).
+  - **Three-stage trait universe** on nine-pack full gene-linked (age/sex/tissue +
+    disease/cancer): catalog → restrict → fold-safe reselect.
+  - G1 comparison smoke vs 12b all-genes **not run**.
+- **Results (CPU dry-run ATS, 2026-09-09):** see
+  [`reports/inspection/stage0_7g_prime_matched_probe/analysis.md`](../../reports/inspection/stage0_7g_prime_matched_probe/analysis.md)
+  + `cpu_panel_overview.json`.
+  - **3 panels** (folds 0–2); traits **age / sex / tissue**; universe **65 536**
+    CpGs → **2 658** genes in assignment.
+  - Panel sizes ~**33–35k** CpGs → ~**1.2–1.3k** genes / fold; **717** genes
+    shared across all folds (union **1 776**).
+  - Classical mean: age r **0.894**, sex AUROC **0.891**, tissue bal-acc **0.437**.
+  - Atlas: age/sex panel CpGs **enriched** vs curated associations; tissue Atlas
+    in-universe too sparse for a meaningful enrichment call.
+- **Results (trait universe):** fill from
+  `reports/inspection/stage0_11_trait_universe/` when catalog + fold-reselect
+  complete.
+- **Verdict:** ATS CPU prep **usable** for G1 discussion; **not** a G1 lock.
+  Trait-universe path is the scalable discovery design. Does **not** block
+  N-light 65k OOF; neural Stage B still explicit-schedule.
 ## Policy (2026-09-09)
 
 Milestone **10** locked the architecture finalists (**P2-G** cascade +
@@ -46,9 +91,12 @@ on that same panel (`N-cascade-S`, light-on-S), optional fusion ablations, and
 
 - Fold-safe panels under
   `reports/inspection/stage0_7g_prime_matched_probe/fold_panels/fold_*_panel.json`
-- Matched `C-mvalue-enetS` / finalist-on-S (`N-cascade-S`, light) / optional fusion
+  (**CPU dry-run 3/3 present**, `n_repeats=1`; production wants 5)
+- Matched `C-mvalue-enetS` (**3/3 folds present**) / finalist-on-S (`N-cascade-S`,
+  light) / optional fusion — neural **still open**
+- Overview report:
+  `reports/inspection/stage0_7g_prime_matched_probe/analysis.md`
 - `direct_cpg.zarr` when direct loci exist (`n_direct > 0`)
-- Report under `reports/inspection/stage0_7g_prime_matched_probe/`
 - For **G1**: written gene-set verdict (adopt M11 panel vs all represented genes)
 
 **Does not block:** Milestone **12 N-light** 65k validation.

@@ -144,6 +144,7 @@ class _PilotStore:
     flat_region_base_features: np.ndarray | None = None
     flat_region_feature_mode: str = "full"
     flat_region_reg_permute_seed: int | None = None
+    flat_region_static_dim: int = 0
 
 
 def resolve_device(device_str: str, *, require_cuda: bool = False) -> torch.device:
@@ -337,6 +338,7 @@ def _materialize_record(
             base_features=store.flat_region_base_features,
             feature_mode=store.flat_region_feature_mode,  # type: ignore[arg-type]
             reg_permute_seed=store.flat_region_reg_permute_seed,
+            static_dim=store.flat_region_static_dim,
         )
         if cpg_features.shape[0] == 0:
             raise ValueError(f"sample {phenotype.sample_id!r} has zero observed flat-region edges")
@@ -1380,7 +1382,7 @@ def train_flat_baseline(
             )
         epsilon = float(level1_epsilon)
         if topology == "flat_region" and flat_region_index is not None:
-            input_dim = flat_region_input_dim()
+            input_dim = flat_region_input_dim(static_dim=static_dim)
         else:
             input_dim = cpg_input_dim(
                 static_dim,
@@ -1413,12 +1415,17 @@ def train_flat_baseline(
         if flat_reg_permute_seed is not None:
             flat_reg_permute_seed = int(flat_reg_permute_seed)
         if flat_region_index is not None:
+            edge_static_block = (
+                static_by_col[flat_region_index.edge_col_index] if static_dim > 0 else None
+            )
             flat_base = build_flat_region_base_features(
                 flat_region_index,
                 feature_mode=flat_feature_mode,  # type: ignore[arg-type]
+                static_block=edge_static_block,
             )
             print(  # noqa: T201
-                f"[flat] cached annotation base_features shape={flat_base.shape}",
+                f"[flat] cached annotation base_features shape={flat_base.shape} "
+                f"static_dim={static_dim} feature_set={feature_set!r}",
                 flush=True,
             )
         pilot_store = _PilotStore(
@@ -1434,6 +1441,7 @@ def train_flat_baseline(
             flat_region_base_features=flat_base,
             flat_region_feature_mode=flat_feature_mode,
             flat_region_reg_permute_seed=flat_reg_permute_seed,
+            flat_region_static_dim=static_dim if flat_region_index is not None else 0,
         )
         if include_robust_z:
             if not train_phenotypes:

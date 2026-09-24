@@ -34,3 +34,13 @@ def test_parse_folds_arg_out_of_range() -> None:
     mod = _stage_b_module()
     with pytest.raises(ValueError, match="out of range"):
         mod.parse_folds_arg("3", 3)
+
+
+def test_merge_enetS_fold_entries_later_wins() -> None:
+    mod = _stage_b_module()
+    merged = mod.merge_enetS_fold_entries(
+        [{"fold": 0, "metrics": {"a": 1}}, {"fold": 1, "metrics": {"a": 2}}],
+        [{"fold": 1, "metrics": {"a": 9}}, {"fold": 2, "metrics": {"a": 3}}],
+    )
+    assert [r["fold"] for r in merged] == [0, 1, 2]
+    assert merged[1]["metrics"]["a"] == 9

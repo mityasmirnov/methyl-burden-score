@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CPU chain: wait for fold-0 panel, classical-only, then remaining folds.
+# CPU chain: wait for fold-0 panel, panels for remaining folds, then classical all folds.
 # Does NOT launch neural Stage B. Safe while GPU 0 is on Milestone 10.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -24,14 +24,11 @@ log "waiting for fold_0_panel.json (panels-only fold 0 job)"
 while [[ ! -f "$PANEL_DIR/fold_0_panel.json" ]]; do
   sleep 60
 done
-log "fold 0 panel present; classical-only fold 0"
-uv run python -u scripts/run_7g_prime_stage_b.py --device cpu --classical-only --folds 0 \
-  >>"$LOG" 2>&1
-log "panels-only folds 1,2 (panel_repeats=${PANEL_REPEATS})"
+log "fold 0 panel present; panels-only folds 1,2 (panel_repeats=${PANEL_REPEATS})"
 uv run python -u scripts/run_7g_prime_stage_b.py --device cpu --panels-only --folds 1,2 \
   --panel-repeats "$PANEL_REPEATS" \
   >>"$LOG" 2>&1
-log "classical-only folds 1,2"
-uv run python -u scripts/run_7g_prime_stage_b.py --device cpu --classical-only --folds 1,2 \
+log "classical-only folds 0,1,2 (single write; merges prior fold rows if present)"
+uv run python -u scripts/run_7g_prime_stage_b.py --device cpu --classical-only --folds 0,1,2 \
   >>"$LOG" 2>&1
 log "CPU chain complete"

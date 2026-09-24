@@ -54,6 +54,18 @@ def parse_folds_arg(raw: str | None, n_folds: int) -> list[int]:
     return out
 
 
+def merge_enetS_fold_entries(
+    existing: list[dict[str, Any]],
+    new: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge classical fold metric rows by ``fold`` index (later wins)."""
+    by_fold: dict[int, dict[str, Any]] = {}
+    for row in existing + new:
+        fold = int(row["fold"])
+        by_fold[fold] = row
+    return [by_fold[k] for k in sorted(by_fold)]
+
+
 def _phenotype_arrays(
     phenotypes: list[Any], sample_ids: list[str], class_names: list[str] | None = None
 ) -> dict[str, np.ndarray]:
@@ -419,8 +431,18 @@ def main() -> None:
         results["folds"].append(fold_out)
 
     if args.panels_only:
+        manifest_path = panel_dir / "manifest.json"
+        folds_manifest = panel_manifest_folds
+        if manifest_path.is_file():
+            try:
+                prior = json.loads(manifest_path.read_text(encoding="utf-8"))
+                prior_folds = prior.get("folds") if isinstance(prior, dict) else None
+                if isinstance(prior_folds, list):
+                    folds_manifest = merge_enetS_fold_entries(prior_folds, panel_manifest_folds)
+            except (OSError, json.JSONDecodeError, TypeError, KeyError, ValueError):
+                folds_manifest = panel_manifest_folds
         write_json(
-            panel_dir / "manifest.json",
+            manifest_path,
             {
                 "mode": "panels_only",
                 "split_id": split_id,
@@ -429,24 +451,34 @@ def main() -> None:
                 "max_loci": max_loci,
                 "max_seeds": max_seeds,
                 "n_repeats": panel_repeats,
-                "folds": panel_manifest_folds,
+                "folds": folds_manifest,
             },
         )
-        print(f"[stage-b] panels-only wrote {panel_dir / 'manifest.json'}", flush=True)
+        print(f"[stage-b] panels-only wrote {manifest_path}", flush=True)
         return
 
     (report_dir / "per_arm").mkdir(parents=True, exist_ok=True)
+    enet_path = report_dir / "per_arm" / "C-mvalue-enetS.json"
+    folds_out = enetS_folds
+    if args.classical_only and enet_path.is_file():
+        try:
+            prior = json.loads(enet_path.read_text(encoding="utf-8"))
+            prior_folds = prior.get("folds") if isinstance(prior, dict) else None
+            if isinstance(prior_folds, list):
+                folds_out = merge_enetS_fold_entries(prior_folds, enetS_folds)
+        except (OSError, json.JSONDecodeError, TypeError, KeyError, ValueError):
+            folds_out = enetS_folds
     write_json(
-        report_dir / "per_arm" / "C-mvalue-enetS.json",
+        enet_path,
         {
             "arm": "C-mvalue-enetS",
-            "folds": enetS_folds,
+            "folds": folds_out,
             "note": "Shared fold panel artifacts; study-grouped multitask enet stability.",
         },
     )
     if args.classical_only:
         write_json(report_dir / "summary_classical_only.json", results)
-        print(f"[stage-b] classical-only wrote {report_dir / 'per_arm' / 'C-mvalue-enetS.json'}", flush=True)
+        print(f"[stage-b] classical-only wrote {enet_path}", flush=True)
         return
 
     write_json(report_dir / "summary.json", results)
