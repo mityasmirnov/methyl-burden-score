@@ -81,7 +81,7 @@ stage0:
   use_cpgpt_static_features: true
 training:
   batch_size: auto
-  batch_token_budget: 16000000
+  batch_token_budget: 32000000
   early_stopping_patience: 5
   gene_linked_only: true
   gene_allocation: explicit_only

@@ -1070,12 +1070,21 @@ must keep spare VRAM.
 - **Approaches tested / in flight:**
   - Dense full-width N-light smoke (`max_loci: null`) — gene-count go/no-go
     under old loader (anti-pattern; not the recipe).
-  - CpGPT 65k N-light ablation (G2 probe; N-light `static_dim` only) — queued.
+  - CpGPT 65k N-light ablation (G2 probe; N-light `static_dim` only) — **1
+    fold × 1 seed done** (`stage0-12b-cpgpt-nlight-smoke-f0` vs
+    `stage0-7h-nine-pack-m-only-wide-f0`).
   - Product recipe (within-gene sampler + gather) — **not started**.
   - Gene-set fork smoke: all represented genes vs Milestone **11** panel —
     **not started**.
-- **Results:** `pending` (dense smoke val_loss climb noted in session logs).
-- **Verdict:** open — do not mark `done` for scaffolding / dense smokes.
+- **Results:** dense smoke — `pending` (val_loss climb noted in session
+  logs). CpGPT G2 probe (nested enet, fold 0 only): tissue F1 0.376→0.340
+  (**−0.036**), age MAE 9.57→**8.44**, sex AUROC 0.814→**0.904**. Partial
+  win (2/3 nested metrics improve, tissue regresses) — single fold/seed, not
+  yet fold-variance-checked. Report:
+  [`../../reports/inspection/stage0_12b_gene_expansion_smoke/analysis.md`](../../reports/inspection/stage0_12b_gene_expansion_smoke/analysis.md).
+- **Verdict:** open — do not mark `done` for scaffolding / dense smokes. G2
+  CpGPT: not yet a gate pass (tissue regression unresolved) or fail (age/sex
+  gains real); needs a multi-restart re-run before promoting.
 - **Cascade OOF:** product-scale = G1 panel (**native P2-G**; 10e rejected).
 - **Hard stop:** do not retarget the in-flight 65k 5×6 to 12b; do not treat
   dense `max_loci: null` as G1 acceptance.

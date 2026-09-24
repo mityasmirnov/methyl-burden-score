@@ -1,0 +1,32 @@
+{
+  "probe": "G2 CpGPT2M static-embedding ablation vs 65k-prefix N-light baseline",
+  "gate": "G2",
+  "config_cpgpt": "configs/experiment/stage0_12b_cpgpt_nlight_smoke.yaml",
+  "config_baseline": "configs/experiment/stage0_7h_nine_pack_m_only_wide.yaml",
+  "split_id": "hub-nine-pack-3fold-v1",
+  "fold": 0,
+  "max_epochs": 16,
+  "matched_batch_size": 256,
+  "rows": [
+    {
+      "run_id": "stage0-7h-nine-pack-m-only-wide-f0",
+      "arm": "baseline_no_cpgpt",
+      "mbs_e2e_tissue_f1": 0.3354023739633427,
+      "mbs_e2e_age_mae": 16.664034627317022,
+      "mbs_e2e_sex_auroc": 0.8875199456332683,
+      "mbs_enet_nested_tissue_f1": 0.37607031982056455,
+      "mbs_enet_nested_age_mae": 9.5673309293187,
+      "mbs_enet_nested_sex_auroc": 0.8141902335202862
+    },
+    {
+      "run_id": "stage0-12b-cpgpt-nlight-smoke-f0",
+      "arm": "cpgpt2m_adapter_128",
+      "mbs_e2e_tissue_f1": 0.34108977038127974,
+      "mbs_e2e_age_mae": 10.399723620930772,
+      "mbs_e2e_sex_auroc": 0.9674184330877307,
+      "mbs_enet_nested_tissue_f1": 0.3401047810749234,
+      "mbs_enet_nested_age_mae": 8.442592628471216,
+      "mbs_enet_nested_sex_auroc": 0.9040920059004909
+    }
+  ]
+}
