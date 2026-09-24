@@ -188,27 +188,21 @@ def make_synthetic_cascade_tables(
     }
 
 
-def _dense_cpg_features(
-    beta_row: np.ndarray,
-    *,
-    epsilon: float = 0.001,
-) -> np.ndarray:
-    """M-value features [n_cols, 1] with NaN→0 (observed handled via edges)."""
-    b = np.asarray(beta_row, dtype=np.float64)
-    finite = np.isfinite(b)
-    safe = np.where(finite, np.clip(b, epsilon, 1.0 - epsilon), 0.5)
-    m = beta_to_m_value(safe, epsilon=epsilon)
-    m = np.where(finite, m, 0.0)
-    return m.astype(np.float32).reshape(-1, 1)
-
-
 def _dense_cpg_features_batch(
     betas_rows: np.ndarray,
     *,
     col_indices: np.ndarray | None = None,
     epsilon: float = 0.001,
+    static_edge_block: np.ndarray | None = None,
 ) -> np.ndarray:
-    """M-value features [batch, n_edges, 1]; optional column subset."""
+    """M-value features ``[batch, n_edges, 1 + static_dim]``; optional column subset.
+
+    ``static_edge_block`` is an already-gathered ``[n_edges, static_dim]`` table
+    (e.g. ``static_by_col[assignment.edge_col_index]``) appended as **trailing**
+    columns after the M-value, mirroring the flat_region layout so column 0 stays
+    the M-value and existing index math is unaffected. ``None`` / width-0 keeps
+    the historical ``[..., 1]`` shape byte-for-byte.
+    """
     b = np.asarray(betas_rows, dtype=np.float64)
     if b.ndim == 1:
         b = b.reshape(1, -1)
@@ -218,7 +212,17 @@ def _dense_cpg_features_batch(
     safe = np.where(finite, np.clip(b, epsilon, 1.0 - epsilon), 0.5)
     m = beta_to_m_value(safe, epsilon=epsilon)
     m = np.where(finite, m, 0.0)
-    return m.astype(np.float32)[..., np.newaxis]
+    feats = m.astype(np.float32)[..., np.newaxis]
+    if static_edge_block is None or static_edge_block.size == 0:
+        return feats
+    static = np.asarray(static_edge_block, dtype=np.float32)
+    if static.ndim != 2 or static.shape[0] != feats.shape[1]:
+        raise ValueError(
+            "static_edge_block must be [n_edges, static_dim] matching the feature "
+            f"axis; got {static.shape} for n_edges={feats.shape[1]}"
+        )
+    tiled = np.broadcast_to(static[np.newaxis, ...], (feats.shape[0], *static.shape))
+    return np.concatenate([feats, tiled], axis=-1)
 
 
 @dataclass(frozen=True, slots=True)
@@ -300,6 +304,7 @@ def _forward_batch(
     *,
     device: torch.device,
     graph: _CascadeGraphTensors | None = None,
+    static_edge_block: np.ndarray | None = None,
 ) -> dict[str, torch.Tensor]:
     """Batched CpG encoder + per-sample region path; returns stacked MBS tensors."""
     betas_batch = np.asarray(betas_batch, dtype=np.float64)
@@ -331,10 +336,12 @@ def _forward_batch(
             "rbs_present": rbs_present,
         }
 
-    feats = _dense_cpg_features_batch(betas_batch, col_indices=cols)
+    feats = _dense_cpg_features_batch(
+        betas_batch, col_indices=cols, static_edge_block=static_edge_block
+    )
     feats_t = torch.from_numpy(feats).to(device=device, dtype=torch.float32)
     n_edges = int(feats_t.shape[1])
-    cpg_hidden = model.cpg_encoder(feats_t.reshape(batch_size * n_edges, 1)).view(
+    cpg_hidden = model.cpg_encoder(feats_t.reshape(batch_size * n_edges, -1)).view(
         batch_size, n_edges, -1
     )
 
