@@ -394,8 +394,11 @@ def _forward_sample(
     beta_row: np.ndarray,
     *,
     device: torch.device,
+    static_edge_block: np.ndarray | None = None,
 ) -> dict[str, torch.Tensor]:
-    out = _forward_batch(model, assignment, beta_row, device=device)
+    out = _forward_batch(
+        model, assignment, beta_row, device=device, static_edge_block=static_edge_block
+    )
     return {
         "mbs": out["mbs"][0],
         "present": out["present"][0],
@@ -410,8 +413,14 @@ def score_samples(
     *,
     device: torch.device,
     batch_size: int = 1,
+    static_edge_block: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Return mbs, gene_present, orphan_rbs, all_rbs, all_rbs_present."""
+    """Return mbs, gene_present, orphan_rbs, all_rbs, all_rbs_present.
+
+    ``static_edge_block`` must be the **same** ``[n_edges, static_dim]`` table the
+    model was trained with; omitting it for a CpGPT-trained model raises a shape
+    error in the encoder rather than silently producing wrong scores.
+    """
     model.eval()
     n = betas.shape[0]
     n_genes = max(assignment.n_genes, 1)
@@ -433,6 +442,7 @@ def score_samples(
                 betas[start:end],
                 device=device,
                 graph=graph,
+                static_edge_block=static_edge_block,
             )
             m = out["mbs"].detach().cpu().numpy().astype(np.float32)
             p = out["present"].detach().cpu().numpy().astype(bool)
@@ -675,6 +685,7 @@ def _evaluate_cascade_validation(
     sex_mask_val: np.ndarray,
     device: torch.device,
     batch_size: int = 1,
+    static_edge_block: np.ndarray | None = None,
 ) -> dict[str, Any]:
     """Cheap proxy metrics from the model's own heads on a held-out validation slice."""
     from mbs.evaluation.metrics import (  # noqa: PLC0415
@@ -687,7 +698,12 @@ def _evaluate_cascade_validation(
     if betas_val.shape[0] == 0:
         return out
     mbs_v, present_v, _, _, _ = score_samples(
-        model, assignment, betas_val, device=device, batch_size=batch_size
+        model,
+        assignment,
+        betas_val,
+        device=device,
+        batch_size=batch_size,
+        static_edge_block=static_edge_block,
     )
     mbs_t = torch.from_numpy(mbs_v).to(device)
     present_t = torch.from_numpy(present_v).to(device)
@@ -755,12 +771,18 @@ def _evaluate_mbs_e2e(
     class_names: list[str],
     device: torch.device,
     batch_size: int = 1,
+    static_edge_block: np.ndarray | None = None,
 ) -> dict[str, Any]:
     """End-to-end phenotype heads on MBS only (no late fusion); test split only."""
     test_idx_a = np.asarray(test_idx, dtype=np.int64)
     betas_te = betas[test_idx_a]
     mbs_te, present_te, _, _, _ = score_samples(
-        model, assignment, betas_te, device=device, batch_size=batch_size
+        model,
+        assignment,
+        betas_te,
+        device=device,
+        batch_size=batch_size,
+        static_edge_block=static_edge_block,
     )
     mbs_t = torch.from_numpy(mbs_te).to(device)
     present_t = torch.from_numpy(present_te).to(device)
@@ -984,6 +1006,7 @@ def train_cascade_on_arrays(
     fine_tune_learning_rate: float | None = None,
     warm_start_include_gene_rho: bool = False,
     warm_start_include_heads: bool = False,
+    static_by_col: np.ndarray | None = None,
 ) -> dict[str, Any]:
     """Train CascadeDeepSet + MBS heads; write scores; evaluate; return metrics.
 
@@ -1025,12 +1048,23 @@ def train_cascade_on_arrays(
         assignment = assignment_gene_linked_only(assignment)
     gene_cols = gene_linked_col_index(assignment)
 
+    # CpGPT / DNA-LM static embeddings: gather the per-edge block AFTER any
+    # gene_linked_only pruning, so it aligns with the final edge_col_index axis.
+    static_edge_block: np.ndarray | None = None
+    static_dim = 0
+    if static_by_col is not None and np.asarray(static_by_col).size:
+        sbc = np.asarray(static_by_col, dtype=np.float32)
+        if sbc.ndim != 2:
+            raise ValueError(f"static_by_col must be [n_cols, static_dim]; got {sbc.shape}")
+        static_edge_block = sbc[assignment.edge_col_index]
+        static_dim = int(sbc.shape[1])
+
     _set_seed(seed)
     device = resolve_device(device_str, require_cuda=False)
     n_region_types = max(len(assignment.region_types), 1)
     n_genes = max(assignment.n_genes, 1)
     model = CascadeDeepSet(
-        1,
+        1 + static_dim,
         n_region_types,
         cpg_hidden_dim=int(cpg_hidden_dim),
         region_hidden_dim=int(region_hidden_dim),
@@ -1260,6 +1294,7 @@ def train_cascade_on_arrays(
                     betas[active_a],
                     device=device,
                     graph=graph_tensors,
+                    static_edge_block=static_edge_block,
                 )
                 mbs = out["mbs"]
                 present = out["present"]
@@ -1356,6 +1391,7 @@ def train_cascade_on_arrays(
                     tissue_mask_val=tissue_mask_a[val_idx_a],
                     sex_val=sex[val_idx_a],
                     sex_mask_val=sex_mask_a[val_idx_a],
+                    static_edge_block=static_edge_block,
                     device=device,
                     batch_size=batch_size,
                 )
@@ -1425,7 +1461,12 @@ def train_cascade_on_arrays(
         # Re-attach diagnostic gene-linked RBS if an older score dir lacks it.
         if not (score_dir / "all_gene_rbs.zarr").exists():
             mbs_all, present_all, orphan_all, rbs_all, rbs_present_all = score_samples(
-                model, assignment, betas, device=device, batch_size=batch_size
+                model,
+                assignment,
+                betas,
+                device=device,
+                batch_size=batch_size,
+                static_edge_block=static_edge_block,
             )
             gene_linked_region_mask = assignment.region_to_gene >= 0
             gene_linked_region_indices = np.flatnonzero(gene_linked_region_mask).astype(
@@ -1474,7 +1515,12 @@ def train_cascade_on_arrays(
             del mbs_all, present_all, orphan_all
     else:
         mbs_all, present_all, orphan_all, rbs_all, rbs_present_all = score_samples(
-            model, assignment, betas, device=device, batch_size=batch_size
+            model,
+            assignment,
+            betas,
+            device=device,
+            batch_size=batch_size,
+            static_edge_block=static_edge_block,
         )
         direct_all, direct_names = _fit_direct_columns(
             betas_train=betas[train_idx],
@@ -1578,6 +1624,7 @@ def train_cascade_on_arrays(
         class_names=list(class_names),
         device=device,
         batch_size=batch_size,
+        static_edge_block=static_edge_block,
     )
     evaluations["mbs_linear_probe"] = _evaluate_fusion_mode(
         blocks,

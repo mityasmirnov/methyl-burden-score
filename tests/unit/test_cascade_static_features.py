@@ -9,6 +9,8 @@ funnel.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 import torch
@@ -19,6 +21,7 @@ from mbs.training.cascade_loop import (
     _dense_cpg_features_batch,
     _forward_batch,
     make_synthetic_cascade_tables,
+    train_cascade_on_arrays,
 )
 
 
@@ -81,3 +84,80 @@ def test_forward_batch_accepts_static_block_end_to_end() -> None:
     out_plain = _forward_batch(plain, assignment, betas, device=device)
     assert out_plain["mbs"].shape == out["mbs"].shape
     assert torch.isfinite(out_plain["mbs"]).all()
+
+
+def test_train_cascade_on_arrays_with_static_by_col(tmp_path: Path) -> None:
+    """End-to-end: static_by_col widens input_dim and every threaded site agrees.
+
+    This is the integration guard -- training, per-epoch validation, and score
+    export all funnel through _forward_batch, so if any site failed to receive
+    the static block the encoder would raise a shape error here.
+    """
+    tables = make_synthetic_cascade_tables(seed=7)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, max(3, (n * 2) // 3), dtype=np.int64)
+    test_idx = np.arange(train_idx[-1] + 1, n, dtype=np.int64)
+    if test_idx.size == 0:
+        test_idx = train_idx.copy()
+
+    n_cols = int(np.asarray(tables["betas"]).shape[1])
+    static_dim = 5
+    static_by_col = (
+        np.random.default_rng(1).normal(size=(n_cols, static_dim)).astype(np.float32)
+    )
+
+    out = train_cascade_on_arrays(
+        assignment=assignment,
+        betas=tables["betas"],
+        train_idx=train_idx,
+        test_idx=test_idx,
+        ages=tables["ages"],
+        tissue=tables["tissue"],
+        sex=tables["sex"],
+        study_ids=tables["study_ids"],
+        sample_ids=tables["sample_ids"],
+        class_names=tables["class_names"],
+        out_dir=tmp_path / "cpgpt_fold",
+        max_epochs=2,
+        seed=0,
+        device_str="cpu",
+        static_by_col=static_by_col,
+    )
+    assert "metrics" in out
+    assert (tmp_path / "cpgpt_fold" / "scores" / "score_manifest.json").is_file()
+
+
+def test_train_cascade_rejects_malformed_static_by_col(tmp_path: Path) -> None:
+    tables = make_synthetic_cascade_tables(seed=8)
+    assignment = build_cascade_assignment(
+        locus_index=tables["locus_index"],
+        locus_region_edges=tables["locus_region_edges"],
+        regions=tables["regions"],
+        genes=tables["genes"],
+    )
+    n = len(tables["sample_ids"])
+    train_idx = np.arange(0, max(3, (n * 2) // 3), dtype=np.int64)
+    with pytest.raises(ValueError, match="static_by_col must be"):
+        train_cascade_on_arrays(
+            assignment=assignment,
+            betas=tables["betas"],
+            train_idx=train_idx,
+            test_idx=train_idx.copy(),
+            ages=tables["ages"],
+            tissue=tables["tissue"],
+            sex=tables["sex"],
+            study_ids=tables["study_ids"],
+            sample_ids=tables["sample_ids"],
+            class_names=tables["class_names"],
+            out_dir=tmp_path / "bad",
+            max_epochs=1,
+            seed=0,
+            device_str="cpu",
+            static_by_col=np.zeros(7, dtype=np.float32),  # 1-D, not [n_cols, dim]
+        )
