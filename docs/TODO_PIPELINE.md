@@ -1080,9 +1080,9 @@ must keep spare VRAM.
   not once per feature variant.
 - **Cascade policy:** topology+recipe = **native P2-G** (fair **10e**
   rejected). Cascade OOF is the **next big campaign** and is where CpGPT
-  should land — but it needs CpGPT plumbing in `cascade_loop.py` first
-  (**none exists today**; see **12b**). Do **not** 5×6 joint `mbs_e2e` as the
-  product score.
+  should land. CpGPT cascade plumbing is now **DONE** (see **12b**); the
+  remaining prerequisite is a plumbing smoke at real scale. Do **not** 5×6
+  joint `mbs_e2e` as the product score.
 - **Plan:** [`plans/milestone-12-final-oof.md`](plans/milestone-12-final-oof.md)
   (alias stub: [`milestone-13-final-oof.md`](plans/milestone-13-final-oof.md))
 - **Arms policy:** **N-light 5×6 first** on the **65k prefix**. Cascade **THEN**
@@ -1120,12 +1120,17 @@ must keep spare VRAM.
     dropout 0.1→0.3 / weight_decay 1e-4→1e-3 to address the earlier
     full-width overfit, auto-launches via waiter once the multi-restart
     exits — see `scratch/logs/12b_cpgpt_full_width_smoke_gpu0.log`).
-  - **CpGPT in cascade (`cascade_loop.py`) — NOT STARTED, blocks cascade OOF.**
-    `grep -n "static\|cpgpt" src/mbs/training/cascade_loop.py` → **zero hits**.
-    `_dense_cpg_features`/`_dense_cpg_features_batch` hardcode `[..., 1]`
-    (M-value only) and `model.cpg_encoder(feats.reshape(B * n_edges, 1))`
-    hardcodes input dim **1**. Mirroring the flat_region fix (append CpGPT as
-    trailing columns, 1 → 129) is the concrete task.
+  - **CpGPT in cascade (`cascade_loop.py`) — DONE** (2026-09-24/25, commits
+    `efb8518`, `83d5909`, `f46f0ce`). Static dims append as trailing columns
+    after the M-value (mirrors flat_region), threaded explicitly through
+    `_forward_batch`/`_forward_sample`/`score_samples`/both eval helpers/all
+    five `train_cascade_on_arrays` call sites, and loaded from config in
+    `run_cascade_hub`. Default off for existing configs, so locked P2-G is
+    unchanged (asserted by test). Useful finding: `_forward_batch` is the
+    **single funnel** for training *and* scoring, so train/score feature
+    layouts cannot diverge. 6 new tests; 332 unit tests pass.
+    **Next:** run `stage0_12_cascade_cpgpt_smoke.yaml` (fold 0, 6 ep) to prove
+    it trains at real scale, *then* consider cascade OOF.
   - CpGPT **architecture sweep** (φ/ρ 64→512, 6 variants) — **in flight on
     GPU0** (`scripts/run_12b_cpgpt_arch_sweep.py`, ledger under
     `reports/inspection/stage0_12b_cpgpt_arch_sweep/`). Rationale: CpGPT
