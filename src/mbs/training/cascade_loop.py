@@ -43,7 +43,12 @@ from mbs.training.checkpoint_selection import (
 )
 from mbs.training.dev_cv import DEFAULT_SPLIT_ID, load_frozen_folds
 from mbs.training.direct_cpg import direct_cpg_design_matrix, fit_direct_elasticnet
-from mbs.training.features import beta_to_m_value
+from mbs.static_features.store import (
+    open_embeddings_zarr,
+    read_loci_index,
+    static_feature_store_paths,
+)
+from mbs.training.features import beta_to_m_value, build_static_column_table
 from mbs.training.late_fusion import evaluate_late_fusion
 from mbs.training.locus_gene import load_graph_tables
 from mbs.training.loop import load_experiment_config, resolve_device
@@ -2080,6 +2085,31 @@ def run_cascade_hub(
     fold_summaries: list[dict[str, Any]] = []
     n_cols = assignment.n_study_loci
 
+    # CpGPT / DNA-LM static embeddings (mirrors loop.py). Off by default so the
+    # locked P2-G recipe is unchanged unless a config opts in.
+    feature_set = str(
+        (config.get("features") or {}).get("static_feature_set")
+        or (config.get("pilot") or {}).get("static_feature_set")
+        or "none"
+    )
+    use_cpgpt = bool((config.get("stage0") or {}).get("use_cpgpt_static_features", True))
+    static_by_col: np.ndarray | None = None
+    if use_cpgpt and feature_set.lower() not in {"none", "null", "off", ""}:
+        static_paths = static_feature_store_paths(
+            data_root / "canonical" / "static_features" / feature_set
+        )
+        static_by_col, _static_valid, _static_dim = build_static_column_table(
+            locus_index_locus_ids=locus_index["locus_id"].to_numpy(),
+            static_loci=read_loci_index(static_paths.loci_path),
+            embeddings=open_embeddings_zarr(static_paths.embeddings_path),
+            n_study_loci=n_cols,
+        )
+        print(
+            f"[cascade] static features '{feature_set}' dim={_static_dim} "
+            f"mapped={int(_static_valid.sum())}/{n_cols}",
+            flush=True,
+        )
+
     # Dense prefix load once (~3.5 GB float32 for 13.5k × 65k; ~8.4 GB for 34k × 65k).
     print(f"[cascade] loading betas[:, :{n_cols}] into RAM…", flush=True)
     betas_all = np.asarray(betas_z[:, :n_cols], dtype=np.float32)
@@ -2205,6 +2235,7 @@ def run_cascade_hub(
             primary_evaluation=cast(PrimaryEvaluation, primary_evaluation),
             extra_fusion_modes=cast(tuple[FusionBlockMode, ...], extra_fusion_modes),
             locus_ids=locus_index["locus_id"].astype(str).tolist()[:n_cols],
+            static_by_col=static_by_col,
             eval_only=eval_only,
             train_batch_size=train_batch_size,
             gpu_share=gpu_share,
