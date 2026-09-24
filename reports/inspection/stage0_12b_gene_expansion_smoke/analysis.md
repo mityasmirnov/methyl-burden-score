@@ -63,13 +63,25 @@ that as the next GPU0 job rather than treating this single run as decisive.
 User's read: the age/sex gains are compelling enough to want CpGPT static
 embeddings as a **main-architecture direction going forward** (N-light now,
 cascade later), not just an optional ablation. Recorded as the stated
-direction. This does **not** change the evidence above or waive the
-condition already stated: promotion to product/main-architecture status
-still needs the multi-restart re-run (and ideally cascade wiring +
-matched arm) to confirm the tissue regression is noise, not a real cost —
-single fold/seed is not sufficient basis to lock in an architecture change
-on its own, consistent with how this project already treated the P2-G
-vector warm-start (fold-0-promising, then failed the fair multi-run
-re-test — see `docs/ARCHITECTURE_BENCHMARKS.md`). Next probe: multi-restart
-CpGPT smoke on fold 0, then cascade `cascade_loop.py` static-feature
-plumbing if that holds.
+direction.
+
+**Age is the primary decision metric for this call** (per user direction;
+consistent with existing project vocabulary — age-primary framing already
+appears in `docs/plans/milestone-7g-prime-age-seed-mask.md`/Milestone 9c,
+and `mbs_enet_nested`'s age win is called out project-wide as "the dramatic
+age win" in `docs/plans/milestone-10e-staged-rbs-mbs-training.md`). Under
+that weighting, the nested age MAE improvement (9.57→8.44) is the headline
+result and the tissue regression (−0.036) is a secondary concern, not a
+tied co-equal metric — it does not by itself block treating CpGPT as the
+leading direction.
+
+This does **not**, however, waive the multi-restart condition already
+stated: single fold/seed is still not sufficient basis to lock in an
+architecture change on its own, consistent with how this project already
+treated the P2-G vector warm-start (fold-0-promising, then failed the fair
+multi-run re-test — see `docs/ARCHITECTURE_BENCHMARKS.md`). The
+multi-restart re-run (6 seeds, fold 0, `stage0-12b-cpgpt-nlight-smoke-f0-r0..5`)
+is running now on GPU0; see
+[`../stage0_12b_cpgpt_multirestart/summary.json`](../stage0_12b_cpgpt_multirestart/summary.json)
+once complete. Next after that holds up: cascade `cascade_loop.py`
+static-feature plumbing.

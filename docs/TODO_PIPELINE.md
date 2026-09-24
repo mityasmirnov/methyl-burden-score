@@ -990,8 +990,16 @@ must keep spare VRAM.
 
 ## 11. Fold-selected panel + full model (alias: 7G′ Stage B) — **GATE G1 option**
 
-- **Status:** `pending` for G1 gene-set decision (ATS CPU dry-run **done**;
-  **trait-universe** catalog/reselect in progress; Stage B GPU still explicit)
+- **Status:** `pending` for G1 gene-set decision. ATS CPU dry-run (`n_repeats=1`)
+  **done**; **production `panel_repeats=5` re-run in flight now** (CPU,
+  `scripts/run_stage_b_cpu_chain.sh`-equivalent, all 3 folds panels + classical,
+  log `scratch/logs/stage_b_cpu_panels_repeats5.log`, likely 1–3+ days).
+  **Correction (2026-09-24):** the scalable **trait-universe** runners named
+  below (`run_trait_universe_catalog.py` / `run_trait_universe_fold_reselect.py`)
+  do **not exist yet** — only the config and design docs were written; nothing
+  is running for that track. Design is in progress (brainstorming architectural
+  spec, see `docs/superpowers/specs/` once written) before implementation.
+  Stage B GPU still explicit-schedule.
 - **Plan:** [`plans/milestone-11-fold-selected-panel.md`](plans/milestone-11-fold-selected-panel.md)
 - **Runners:** `scripts/run_7g_prime_stage_b.py` (legacy ATS panels);
   `scripts/run_trait_universe_catalog.py` +
@@ -1072,7 +1080,9 @@ must keep spare VRAM.
     under old loader (anti-pattern; not the recipe).
   - CpGPT 65k N-light ablation (G2 probe; N-light `static_dim` only) — **1
     fold × 1 seed done** (`stage0-12b-cpgpt-nlight-smoke-f0` vs
-    `stage0-7h-nine-pack-m-only-wide-f0`).
+    `stage0-7h-nine-pack-m-only-wide-f0`); **6-restart re-run in flight on
+    GPU0** (`stage0-12b-cpgpt-nlight-smoke-f0-r0..5`, fold 0 only, report
+    dir `reports/inspection/stage0_12b_cpgpt_multirestart/`).
   - Product recipe (within-gene sampler + gather) — **not started**.
   - Gene-set fork smoke: all represented genes vs Milestone **11** panel —
     **not started**.
@@ -1084,7 +1094,12 @@ must keep spare VRAM.
   [`../../reports/inspection/stage0_12b_gene_expansion_smoke/analysis.md`](../../reports/inspection/stage0_12b_gene_expansion_smoke/analysis.md).
 - **Verdict:** open — do not mark `done` for scaffolding / dense smokes. G2
   CpGPT: not yet a gate pass (tissue regression unresolved) or fail (age/sex
-  gains real); needs a multi-restart re-run before promoting.
+  gains real). **User direction:** age is the primary decision metric for
+  this call (consistent with existing age-primary framing elsewhere in this
+  doc set) — the age win is the headline result, tissue is secondary, and
+  CpGPT is the stated candidate main-architecture direction going forward.
+  Still needs the multi-restart re-run (in flight) before locking that in,
+  same discipline as the P2-G warm-start precedent.
 - **Cascade OOF:** product-scale = G1 panel (**native P2-G**; 10e rejected).
 - **Hard stop:** do not retarget the in-flight 65k 5×6 to 12b; do not treat
   dense `max_loci: null` as G1 acceptance.
