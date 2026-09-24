@@ -55,7 +55,10 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
 
 **GPU-2:** free (N-light 5×6 finished 2026-09-24; no longer exclusive).
 **GPU 1:** often filled by unrelated vLLM (not ours). **GPU 0:** running the
-G2 CpGPT 6-restart confirmation smoke. Do **not** auto-start cascade 5×6.
+G2 CpGPT 6-restart confirmation smoke, chained into a full gene-linked-width
+(374k-col) CpGPT smoke immediately after (auto-launch waiter, no idle gap;
+regularization bumped to address the earlier full-width overfit). Do **not**
+auto-start cascade 5×6.
 
 **NOW — Milestone 11 / GATE G1** (fold-selected gene panel / trait-universe
 gene-set choice). Two tracks in flight: (1) legacy ATS CPU panels —
@@ -1092,7 +1095,12 @@ must keep spare VRAM.
     fold × 1 seed done** (`stage0-12b-cpgpt-nlight-smoke-f0` vs
     `stage0-7h-nine-pack-m-only-wide-f0`); **6-restart re-run in flight on
     GPU0** (`stage0-12b-cpgpt-nlight-smoke-f0-r0..5`, fold 0 only, report
-    dir `reports/inspection/stage0_12b_cpgpt_multirestart/`).
+    dir `reports/inspection/stage0_12b_cpgpt_multirestart/`); **chained
+    full-width (374k-col) CpGPT smoke queued next on GPU0**
+    (`configs/experiment/stage0_12b_cpgpt_full_width_smoke.yaml`,
+    dropout 0.1→0.3 / weight_decay 1e-4→1e-3 to address the earlier
+    full-width overfit, auto-launches via waiter once the multi-restart
+    exits — see `scratch/logs/12b_cpgpt_full_width_smoke_gpu0.log`).
   - Product recipe (within-gene sampler + gather) — **not started**.
   - Gene-set fork smoke: all represented genes vs Milestone **11** panel —
     **not started**.
