@@ -1013,12 +1013,16 @@ must keep spare VRAM.
 ## 11. Fold-selected panel + full model (alias: 7G′ Stage B) — **GATE G1 — ← NOW**
 
 - **Status:** `pending` for G1 gene-set decision. ATS CPU dry-run (`n_repeats=1`)
-- **Panel stability (interim, folds 0–1):** `n_repeats=5` vs the `n_repeats=1`
-  dry-run — seed genes only ~85% retained (Jaccard 0.73–0.76), but `panel_cols`
-  ~97% retained (Jaccard ~0.91). Near-identical `n_seed` **counts** were
-  misleading (selection stops on a frequency threshold, so counts match
-  regardless); set overlap had to be computed directly. So repeats=5 was worth
-  running, but is unlikely to flip the G1 verdict on its own. Report:
+- **Panel stability (all 3 folds; panel stage DONE, classical stage running):**
+  r=5 vs r=1 — seed columns only ~85–86% retained (Jaccard 0.73–0.76), but
+  `panel_cols` ~96–97% retained (Jaccard ~0.91). Near-identical `n_seed`
+  **counts** were misleading (selector stops on a frequency threshold, so counts
+  match regardless); set overlap had to be computed directly. **Cross-fold:**
+  only **5%** of seed columns and **52%** of panel columns are common to all 3
+  folds, and r=5 did **not** improve that (0.521→0.523 panel, 0.066→0.051 seed)
+  — extra repeats bought within-fold reproducibility, not cross-fold consensus.
+  Implication for **10d**: the M11 panel is *three* panels, so adopting it means
+  shipping a fold-varying feature set. Report:
   [`../reports/inspection/stage0_7g_prime_matched_probe/panel_stability_repeats.md`](../reports/inspection/stage0_7g_prime_matched_probe/panel_stability_repeats.md)
   **done**; **production `panel_repeats=5` re-run in flight now** (CPU,
   `scripts/run_stage_b_cpu_chain.sh`-equivalent, all 3 folds panels + classical,
