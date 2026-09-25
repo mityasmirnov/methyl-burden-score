@@ -46,15 +46,26 @@ GEN_DIR = ROOT / "configs" / "experiment" / "_generated"
 REPORT = ROOT / "reports" / "inspection" / "stage0_12b_cpgpt_arch_sweep"
 LEDGER = REPORT / "ledger.json"
 
+# Batch size is FIXED across every variant, not `auto`. Peak activation memory
+# scales ~ n_edges (57 430) x batch x cpg_hidden, so `auto` would calibrate each
+# variant to a different batch and confound capacity with batch size. 128 is the
+# largest value that leaves headroom for cpg_hidden=128 on a 49 GB card (the
+# first attempt OOM'd at batch 256 with cpg_hidden=128).
+MATCHED_BATCH = 128
+
 # (slug, phi/rho width, n_layers, cpg_hidden_dim, dropout)
-# base = current locked N-light shape, carried as the in-sweep control.
+# `cpg_hidden` is the memory-critical dim (per-edge); phi/rho act on pooled
+# gene-level tensors and are comparatively cheap. Capped at 128 for that reason:
+# cpg_hidden=256 would need batch 64, and matching that across all arms would
+# roughly quadruple wall time. c64-* isolates downstream capacity; c128-* tests
+# the 152->cpg_hidden compression that motivated the sweep.
 VARIANTS: tuple[tuple[str, int, int, int, float], ...] = (
-    ("base-64", 64, 2, 64, 0.1),
-    ("w128", 128, 2, 128, 0.1),
-    ("w256", 256, 2, 128, 0.1),
-    ("w128-d3", 128, 3, 128, 0.1),
-    ("w256-d3-drop2", 256, 3, 256, 0.2),
-    ("w512-drop2", 512, 2, 256, 0.2),
+    ("c64-w64", 64, 2, 64, 0.1),      # in-sweep control (locked N-light shape)
+    ("c64-w128", 128, 2, 64, 0.1),
+    ("c64-w256", 256, 2, 64, 0.1),
+    ("c128-w128", 128, 2, 128, 0.1),  # widens the per-CpG encoder (bottleneck test)
+    ("c128-w256", 256, 2, 128, 0.1),
+    ("c128-w256-d3", 256, 3, 128, 0.2),
 )
 
 
@@ -68,6 +79,8 @@ def _write_variant_config(slug: str, width: int, layers: int, cpg_hidden: int, d
     model["rho_layers"] = layers
     model["encoder"]["cpg_hidden_dim"] = cpg_hidden
     model["encoder"]["dropout"] = dropout
+    # matched, explicit batch (not "auto") so capacity is not confounded by batch
+    cfg.setdefault("training", {})["batch_size"] = MATCHED_BATCH
     GEN_DIR.mkdir(parents=True, exist_ok=True)
     out = GEN_DIR / f"stage0_12b_cpgpt_arch_{slug.replace('-', '_')}.yaml"
     out.write_text(yaml.safe_dump(cfg, sort_keys=False), encoding="utf-8")
@@ -132,12 +145,15 @@ def _append_ledger(row: dict[str, Any]) -> None:
                 "sweep": "stage0_12b_cpgpt_arch_sweep",
                 "protocol": (
                     "fold 0 hub-nine-pack-3fold-v1, 65536-locus prefix, 16 epochs, "
-                    "CpGPT2M on in all arms; ranked on mbs_enet_nested age MAE"
+                    f"CpGPT2M on in all arms, batch_size={MATCHED_BATCH} (matched, not auto); "
+                    "ranked on mbs_enet_nested age MAE"
                 ),
                 "ranking_metric": "nested_age_mae (mbs_enet_nested, lower better)",
                 "caveat": (
-                    "smoke-level, single fold/seed. Ranked on nested (sd ~0.15 over "
-                    "restarts) not e2e (sd ~1.75) -- e2e gaps here would be mostly noise."
+                    "smoke-level, single fold/seed. Ranked on nested, not e2e (e2e "
+                    "restart sd ~1.6 vs nested ~0.19). Observed run-to-run spread for a "
+                    "FIXED config is ~0.53 MAE wide, so only gaps >~0.5 MAE vs the "
+                    "in-sweep control (c64-w64) are credible; smaller orderings are ties."
                 ),
                 "rows": rows,
             },
@@ -163,6 +179,7 @@ def main() -> None:
                     "layers": layers,
                     "cpg_hidden": cpg_hidden,
                     "dropout": dropout,
+                    "batch_size": MATCHED_BATCH,
                     "run_id": run_id,
                     "status": "skipped_existing",
                     **_read_metrics(run_id, paths),
@@ -197,6 +214,7 @@ def main() -> None:
             "layers": layers,
             "cpg_hidden": cpg_hidden,
             "dropout": dropout,
+            "batch_size": MATCHED_BATCH,
             "run_id": run_id,
             "status": status,
             "wall_seconds": round(time.time() - t0, 1),

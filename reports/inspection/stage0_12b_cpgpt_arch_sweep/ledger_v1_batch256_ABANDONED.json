@@ -1,0 +1,36 @@
+{
+  "sweep": "stage0_12b_cpgpt_arch_sweep",
+  "protocol": "fold 0 hub-nine-pack-3fold-v1, 65536-locus prefix, 16 epochs, CpGPT2M on in all arms; ranked on mbs_enet_nested age MAE",
+  "ranking_metric": "nested_age_mae (mbs_enet_nested, lower better)",
+  "caveat": "smoke-level, single fold/seed. Ranked on nested (sd ~0.15 over restarts) not e2e (sd ~1.75) -- e2e gaps here would be mostly noise.",
+  "rows": [
+    {
+      "variant": "base-64",
+      "width": 64,
+      "layers": 2,
+      "cpg_hidden": 64,
+      "dropout": 0.1,
+      "run_id": "stage0-12b-cpgpt-arch-base-64-f0",
+      "status": "ok",
+      "wall_seconds": 9055.8,
+      "best_epoch": 13,
+      "nested_tissue_f1": 0.3470528852581862,
+      "nested_age_mae": 8.482190125099704,
+      "nested_sex_auroc": 0.877850533995484,
+      "e2e_tissue_f1": 0.3432544389613768,
+      "e2e_age_mae": 10.455771328938198,
+      "e2e_sex_auroc": 0.966795884507284
+    },
+    {
+      "variant": "w128",
+      "width": 128,
+      "layers": 2,
+      "cpg_hidden": 128,
+      "dropout": 0.1,
+      "run_id": "stage0-12b-cpgpt-arch-w128-f0",
+      "status": "failed: OutOfMemoryError: CUDA out of memory. Tried to allocate 6.21 GiB. GPU 0 has a total capacity of 47.38 GiB of which 4.34 GiB is free. Including non-PyTorch memory, this process has 43.02 GiB memory in use. Of the allocated memory 31.48 GiB is allocated by PyTorch, and 11.03 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)",
+      "wall_seconds": 525.1,
+      "error": "missing /data/projects/methyl-burden-score/artifacts/runs/stage0-12b-cpgpt-arch-w128-f0/metrics.json"
+    }
+  ]
+}
