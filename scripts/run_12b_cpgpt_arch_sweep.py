@@ -11,10 +11,10 @@ Protocol (every variant identical, so results are comparable):
   * fold 0 of hub-nine-pack-3fold-v1, 65,536-locus prefix, 16 epochs
   * CpGPT2M static embeddings ON in every arm (this sweep is about capacity,
     not about re-litigating whether CpGPT helps -- that was the G2 probe)
-  * ranked on in-loop ``mbs_e2e`` **age MAE** (user-designated primary metric).
-    ``mbs_enet_nested`` is NOT computed inline (too slow for a sweep); run
-    ``eval_mbs_enet_from_scores.py --nested`` on the winner(s) afterwards
-    before promoting anything. Smoke-level ranking only -- not a gate.
+  * ranked on ``mbs_enet_nested`` **age MAE** (the product readout, and the
+    user-designated primary metric). Nested is fit post-hoc per variant because
+    measured restart spread is sd ~0.15 for nested vs ~1.75 for e2e -- ranking
+    on e2e would mostly rank noise. Smoke-level, single fold/seed -- not a gate.
 
 Ledger: reports/inspection/stage0_12b_cpgpt_arch_sweep/ledger.json (one row
 per variant, appended as each finishes, so a crash keeps prior results).
@@ -23,6 +23,7 @@ per variant, appended as each finishes, so a crash keeps prior results).
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -73,18 +74,49 @@ def _write_variant_config(slug: str, width: int, layers: int, cpg_hidden: int, d
     return out
 
 
-def _read_e2e(run_id: str, paths: DataPaths) -> dict[str, Any]:
-    """Pull mbs_e2e tissue/age/sex out of a finished run's metrics.json."""
+def _fit_nested(run_id: str, cfg_path: Path) -> None:
+    """Fit post-hoc nested elastic-net on the saved scores (the product readout).
+
+    Ranking on mbs_e2e alone is unsound here: measured across 6 restarts of the
+    same config, e2e age MAE has sd ~1.75 while nested has sd ~0.15 (an 11x
+    difference). Single-seed e2e gaps between variants would therefore be mostly
+    noise, so the sweep ranks on nested instead.
+    """
+    subprocess.run(
+        [
+            "uv", "run", "python", "-u", "scripts/eval_mbs_enet_from_scores.py",
+            "--run-id", run_id, "--config", str(cfg_path), "--nested", "--force",
+        ],
+        cwd=ROOT,
+        check=False,  # a failed nested fit must not kill the sweep; recorded as null
+    )
+
+
+def _read_metrics(run_id: str, paths: DataPaths) -> dict[str, Any]:
+    """Pull both readouts out of a finished run's metrics.json."""
     mpath = paths.artifact_root / "runs" / run_id / "metrics.json"
     if not mpath.is_file():
         return {"error": f"missing {mpath}"}
     m = json.loads(mpath.read_text(encoding="utf-8"))
-    e2e = ((m.get("evaluations") or {}).get("mbs_e2e") or {}).get("metrics") or {}
+    ev = m.get("evaluations") or {}
+
+    def grab(name: str) -> dict[str, Any]:
+        g = (ev.get(name) or {}).get("metrics") or {}
+        return {
+            "tissue_f1": (g.get("tissue") or {}).get("macro_f1"),
+            "age_mae": (g.get("age") or {}).get("mae"),
+            "sex_auroc": (g.get("sex") or {}).get("auroc"),
+        }
+
+    e2e, nested = grab("mbs_e2e"), grab("mbs_enet_nested")
     return {
         "best_epoch": m.get("best_epoch"),
-        "tissue_f1": (e2e.get("tissue") or {}).get("macro_f1"),
-        "age_mae": (e2e.get("age") or {}).get("mae"),
-        "sex_auroc": (e2e.get("sex") or {}).get("auroc"),
+        "nested_tissue_f1": nested["tissue_f1"],
+        "nested_age_mae": nested["age_mae"],
+        "nested_sex_auroc": nested["sex_auroc"],
+        "e2e_tissue_f1": e2e["tissue_f1"],
+        "e2e_age_mae": e2e["age_mae"],
+        "e2e_sex_auroc": e2e["sex_auroc"],
     }
 
 
@@ -100,10 +132,13 @@ def _append_ledger(row: dict[str, Any]) -> None:
                 "sweep": "stage0_12b_cpgpt_arch_sweep",
                 "protocol": (
                     "fold 0 hub-nine-pack-3fold-v1, 65536-locus prefix, 16 epochs, "
-                    "CpGPT2M on in all arms; ranked on mbs_e2e age MAE (primary)"
+                    "CpGPT2M on in all arms; ranked on mbs_enet_nested age MAE"
                 ),
-                "ranking_metric": "age_mae (mbs_e2e, lower better)",
-                "caveat": "smoke-level, single fold/seed; nested enet not computed inline",
+                "ranking_metric": "nested_age_mae (mbs_enet_nested, lower better)",
+                "caveat": (
+                    "smoke-level, single fold/seed. Ranked on nested (sd ~0.15 over "
+                    "restarts) not e2e (sd ~1.75) -- e2e gaps here would be mostly noise."
+                ),
                 "rows": rows,
             },
             indent=2,
@@ -130,7 +165,7 @@ def main() -> None:
                     "dropout": dropout,
                     "run_id": run_id,
                     "status": "skipped_existing",
-                    **_read_e2e(run_id, paths),
+                    **_read_metrics(run_id, paths),
                 }
             )
             continue
@@ -154,6 +189,8 @@ def main() -> None:
         except Exception as exc:  # keep the sweep alive; record the failure
             status = f"failed: {type(exc).__name__}: {exc}"
             print(f"[arch-sweep] {slug} FAILED: {status}", flush=True)
+        if status == "ok":
+            _fit_nested(run_id, cfg_path)
         row = {
             "variant": slug,
             "width": width,
@@ -163,7 +200,7 @@ def main() -> None:
             "run_id": run_id,
             "status": status,
             "wall_seconds": round(time.time() - t0, 1),
-            **_read_e2e(run_id, paths),
+            **_read_metrics(run_id, paths),
         }
         _append_ledger(row)
         print(f"[arch-sweep] {slug} -> {row}", flush=True)
