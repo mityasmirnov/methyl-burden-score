@@ -1,7 +1,7 @@
 # Panel stability: `n_repeats=1` (dry-run) vs `n_repeats=5` (production)
 
-Updated: `2026-09-25` — **complete for all 3 folds** (panel stage finished;
-classical `C-mvalue-enetS` stage still running).
+Updated: `2026-09-25` — **CPU chain complete** (panels + classical
+`C-mvalue-enetS`, all 3 folds).
 
 Compares the committed dry-run panels (`9488b60`, `n_repeats=1`) against the
 production re-run (`n_repeats=5`), same split (`hub-ats-7e-3fold-v1`), same
@@ -70,7 +70,44 @@ Two things stand out:
   single deployable reference checkpoint — a fixed panel (e.g. the ∩-all-folds
   core, or "all represented genes") sidesteps it. Worth deciding explicitly
   rather than by default.
-- **Still not sufficient as the G1 verdict:** this is panel *composition* only.
-  No model was trained on either panel here, so it says nothing about downstream
-  metric impact. The classical `C-mvalue-enetS` arm now running is the first
-  thing that will.
+
+## 4. Downstream metric impact (classical `C-mvalue-enetS`, r=1 vs r=5)
+
+The classical arm was refit on the r=5 panels, so the composition differences
+above can be translated into metrics. Same arm, same folds, same split — the
+only change is which panel columns it fit on.
+
+| Metric (3-fold mean) | r=1 (dry) | r=5 (prod) | Δ |
+|---|---:|---:|---:|
+| age MAE | 8.3095 | 8.3003 | **−0.009** |
+| age Pearson r | 0.8941 | 0.8944 | +0.0002 |
+| sex AUROC | 0.8905 | 0.8942 | +0.0037 |
+| tissue balanced acc | 0.4372 | 0.4395 | +0.0023 |
+| tissue macro-F1 | 0.3852 | 0.3883 | +0.0031 |
+
+**`n_repeats=5` did not move the numbers.** Every delta is negligible (age MAE
+by 0.1%), and per-fold signs are mixed rather than systematically favouring r=5.
+The ~15% seed churn from §1 does not propagate to downstream accuracy, which is
+consistent with §1's finding that the trained-on `panel_cols` layer is ~97%
+unchanged.
+
+So the documented expectation that "production wants `n_repeats=5`" is now
+empirically settled: **r=5 buys within-fold reproducibility, not accuracy.** The
+r=1 dry-run was metrically adequate for the G1 decision; the production run
+confirms the earlier conclusions rather than revising them. Exploratory panel
+work can use r=1 with confidence.
+
+## 5. What this does and does not settle for G1
+
+Settles:
+- r=1 vs r=5 is not a live concern (§4).
+- The M11 panel is fold-varying, not a single object (§2) — a real input to the
+  10d checkpoint decision.
+
+Does **not** settle — G1's actual question is still open:
+- G1 asks whether the fold-selected panel **matches or beats "all ~19.6k
+  represented genes"** under nested enet. There is **no all-genes comparator
+  run**, so no verdict is possible yet. The numbers here characterise the
+  fold-selected panel in isolation.
+- These are classical `C-mvalue-enetS` numbers, not the neural finalists on the
+  same panel, and not `mbs_enet_nested`.
