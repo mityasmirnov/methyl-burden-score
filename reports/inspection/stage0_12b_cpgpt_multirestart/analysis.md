@@ -26,7 +26,7 @@ run repeats the *same* config 6× on fold 0 to measure restart spread.
 | Readout | mean ± sd | min–max |
 |---|---|---|
 | **nested tissue F1** | **0.355 ± 0.010** | 0.339–0.371 |
-| **nested age MAE** | **8.096 ± 0.140** | 7.955–8.359 |
+| **nested age MAE** | **8.096 ± 0.140** (±0.187 incl. the sweep control — see Finding 4) | 7.955–8.359 |
 | **nested sex AUROC** | **0.879 ± 0.015** | 0.852–0.902 |
 | e2e tissue F1 | 0.316 ± 0.032 | 0.248–0.342 |
 | e2e age MAE | 11.579 ± 1.630 | 9.684–13.636 |
@@ -77,6 +77,41 @@ readout, which epoch got picked matters much less than expected.
 **Under the age-primary weighting** (user direction, 2026-09-24), this is a net
 win: a decisive age gain plus a sex gain against a small, quantified tissue
 cost.
+
+## Finding 4 — same seed does NOT reproduce; spread is wider than 6 draws showed
+
+The architecture sweep's in-sweep control (`base-64`) is the **same config and
+the same seed (42)** as restart r0 — verified by diffing the generated config
+against the base (only `experiment.name` differs) and by checking both
+`resolved_config.yaml` files. Both harnesses pass identical arguments to
+`train_flat_baseline`. Yet it landed at nested age MAE **8.482** vs r0's
+**8.011**, with `best_epoch` 13 vs 5.
+
+Cause: **there are no determinism settings anywhere in the codebase** —
+`grep -rn "use_deterministic_algorithms\|cudnn.deterministic\|cudnn.benchmark"`
+over `src/` and `scripts/` returns nothing. With bf16 AMP and non-deterministic
+CUDA kernels, identical seeds legitimately diverge. So `base-64` is a valid
+**7th draw** of the same configuration, not a harness bug.
+
+Revised spread (treating it as a 7th draw):
+
+| sample | mean | sd | range | width |
+|---|---:|---:|---|---:|
+| n=6 (restarts only) | 8.096 | 0.140 | 7.955–8.359 | 0.404 |
+| **n=7 (+ sweep control)** | **8.151** | **0.187** | 7.955–**8.482** | **0.527** |
+
+**The ±0.140 figure reported from 6 restarts under-stated run-to-run spread**;
+±0.19 (width ~0.53 MAE) is the better estimate. The G2 verdict is unaffected —
+the CpGPT-vs-baseline gap (1.42 MAE) is still **2.7× the full observed spread**.
+
+### How to read the architecture sweep because of this
+
+A single-seed variant must beat the in-sweep control (`base-64` = 8.482 nested
+age) by **more than ~0.5 MAE** before the difference is credible. The sweep can
+therefore detect large capacity effects but **not** subtle ones; small
+orderings within it should be treated as ties, and any apparent winner needs a
+multi-seed rerun before promotion. Compare variants to `base-64`, **not** to the
+multi-restart means — same harness, same draw process.
 
 ## Caveat that still stands
 

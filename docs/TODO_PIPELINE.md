@@ -78,7 +78,7 @@ runner scripts do not exist yet.
 | ID | Track | Question (short) | Status |
 |----|-------|------------------|-----------|
 | **G1** | **11** / **12b** gene utilization | Does DeepRVAT within-gene sampling + minibatch gather (or M11 fold-selected panel) train a usable gene MBS without dense 482k load? | **open** — ATS production run + trait-universe design both in flight |
-| **G2** | Positional / CpGPT | Do CpGPT (or DNA-LM) static embeddings improve N-light and/or cascade vs matched baseline? | **YES for N-light** (6/6 restarts, nested: age MAE 9.57→**8.096 ± 0.140**, sex 0.814→**0.879 ± 0.015**, tissue 0.376→**0.355 ± 0.010** = small but *real* regression). Age-primary ⇒ net win. Baseline still n=1 (matched 6-restart baseline recommended). **Cascade untested** — plumbing landed, smoke not run |
+| **G2** | Positional / CpGPT | Do CpGPT (or DNA-LM) static embeddings improve N-light and/or cascade vs matched baseline? | **YES for N-light** (6/6 restarts, nested: age MAE 9.57→**8.10 ± 0.19**, sex 0.814→**0.879 ± 0.015**, tissue 0.376→**0.355 ± 0.010** = small but *real* regression). Age-primary ⇒ net win; gap is 2.7× the full run-to-run spread. **Same seed does not reproduce** (no determinism settings in the repo), so single-seed diffs under ~0.5 MAE are not credible. Baseline still n=1 (matched 6-restart baseline recommended). **Cascade untested** — plumbing landed, smoke not run |
 | **G3** | **12c** platform robustness | Does HM450 CpG/platform-mask dropout preserve MBS; path to EPIC membership? | **not started** |
 | **G4** | **10e** + **10d** | Does fair S1→S2→S3→S4 beat native P2-G? What checkpoint contract do we ship? | **10e done (FAIL)**; 10d MBS-side unblocked (N-light OOF done), full package still waits on cascade OOF |
 
