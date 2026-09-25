@@ -1013,6 +1013,13 @@ must keep spare VRAM.
 ## 11. Fold-selected panel + full model (alias: 7G′ Stage B) — **GATE G1 — ← NOW**
 
 - **Status:** `pending` for G1 gene-set decision. ATS CPU dry-run (`n_repeats=1`)
+- **Panel stability (interim, folds 0–1):** `n_repeats=5` vs the `n_repeats=1`
+  dry-run — seed genes only ~85% retained (Jaccard 0.73–0.76), but `panel_cols`
+  ~97% retained (Jaccard ~0.91). Near-identical `n_seed` **counts** were
+  misleading (selection stops on a frequency threshold, so counts match
+  regardless); set overlap had to be computed directly. So repeats=5 was worth
+  running, but is unlikely to flip the G1 verdict on its own. Report:
+  [`../reports/inspection/stage0_7g_prime_matched_probe/panel_stability_repeats.md`](../reports/inspection/stage0_7g_prime_matched_probe/panel_stability_repeats.md)
   **done**; **production `panel_repeats=5` re-run in flight now** (CPU,
   `scripts/run_stage_b_cpu_chain.sh`-equivalent, all 3 folds panels + classical,
   log `scratch/logs/stage_b_cpu_panels_repeats5.log`, likely 1–3+ days).
