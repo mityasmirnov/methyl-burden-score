@@ -36,8 +36,8 @@ finishing, fill Results + Verdict in the same change set that flips status
   GATE       pending  blocks cascade OOF (G1, G3 open; G2 user-decided YES,
                        confirming; G4 10e done)
   12b / G1   pending  gene utilization (DeepRVAT sampler; vs M11 panel)
-  G2         **YES**  positional / CpGPT probe — user-decided (age-primary);
-                       6-restart confirmation run in flight on GPU0
+  G2         **YES**  CpGPT confirmed for N-light (6 restarts, nested age
+                       8.10±0.14 vs 9.57; tissue −0.021 real). Cascade untested
   12c / G3   pending  platform robustness (CpG dropout; EPIC later) — not started
   10d        pending  ships from the cascade OOF finalist; do NOT rerun the
                        N-light 5x6 (closed light benchmark, marginal delta)
@@ -78,7 +78,7 @@ runner scripts do not exist yet.
 | ID | Track | Question (short) | Status |
 |----|-------|------------------|-----------|
 | **G1** | **11** / **12b** gene utilization | Does DeepRVAT within-gene sampling + minibatch gather (or M11 fold-selected panel) train a usable gene MBS without dense 482k load? | **open** — ATS production run + trait-universe design both in flight |
-| **G2** | Positional / CpGPT | Do CpGPT (or DNA-LM) static embeddings improve N-light and/or cascade vs matched baseline? | **user-decided YES** (2026-09-24, age-primary: nested age MAE 9.57→8.44, sex AUROC 0.814→0.904, tissue −0.036 secondary); 6-restart confirmation run in flight on GPU0 |
+| **G2** | Positional / CpGPT | Do CpGPT (or DNA-LM) static embeddings improve N-light and/or cascade vs matched baseline? | **YES for N-light** (6/6 restarts, nested: age MAE 9.57→**8.096 ± 0.140**, sex 0.814→**0.879 ± 0.015**, tissue 0.376→**0.355 ± 0.010** = small but *real* regression). Age-primary ⇒ net win. Baseline still n=1 (matched 6-restart baseline recommended). **Cascade untested** — plumbing landed, smoke not run |
 | **G3** | **12c** platform robustness | Does HM450 CpG/platform-mask dropout preserve MBS; path to EPIC membership? | **not started** |
 | **G4** | **10e** + **10d** | Does fair S1→S2→S3→S4 beat native P2-G? What checkpoint contract do we ship? | **10e done (FAIL)**; 10d MBS-side unblocked (N-light OOF done), full package still waits on cascade OOF |
 
@@ -1142,6 +1142,13 @@ must keep spare VRAM.
     layouts cannot diverge. 6 new tests; 332 unit tests pass.
     **Next:** run `stage0_12_cascade_cpgpt_smoke.yaml` (fold 0, 6 ep) to prove
     it trains at real scale, *then* consider cascade OOF.
+  - **CpGPT 6-restart confirmation — DONE** (6/6, fold 0). Nested: tissue
+    **0.355 ± 0.010**, age **8.096 ± 0.140**, sex **0.879 ± 0.015**. Key
+    methodological finding: **`mbs_e2e` restart sd is ~11× nested's** (age 1.63
+    vs 0.14), so single-seed configs must not be ranked on e2e — this
+    invalidated the arch sweep's original design before it ran (fixed in
+    `9bd1204`). Report:
+    [`../../reports/inspection/stage0_12b_cpgpt_multirestart/analysis.md`](../../reports/inspection/stage0_12b_cpgpt_multirestart/analysis.md)
   - CpGPT **architecture sweep** (φ/ρ 64→512, 6 variants) — **in flight on
     GPU0** (`scripts/run_12b_cpgpt_arch_sweep.py`, ledger under
     `reports/inspection/stage0_12b_cpgpt_arch_sweep/`). Rationale: CpGPT

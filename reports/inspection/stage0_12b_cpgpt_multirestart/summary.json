@@ -1,0 +1,75 @@
+{
+  "split_id": "hub-nine-pack-3fold-v1",
+  "n_folds": 3,
+  "n_restarts": 6,
+  "run_prefix": "stage0-12b-cpgpt-nlight-smoke",
+  "primary_evaluation": "mbs_enet_nested",
+  "rows": [
+    {
+      "run_id": "stage0-12b-cpgpt-nlight-smoke-f0-r0",
+      "fold": 0,
+      "restart": 0,
+      "nested_tissue_f1": 0.3611219698263072,
+      "nested_age_mae": 8.011479721534204,
+      "nested_sex_auroc": 0.8521463263580451,
+      "e2e_tissue_f1": 0.24814103901378923,
+      "e2e_age_mae": 13.635805972006185,
+      "e2e_sex_auroc": 0.8667164920759574
+    },
+    {
+      "run_id": "stage0-12b-cpgpt-nlight-smoke-f0-r1",
+      "fold": 0,
+      "restart": 1,
+      "nested_tissue_f1": 0.3707007683428452,
+      "nested_age_mae": 7.963759698756976,
+      "nested_sex_auroc": 0.8784289607232111,
+      "e2e_tissue_f1": 0.3423673115682648,
+      "e2e_age_mae": 9.684125169523432,
+      "e2e_sex_auroc": 0.956920929604391
+    },
+    {
+      "run_id": "stage0-12b-cpgpt-nlight-smoke-f0-r2",
+      "fold": 0,
+      "restart": 2,
+      "nested_tissue_f1": 0.339009150476189,
+      "nested_age_mae": 8.35918188624619,
+      "nested_sex_auroc": 0.8916443972376491,
+      "e2e_tissue_f1": 0.33939239097942686,
+      "e2e_age_mae": 9.76044657092108,
+      "e2e_sex_auroc": 0.9675586006808218
+    },
+    {
+      "run_id": "stage0-12b-cpgpt-nlight-smoke-f0-r3",
+      "fold": 0,
+      "restart": 3,
+      "nested_tissue_f1": 0.3492777966950213,
+      "nested_age_mae": 8.139652715301159,
+      "nested_sex_auroc": 0.873307193825954,
+      "e2e_tissue_f1": 0.3336302316725578,
+      "e2e_age_mae": 13.591992205190904,
+      "e2e_sex_auroc": 0.9638309767152304
+    },
+    {
+      "run_id": "stage0-12b-cpgpt-nlight-smoke-f0-r4",
+      "fold": 0,
+      "restart": 4,
+      "nested_tissue_f1": 0.35553386344200355,
+      "nested_age_mae": 7.95546157122646,
+      "nested_sex_auroc": 0.8774740185510868,
+      "e2e_tissue_f1": 0.30876569165484874,
+      "e2e_age_mae": 11.992812597869584,
+      "e2e_sex_auroc": 0.9350940642925344
+    },
+    {
+      "run_id": "stage0-12b-cpgpt-nlight-smoke-f0-r5",
+      "fold": 0,
+      "restart": 5,
+      "nested_tissue_f1": 0.3547832655828445,
+      "nested_age_mae": 8.148145879305371,
+      "nested_sex_auroc": 0.9015081871595184,
+      "e2e_tissue_f1": 0.3212135658994423,
+      "e2e_age_mae": 10.810680901937749,
+      "e2e_sex_auroc": 0.9660818637931503
+    }
+  ]
+}
