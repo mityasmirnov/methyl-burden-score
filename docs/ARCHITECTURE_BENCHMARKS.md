@@ -210,12 +210,23 @@ disease-tissue **n>200** (Milestone 12 recipe).
 
 | Track | Status | Notes |
 |-------|--------|-------|
-| Milestone **12** N-light 5×6 | Running GPU 2 | 65k-prefix validation; nested enet product |
-| GATE G1 / **12b** | Pending | ~20k-gene sampler; product cascade panel |
-| GATE G2 CpGPT / positional | Pending | Matched smokes only |
-| GATE G3 / **12c** platform | Pending | Dropout / EPIC path |
-| **10d** reference checkpoint | Pending | After OOF finalist |
-| Cascade 5×6 | Blocked on G1–G3 (+10d) | Native **P2-G** recipe |
+| Milestone **12** N-light 5×6 | **done** (30/30) | 65k-prefix validation; nested **0.316 / 9.59 / 0.822** |
+| GATE G1 / **11** panels | CPU chain **done** | r=5 panels + classical; r=5 vs r=1 changed metrics ~0 |
+| GATE G1 / **12b** all-genes comparator | **not run** | the thing that actually closes G1 |
+| GATE G2 CpGPT / positional | **YES (N-light)** | 6 restarts, nested age **8.10 ± 0.19** vs 9.57; sex +0.065; tissue −0.021 (real) |
+| CpGPT architecture sweep | **done — negative** | 6 arms, 4× φ/ρ × 2× cpg_hidden: **no capacity effect**; keep width 64 |
+| GATE G3 / **12c** platform | Pending | Dropout / EPIC path; not started |
+| **10d** reference checkpoint | Pending | Ships from cascade OOF finalist |
+| Cascade CpGPT plumbing | **done** | `efb8518`/`83d5909`/`f46f0ce`; smoke not yet run |
+| Cascade 5×6 | Blocked on G1, G3 | Native **P2-G** recipe |
+
+### Run-to-run spread (measured; use when judging any single-seed result)
+
+Same config, repeated: nested age MAE **sd 0.187**, width **0.53** (n=7).
+`mbs_e2e` is ~9–11× noisier (sd 1.63). **Do not rank single-seed configs on
+`mbs_e2e`**, and treat single-seed nested gaps under ~0.5 MAE as ties. There are
+no determinism settings in the repo, so the same seed does **not** reproduce.
+Detail: [`../reports/inspection/stage0_12b_cpgpt_multirestart/analysis.md`](../reports/inspection/stage0_12b_cpgpt_multirestart/analysis.md).
 
 ---
 

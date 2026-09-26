@@ -1149,11 +1149,15 @@ must keep spare VRAM.
     invalidated the arch sweep's original design before it ran (fixed in
     `9bd1204`). Report:
     [`../../reports/inspection/stage0_12b_cpgpt_multirestart/analysis.md`](../../reports/inspection/stage0_12b_cpgpt_multirestart/analysis.md)
-  - CpGPT **architecture sweep** (φ/ρ 64→512, 6 variants) — **in flight on
-    GPU0** (`scripts/run_12b_cpgpt_arch_sweep.py`, ledger under
-    `reports/inspection/stage0_12b_cpgpt_arch_sweep/`). Rationale: CpGPT
-    lifts per-CpG input **24 → 152** dims while φ/ρ stayed **64**, so the
-    65k G2 probe may be *understating* CpGPT by starving it of capacity.
+  - CpGPT **architecture sweep — DONE, negative** (6 arms, 15 h GPU0, matched
+    batch 128). 4× φ/ρ (64→256) × 2× `cpg_hidden` (64→128) + a depth arm:
+    **no capacity effect**. Spread across 6 *different architectures* (sd 0.267)
+    is the same order as re-running one *fixed* config (sd 0.187); nested tissue
+    varies by only 0.011 across the whole grid. Best arm beats control by 0.432
+    MAE — under the pre-registered 0.5 bar — and is non-monotonic. **Keep the
+    locked width-64 shape**; "make it wider" is closed. The motivating
+    24→152-input bottleneck hypothesis is **not supported**. Report:
+    [`../../reports/inspection/stage0_12b_cpgpt_arch_sweep/analysis.md`](../../reports/inspection/stage0_12b_cpgpt_arch_sweep/analysis.md)
   - Product recipe (within-gene sampler + gather) — **not started**.
   - Gene-set fork smoke: all represented genes vs Milestone **11** panel —
     **not started**.
