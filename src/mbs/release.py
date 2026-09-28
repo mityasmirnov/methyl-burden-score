@@ -50,6 +50,7 @@ from mbs.geo_series_metadata import load_geo_series_frame, merge_geo_series_into
 from mbs.paths import DataPaths
 from mbs.platform_id import PLATFORM_ALIASES, normalize_platform
 from mbs.registry.sample_info import FAMILY_VALUE_COLUMN
+from mbs.sample_overview_enrich import fill_null_study_platforms_from_ewas_db
 from mbs.static_features.export_cpgpt import DEFAULT_FEATURE_SET_ID
 
 RELEASE_ID = "deepmat-data-v1"
@@ -1227,6 +1228,13 @@ def refresh_release(
     if not geo_series_frame.empty and not studies.empty:
         studies = merge_geo_series_into_studies(studies, geo_series_frame)
 
+    assay_platform_stats: dict[str, int] = {"n_studies_considered": 0, "n_studies_platform_set": 0}
+    if not studies.empty:
+        studies, assay_platform_stats = fill_null_study_platforms_from_ewas_db(
+            studies,
+            ewas_db_root=paths.data_root / "raw" / "ewas_datahub" / "EWAS_db",
+        )
+
     sample_lane_flags = build_sample_lane_flags(
         samples=samples,
         membership=membership,
@@ -1597,6 +1605,7 @@ def refresh_release(
         },
         "geo_backfill": geo_merge_stats,
         "datahub_census": datahub_merge_stats,
+        "assay_platform_fill": assay_platform_stats,
         "catalog_path": str(rp.catalog_db),
         "notes": (
             "Re-run mbs catalog refresh-release after EWAS_db download adds study dirs. "

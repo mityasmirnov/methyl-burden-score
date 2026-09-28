@@ -19,76 +19,110 @@ finishing, fill Results + Verdict in the same change set that flips status
 
 ## Roadmap (one screen)
 
+**Execution order** (what to run next). Milestone **IDs stay** (1–14, G1–G4);
+do not renumber. Agents follow this sequence, not numeric milestone order.
+
 ```text
+═══ DONE ═══════════════════════════════════════════════════════════════════
 1–6          done     bootstrap → flat/hierarchical v0.1 freezes
 7A–7F, 7E′   done     release → nine-pack → architecture → CV → cascade (no TBS)
 8            done     methylation-only full eval + tissue probe          (was 7G)
 9            done     gene-only architecture on ATS (9a–9d screens)      (was 7G′)
-10           campaign pretrained MBS/RBS scale (was 7H); topology locked
-  10a–10c    done     P2-G lock; N-light@64; warms; freeze-reuse
-  10a-dense  partial  S1 fold 0 done; queue stopped for N-light OOF
-  10e        done      GATE G4 — fair S1→S2→S3→S4 FAIL; native P2-G; no 3-fold
-  10d        pending  GATE G4 — reference checkpoint after OOF finalist
-11           ← NOW    GATE G1: ATS panels+classical **done** at r=5 (no metric
-                       change); all-genes comparator NOT run; trait-universe
-                       A→B→C pipeline still in design (not built yet)
-12           done     N-light 5×6 30/30 done (nested 0.316/9.59/0.822); cascade
-                       arm still blocked on GATE G1–G3
-  GATE       pending  blocks cascade OOF (G1, G3 open; G2 user-decided YES,
-                       confirming; G4 10e done)
-  12b / G1   pending  gene utilization (DeepRVAT sampler; vs M11 panel)
-  G2         **YES**  CpGPT confirmed for N-light (6 restarts, nested age
-                       8.10±0.14 vs 9.57; tissue −0.021 real). Cascade untested
-  12c / G3   pending  platform robustness (CpG dropout; EPIC later) — not started
-  10d        pending  ships from the cascade OOF finalist; do NOT rerun the
-                       N-light 5x6 (closed light benchmark, marginal delta)
-  THEN       blocked  12 cascade 5×6 on G1 panel (**native P2-G**; 10e rejected)
-13           deferred expression aux after OOF
-14           deferred optional a–f
+10a–10c      done     P2-G lock; N-light@64; warms; freeze-reuse
+10e / G4     done     fair S1→S2→S3→S4 FAIL; cascade recipe = native P2-G
+12 N-light   done     5×6 30/30 (nested 0.316/9.59/0.822); 65k-prefix only
+G2 N-light   YES      CpGPT age/sex win (8.10±0.14 vs 9.57); tissue −0.021
+11 ATS       done     panels+classical at r=5 (no metric change)
+
+═══ NOW — GPU queue (expected gain, keep GPU 0 saturated) ═════════════════
+1. G1 cascade gene-holdout random   stage0_12b_gene_holdout_cascade_smoke.yaml
+2. G1 N-light gene-holdout random   stage0_12b_gene_holdout_nlight_smoke.yaml
+3. nested enet both arms            scripts/eval_gene_holdout_nested.py
+4. chromosome arms (if random pass) *_chrom_smoke.yaml (cascade then N-light)
+   Then: full-width converge / matched baseline as capacity allows.
+   Product path locks: max samples; CpGPT sequence embeddings on;
+   trait heads in training once architecture is locked.
+
+═══ NOW — science (while GPU runs) ════════════════════════════════════════
+G1 / 12b     ← NOW    gene-holdout: train φ/ρ on one gene set, score a
+                       disjoint set; nested enet on heldout MBS.
+                       Run order: cascade random → N-light random → nested →
+                       chromosome if random passes.
+                       DeepRVAT sampler still unbuilt (product full-width path).
+                       After arch lock: train with max samples + trait heads;
+                       carry CpGPT sequence embeddings (cpgpt2m_adapter_128_v1).
+
+═══ BLOCKED (do not auto-start) ═══════════════════════════════════════════
+12 cascade   blocked  5×6 on G1 panel, native P2-G only (10e rejected)
+G3 / 12c     pending  platform robustness (CpG dropout; EPIC later)
+10d / G4     pending  reference checkpoint from cascade OOF finalist
+                       (do NOT rerun N-light 5×6)
+
+═══ DEFERRED ══════════════════════════════════════════════════════════════
+13           deferred expression aux after OOF scores exist
+14           deferred optional Stage 1+ layers (a–f)
 ```
 
 Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pretrained-mbs-rbs.md)
 → [`plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](plans/milestone-7h-pretrained-mbs-rbs-campaign.md)
 → [`../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](../reports/inspection/stage0_7h_nine_pack_smoke/analysis.md)
 → [`../reports/inspection/stage0_7h_nine_pack_smoke/vector_vs_scalar.md`](../reports/inspection/stage0_7h_nine_pack_smoke/vector_vs_scalar.md).
+Architecture slide figures (open **PNG/PDF**; SVG source kept):
+[`figures/deepmat-poster.png`](figures/deepmat-poster.png) (overview panel) ·
+[`figures/nlight-cpgpt-architecture.png`](figures/nlight-cpgpt-architecture.png) ·
+[`figures/p2g-cascade-architecture.png`](figures/p2g-cascade-architecture.png)
+([PDF](figures/deepmat-poster.pdf) /
+[PDF](figures/nlight-cpgpt-architecture.pdf) /
+[PDF](figures/p2g-cascade-architecture.pdf)).
 
 ### Next steps (NOW → GATE → THEN)
 
-**GPU 0 queue RUNNING** (`scripts/run_gpu0_queue.sh`, log
-`scratch/logs/gpu0_queue.log`) — standing instruction is to keep GPU 0 saturated
-until we have the best model, so jobs run back-to-back and a failure logs and
-continues rather than idling the card. **GPU 1/2** are usually filled by
-unrelated services (vLLM, another lab's job) — check before assuming capacity.
-Do **not** auto-start cascade 5×6.
+**GPU 0 queue** — keep GPU 0 saturated until we have the best model. Jobs run
+back-to-back; a failure logs and continues rather than idling the card.
+**GPU 1/2** are usually filled by unrelated services — check before assuming
+capacity. Do **not** auto-start cascade 5×6.
+
+**Product defaults (user direction, 2026-09-28) — apply as soon as architecture
+is locked (after G1 gene-holdout + topology):**
+
+| Default | Rule |
+|---------|------|
+| **Samples** | Use the **maximum possible** eligible samples (full nine-pack / full Hub phenotype table for the split; no `max_train_samples` caps on product runs). Gene-holdout plumbing smokes may stay short-epoch; product / OOF campaigns do not. |
+| **Static features** | Carry **CpGPT sequence embeddings** (`cpgpt2m_adapter_128_v1`) as the default static block (G2 YES for N-light; cascade plumbing + smoke done). Not positional encodings — see clarification below. |
+| **Traits** | Once architecture is locked, train with **trait heads in the loop** (age / tissue / sex + disease/cancer aux where `n>200` / eligibility allows), not methylation-screen-only forever. |
 
 Queue order is by expected model gain, **not** TODO numbering:
 
-1. **Cascade CpGPT smoke** (`stage0_12_cascade_cpgpt_smoke.yaml`, fold 0, 6 ep) —
-   short, and de-risks the product campaign. **Confirmed live:** cascade now
-   loads static features (`dim=128 mapped=65280/65536`), and its assignment
-   carries `orphan_rbs=1953` + `direct=9322`, i.e. the **non-coding CpGs**
-   N-light discards.
-2. **Full-width converge** (`stage0_12b_cpgpt_full_width_converge.yaml`) — the
-   19 554-gene run had the best tissue/sex on record but never converged
-   (early-stopped ep 9/16, best ep 4). lr 1e-3→5e-4, patience 5→10, epochs
-   16→30, nested fitted inline. Most likely single source of a better model.
-3. **Matched baseline ×6** (`stage0_7h_nine_pack_m_only_wide.yaml`, CpGPT off,
-   fold 0, 6 restarts) — rigour only: the CpGPT effect size currently rests on
-   an n=1 baseline. Verified protocol-matched to the CpGPT multirestart (configs
-   differ only in the CpGPT keys; its `auto` batch calibrated to the same 256).
+1. **G1 cascade gene-holdout (random)** —
+   `stage0_12b_gene_holdout_cascade_smoke.yaml` (fold 0, 6 ep plumbing).
+2. **G1 N-light gene-holdout (random)** —
+   `stage0_12b_gene_holdout_nlight_smoke.yaml`.
+3. **Nested enet** on both runs —
+   `scripts/eval_gene_holdout_nested.py` (train-gene vs heldout-gene).
+4. **Chromosome arms if random passes** —
+   `stage0_12b_gene_holdout_cascade_chrom_smoke.yaml` then
+   `stage0_12b_gene_holdout_nlight_chrom_smoke.yaml`.
+5. **Full-width converge** / **matched CpGPT-off baseline ×6** as capacity
+   allows (after G1 smoke evidence is in).
+
+Cascade CpGPT plumbing smoke is **DONE**
+(`stage0-12-cascade-cpgpt-smoke-f0-r0`, e2e 0.280 / 17.1 / 0.888 — not a
+benchmark).
 
 **G1 reframed as gene-holdout (user direction, 2026-09-28).** The decisive G1
 test is *not* "all ~19.6k genes vs the M11 panel" as competing training sets —
 it is the **DeepRVAT property**: train the encoder on one gene set, score a
 **disjoint** gene set, and check the readout still works. That is what "truly
-gene-agnostic" means, and it is **unimplemented** (12b item 7).
+gene-agnostic" means. Plumbing is **landed**; smokes / nested **not yet run**.
 
-Design (agreed): partition the 19 554 genes into disjoint train/heldout sets →
+Design (agreed): partition the gene panel into disjoint train/heldout sets →
 train `φ`/`ρ` on train-genes only → score MBS for heldout genes with that frozen
 encoder → fit the **nested elastic-net on heldout-gene MBS** (the readout is
 already post-hoc, so it accepts columns the encoder never saw) → compare heldout
-vs train-gene nested. Decisions: **random gene split**, and **N-light first,
-cascade after**.
+vs train-gene nested. Decisions: **random gene split first**, **chromosome
+holdout as the locality-leakage bound**, GPU run order **cascade random →
+N-light random → nested → chromosome if random passes**. Implementation:
+[`plans/milestone-12b-gene-holdout.md`](plans/milestone-12b-gene-holdout.md).
 
 - **Known caveat of the random split** (chromosome-holdout was the alternative):
   neighbouring / co-regulated genes can straddle the split, so heldout
@@ -99,12 +133,10 @@ cascade after**.
   mechanism that could support per-locus memorisation. Gene-holdout is what
   detects it.
 
-**NOW — Milestone 11 / GATE G1** (fold-selected gene panel / trait-universe
-gene-set choice). Two tracks: (1) legacy ATS CPU panels — **complete** at
-`panel_repeats=5` (panels + classical; r=5 vs r=1 changed metrics ~0);
-(2) new scalable three-stage trait-universe pipeline
-(catalog → restrict → fold-safe reselect) — **design in progress**, its
-runner scripts do not exist yet.
+**Milestone 11 ATS panels** — legacy track **complete** at `panel_repeats=5`
+(panels + classical; r=5 vs r=1 changed metrics ~0). Trait-universe A→B→C
+pipeline remains design-only (runners unbuilt); it does **not** displace
+gene-holdout as the decisive G1 test.
 
 **Milestone 12 N-light 5×6 is `done`** (30/30, nested **0.316 / 9.59 /
 0.822**). Cascade arm remains blocked on the GATE below.
@@ -113,8 +145,8 @@ runner scripts do not exist yet.
 
 | ID | Track | Question (short) | Status |
 |----|-------|------------------|-----------|
-| **G1** | **11** / **12b** gene utilization + **gene-holdout** | (a) Does within-gene sampling + minibatch gather train a usable gene MBS without a dense 482k load? (b) **DeepRVAT-style: train on one gene set, test on a disjoint one — is the encoder truly gene-agnostic?** | **open** — ATS panels done; **gene-holdout never run** (unimplemented, 12b item 7) and it is now the decisive G1 test; trait-universe pipeline still unbuilt |
-| **G2** | DNA-sequence embeddings (CpGPT adapter) | Do CpGPT (or DNA-LM) static embeddings improve N-light and/or cascade vs matched baseline? | **YES for N-light** (6/6 restarts, nested: age MAE 9.57→**8.10 ± 0.19**, sex 0.814→**0.879 ± 0.015**, tissue 0.376→**0.355 ± 0.010** = small but *real* regression). Age-primary ⇒ net win; gap is 2.7× the full run-to-run spread. **Same seed does not reproduce** (no determinism settings in the repo), so single-seed diffs under ~0.5 MAE are not credible. Baseline still n=1 (matched 6-restart baseline recommended). **Cascade untested** — plumbing landed, smoke not run |
+| **G1** | **11** / **12b** gene utilization + **gene-holdout** | (a) Does within-gene sampling + minibatch gather train a usable gene MBS without a dense 482k load? (b) **DeepRVAT-style: train on one gene set, test on a disjoint one — is the encoder truly gene-agnostic?** | **open** — ATS panels done; **gene-holdout plumbing landed** (N-light + cascade; `random` + `chromosome`; plan [`plans/milestone-12b-gene-holdout.md`](plans/milestone-12b-gene-holdout.md)); **smokes / nested not yet run** — that remains the decisive G1 test; trait-universe pipeline still unbuilt |
+| **G2** | DNA-sequence embeddings (CpGPT adapter) | Do CpGPT (or DNA-LM) static embeddings improve N-light and/or cascade vs matched baseline? | **YES for N-light** (6/6 restarts, nested: age MAE 9.57→**8.10 ± 0.19**, sex 0.814→**0.879 ± 0.015**, tissue 0.376→**0.355 ± 0.010** = small but *real* regression). Age-primary ⇒ net win. **Product default: carry CpGPT sequence embeddings** (`cpgpt2m_adapter_128_v1`) once architecture is locked. **Cascade plumbing + 6-ep smoke DONE** (`stage0-12-cascade-cpgpt-smoke-f0-r0`); matched cascade baseline still pending as capacity allows |
 | **G3** | **12c** platform robustness | Does HM450 CpG/platform-mask dropout preserve MBS; path to EPIC membership? | **not started** |
 | **G4** | **10e** + **10d** | Does fair S1→S2→S3→S4 beat native P2-G? What checkpoint contract do we ship? | **10e done (FAIL)**; 10d MBS-side unblocked (N-light OOF done), full package still waits on cascade OOF |
 
@@ -141,8 +173,9 @@ silently launching cascade). A 65k-matched cascade “for architecture
 comparison” is **not** auto-queued.
 
 **THEN — 12 cascade 5×6** on the **G1** panel (**native P2-G**; fair **10e**
-rejected). Nested enet product readout. Milestone **13** expression after OOF
-scores exist.
+rejected), with **max samples**, **CpGPT sequence embeddings on**, and **trait
+heads in training**. Nested enet product readout. Milestone **13** expression
+after OOF scores exist.
 
 **Reference (done, do not reopen as blockers):** P2-G topology lock; N-light@64;
 warms; pack freeze-reuse (cancer 0.954 / Alzheimer’s 0.838); P2-G nested enet
@@ -1212,6 +1245,19 @@ must keep spare VRAM.
     layouts cannot diverge. 6 new tests; 332 unit tests pass.
     **Next:** run `stage0_12_cascade_cpgpt_smoke.yaml` (fold 0, 6 ep) to prove
     it trains at real scale, *then* consider cascade OOF.
+    **Cascade CpGPT smoke — DONE** (2026-09-28):
+    `stage0-12-cascade-cpgpt-smoke-f0-r0` trains + exports with the static
+    block. e2e tissue **0.280** / age **17.1** / sex **0.888** — plumbing
+    only (6 epochs vs 30-epoch recipe; config headered “not a benchmark”).
+  - **Gene-holdout (decisive G1) — plumbing DONE for N-light + cascade,
+    random + chromosome** (2026-09-28). Plan:
+    [`plans/milestone-12b-gene-holdout.md`](plans/milestone-12b-gene-holdout.md).
+    `training.gene_holdout` partitions genes, trains φ/ρ on the train set,
+    scores heldout MBS with the frozen encoder
+    (`scores/mbs_heldout.npy` + `gene_holdout.json`). Post-hoc nested:
+    `scripts/eval_gene_holdout_nested.py`. Smoke configs:
+    `stage0_12b_gene_holdout_{nlight,nlight_chrom,cascade,cascade_chrom}_smoke.yaml`
+    (6 ep). **Smokes / nested not yet run.**
   - **CpGPT 6-restart confirmation — DONE** (6/6, fold 0). Nested: tissue
     **0.355 ± 0.010**, age **8.096 ± 0.140**, sex **0.879 ± 0.015**. Key
     methodological finding: **`mbs_e2e` restart sd is ~11× nested's** (age 1.63

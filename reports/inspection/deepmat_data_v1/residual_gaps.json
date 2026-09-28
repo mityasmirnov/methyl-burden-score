@@ -1,158 +1,499 @@
 {
-  "generated_at": "2026-09-07T14:33:25Z",
+  "applied_platform_fill": true,
+  "assay_platform_fill": {
+    "duckdb_update": "skipped_fk_limitation_use_refresh_release",
+    "n_studies_considered": 19,
+    "n_studies_platform_set": 18
+  },
   "catalog": {
-    "n_samples": 173076,
-    "n_studies": 1763,
-    "n_studies_with_platform_id": 1456,
-    "pct_studies_with_platform_id": 82.6,
-    "platform_id_counts": {
-      "HM450": 908,
-      "EPIC": 530,
-      "nan": 307,
-      "EPICv2": 18
+    "n_assay_files": 187324,
+    "n_samples": 185851,
+    "n_studies": 1860,
+    "platform_study_counts": {
+      "(null)": 42,
+      "EPIC": 636,
+      "EPICv2": 20,
+      "HM450": 1162
     }
   },
-  "lane_flags": {
-    "hub_only": 3900,
-    "ewas_db_only": 138842,
-    "both": 30334
+  "disk_ewas_db": {
+    "empty_dirs": [
+      "GSE147377",
+      "GSE152519",
+      "GSE152561",
+      "GSE152802",
+      "GSE153347",
+      "GSE154403",
+      "GSE154446",
+      "GSE154683",
+      "GSE154915",
+      "GSE155207",
+      "GSE155660",
+      "GSE155962",
+      "GSE155985",
+      "GSE156012",
+      "GSE156090",
+      "GSE156299",
+      "GSE156512",
+      "GSE156546",
+      "GSE157273",
+      "GSE157611",
+      "GSE157908",
+      "GSE157914",
+      "GSE159479",
+      "GSE159655",
+      "GSE159710",
+      "GSE159907",
+      "GSE160878",
+      "GSE161020",
+      "GSE161175",
+      "GSE161814",
+      "GSE162288",
+      "GSE162350",
+      "GSE162560",
+      "GSE162984",
+      "GSE164056",
+      "GSE164149",
+      "GSE164195",
+      "GSE164269",
+      "GSE164468",
+      "GSE164822",
+      "GSE165050",
+      "GSE165688",
+      "GSE166067",
+      "GSE166212",
+      "GSE166503",
+      "GSE166587",
+      "GSE166844",
+      "GSE166845",
+      "GSE167347",
+      "GSE167429",
+      "GSE167883",
+      "GSE167885",
+      "GSE168185",
+      "GSE168581",
+      "GSE168614",
+      "GSE168739",
+      "GSE168930",
+      "GSE168999",
+      "GSE169156",
+      "GSE169595",
+      "GSE169598",
+      "GSE169622",
+      "GSE171140",
+      "GSE171142",
+      "GSE171318",
+      "GSE171424",
+      "GSE171550",
+      "GSE171911",
+      "GSE171956",
+      "GSE172081",
+      "GSE172365",
+      "GSE172468",
+      "GSE173081",
+      "GSE173356",
+      "GSE173382",
+      "GSE173613",
+      "GSE173717",
+      "GSE173836",
+      "GSE174201",
+      "GSE174525",
+      "GSE174568",
+      "GSE174613",
+      "GSE174625",
+      "GSE174818",
+      "GSE175379",
+      "GSE175399",
+      "GSE175699",
+      "GSE175769",
+      "GSE175892",
+      "GSE176273",
+      "GSE176334",
+      "GSE176450",
+      "GSE178416",
+      "GSE178700",
+      "GSE178737",
+      "GSE179181",
+      "GSE179234",
+      "GSE179414",
+      "GSE179759",
+      "GSE179801",
+      "GSE179847",
+      "GSE180061",
+      "GSE180130",
+      "GSE180453",
+      "GSE180474",
+      "GSE180535",
+      "GSE180660",
+      "GSE180929",
+      "GSE181126",
+      "GSE182707",
+      "GSE182772",
+      "GSE182874",
+      "GSE183015",
+      "GSE183798",
+      "GSE184047",
+      "GSE184206",
+      "GSE184269",
+      "GSE184500",
+      "GSE184576",
+      "GSE185041",
+      "GSE185556",
+      "GSE185854",
+      "GSE185973",
+      "GSE186782",
+      "GSE188547",
+      "GSE188552",
+      "GSE42409",
+      "GSE58783",
+      "GSE78217"
+    ],
+    "n_dirs": 1989,
+    "n_empty": 129,
+    "n_gsm_files": 173166,
+    "n_txt_files": 187324,
+    "n_with_txt": 1860
+  },
+  "generated_at": "2026-09-28T09:33:07Z",
+  "platform_null": {
+    "classification": [
+      {
+        "census_platforms": "EPIC|EPICv2",
+        "fill": NaN,
+        "n_samples": 1998,
+        "reason": "mixed_census",
+        "study_id": "CPTAC-3"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 675,
+        "reason": "mixed_census",
+        "study_id": "GSE104210"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 147,
+        "reason": "mixed_census",
+        "study_id": "GSE111165"
+      },
+      {
+        "census_platforms": "EPIC",
+        "fill": "EPIC",
+        "n_samples": 0,
+        "reason": "single_census_unapplied",
+        "study_id": "GSE112618"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 474,
+        "reason": "mixed_census",
+        "study_id": "GSE115278"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 212,
+        "reason": "mixed_census",
+        "study_id": "GSE117130"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 12,
+        "reason": "mixed_census",
+        "study_id": "GSE121056"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 217,
+        "reason": "mixed_census",
+        "study_id": "GSE122038"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 101,
+        "reason": "mixed_census",
+        "study_id": "GSE122126"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 380,
+        "reason": "mixed_census",
+        "study_id": "GSE122994"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 142,
+        "reason": "mixed_census",
+        "study_id": "GSE123601"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 94,
+        "reason": "mixed_census",
+        "study_id": "GSE124617"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 19,
+        "reason": "mixed_census",
+        "study_id": "GSE128684"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 11,
+        "reason": "mixed_census",
+        "study_id": "GSE128685"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 12,
+        "reason": "mixed_census",
+        "study_id": "GSE128733"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 153,
+        "reason": "mixed_census",
+        "study_id": "GSE131482"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 334,
+        "reason": "mixed_census",
+        "study_id": "GSE132804"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 40,
+        "reason": "mixed_census",
+        "study_id": "GSE136189"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 26,
+        "reason": "mixed_census",
+        "study_id": "GSE136361"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 108,
+        "reason": "mixed_census",
+        "study_id": "GSE136790"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 6,
+        "reason": "mixed_census",
+        "study_id": "GSE138221"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 10,
+        "reason": "mixed_census",
+        "study_id": "GSE140124"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 1504,
+        "reason": "mixed_census",
+        "study_id": "GSE140686"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 96,
+        "reason": "mixed_census",
+        "study_id": "GSE141254"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 13,
+        "reason": "mixed_census",
+        "study_id": "GSE141363"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 18,
+        "reason": "mixed_census",
+        "study_id": "GSE141521"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 395,
+        "reason": "mixed_census",
+        "study_id": "GSE142512"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 18,
+        "reason": "mixed_census",
+        "study_id": "GSE143842"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 132,
+        "reason": "mixed_census",
+        "study_id": "GSE147430"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 18,
+        "reason": "mixed_census",
+        "study_id": "GSE149759"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 55,
+        "reason": "mixed_census",
+        "study_id": "GSE152035"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 1218,
+        "reason": "mixed_census",
+        "study_id": "GSE157131"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 51,
+        "reason": "mixed_census",
+        "study_id": "GSE157397"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 40,
+        "reason": "mixed_census",
+        "study_id": "GSE222478"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 170,
+        "reason": "mixed_census",
+        "study_id": "GSE224218"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 126,
+        "reason": "mixed_census",
+        "study_id": "GSE237561"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 68,
+        "reason": "mixed_census",
+        "study_id": "GSE267015"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 41,
+        "reason": "mixed_census",
+        "study_id": "GSE270084"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 44,
+        "reason": "mixed_census",
+        "study_id": "GSE276972"
+      },
+      {
+        "census_platforms": "EPIC|HM450",
+        "fill": NaN,
+        "n_samples": 648,
+        "reason": "mixed_census",
+        "study_id": "GSE280206"
+      },
+      {
+        "census_platforms": "",
+        "fill": NaN,
+        "n_samples": 0,
+        "reason": "no_single_platform_source",
+        "study_id": "GSE51057"
+      },
+      {
+        "census_platforms": "",
+        "fill": NaN,
+        "n_samples": 7,
+        "reason": "no_single_platform_source",
+        "study_id": "GSE75073"
+      }
+    ],
+    "n_samples": 9833,
+    "n_studies": 42,
+    "reason_counts": {
+      "mixed_census": 39,
+      "no_single_platform_source": 2,
+      "single_census_unapplied": 1
+    }
+  },
+  "release_id": "deepmat-data-v1",
+  "remote_probe": {
+    "n_empty_both_sides": 128,
+    "n_recoverable_delta_gt0": 0,
+    "note": "Empty local dirs with remote_txt=0 cannot be filled from the Hub mirror. Partial census>disk studies are Hub-side incomplete, not local download debt.",
+    "path": "/data/projects/methyl-burden-score/reports/inspection/deepmat_data_v1/ewas_db_empty_remote_probe.json"
   },
   "vs_datahub_census": {
-    "official_n_samples": 180317,
-    "local_census_n": 180317,
-    "overlap": 157402,
-    "census_not_in_catalog_missing_betas": 22915,
-    "catalog_not_in_census": 15674
-  },
-  "platform_null_studies": {
-    "n": 307,
-    "n_samples_in_null_studies": 13321,
-    "by_kind": {
-      "GSE": 304,
-      "ArrayExpress": 2,
-      "TCGA/CPTAC": 1
+    "catalog_not_in_census": 16484,
+    "census_not_in_catalog": 11267,
+    "census_not_in_catalog_top_studies": {
+      "CPTAC-3": 585,
+      "GSE152026": 486,
+      "GSE154915": 470,
+      "GSE156299": 137,
+      "GSE159907": 316,
+      "GSE164056": 143,
+      "GSE164822": 153,
+      "GSE166844": 217,
+      "GSE167885": 411,
+      "GSE168739": 407,
+      "GSE169156": 2052,
+      "GSE171140": 160,
+      "GSE172365": 206,
+      "GSE174818": 128,
+      "GSE179414": 157,
+      "GSE179847": 479,
+      "GSE180061": 121,
+      "GSE183015": 174,
+      "GSE183798": 145,
+      "GSE184269": 167
     },
-    "reasons": {
-      "mixed_census_or_geo": 43,
-      "single_unapplied_zero_samples": 3,
-      "not_in_census_or_geo": 261
-    },
-    "top_by_n_samples": [
-      {
-        "study_id": "CPTAC-3",
-        "n_samples": 1998,
-        "kind": "TCGA/CPTAC"
-      },
-      {
-        "study_id": "GSE140686",
-        "n_samples": 1504,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE157131",
-        "n_samples": 1218,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE104210",
-        "n_samples": 675,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE280206",
-        "n_samples": 648,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE115278",
-        "n_samples": 474,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE142512",
-        "n_samples": 395,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE122994",
-        "n_samples": 380,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE132804",
-        "n_samples": 334,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE122038",
-        "n_samples": 217,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE224218",
-        "n_samples": 170,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE131482",
-        "n_samples": 153,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE141039",
-        "n_samples": 153,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE111165",
-        "n_samples": 147,
-        "kind": "GSE"
-      },
-      {
-        "study_id": "GSE123601",
-        "n_samples": 142,
-        "kind": "GSE"
-      }
-    ]
-  },
-  "ewas_db_retry": {
-    "manifest_rows": 0,
-    "on_disk": 0,
-    "missing": 0,
-    "missing_paths": [],
-    "failures_report_still_missing": 0,
-    "note": "Post-retry summarize: still_missing=0 (WARN lines remain historical; HTML parse artifacts filtered)."
-  },
-  "release_ewas_db": {
-    "advertised_n": 1989,
-    "mirror_complete": false,
-    "n_local_gsm": 170641,
-    "n_local_studies": 1695,
-    "refresh_is_idempotent": true,
-    "remote_index_fetched": false,
-    "total_bytes": 1793230765292
-  },
-  "release_datahub_census": {
-    "enabled": true,
-    "n_census_rows": 180317,
-    "n_phenotype_rows_added": 250491,
-    "n_platform_filled": 157402,
-    "n_sample_type_filled": 143774,
-    "n_samples_matched": 157402,
-    "n_studies_platform_set": 942,
-    "n_tissue_filled": 122712,
-    "parquet_path": "/data/projects/methyl-burden-score/data/canonical/phenotypes/ewas_datahub_sample_census.parquet"
-  },
-  "registry_sample_count_nulls": 0,
-  "notes": [
-    "Hub pack phenotypes remain training SoT.",
-    "Mixed-platform studies correctly keep study.platform_id null.",
-    "single_unapplied_zero_samples = inventory studies with no catalog samples but a single census/GEO platform.",
-    "GEO priority gap list filled platforms where SOFT had a single methylation GPL."
-  ],
-  "disk_ewas_db": {
-    "studies_with_txt": 1695,
-    "txt": 170641,
-    "gsm_named": 157240
+    "n_catalog_samples": 185851,
+    "n_census_unique_samples": 180634,
+    "overlap": 169367
   }
 }

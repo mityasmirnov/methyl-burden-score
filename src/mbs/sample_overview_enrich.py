@@ -54,6 +54,106 @@ def platform_from_n_probes(n_probes: int) -> str | None:
     return None
 
 
+def _blank_platform(value: object) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, float) and pd.isna(value):
+        return True
+    text = str(value).strip()
+    return text == "" or text.lower() == "nan"
+
+
+def infer_study_platform_from_assay_dir(
+    study_dir: Path,
+    *,
+    max_files: int = 3,
+) -> str | None:
+    """Return a catalog platform when sampled EWAS_db ``*.txt`` probe counts agree."""
+    if not study_dir.is_dir():
+        return None
+    files = sorted(study_dir.glob("*.txt"))[: max(1, max_files)]
+    if not files:
+        return None
+    plats: set[str] = set()
+    for path in files:
+        # Header line is one of the newlines; band widths absorb ±1.
+        plat = platform_from_n_probes(count_text_lines(path))
+        if plat is None:
+            return None
+        plats.add(plat)
+    if len(plats) != 1:
+        return None
+    return next(iter(plats))
+
+
+def fill_null_study_platforms_from_ewas_db(
+    studies: pd.DataFrame,
+    *,
+    ewas_db_root: Path,
+    max_files_per_study: int = 3,
+    study_ids: set[str] | None = None,
+) -> tuple[pd.DataFrame, dict[str, int]]:
+    """Fill blank ``study.platform_id`` from on-disk assay probe-count bands.
+
+    Mixed-platform studies stay null (caller should already have set
+    ``metadata_json.datahub.platforms`` from the DataHub census). Only studies
+    whose sampled ``*.txt`` files agree on one Illumina band are updated.
+    Pass ``study_ids`` to restrict which null studies are considered (skips
+    known mixed-platform studies). Studies whose ``metadata_json.datahub.platforms``
+    lists more than one platform are never filled from probe counts.
+    """
+    if studies.empty or "study_id" not in studies.columns:
+        return studies, {"n_studies_considered": 0, "n_studies_platform_set": 0}
+
+    out = studies.copy()
+    if "platform_id" not in out.columns:
+        out["platform_id"] = None
+    considered = 0
+    filled = 0
+    for idx, rec in out.iterrows():
+        if not _blank_platform(rec.get("platform_id")):
+            continue
+        study_id = str(rec.get("study_id", "")).strip()
+        if not study_id:
+            continue
+        if study_ids is not None and study_id not in study_ids:
+            continue
+        meta_plats = _datahub_platforms_from_metadata(rec.get("metadata_json"))
+        if len(meta_plats) > 1:
+            continue
+        considered += 1
+        plat = infer_study_platform_from_assay_dir(
+            ewas_db_root / study_id,
+            max_files=max_files_per_study,
+        )
+        if plat is None:
+            continue
+        out.at[idx, "platform_id"] = plat
+        filled += 1
+    return out, {
+        "n_studies_considered": considered,
+        "n_studies_platform_set": filled,
+    }
+
+
+def _datahub_platforms_from_metadata(raw: object) -> set[str]:
+    if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+        return set()
+    try:
+        payload = json.loads(raw) if isinstance(raw, str) else raw
+    except (TypeError, json.JSONDecodeError):
+        return set()
+    if not isinstance(payload, dict):
+        return set()
+    datahub = payload.get("datahub")
+    if not isinstance(datahub, dict):
+        return set()
+    plats = datahub.get("platforms")
+    if not isinstance(plats, list):
+        return set()
+    return {str(p).strip() for p in plats if str(p).strip()}
+
+
 def platform_from_sample_id_hint(sample_id: str) -> str | None:
     """EWAS_db EPICv2 files often use a ``_935k`` sample_id suffix."""
     text = sample_id.strip().lower()

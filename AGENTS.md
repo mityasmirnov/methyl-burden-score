@@ -11,7 +11,10 @@ Milestone 7C, optional non-gene **RBS**, intergenic **TBS**, and direct CpG
 contributions) for association and prediction. Current gate and ordering:
 [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md)
 (numbers: [`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md);
-**now = Milestone 10**).
+**now = GATE G1 gene-holdout / 12b** — GPU queue: cascade holdout random →
+N-light random → nested → chromosome if pass; after arch lock use max samples,
+CpGPT sequence embeddings, and trait heads in training — follow the
+execution-order roadmap in that TODO, not numeric milestone order).
 
 ## Filesystem policy
 

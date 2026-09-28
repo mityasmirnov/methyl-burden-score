@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540" role="img" aria-labelledby="title desc">
+  <title id="title">P2-G cascade + CpGPT architecture</title>
+  <desc id="desc">Locked cascade topology with CpGPT DNA-sequence embeddings at CpG input: max-pool by typed region, scalar RBS, max-pool by gene to MBS, orphan RBS and direct leftover paths.</desc>
+  <rect width="960" height="540" fill="#ffffff"/>
+  <text x="40" y="42" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">P2-G + CpGPT - locked cascade topology</text>
+  <text x="40" y="66" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#4b5563">CascadeDeepSet | scalar_rbs | max/max | explicit_only | CpGPT static 128-d | native joint train</text>
+
+  <rect x="40" y="95" width="130" height="58" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="105" y="120" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1e3a8a">M-value</text>
+  <text x="105" y="140" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#1e40af">typed CpG</text>
+
+  <rect x="40" y="165" width="130" height="58" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="105" y="190" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#14532d">CpGPT 128-d</text>
+  <text x="105" y="210" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#166534">DNA seq | 2001 bp</text>
+
+  <path d="M170 124 H200" stroke="#6b7280" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M170 194 H200" stroke="#6b7280" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="200" y="120" width="120" height="80" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text x="260" y="155" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#92400e">Shared phi</text>
+  <text x="260" y="175" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#a16207">CpG MLP</text>
+
+  <path d="M320 160 H350" stroke="#6b7280" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="350" y="125" width="115" height="70" rx="8" fill="#f3e8ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="407" y="155" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#5b21b6">Max-pool</text>
+  <text x="407" y="175" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6d28d9">by typed region</text>
+
+  <path d="M465 160 H495" stroke="#6b7280" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="495" y="125" width="125" height="70" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="557" y="155" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#9a3412">Scalar RBS</text>
+  <text x="557" y="175" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#c2410c">region score [0,1]</text>
+
+  <path d="M620 160 H650" stroke="#6b7280" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="650" y="125" width="110" height="70" rx="8" fill="#f3e8ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="705" y="155" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#5b21b6">Max-pool</text>
+  <text x="705" y="175" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6d28d9">by gene</text>
+
+  <path d="M760 160 H790" stroke="#6b7280" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="790" y="125" width="130" height="70" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+  <text x="855" y="155" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#065f46">MBS</text>
+  <text x="855" y="175" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#047857">+ presence</text>
+
+  <path d="M557 195 V230 H790" stroke="#9ca3af" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#arrowGray)"/>
+  <rect x="790" y="210" width="130" height="48" rx="8" fill="#f9fafb" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="855" y="230" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#374151">Orphan RBS</text>
+  <text x="855" y="248" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#6b7280">no gene alloc.</text>
+
+  <rect x="40" y="245" width="110" height="48" rx="8" fill="#f9fafb" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="95" y="265" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#374151">Leftover</text>
+  <text x="95" y="282" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#6b7280">untyped CpG</text>
+  <path d="M150 269 H185" stroke="#9ca3af" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#arrowGray)"/>
+  <rect x="185" y="245" width="130" height="48" rx="8" fill="#f9fafb" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="250" y="265" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#374151">Direct branch</text>
+  <text x="250" y="282" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#6b7280">outside gene pool</text>
+
+  <rect x="40" y="315" width="880" height="78" rx="8" fill="#f9fafb" stroke="#374151" stroke-width="2"/>
+  <text x="60" y="342" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#111827">Product features (ADR 0009 - no TBS) | CpGPT = DNA-sequence embedding, not classical PE</text>
+  <text x="60" y="365" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#374151">Gene MBS | orphan RBS | direct CpGs | static 128-d looked up by coordinate, identical across samples</text>
+  <text x="60" y="383" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#374151">Readout: freeze encoder -&gt; nested elastic-net. Staged S1-S4 FAIL vs native P2-G. Cascade+CpGPT smoke in GPU queue.</text>
+
+  <rect x="40" y="415" width="880" height="95" rx="8" fill="#111827"/>
+  <text x="60" y="445" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#f9fafb">Locked metrics so far (topology without CpGPT on cascade OOF)</text>
+  <text x="60" y="468" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#d1d5db">P2-G topology screen (mbs_e2e): tissue F1 0.355 | age MAE 13.43 | sex AUROC 0.853</text>
+  <text x="60" y="490" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#d1d5db">Nested 3-fold: 0.335 / 9.81 / 0.759 | CpGPT effect on cascade: smoke queued (N-light YES)</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#6b7280"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#9ca3af"/>
+    </marker>
+  </defs>
+</svg>

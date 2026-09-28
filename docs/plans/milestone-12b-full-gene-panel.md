@@ -39,11 +39,11 @@ within-gene CpG sampling).
 | 65k-prefix OOF scope lock | **Done** — configs + docs |
 | OOF completeness gate (`scripts/check_12_oof_completeness.py`) | **Done** (read-only; not wired into runners) |
 | N-light `static_dim` / `static_block` (CpGPT trailing cols survive `m_only`) | **Done** — unit-tested |
-| Cascade static-feature / CpGPT path | **Not started** (`cpg_encoder` still `input_dim=1`) |
+| Cascade static-feature / CpGPT path | **Done** — smoke `stage0-12-cascade-cpgpt-smoke-f0-r0` (6 ep plumbing) |
 | Within-gene CpG sampler (`max_cpgs_per_gene`) | **Not started** |
 | Minibatch row×column gather (no dense preload) | **Not started** — both trainers still `betas[:, :n_cols]` |
 | Canonical ~20k-gene present-mask training index | **Not started** |
-| Role-gated embeddings / platform dropout / ONT adapter / gene-holdout | **Not started** — platform dropout is **12c / G3**; rest post-GATE |
+| Role-gated embeddings / platform dropout / ONT adapter / gene-holdout | Gene-holdout **plumbing done** (N-light + cascade; random + chromosome; smokes pending). Platform dropout is **12c / G3**; role-gated / ONT still post-GATE |
 | N-light dense full-width smoke (`max_loci: null`) | **Probe running** — not the recipe |
 | Cascade full-width smoke YAML | **Unlaunchable** — `cascade_loop` does `int(max_loci)`; `null` → `TypeError` |
 | CpGPT 65k N-light ablation | **Queued** after dense smoke (takeover waiter) |
@@ -343,7 +343,9 @@ then age MAE).
    **do not** treat them as recipe acceptance.
 5. Implement within-gene CpG sampler + minibatch column gather (§3).
 6. 1-fold recipe smoke (N-light, then native P2-G); choose gene-set fork (§2c).
-7. Gene-holdout + EPIC→450K dropout tests.
+7. Gene-holdout (**plumbing done** 2026-09-28 — N-light + cascade, random +
+   chromosome; plan [`milestone-12b-gene-holdout.md`](milestone-12b-gene-holdout.md))
+   — **smokes / nested still pending**; then EPIC→450K dropout (G3).
 8. Role-aware one-hop (N-light) and/or cascade 5×6 on the **12b** graph.
 9. ONT measurement adapter.
 10. Only then freeze a portable deepMAT encoder.

@@ -8,7 +8,7 @@ SCRATCH_ROOT ?= $(PROJECT_ROOT)/scratch
 CACHE_ROOT ?= $(PROJECT_ROOT)/cache
 ARTIFACT_ROOT ?= $(PROJECT_ROOT)/artifacts
 
-.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build seed-atlas-gse-map fetch-geo-sample-metadata fetch-geo-sample-metadata-batch remap-geo-tissue enrich-geo-series-metadata fetch-ewas-datahub-census catalog-refresh-release summarize-ewas-db-failures retry-ewas-db-failures refill-ewas-db-empty data-population-inventory write-geo-next-gse-list agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info 7b-status 7b-convert-bg
+.PHONY: help bootstrap activate doctor sync lint format typecheck test-fast test test-cov clean catalog-init catalog-build seed-atlas-gse-map fetch-geo-sample-metadata fetch-geo-sample-metadata-batch remap-geo-tissue enrich-geo-series-metadata fetch-ewas-datahub-census catalog-refresh-release summarize-ewas-db-failures retry-ewas-db-failures refill-ewas-db-empty data-population-inventory residual-gaps residual-gaps-apply-platforms write-geo-next-gse-list agent-context references download-cpgcorpus download-cpgcorpus-gse download-ewas-atlas download-ewas-datahub download-ewas-study download-ewas-family download-manifests download-gencode download-cpg-islands setup-methylgpt download-methylgpt export-cpgpt-static export-ewas-sample-info 7b-status 7b-convert-bg
 
 help:
 	@printf '%s\n' \
@@ -35,6 +35,8 @@ help:
 	  'retry-ewas-db-failures  Retry missing GSM from failure manifest' \
 	  'refill-ewas-db-empty  Refill empty EWAS_db dirs (LIST=configs/data/ewas_db_refill_empty_gse.txt)' \
 	  'data-population-inventory  Write catalog/GEO/EWAS_db coverage report' \
+	  'residual-gaps              Live census/platform/empty-dir gap report' \
+	  'residual-gaps-apply-platforms  Fill null platforms from assay probe counts' \
 	  '7b-status      Refresh + print Milestone 7B Hub matrix convert progress' \
 	  '7b-convert-bg  Background 7B convert watcher (progress docs + finalize)' \
 	  'agent-context  Print a concise context summary for coding agents' \
@@ -138,6 +140,12 @@ refill-ewas-db-empty:
 
 data-population-inventory:
 	uv run python scripts/write_data_population_inventory.py
+
+residual-gaps:
+	uv run python scripts/write_residual_gaps_report.py
+
+residual-gaps-apply-platforms:
+	uv run python scripts/write_residual_gaps_report.py --apply-platform-fill
 
 7b-status:
 	bash scripts/status_7b_hub_matrices.sh

@@ -24,6 +24,11 @@ from mbs.matrix.store import (
 from mbs.matrix.virtual_hub_store import open_betas_for_matrix
 from mbs.models import CascadeDeepSet
 from mbs.segment_ops import PoolName
+from mbs.static_features.store import (
+    open_embeddings_zarr,
+    read_loci_index,
+    static_feature_store_paths,
+)
 from mbs.training.cascade_assign import (
     CascadeAssignment,
     assignment_gene_linked_only,
@@ -32,33 +37,37 @@ from mbs.training.cascade_assign import (
 )
 from mbs.training.cascade_scores import (
     FusionBlockMode,
+    _write_array,
     fusion_feature_matrix,
     load_cascade_score_blocks,
     write_cascade_score_dir,
-    _write_array,
 )
 from mbs.training.checkpoint_selection import (
     validation_rank as _validation_rank,
+)
+from mbs.training.checkpoint_selection import (
     validation_rank_age_primary as _validation_rank_age_primary,
 )
 from mbs.training.dev_cv import DEFAULT_SPLIT_ID, load_frozen_folds
 from mbs.training.direct_cpg import direct_cpg_design_matrix, fit_direct_elasticnet
-from mbs.static_features.store import (
-    open_embeddings_zarr,
-    read_loci_index,
-    static_feature_store_paths,
-)
 from mbs.training.features import beta_to_m_value, build_static_column_table
+from mbs.training.gene_holdout import (
+    GeneHoldoutPartition,
+    gene_chromosome_map,
+    resolve_gene_holdout_partition,
+    subset_cascade_assignment,
+    write_gene_holdout_artifacts,
+)
 from mbs.training.late_fusion import evaluate_late_fusion
 from mbs.training.locus_gene import load_graph_tables
 from mbs.training.loop import load_experiment_config, resolve_device
 from mbs.training.multitask import MultitaskHeads
 from mbs.training.phenotypes import load_multitask_phenotypes
+from mbs.training.run_artifacts import run_dir
 from mbs.training.transparent_baselines import (
     evaluate_multitask_predictions,
     run_elasticnet_multitask,
 )
-from mbs.training.run_artifacts import run_dir
 
 PrimaryEvaluation = Literal["late_fusion", "mbs_e2e"]
 
@@ -1012,6 +1021,8 @@ def train_cascade_on_arrays(
     warm_start_include_gene_rho: bool = False,
     warm_start_include_heads: bool = False,
     static_by_col: np.ndarray | None = None,
+    heldout_assignment: CascadeAssignment | None = None,
+    gene_holdout_partition: GeneHoldoutPartition | None = None,
 ) -> dict[str, Any]:
     """Train CascadeDeepSet + MBS heads; write scores; evaluate; return metrics.
 
@@ -1021,6 +1032,9 @@ def train_cascade_on_arrays(
     ``warm_start_include_gene_rho`` / ``warm_start_include_heads``: for staged
     S3→S4 continuity (preserve trained ``gene_rho`` and trait heads). Default
     False keeps legacy LP-FT behaviour (encoder-only warm-start).
+
+    ``heldout_assignment`` / ``gene_holdout_partition``: after scoring train-gene
+    MBS, score a disjoint gene set with the frozen encoder (GATE G1).
     """
     score_dir = out_dir / "scores"
     manifest_path = score_dir / "score_manifest.json"
@@ -1462,6 +1476,7 @@ def train_cascade_on_arrays(
             checkpoint_selection["selection"] = "final_epoch_no_validation"
             _save_checkpoint()
 
+    gene_holdout_meta: dict[str, Any] | None = None
     if eval_only and manifest_path.is_file():
         # Re-attach diagnostic gene-linked RBS if an older score dir lacks it.
         if not (score_dir / "all_gene_rbs.zarr").exists():
@@ -1606,6 +1621,67 @@ def train_cascade_on_arrays(
                 **({"seed_masks": seed_mask_meta} if seed_mask_meta else {}),
             },
         )
+
+        if heldout_assignment is not None and gene_holdout_partition is not None:
+            held = heldout_assignment
+            if gene_linked_only:
+                held = assignment_gene_linked_only(held)
+            held_static: np.ndarray | None = None
+            if static_by_col is not None and np.asarray(static_by_col).size:
+                held_static = np.asarray(static_by_col, dtype=np.float32)[held.edge_col_index]
+            print(  # noqa: T201
+                f"[gene_holdout] scoring heldout genes={held.n_genes} "
+                f"edges={held.edge_col_index.shape[0]}",
+                flush=True,
+            )
+            mbs_h, present_h, _, _, _ = score_samples(
+                model,
+                held,
+                betas,
+                device=device,
+                batch_size=batch_size,
+                static_edge_block=held_static,
+            )
+            gh_path = write_gene_holdout_artifacts(
+                score_dir,
+                partition=gene_holdout_partition,
+                train_gene_ids=list(assignment.gene_ids),
+                heldout_gene_ids=list(held.gene_ids),
+                mbs_heldout=mbs_h if held.n_genes else mbs_h[:, :1],
+                present_heldout=present_h if held.n_genes else present_h[:, :1],
+                extra={
+                    "topology": "cascade",
+                    "train_n_edges": int(assignment.edge_col_index.shape[0]),
+                    "heldout_n_edges": int(held.edge_col_index.shape[0]),
+                },
+            )
+            np.savez_compressed(
+                score_dir / "gene_holdout_pheno.npz",
+                train_idx=np.asarray(train_idx, dtype=np.int64),
+                test_idx=np.asarray(test_idx, dtype=np.int64),
+                age=np.asarray(ages, dtype=np.float64),
+                age_mask=np.asarray(age_mask_a, dtype=bool),
+                tissue=np.asarray(tissue, dtype=np.int64),
+                tissue_mask=np.asarray(tissue_mask_a, dtype=bool),
+                sex=np.asarray(sex, dtype=np.int64),
+                sex_mask=np.asarray(sex_mask_a, dtype=bool),
+                study_ids=np.asarray(study_ids, dtype=object),
+                class_names=np.asarray(list(class_names), dtype=object),
+            )
+            # Stash for metrics merge below.
+            gene_holdout_meta = {
+                "method": gene_holdout_partition.method,
+                "seed": gene_holdout_partition.seed,
+                "heldout_fraction": gene_holdout_partition.heldout_fraction,
+                "actual_heldout_fraction": gene_holdout_partition.actual_heldout_fraction,
+                "n_train_genes": gene_holdout_partition.n_train,
+                "n_heldout_genes": gene_holdout_partition.n_heldout,
+                "heldout_chromosomes": list(gene_holdout_partition.heldout_chromosomes),
+                "n_train_genes_scored": int(assignment.n_genes),
+                "n_heldout_genes_scored": int(held.n_genes),
+                "artifact": str(gh_path),
+                "nested_enet": "deferred — scripts/eval_gene_holdout_nested.py",
+            }
 
     blocks = load_cascade_score_blocks(score_dir)
     if "tbs" in blocks:
@@ -1770,6 +1846,8 @@ def train_cascade_on_arrays(
     }
     if seed_mask_meta:
         fused["seed_masks"] = seed_mask_meta
+    if gene_holdout_meta is not None:
+        fused["gene_holdout"] = gene_holdout_meta
     write_json(metrics_path, fused)
     return fused
 
@@ -2058,6 +2136,47 @@ def run_cascade_hub(
         f"gene_allocation={gene_allocation}",
         flush=True,
     )
+    gene_holdout_partition: GeneHoldoutPartition | None = None
+    heldout_assignment: CascadeAssignment | None = None
+    gh_cfg = training_cfg.get("gene_holdout") or {}
+    if isinstance(gh_cfg, dict) and bool(gh_cfg.get("enabled", False)):
+        method = str(gh_cfg.get("method", "random")).lower()
+        frac = float(gh_cfg.get("heldout_fraction", 0.2))
+        gh_seed = int(gh_cfg.get("seed", seed))
+        chrom_map = gene_chromosome_map(genes) if method == "chromosome" else None
+        gene_holdout_partition = resolve_gene_holdout_partition(
+            assignment.gene_ids,
+            method=method,
+            heldout_fraction=frac,
+            seed=gh_seed,
+            gene_chromosome=chrom_map,
+            heldout_chromosomes=gh_cfg.get("heldout_chromosomes"),
+            exclude_chromosomes=gh_cfg.get("exclude_chromosomes"),
+        )
+        full_assignment = assignment
+        assignment = subset_cascade_assignment(
+            full_assignment,
+            gene_holdout_partition.train_gene_ids,
+            keep_orphans=True,
+            keep_direct=True,
+        )
+        heldout_assignment = subset_cascade_assignment(
+            full_assignment,
+            gene_holdout_partition.heldout_gene_ids,
+            keep_orphans=False,
+            keep_direct=False,
+        )
+        chrom_note = ""
+        if gene_holdout_partition.heldout_chromosomes:
+            chrom_note = f" heldout_chroms={gene_holdout_partition.heldout_chromosomes}"
+        print(
+            f"[gene_holdout] method={gene_holdout_partition.method} seed={gh_seed} "
+            f"heldout_fraction={frac} "
+            f"actual={gene_holdout_partition.actual_heldout_fraction:.3f} "
+            f"train_genes={assignment.n_genes} "
+            f"heldout_genes={heldout_assignment.n_genes}{chrom_note}",
+            flush=True,
+        )
     betas_z = open_betas_for_matrix(matrix_paths.root)
     row_by_id = {
         str(sid): int(row)
@@ -2254,6 +2373,8 @@ def run_cascade_hub(
             fine_tune_learning_rate=fine_tune_learning_rate,
             warm_start_include_gene_rho=warm_start_include_gene_rho,
             warm_start_include_heads=warm_start_include_heads,
+            heldout_assignment=heldout_assignment,
+            gene_holdout_partition=gene_holdout_partition,
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
         fold_summaries.append(metrics)

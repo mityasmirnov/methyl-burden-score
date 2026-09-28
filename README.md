@@ -9,10 +9,19 @@ Primary data: CNCB **EWAS Data Hub**. Authoritative progress:
 [`docs/ARCHITECTURE_BENCHMARKS.md`](docs/ARCHITECTURE_BENCHMARKS.md) ·
 milestones: [`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md).
 
-**NOW (2026-09-28):** Milestone **11 / GATE G1** — gene-holdout + panels.
-N-light 5×6 OOF is **done**. Cascade OOF stays blocked on G1 + G3. GPU 0 queue:
-cascade CpGPT smoke → full-width converge → matched CpGPT-off baseline.
-Do **not** auto-launch cascade 5×6. Do **not** retrain frozen v0.1 baselines.
+**Poster panel** (overview for talks / wall posters — will iterate):
+[`docs/figures/deepmat-poster.png`](docs/figures/deepmat-poster.png)
+([PDF](docs/figures/deepmat-poster.pdf)). Architecture diagrams:
+[`docs/figures/nlight-cpgpt-architecture.png`](docs/figures/nlight-cpgpt-architecture.png) ·
+[`docs/figures/p2g-cascade-architecture.png`](docs/figures/p2g-cascade-architecture.png).
+
+**NOW (2026-09-28):** Milestone **11 / GATE G1** — gene-holdout smokes.
+N-light 5×6 OOF is **done**. Cascade OOF stays blocked on G1 + G3. Cascade
+CpGPT smoke **done**. Gene-holdout **plumbing done**. GPU queue when free:
+**cascade random → N-light random → nested → chromosome if random passes**.
+After arch lock: **max samples**, **CpGPT sequence embeddings on**, **trait
+heads in training**. Do **not** auto-launch cascade 5×6. Do **not** retrain
+frozen v0.1 baselines.
 
 ---
 
@@ -54,8 +63,8 @@ Seed-mask write-up:
 
 | ID | Status | One-liner |
 |----|--------|-----------|
-| **G1** | open | Gene-holdout / utilization — decisive test not run yet |
-| **G2** | **YES** (N-light) | CpGPT confirmed; cascade smoke pending |
+| **G1** | open | Gene-holdout plumbing done (N-light+cascade, random+chrom); smokes pending |
+| **G2** | **YES** (N-light) | CpGPT sequence embeddings = product default once arch locked |
 | **G3** | not started | Platform / CpG dropout robustness |
 | **G4** | 10e FAIL; 10d pending | Native P2-G; checkpoint after cascade finalist |
 
@@ -112,6 +121,7 @@ uv run mbs train flat --overfit-fixture
 | Topic | Doc |
 |-------|-----|
 | Live checklist | [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md) |
+| Poster / talk panel | [`docs/figures/deepmat-poster.png`](docs/figures/deepmat-poster.png) |
 | Benchmark ledger | [`docs/ARCHITECTURE_BENCHMARKS.md`](docs/ARCHITECTURE_BENCHMARKS.md) |
 | Scoring / architecture | [`docs/SCORING_PIPELINE.md`](docs/SCORING_PIPELINE.md), [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
 | Data | [`docs/DATA_CATALOG.md`](docs/DATA_CATALOG.md), [`docs/EWAS_DATA.md`](docs/EWAS_DATA.md) |

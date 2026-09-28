@@ -1,0 +1,1190 @@
+{
+  "n": 131,
+  "recoverable": [],
+  "empty_both": [
+    "GSE147377",
+    "GSE152519",
+    "GSE152561",
+    "GSE152802",
+    "GSE153347",
+    "GSE154403",
+    "GSE154446",
+    "GSE154683",
+    "GSE154915",
+    "GSE155207",
+    "GSE155660",
+    "GSE155962",
+    "GSE155985",
+    "GSE156012",
+    "GSE156090",
+    "GSE156299",
+    "GSE156512",
+    "GSE156546",
+    "GSE157273",
+    "GSE157611",
+    "GSE157908",
+    "GSE157914",
+    "GSE159479",
+    "GSE159655",
+    "GSE159710",
+    "GSE159907",
+    "GSE160878",
+    "GSE161020",
+    "GSE161175",
+    "GSE161814",
+    "GSE162288",
+    "GSE162350",
+    "GSE162560",
+    "GSE162984",
+    "GSE164056",
+    "GSE164149",
+    "GSE164195",
+    "GSE164269",
+    "GSE164468",
+    "GSE164822",
+    "GSE165050",
+    "GSE165688",
+    "GSE166067",
+    "GSE166212",
+    "GSE166503",
+    "GSE166587",
+    "GSE166844",
+    "GSE166845",
+    "GSE167347",
+    "GSE167429",
+    "GSE167883",
+    "GSE167885",
+    "GSE168185",
+    "GSE168581",
+    "GSE168614",
+    "GSE168739",
+    "GSE168930",
+    "GSE168999",
+    "GSE169156",
+    "GSE169595",
+    "GSE169598",
+    "GSE169622",
+    "GSE171140",
+    "GSE171142",
+    "GSE171318",
+    "GSE171424",
+    "GSE171550",
+    "GSE171911",
+    "GSE171956",
+    "GSE172081",
+    "GSE172365",
+    "GSE172468",
+    "GSE173081",
+    "GSE173356",
+    "GSE173382",
+    "GSE173613",
+    "GSE173717",
+    "GSE173836",
+    "GSE174201",
+    "GSE174525",
+    "GSE174568",
+    "GSE174613",
+    "GSE174625",
+    "GSE174818",
+    "GSE175379",
+    "GSE175399",
+    "GSE175699",
+    "GSE175769",
+    "GSE175892",
+    "GSE176273",
+    "GSE176334",
+    "GSE176450",
+    "GSE178416",
+    "GSE178700",
+    "GSE178737",
+    "GSE179181",
+    "GSE179234",
+    "GSE179414",
+    "GSE179759",
+    "GSE179801",
+    "GSE179847",
+    "GSE180061",
+    "GSE180130",
+    "GSE180453",
+    "GSE180474",
+    "GSE180535",
+    "GSE180660",
+    "GSE180929",
+    "GSE181126",
+    "GSE182707",
+    "GSE182772",
+    "GSE182874",
+    "GSE183015",
+    "GSE183798",
+    "GSE184047",
+    "GSE184206",
+    "GSE184269",
+    "GSE184500",
+    "GSE184576",
+    "GSE185041",
+    "GSE185556",
+    "GSE185854",
+    "GSE185973",
+    "GSE186782",
+    "GSE188547",
+    "GSE188552",
+    "GSE42409",
+    "GSE78217"
+  ],
+  "errors": [
+    {
+      "study": "GSE58783",
+      "ok": false,
+      "error": "RemoteDisconnected: Remote end closed connection without response",
+      "local_txt": 0
+    }
+  ],
+  "all": [
+    {
+      "study": "CPTAC-3",
+      "ok": true,
+      "remote_txt": 1998,
+      "remote_gsm": 0,
+      "local_txt": 1998,
+      "delta": 0
+    },
+    {
+      "study": "GSE147377",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE152026",
+      "ok": true,
+      "remote_txt": 448,
+      "remote_gsm": 448,
+      "local_txt": 448,
+      "delta": 0
+    },
+    {
+      "study": "GSE152519",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE152561",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE152802",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE153347",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE154403",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE154446",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE154683",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE154915",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE155207",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE155660",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE155962",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE155985",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE156012",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE156090",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE156299",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE156512",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE156546",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE157273",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE157611",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE157908",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE157914",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE159479",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE159655",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE159710",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE159907",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE160878",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE161020",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE161175",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE161814",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE162288",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE162350",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE162560",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE162984",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE164056",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE164149",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE164195",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE164269",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE164468",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE164822",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE165050",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE165688",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE166067",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE166212",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE166503",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE166587",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE166844",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE166845",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE167347",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE167429",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE167883",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE167885",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE168185",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE168581",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE168614",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE168739",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE168930",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE168999",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE169156",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE169595",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE169598",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE169622",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE171140",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE171142",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE171318",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE171424",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE171550",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE171911",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE171956",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE172081",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE172365",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE172468",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE173081",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE173356",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE173382",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE173613",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE173717",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE173836",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE174201",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE174525",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE174568",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE174613",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE174625",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE174818",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE175379",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE175399",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE175699",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE175769",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE175892",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE176273",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE176334",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE176450",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE178416",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE178700",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE178737",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE179181",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE179234",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE179414",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE179759",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE179801",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE179847",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE180061",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE180130",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE180453",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE180474",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE180535",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE180660",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE180929",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE181126",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE182707",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE182772",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE182874",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE183015",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE183798",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE184047",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE184206",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE184269",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE184500",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE184576",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE185041",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE185556",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE185854",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE185973",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE186782",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE188547",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE188552",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE42409",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    },
+    {
+      "study": "GSE58783",
+      "ok": false,
+      "error": "RemoteDisconnected: Remote end closed connection without response",
+      "local_txt": 0
+    },
+    {
+      "study": "GSE78217",
+      "ok": true,
+      "remote_txt": 0,
+      "remote_gsm": 0,
+      "local_txt": 0,
+      "delta": 0
+    }
+  ]
+}

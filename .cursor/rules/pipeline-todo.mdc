@@ -15,9 +15,11 @@ task is pipeline work. Numbering index:
 ## At session start (and before new pipeline work)
 
 1. Open `docs/TODO_PIPELINE.md`.
-2. Identify the first milestone that is `in_progress` or the first `pending`
-   after the last `done` (today: **Milestone 10**).
-3. Work that milestone; do not jump to optional / deferred layers early.
+2. Read the **Execution order** roadmap (NOW GPU queue → gene-holdout G1 →
+   blocked cascade). Today: **12b / G1 gene-holdout** + GPU queue items;
+   do **not** restart N-light 5×6 or Milestone 10 topology work.
+3. Work that sequence; do not jump to optional / deferred layers early.
+   Numeric milestone IDs stay; execution order is not numeric order.
 
 ## When marking complete
 
@@ -28,18 +30,20 @@ CLI stubs, download scripts, or model class definitions alone are not enough.
 Update `docs/TODO_PIPELINE.md` in the same change set that finishes the milestone.
 Keep Cursor session todos in sync (complete / cancel / start next).
 
-## Ordering (do not reorder without an ADR)
+## Ordering (do not reorder milestone IDs without an ADR)
 
 ```text
-1–6        bootstrap → flat → hierarchical v0.1
-7A–7F,7E′  release → matrices → architecture → CV → cascade (done)
-8          methylation-only eval (was 7G) — done
-9          gene-only architecture on ATS (was 7G′) — done
-10         pretrained MBS/RBS / nine-pack campaign (was 7H) — current
-11         fold-selected panel + full model (was 7G′ Stage B) — blocked
-12         final 5×6 OOF (was “Milestone 7”) — blocked
-13         expression aux after OOF (was 7G″; download first) — deferred
-14         optional Stage 1+ layers (a–f only) — deferred
+1–6          done     bootstrap → flat → hierarchical v0.1
+7A–7F,7E′    done     release → matrices → architecture → CV → cascade
+8–9          done     methylation-only + gene-only ATS
+10a–10c,10e  done     P2-G lock; N-light@64; staged FAIL → native P2-G
+12 N-light   done     5×6 65k-prefix closed (0.316/9.59/0.822)
+NOW GPU      queue    G1 cascade holdout random → N-light random → nested →
+                      chrom if pass; then full-width / baseline as capacity
+NOW science  ← TODAY  G1 gene-holdout (12b); product defaults after arch lock:
+                      max samples + CpGPT sequence embeddings + trait heads
+BLOCKED               12 cascade 5×6; G3/12c platform; 10d reference ckpt
+13–14        deferred expression aux; optional Stage 1+ (a–f)
 ```
 
 Historical aliases `7G` / `7G′` / `7H` / “Milestone 7 OOF” appear in older
@@ -50,11 +54,14 @@ Ordering after Milestone 6 is locked by
 and [`docs/adr/0008-score-identifiability.md`](docs/adr/0008-score-identifiability.md).
 Programme brief:
 [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md).
-Do not retrain v0.1. Do not start Milestone **12** before **11**. Architecture
+Do not retrain v0.1. Do not launch cascade 5×6 before GATE G1–G3. Architecture
 ranking uses methylation-input methods only (not metadata-only).
 
 Before starting **5c**, read `docs/EWAS_METADATA.md` and
 `reports/inspection/ewas_metadata_structure/summary.md`.
-Before Milestone **10** work, read the campaign log
+Before residual Milestone **10** / GPU-queue work, read the campaign log
 [`docs/plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](docs/plans/milestone-7h-pretrained-mbs-rbs-campaign.md)
 and stub [`docs/plans/milestone-10-pretrained-mbs-rbs.md`](docs/plans/milestone-10-pretrained-mbs-rbs.md).
+Before gene-holdout / 12b, read
+[`docs/plans/milestone-12b-full-gene-panel.md`](docs/plans/milestone-12b-full-gene-panel.md)
+and [`docs/plans/milestone-12b-gene-holdout.md`](docs/plans/milestone-12b-gene-holdout.md).
