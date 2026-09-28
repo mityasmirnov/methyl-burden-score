@@ -2,71 +2,71 @@
 
 > **Canonical milestone: 9c**. Historical 7G′ age-primary seed-mask. See [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
 
+Status (2026-09-06): **`done` — seed-masking not adopted.**
 
-Status (2026-09-05): **unblocked, GPU screen running.** The matched 16-ep
-promotion screen finished (`87b22c3`, provenance landed `e644ed4`) with
-`next_gate: retain_pooling_2x2` and `recommendation: "Retain full 2×2
-pooling result; no pooling lock. Proceed to age-primary seed-mask."` — the
-full 2×2 cascade pooling grid (mean/max × mean/max) is retained, not locked
-down to a single pooling choice.
+## Question / Approaches / Results / Verdict
 
-The first launch attempt (weekend supervisor, `weekend_seed_mask_20260904_190816.log`)
-completed all 8 cascade runs (G0–G3 × seeds {42,43}) cleanly but crashed on
-arm `C0` seed 42 with `KeyError: 'tissues'` in
-`classical_mvalue.fit_eval_mvalue_fold` (`tissue_ovr_curves` call expected a
-`ph_te["tissues"]` string-name array that `_phenotype_arrays()` in both
-`scripts/run_7g_prime_seed_mask.py` and `scripts/run_7g_prime_stage_b.py`
-never populated — only numeric `ph["tissue"]` class indices existed). Fixed
-by threading `class_names` through `_phenotype_arrays()` in both scripts to
-populate `ph["tissues"]`. Relaunched the full grid (`--device cuda
---reuse-panels`, no `--arm` filter, since the runner has no skip-if-done
-cache) on the now-idle GPU 0 at 2026-09-05 ~10:57. It completed end to end
-(`C0`/`C2` no longer crash) — but revealed a **second, more serious issue**:
-7 of 8 cascade runs (`G0` seed 42, `G1`/`G2`/`G3` both seeds) collapsed to
-random-baseline performance (tissue F1≈0, sex AUROC=0.5, age MAE≈25) and
-never recovered across 15 epochs; only `G0` seed 43 trained normally.
-Classical `C0`/`C2` are fine. Full evidence and diagnosis in
-`reports/inspection/stage0_7g_prime_seed_mask/analysis.md` — likely cause is
-missing gradient clipping + age-target standardization in
-`train_cascade_on_arrays` combined with this screen's age-primary loss
-weights (`age_loss_weight: 1.0`), a combination no prior committed cascade
-result exercised. **Do not treat this run as the G0-vs-G1/G2/G3 decision.**
-Fix (fold-safe fix to `_phenotype_arrays` in both `run_7g_prime_seed_mask.py`
-/ `run_7g_prime_stage_b.py`) is ready to commit; gradient-clipping /
-age-standardization fix to `cascade_loop.py` + rerun is the next step,
-pending direction.
+| Field | Content |
+|-------|---------|
+| **Question** | Does age-primary phenotype masking to fold-safe seed genes help vs dense all-gene cascade on ATS? |
+| **Approaches** | G0 all-gene control; G1 seed heads only; G2 expanded seed-gene CpGs + masks; G3 matched-random; C0/C2 classical enet comparators. Fold 0, seeds {42,43}, 40 epochs after bug fixes. |
+| **Results** | Mean G0 age MAE **17.0**, tissue F1 **0.233**, sex AUROC **0.788**. Masked arms (G1–G3) age MAE **21–25**, tissue F1 **≤0.10**, sex AUROC mostly **0.51–0.72**. C0 classical age MAE **8.94** still leads. ADR 0012 panel: age discovery **1024** → expanded **9595** CpGs (seed frac ≈9%). |
+| **Verdict** | **Do not adopt seed-gene masking** for pretrained MBS/RBS age-primary training. G0 beats every masked variant; G1/G2/G3 are not separable once training converges. Proceed with dense cascade / N-light paths (Milestones 10–12). |
 
-## Done already (2026-09-04)
+Normative report: [`reports/inspection/stage0_7g_prime_seed_mask/analysis.md`](../../reports/inspection/stage0_7g_prime_seed_mask/analysis.md).
+Panel audit: [`panel_audit.md`](../../reports/inspection/stage0_7g_prime_seed_mask/panel_audit.md) (`ok_for_seed_mask_gpu: true`).
+
+### Bugs fixed before the conclusive run
+
+1. Classical `KeyError: 'tissues'` — thread `class_names` into `_phenotype_arrays`.
+2. Silent `learning_rate` threading bug (`lr=1e-2` instead of `1e-3`) + missing gradient clipping → near-total cascade collapse at 15 epochs; fixed, budget raised 15→40.
+
+### Fold-0 panel (ADR 0012 empirical confirmation)
+
+| Trait | Prefilter | Discovery CpGs | Seed genes | Unique expanded | Seed frac |
+|-------|----------:|---------------:|-----------:|----------------:|----------:|
+| age | 4096 | 1024 | 256 | 9595 | 0.089 |
+| tissue | 4096 | 45 | 41 | 2778 | 0.016 |
+| sex | 4096 | 44 | 50 | 2356 | 0.019 |
+| sex_autosome | 4096 | 44 | 50 | 2356 | 0.019 |
+
+Gene union across age/tissue/sex: **331**. Expanded CpG union: **11 785**.
+Age used univariate top-k fallback (`sparsity_ok: false` for age only);
+tissue/sex are sparse. `graph_content_hash` non-null; `panel_hash`
+`ef6cd307513f28e3c45021f85c3a4d0c`.
+
+### Final GPU metrics (fold 0, 40 epochs)
+
+| Arm | Seed | Age MAE | Tissue F1 | Sex AUROC | Best epoch |
+|-----|-----:|--------:|----------:|----------:|-----------:|
+| G0 | 42 | 17.66 | 0.227 | 0.790 | 40/40 |
+| G0 | 43 | 16.38 | 0.238 | 0.786 | 40/40 |
+| G1 | 42 | 21.48 | 0.098 | 0.512 | 38/40 |
+| G1 | 43 | 25.13 | 0.058 | 0.515 | 39/40 |
+| G2 | 42 | 22.12 | 0.070 | 0.565 | 40/40 |
+| G2 | 43 | 21.48 | 0.074 | 0.715 | 39/40 |
+| G3 | 42 | 24.26 | 0.074 | 0.583 | 23/40 |
+| G3 | 43 | 25.20 | 0.000 | 0.489 | 2/40 (collapsed) |
+| C0 | — | 8.94 | 0.367 | 0.854 | — |
+| C2 | — | 10.61 | 0.352 | 0.856 | — |
+
+## Done already (scaffolding + audit)
 
 | Item | Evidence |
 |------|----------|
-| ADR 0011 / 0012 + runner/YAML scaffolding | `configs/experiment/stage0_7g_prime_seed_mask.yaml`, `scripts/run_7g_prime_seed_mask.py` |
-| Fold-0 `internal_fold` panel regenerated | `seed_panels/fold_0/seed_panel.json` — `panel_hash` `ef6cd307…`, `graph_content_hash` `7ee70c55…` |
-| Provenance / sparsity audit green | `panel_audit.md` → `ok_for_seed_mask_gpu: true` |
-| Tissue/sex discovery sparse | 45 / 44 discovery CpGs (`sparsity_ok`); age fallback documented |
-| `sex_autosome` control | Present; `n_sex_chrom_seed_cpgs=0` |
-| Overlap + G3 matching quality | In `analysis.md` / panel JSON (gene union 331; G3 exact CpG-count match ≈90.6%) |
-| Atlas catalog (non-blocking) | `sql/013_*`, `association_catalog.py` |
+| ADR 0011 / 0012 + runner/YAML | `configs/experiment/stage0_7g_prime_seed_mask.yaml`, `scripts/run_7g_prime_seed_mask.py` |
+| Fold-0 `internal_fold` panel | `seed_panels/fold_0/` — hashes above |
+| Provenance audit green | `panel_audit.md` |
+| GPU screen conclusive | `analysis.md` § GPU screen results |
 
-## Next steps
+## Follow-ons (out of this milestone)
 
-1. Wait for matched 16-ep promotion to finish and refresh
-   `promotion_decision.json` (see [`milestone-7g-prime-16ep-promotion.md`](milestone-7g-prime-16ep-promotion.md)).
-2. Clear `scratch/SEED_MASK_GPU_BLOCKED.txt` only when `next_gate` unlocks
-   age-primary seed-mask (or equivalent).
-3. Launch CUDA screen:  
-   `uv run python -u scripts/run_7g_prime_seed_mask.py --device cuda --reuse-panels`  
-   (fold 0, seeds {42,43}, arms G0/G1/G2/G3/C0/C2).
-4. Write seed-mask `summary.json` / analysis; only then consider Stage B
-   fold-panel GPU (`run_7g_prime_stage_b.py` still blocked).
+- Platform-agnostic robustness / CpG dropout → **GATE G3** (Milestone 12c), not reopened here.
+- Fold-selected panels → **Milestone 11**.
+- Do **not** regenerate fold-0 panels unless graph hash or selection code changes.
 
-Do **not** regenerate fold-0 panels unless the graph hash or selection code
-changes; do **not** `--reuse-panels` on the stale null-hash copy under
-`fold_0.stale-null-graph-hash/` / `fold_0.pre-topk-fallback/`.
-
-Normative: [ADR 0011](../adr/0011-seed-gene-sources.md) (seed sources),
-[ADR 0012](../adr/0012-seed-gene-discovery-vs-deployment-input.md)
-(discovery CpGs vs deployment input),
+Normative: [ADR 0011](../adr/0011-seed-gene-sources.md),
+[ADR 0012](../adr/0012-seed-gene-discovery-vs-deployment-input.md),
 [ADR 0010](../adr/0010-gene-allocation-policy.md).
 Parents: [`milestone-7g-prime-matched-probe-lightweight.md`](milestone-7g-prime-matched-probe-lightweight.md),
 [`milestone-7g-prime-pre-stage-b.md`](milestone-7g-prime-pre-stage-b.md).
@@ -83,14 +83,15 @@ with the G0/G1/G2/G3/C0/C2 decomposition.
 |--------|----------|
 | First seed source | `internal_fold` only (DeepRVAT-faithful) |
 | Atlas `external_clean` / `hybrid_fold` | Parallel catalog track; not a GPU gate |
-| Encoder | P2-G max/max 15 ep, `explicit_only` |
+| Encoder | P2-G max/max, `explicit_only` |
 | Selection | `validation_age_mae` → tissue F1 → sex AUROC |
 | Loss | `lambda_age=1.0`, `lambda_tissue=0.3`, `lambda_sex=0.1` |
-| Grid | Fold 0, seeds {42, 43}, K=256 then maybe 512 |
+| Grid | Fold 0, seeds {42, 43}, K=256 |
 | Masks | Age / tissue / sex `SeedMaskedLinearHead`; fail if &lt;32 genes |
 | Discovery CpGs | Fold-safe association ranks genes only (ADR 0012) |
 | G2 / C2 CpGs | **All** explicit gene-linked CpGs of selected genes |
 | Traits | Config-driven; ATS default age / tissue / sex |
+| Adoption | **Rejected** — dense G0 preferred |
 
 ## Screening grid
 
@@ -102,10 +103,6 @@ with the G0/G1/G2/G3/C0/C2 decomposition.
 | G3 | Matched random | Matched random masks | Biological specificity? |
 | C0 | G0 CpGs | Ridge/enet | Classical all-gene |
 | C2 | Exact G2 expanded CpGs | Ridge/enet | Fair classical seed comparator |
-
-Discovery CpGs (stability / prefilter survivors, often 4,096) are **not** the
-G2 input panel. G2 and C2 train on sibling-enriched gene CpGs; `is_seed_cpg`
-marks which loci came from discovery.
 
 ## Required panel report fields (per trait)
 
@@ -125,19 +122,15 @@ marks which loci came from discovery.
 | age | **active** (primary) | Core continuous |
 | tissue | **active** (secondary) | Core multiclass |
 | sex | **active** (auxiliary) + `sex_autosome` control | Autosomal sensitivity |
-| BMI | **blocked** on ATS | Eligible on `matrix-hub-bmi-full-v1` (2,070 / 25); fails ≥1k bar on ATS age-pack BMI |
-| disease / cancer | **blocked** | Need documented multi-study cases+controls; unknown ≠ control |
+| BMI | **blocked** on ATS | Eligible on `matrix-hub-bmi-full-v1` |
+| disease / cancer | **blocked** | unknown ≠ control |
 | blood / brain subtraits | **blocked** | After ontology / label quality |
-
-Experiment YAML drives the active list (`seed_panel.traits`). Unknown ids or
-traits without label arrays fail closed. Heads stay age/tissue/sex until a
-later eligible-trait change.
 
 ## Seed sources (ADR 0011)
 
 | Source | Leakage |
 |--------|---------|
-| `external_clean` | Fixed prior (Atlas − overlapping studies) — **not** fold-fitted |
+| `external_clean` | Fixed prior — **not** fold-fitted |
 | `internal_fold` | Fold-fitted (outer train only) |
 | `hybrid_fold` | Fold-safe if combined inside train |
 
@@ -148,24 +141,13 @@ later eligible-trait change.
 - Report: `reports/inspection/stage0_7g_prime_seed_mask/`
 - Panels: `seed_panel.json` + gene/locus parquet (hashed)
 
-## Later: platform-agnostic robustness (not this screen)
+## Later: platform-agnostic robustness (GATE G3)
 
-Deployment aggregates whatever eligible CpGs a gene has on 450K, EPIC, or
-ONT (coordinate + build; pool observed only; never impute absent as zero).
-Reuse presence-aware paths in
-`mbs.training.transparent_baselines.presence_aware_means` and observed-edge
-assembly in `mbs.training.features`. Before calling the encoder
-platform-agnostic: EPIC→450K / heterogeneous-coverage dropout, score
-stability vs gene coverage, min-coverage / low-confidence flags, and
-fold-fitted platform transforms (do not feed ONT frequency into an array
-M-value model as identical measurements). **No training code in this plan.**
+Deployment aggregates observed eligible CpGs per gene (coordinate + build;
+never impute absent as zero). Covered under Milestone **12c / G3**, not 9c.
 
 ## Non-goals
 
-- Launching Stage B CpG-panel GPU or Milestone 7
-- BMI / smoking / disease / cancer heads (or joining BMI onto ATS)
-- 450K↔EPIC dropout, ONT transforms, coverage-confidence tensors
-- Per-tissue-class masks in the first grid
-- Blocking on full Atlas DuckDB ingest
-- Treating age univariate fallback as sparse elastic-net seeds (age
-  `ranking_fallback=univariate_prefilter_top_k` when SGD coefs explode)
+- Re-adopting seed masks for age-primary ATS training after this negative result
+- BMI / disease / cancer heads on ATS
+- Treating age univariate fallback as sparse elastic-net seeds

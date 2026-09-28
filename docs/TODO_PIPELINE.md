@@ -920,10 +920,20 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 ### 9c — Age-primary seed-mask
 
 - **Status:** `done` — **seed-masking not adopted** (`G0` beats G1–G3)
+- **Question:** Does fold-safe seed-gene masking help age-primary cascade vs
+  dense all-gene G0 on ATS?
+- **Approaches tested:** G0/G1/G2/G3 + C0/C2; fold 0; seeds {42,43}; 40 ep
+  after LR-threading + gradient-clip fixes; ADR 0012 discovery→expand panels.
+- **Results:** G0 age MAE ≈17 / tissue F1 ≈0.23 / sex AUROC ≈0.79. Masked
+  arms age MAE 21–25, tissue F1 ≤0.10. Classical C0 age MAE 8.94 still leads.
+  Panel: age discovery 1024 → expanded 9595 CpGs (seed frac ≈9%).
+- **Verdict:** Do not use seed-gene masks for pretrained MBS/RBS age-primary
+  training; continue dense cascade / N-light (10–12).
 - **Plan:** [`plans/milestone-7g-prime-age-seed-mask.md`](plans/milestone-7g-prime-age-seed-mask.md)
+- **Report:** `reports/inspection/stage0_7g_prime_seed_mask/`
+  (`analysis.md`, `panel_audit.md`).
 - **Bugs fixed en route:** `learning_rate` threading, seed-offset/`-s2`,
   classical tissue array KeyError; gradient clipping; epoch budget raised.
-- **Report:** `reports/inspection/stage0_7g_prime_seed_mask/`.
 
 ### 9d — Typed-RBS R0–R5 (CPU)
 

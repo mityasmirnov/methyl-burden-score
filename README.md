@@ -1,262 +1,135 @@
 # Methylation Burden Score
 
-A research codebase for learning a shared, gene-level DNA methylation burden
-score (MBS) from variable sets of CpG measurements.
+Shared, gene-level DNA methylation burden scores (**MBS**) from ragged CpG
+sets. Public model name: **deepMAT**. Package / CLI: `methyl-burden-score` /
+`mbs`.
 
-The public model name is **deepMAT** (deep Methylation Aggregation Transformer /
-Deep Set family). The Python package remains `methyl-burden-score` with the
-`mbs` CLI entry point.
+Primary data: CNCB **EWAS Data Hub**. Authoritative progress:
+[`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md) · numbers:
+[`docs/ARCHITECTURE_BENCHMARKS.md`](docs/ARCHITECTURE_BENCHMARKS.md) ·
+milestones: [`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md).
 
-Primary open data source: CNCB **EWAS Data Hub** (EWAS Atlas for association
-checks). Authoritative progress:
-[`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
-**Architectures / setups tested + performance comparison (master ledger):**
+**NOW (2026-09-28):** Milestone **11 / GATE G1** — gene-holdout + panels.
+N-light 5×6 OOF is **done**. Cascade OOF stays blocked on G1 + G3. GPU 0 queue:
+cascade CpGPT smoke → full-width converge → matched CpGPT-off baseline.
+Do **not** auto-launch cascade 5×6. Do **not** retrain frozen v0.1 baselines.
+
+---
+
+## Leaderboard
+
+Triplets are **tissue macro-F1 ↑ / age MAE ↓ / sex AUROC ↑**.
+**Product claims use frozen nested elastic-net** (`mbs_enet_nested`), not joint
+`mbs_e2e` (architecture screen only). Prefer multi-seed nested gaps; single-seed
+nested Δ under ~0.5 age MAE is noise (measured spread ≈0.19).
+
+### Product path (nine-pack, nested enet)
+
+| Rank | Setup | Tissue | Age | Sex | Notes |
+|-----:|-------|-------:|----:|----:|-------|
+| 1 | **N-light@64 + CpGPT** (fold 0, n=6) | 0.355 | **8.10** ±0.19 | **0.879** ±0.015 | **G2 YES** — age/sex win; small tissue cost |
+| 2 | N-light@64 3-fold nested | **0.368** | 9.88 | 0.803 | Light path without CpGPT |
+| 3 | N-light 5×6 OOF nested (30/30) | 0.316 | 9.59 | 0.822 | Closed 65k-prefix validation |
+| 4 | P2-G cascade nested 3-fold | 0.335 | 9.81 | 0.759 | Cascade nested baseline |
+| — | Full-width + CpGPT (~19.6k genes, n=1) | **0.388** | 11.67 | **0.962** | Best tissue/sex on record; **undertrained** (best ep 4); age worse — converge run pending |
+
+### Topology & classical ceilings
+
+| Claim | Cite | Verdict |
+|-------|------|---------|
+| Cascade topology | Nine-pack P2-G `mbs_e2e` **0.355 / 13.43 / 0.853** | **Locked** (scalar max/max) |
+| Cascade training recipe | Fair S1→S4 vs native P2-G | Staged **FAIL** → native P2-G |
+| ATS classical tissue | `C-mvalue-enet-G` **0.388** | Still the ATS tissue ceiling |
+| ATS cascade e2e | P2-G `mbs_e2e` **0.373** | Locked Stage A topology on ATS |
+| Seed-gene masking (9c) | G0 ≫ G1–G3 | **Not adopted** |
+| CpGPT width sweep | 6 arms | **No capacity effect** — keep width 64 |
+| Freeze-reuse cancer | AUROC **~0.954** | Useful; BMI not useful yet |
+
+Full tables + caveats:
 [`docs/ARCHITECTURE_BENCHMARKS.md`](docs/ARCHITECTURE_BENCHMARKS.md).
-Milestone numbers (8, 9, 10, …):
-[`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md).
+Seed-mask write-up:
+[`docs/plans/milestone-7g-prime-age-seed-mask.md`](docs/plans/milestone-7g-prime-age-seed-mask.md).
 
-**Current gate (2026-09-09):** **Milestone 12 N-light 5×6** is **NOW** (GPU 2;
-HM450 **65k-prefix** validation, ~2.6k genes — not the ~20k-gene product).
-Product readout: frozen nested enet (`mbs_enet_nested`), not joint `mbs_e2e`.
+### GATE (blocks cascade OOF)
 
-**After N-light — GATE blocks cascade OOF:** (G1) DeepRVAT gene utilization /
-optional Milestone **11** panel; (G2) CpGPT/positional probe; (G3) platform
-robustness ([`12c`](docs/plans/milestone-12c-platform-robustness.md));
-(G4) **10e done (FAIL)** → cascade recipe stays **native P2-G**; **10d**
-checkpoint still pending. Then cascade 5×6 on the G1 panel. Expression is
-**Milestone 13**. Checklist: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
-Benchmarks: [`docs/ARCHITECTURE_BENCHMARKS.md`](docs/ARCHITECTURE_BENCHMARKS.md).
+| ID | Status | One-liner |
+|----|--------|-----------|
+| **G1** | open | Gene-holdout / utilization — decisive test not run yet |
+| **G2** | **YES** (N-light) | CpGPT confirmed; cascade smoke pending |
+| **G3** | not started | Platform / CpG dropout robustness |
+| **G4** | 10e FAIL; 10d pending | Native P2-G; checkpoint after cascade finalist |
 
-Programme docs: [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md),
-[`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md),
-[`docs/plans/milestone-10-pretrained-mbs-rbs.md`](docs/plans/milestone-10-pretrained-mbs-rbs.md),
-[`docs/plans/milestone-12b-full-gene-panel.md`](docs/plans/milestone-12b-full-gene-panel.md),
-[`docs/plans/milestone-9-gene-only-architecture.md`](docs/plans/milestone-9-gene-only-architecture.md).
-ADRs: [0002](docs/adr/0002-ewas-datahub-primary-source.md) (Hub primary),
-[0007](docs/adr/0007-crossfit-prerequisites.md) (OOF = Milestone **12**),
-[0008](docs/adr/0008-score-identifiability.md) (orientation),
-[0009](docs/adr/0009-drop-tbs-scores.md) (no TBS),
-[0010](docs/adr/0010-gene-allocation-policy.md) (`explicit_only`).
-
-Do **not** retrain frozen **deepMAT-flat-v0.1** / **hierarchical-v0.1**.
+---
 
 ## Design principles
 
-1. A DeepRVAT-style scoring function is shared across CpGs, typed regions,
-   genes, and training traits.
-2. The model consumes ragged CpG sets rather than a fixed array manifest.
-3. CpGs are organized into biologically typed regions before gene-level
-   aggregation (**RBS → gene MBS**); leftover CpGs stay **direct** ([ADR 0009](docs/adr/0009-drop-tbs-scores.md) — **no tile/TBS scores**).
-4. Every reported training-sample score is obtained by study-grouped
-  cross-fitting (Milestone **12**; N-light 65k first; cascade only after
-  GATE G1–G3 + 10d, with native **P2-G** recipe; Milestone **11** is a G1
-  gene-set option, not a block on N-light).
-
-## Stage 0 scope
-
-Stage 0 implements:
-
-- canonical GRCh38 locus, probe, region, and gene registries (graph-v2 on disk);
-- DuckDB/Parquet metadata catalogs (populated release = Milestone **7A**);
-- Zarr matrix-store interfaces for Hub nine packs (**7B**), including virtual
-  multi-store nine-pack (**Milestone 10**);
-- flat CpG-to-gene Deep Set and hierarchical residual-path baselines (v0.1 freezes);
-- **RBS → gene cascade + direct leftover** topology (**7F**; no TBS);
-- gene-only architecture selection on `explicit_only` (**Milestone 9** — done);
-- pretrained / nine-pack scale campaign (**Milestone 10** — topology locked;
-  **10e** staged recipe **rejected**; **10d** still GATE);
-- fold-selected panel (**Milestone 11** — G1 gene-set option; not a block on
-  N-light 65k);
-- study-grouped OOF (**Milestone 12** — N-light 5×6 **NOW**; cascade blocked on
-  GATE G1–G3 + 10d; cascade recipe = native **P2-G**);
-- expression continue-train / finetune after OOF (**Milestone 13** — deferred;
-  download expression data first);
-- static CpGPT sequence-adapter features exported offline;
-- optional MethylGPT CpG-token priors as an ablation;
-- masked age / tissue / sex (and Hub disease/cancer hygiene in **7E′**) heads;
-- array missingness and manifest-downsampling tests.
-
-Stage 0 deliberately excludes dynamic foundation-model token extraction, LoRA,
-imputation during training, and default production long-read training until
-Milestone **14f**. Epivariants / episignatures are Milestone **14c** (deferred).
-ClickHouse / TileDB are not Stage 0 optional gates.
-
-## Server layout
-
-All durable and transient files must remain under `/data`. Defaults are
-project-local so bootstrap does not need shared `/data/datasets` ownership:
-
-```text
-$MBS_ROOT                 Git working tree
-$MBS_DATA_ROOT            data/ (canonical + staging)
-$MBS_SCRATCH_ROOT         scratch/ (temporary computation)
-$MBS_CACHE_ROOT           cache/ (project + tool caches)
-$MBS_ARTIFACT_ROOT        artifacts/ (runs, checkpoints, scores)
-```
-
-Do not place datasets, environments, checkpoints, model weights, or caches under
-`$HOME`.
-
-## Quick start on `power-horse`
-
-```bash
-mkdir -p /data/projects
-cd /data/projects
-git clone git@github.com:mityasmirnov/methyl-burden-score.git
-cd methyl-burden-score
-
-cp .env.example .env
-source scripts/activate_data_environment.sh
-
-uv sync --all-groups
-uv run mbs doctor
-uv run pytest
-```
-
-The repository does not contain research data, pretrained weights, or copies of
-the reference repositories. See [`docs/WORKSPACE.md`](docs/WORKSPACE.md) and
-[`scripts/add_reference_submodules.sh`](scripts/add_reference_submodules.sh).
-
-## Architecture
-
-Product score path (after **7F**):
+1. DeepRVAT-style shared scorer over CpGs → typed regions → genes → traits.
+2. Ragged observed CpGs (not a fixed probe panel at deploy time).
+3. Product path: **RBS → gene MBS** + leftover **direct**; **no TBS** ([ADR 0009](docs/adr/0009-drop-tbs-scores.md)).
+4. Study-grouped cross-fitting for reported scores (Milestone **12**).
+5. Discovery CpGs select seed *genes*; training/deploy use all observed
+   gene-linked CpGs ([ADR 0012](docs/adr/0012-seed-gene-discovery-vs-deployment-input.md)).
 
 ```text
 Observed CpGs
-  -> typed regions → RBS (one score per region)
-       -> gene-allocated RBS → pool → MBS[s, g]
-  -> orphan multi-CpG regions → orphan RBS columns
-  -> remaining CpGs → direct (not tiled)
+  → typed regions → RBS
+       → gene-allocated RBS → pool → MBS[s, g]
+  → orphan multi-CpG regions → orphan RBS
+  → remaining CpGs → direct
 ```
 
-Locked Stage A gene encoder (**`P2-G`**): CascadeDeepSet on gene-linked CpGs
-only (`gene_allocation: explicit_only`), **max** CpG→region and **max**
-region→gene, 15 epochs. Primary metric: test-only **`mbs_e2e`**.
+Locked cascade encoder: **`P2-G`** (`CascadeDeepSet`, scalar RBS, max/max,
+`explicit_only`). Light encoder: **N-light@64**. Orientation:
+[ADR 0008](docs/adr/0008-score-identifiability.md).
 
-DeepRVAT-compatible flat baseline (still retained):
+---
 
-```text
-CpG -> shared phi -> elementwise max by gene -> shared rho -> sigmoid MBS
-```
-
-Phenotype heads operate on the gene-score vector; exported association MBS
-follows the orientation contract ([ADR 0008](docs/adr/0008-score-identifiability.md)).
-
-End-to-end docs: [`docs/SCORING_PIPELINE.md`](docs/SCORING_PIPELINE.md),
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md),
-[`docs/ARCHITECTURE_BENCHMARKS.md`](docs/ARCHITECTURE_BENCHMARKS.md)
-(setups tested + performance comparison),
-[`docs/ANNOTATION_GRAPH.md`](docs/ANNOTATION_GRAPH.md).
-Probe coverage: [`docs/PROBE_ANNOTATION_COVERAGE.md`](docs/PROBE_ANNOTATION_COVERAGE.md).
-Data inventory: [`docs/DATA_CATALOG.md`](docs/DATA_CATALOG.md).
-
-## Development commands
+## Quick start (`power-horse`)
 
 ```bash
-make doctor
-make lint
-make typecheck
-make test-fast
-make test
-make catalog-init
-make catalog-build
-```
-
-Useful commands:
-
-```bash
-uv run mbs doctor --create-directories
-uv run mbs catalog init
-uv run mbs catalog refresh-release
-uv run mbs catalog validate-release
-uv run mbs inspect ewas-metadata
-uv run mbs train flat --overfit-fixture
-
-# 7G′ Stage A gene-only screen (GPU host)
-# CUDA_VISIBLE_DEVICES=0 uv run python scripts/run_7g_gene_only_probe.py \
-#   --config configs/experiment/stage0_7g_gene_only_probe.yaml --device cuda
-
-# 7G′ Stage B (after Stage A lock)
-# CUDA_VISIBLE_DEVICES=0 uv run python scripts/run_7g_prime_stage_b.py --device cuda
-```
-
-### Live monitoring (TensorBoard + TUI)
-
-When `logging.tensorboard: true`, **`mbs train flat` starts TensorBoard by
-default**. In a second SSH session:
-
-```bash
+cd /data/projects/methyl-burden-score
+cp .env.example .env   # first time
 source scripts/activate_data_environment.sh
-uv run mbs monitor --run-id <run-id>
+uv sync --all-groups --extra training --extra analysis --frozen
+uv run mbs doctor
+uv run pytest tests/unit
 ```
 
-Browser over SSH: `ssh -L 6006:localhost:6006 <user>@<host>` →
-http://localhost:6006. Details:
-[`docs/EXPERIMENT_PROTOCOL.md`](docs/EXPERIMENT_PROTOCOL.md).
+All artifacts stay under `/data` (`$MBS_*` roots). See
+[`docs/WORKSPACE.md`](docs/WORKSPACE.md).
 
-Hub/Atlas metadata: [`docs/EWAS_METADATA.md`](docs/EWAS_METADATA.md).  
-Hub downloads: [`docs/EWAS_DATA.md`](docs/EWAS_DATA.md).
+```bash
+make doctor && make test-fast
+uv run mbs catalog refresh-release
+uv run mbs train flat --overfit-fixture
+# Live run: uv run mbs monitor --run-id <run-id>
+```
+
+---
+
+## Docs map
+
+| Topic | Doc |
+|-------|-----|
+| Live checklist | [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md) |
+| Benchmark ledger | [`docs/ARCHITECTURE_BENCHMARKS.md`](docs/ARCHITECTURE_BENCHMARKS.md) |
+| Scoring / architecture | [`docs/SCORING_PIPELINE.md`](docs/SCORING_PIPELINE.md), [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
+| Data | [`docs/DATA_CATALOG.md`](docs/DATA_CATALOG.md), [`docs/EWAS_DATA.md`](docs/EWAS_DATA.md) |
+| Programme | [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md) |
+| Key ADRs | [0002](docs/adr/0002-ewas-datahub-primary-source.md) Hub · [0007](docs/adr/0007-crossfit-prerequisites.md) OOF · [0009](docs/adr/0009-drop-tbs-scores.md) no TBS · [0010](docs/adr/0010-gene-allocation-policy.md) `explicit_only` · [0012](docs/adr/0012-seed-gene-discovery-vs-deployment-input.md) discovery vs deploy |
+
+Nine-pack campaign board:
+[`reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
 
 ## Repository policy
 
-Committed:
+**Committed:** source, SQL/schemas, YAML, docs/ADRs, small fixtures, inspection
+reports (not raw matrices).
 
-- Python source;
-- SQL schemas and views;
-- YAML configurations;
-- documentation and architecture decisions;
-- small synthetic test fixtures;
-- artifact manifests, checksums, and inspection reports (not raw matrices).
-
-Never committed:
-
-- sample-level methylation data;
-- IDAT, BAM, VCF, Arrow, Parquet, Zarr, HDF5, or SQLite data artifacts;
-- pretrained checkpoints or embeddings;
-- secrets and credentials;
-- generated run outputs under `artifacts/` (except documented small reports);
-- Docker layer data.
-
-## Status
-
-Milestones **1–9** (through gene-only Stage A) are done; **10** topology is
-locked (P2-G + N-light@64). Authoritative checklist:
-[`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md)
-([`MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md)).
-
-| Done | What shipped |
-|------|----------------|
-| Annotation + static features | GRCh38 graphs (five-role + CGI/tile v2); offline CpGPT locus features |
-| Pilot + Hub matrices | GSE35069; nine Hub full packs; ATS GSM-union 13 548 |
-| Flat / hier deepMAT v0.1 | Frozen phenotype baselines (do not overwrite) |
-| 7A–7E′ | Release + census; architecture corrections; Level-1 MAD; 3×2 CV; Hub multitask hygiene |
-| **7F** | RBS→gene cascade + direct leftover; **no TBS** ([ADR 0009](docs/adr/0009-drop-tbs-scores.md)) |
-| **8** / **9** | Methylation-only eval; gene-only `explicit_only` + DeepRVAT screen |
-| **10a–10c** | Nine-pack P2-G lock; N-light@64; warms; freeze-reuse (cancer AUROC 0.954) |
-
-**Trustworthy Stage A numbers** (`explicit_only`, test split):
-
-| Arm | Tissue macro-F1 | Notes |
-|-----|----------------:|-------|
-| `C-mvalue-enet-G` | **0.388** | Classical leader on same 51 375 CpGs |
-| `P2-G` `mbs_enet` | 0.385 | Frozen MBS + elastic-net heads |
-| `P2-G` `mbs_e2e` | **0.373** | **Locked cascade topology** (max/max, 15 ep) |
-| Screen / one-hop | ≤0.359 / ~0.12 | No Tier-2 promote; prefer M-only annotations |
-
-Nine-pack N-light@64 nested enet 3-fold: **0.368 / 9.88 / 0.803**. Reports:
-[`reports/inspection/stage0_7g_gene_only_probe/analysis.md`](reports/inspection/stage0_7g_gene_only_probe/analysis.md),
-[`reports/inspection/stage0_7h_nine_pack_smoke/analysis.md`](reports/inspection/stage0_7h_nine_pack_smoke/analysis.md).
-
-**NOW → GATE → THEN:** finish N-light 65k 5×6 → GATE G1–G4 (12b / CpGPT /
-12c / fair 10e+10d) → cascade 5×6 on the G1 panel. Do **not** auto-launch
-cascade. Expression = Milestone **13**.
-
-Public model name remains **deepMAT**; package/CLI stay `mbs` /
-`methyl-burden-score`.
+**Never committed:** methylation matrices, IDATs/BAMs, checkpoints/embeddings,
+secrets, `artifacts/` run dumps (except documented small reports).
 
 ## Licensing
 
-A project source-code license has not yet been selected. Reference papers,
-source repositories, datasets, and pretrained model weights have separate
-licenses and must be reviewed independently before redistribution or production
-use.
+Source-code license TBD. Hub/Atlas data, papers, and pretrained weights have
+separate licenses — review before redistribution.
