@@ -54,20 +54,33 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
 
 ### Next steps (NOW → GATE → THEN)
 
-**All GPU queues idle as of 2026-09-28** — G2 6-restart confirmation, the 6-arm
-CpGPT architecture sweep, and the full-width CpGPT smoke all completed. **GPU 0**
-(49 GB) is ours and free; **GPU 1/2** are usually filled by unrelated services
-(vLLM, another lab's job) — check before assuming capacity. Do **not** auto-start
-cascade 5×6.
+**GPU 0 queue RUNNING** (`scripts/run_gpu0_queue.sh`, log
+`scratch/logs/gpu0_queue.log`) — standing instruction is to keep GPU 0 saturated
+until we have the best model, so jobs run back-to-back and a failure logs and
+continues rather than idling the card. **GPU 1/2** are usually filled by
+unrelated services (vLLM, another lab's job) — check before assuming capacity.
+Do **not** auto-start cascade 5×6.
 
-**Recommended next GPU jobs** (none launched; awaiting a call):
-1. **Matched 6-restart baseline** (CpGPT *off*, 65k) — the missing piece for a
-   real CpGPT effect size; the baseline is still n=1.
-2. **Cascade CpGPT smoke** (`stage0_12_cascade_cpgpt_smoke.yaml`) — plumbing
-   landed but is unproven at scale.
-3. **Converging full-width recipe** — the 19 554-gene run early-stopped at
-   epoch 9/16 (best epoch 4); fix that before trusting its metrics.
-4. **G1 all-genes comparator** — the only thing that can actually close G1.
+Queue order is by expected model gain, **not** TODO numbering:
+
+1. **Cascade CpGPT smoke** (`stage0_12_cascade_cpgpt_smoke.yaml`, fold 0, 6 ep) —
+   short, and de-risks the product campaign. **Confirmed live:** cascade now
+   loads static features (`dim=128 mapped=65280/65536`), and its assignment
+   carries `orphan_rbs=1953` + `direct=9322`, i.e. the **non-coding CpGs**
+   N-light discards.
+2. **Full-width converge** (`stage0_12b_cpgpt_full_width_converge.yaml`) — the
+   19 554-gene run had the best tissue/sex on record but never converged
+   (early-stopped ep 9/16, best ep 4). lr 1e-3→5e-4, patience 5→10, epochs
+   16→30, nested fitted inline. Most likely single source of a better model.
+3. **Matched baseline ×6** (`stage0_7h_nine_pack_m_only_wide.yaml`, CpGPT off,
+   fold 0, 6 restarts) — rigour only: the CpGPT effect size currently rests on
+   an n=1 baseline. Verified protocol-matched to the CpGPT multirestart (configs
+   differ only in the CpGPT keys; its `auto` batch calibrated to the same 256).
+
+**Not yet queued:** G1 all-genes comparator — still the only thing that can
+close G1, but it needs a gene-set decision first (all ~19.6k represented genes
+vs the M11 fold-selected panel), which is a call to make rather than a job to
+launch.
 
 **NOW — Milestone 11 / GATE G1** (fold-selected gene panel / trait-universe
 gene-set choice). Two tracks: (1) legacy ATS CPU panels — **complete** at
