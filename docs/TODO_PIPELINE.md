@@ -43,14 +43,14 @@ MBS. Plumbing landed; smokes / nested in flight on GPU0
 (scripts/run_gpu0_queue_g1.sh). Plan: plans/milestone-12b-gene-holdout.md
 Keep GPU 0 saturated. Do not auto-start cascade 5×6.
 
-  Order = **N-light first, cascade after** (user lock; cheaper gate before the
-  product arm). Do not reorder to cascade-first without an explicit ask.
+  Order = **cascade first, N-light after** (user lock — product arm is the
+  gate priority). Do not reorder to N-light-first without an explicit ask.
 
-  2.1  N-light gene-holdout (random)     stage0_12b_gene_holdout_nlight_smoke.yaml
-  2.2  Nested enet on N-light            scripts/eval_gene_holdout_nested.py
-  2.3  Cascade gene-holdout (random)     stage0_12b_gene_holdout_cascade_smoke.yaml
-  2.4  Nested enet on cascade            scripts/eval_gene_holdout_nested.py
-  2.5  Chromosome arms IF random passes  *_chrom_smoke.yaml (N-light, then cascade)
+  2.1  Cascade gene-holdout (random)     stage0_12b_gene_holdout_cascade_smoke.yaml
+  2.2  Nested enet on cascade            scripts/eval_gene_holdout_nested.py
+  2.3  N-light gene-holdout (random)     stage0_12b_gene_holdout_nlight_smoke.yaml
+  2.4  Nested enet on N-light            scripts/eval_gene_holdout_nested.py
+  2.5  Chromosome arms IF random passes  *_chrom_smoke.yaml (cascade, then N-light)
        — not yet wired into run_gpu0_queue_g1.sh; add after nested results land.
 
 ═══ 3. AFTER G1 PASSES — lock product path ═════════════════════════════════

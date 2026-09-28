@@ -8,10 +8,8 @@
 # full-width converge and matched baseline are TODO 3.3 / 3.4 and are re-queued
 # at the end here.
 #
-# Order note: TODO lists cascade (2.1) before N-light (2.2); this runs **N-light
-# first**, per the user's explicit choice when asked ("N-light first, cascade
-# after") — cheaper, and it establishes gene-agnosticism before spending on the
-# slower product arm. Flagged rather than silently reordered.
+# Order = **cascade first, N-light after** (user lock 2026-09-28). Product arm
+# is the gate priority.
 #
 # Each arm: train on ~80% of genes, score the disjoint ~20%, then post-hoc
 # nested enet on heldout MBS columns the encoder never saw.
@@ -30,17 +28,7 @@ run_job() {
   if "$@"; then log "=== OK $name ==="; else log "=== FAILED $name (rc=$?) -- continuing ==="; fi
 }
 
-log "GPU0 G1 queue starting on device ${CUDA_VISIBLE_DEVICES}"
-
-# --- 2.2 N-light gene-holdout (random split) ---
-# NOTE: run_12b_gene_expansion_nlight_smoke.py has NO argparse -- passing
-# --config to it is silently ignored and trains the wrong config. Use a
-# dedicated driver with the config baked in.
-run_job "g1-nlight-random-train" \
-  uv run python -u scripts/run_12b_gh_nlight_random.py
-run_job "g1-nlight-random-nested" \
-  uv run python -u scripts/eval_gene_holdout_nested.py \
-    --run-id stage0-12b-gh-nlight-random-f0 --force
+log "GPU0 G1 queue starting on device ${CUDA_VISIBLE_DEVICES} (cascade first)"
 
 # --- 2.1 Cascade gene-holdout (random split) ---
 run_job "g1-cascade-random-train" \
@@ -53,6 +41,16 @@ run_job "g1-cascade-random-train" \
 run_job "g1-cascade-random-nested" \
   uv run python -u scripts/eval_gene_holdout_nested.py \
     --run-id stage0-12b-gh-cascade-random-f0-r0 --fold 0 --force
+
+# --- 2.3 N-light gene-holdout (random split) ---
+# NOTE: run_12b_gene_expansion_nlight_smoke.py has NO argparse -- passing
+# --config to it is silently ignored and trains the wrong config. Use a
+# dedicated driver with the config baked in.
+run_job "g1-nlight-random-train" \
+  uv run python -u scripts/run_12b_gh_nlight_random.py
+run_job "g1-nlight-random-nested" \
+  uv run python -u scripts/eval_gene_holdout_nested.py \
+    --run-id stage0-12b-gh-nlight-random-f0 --force
 
 # --- 3.3 / 3.4 deprioritised work, so the card never idles ---
 run_job "full-width-converge" \
