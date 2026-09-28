@@ -43,7 +43,7 @@ within-gene CpG sampling).
 | Within-gene CpG sampler (`max_cpgs_per_gene`) | **Not started** |
 | Minibatch row×column gather (no dense preload) | **Not started** — both trainers still `betas[:, :n_cols]` |
 | Canonical ~20k-gene present-mask training index | **Not started** |
-| Role-gated embeddings / platform dropout / ONT adapter / gene-holdout | Gene-holdout **plumbing done** (N-light + cascade; random + chromosome; smokes pending). Platform dropout is **12c / G3**; role-gated / ONT still post-GATE |
+| Role-gated embeddings / platform dropout / ONT adapter / gene-holdout | Gene-holdout **plumbing done** (N-light + cascade; random gate, chrom optional, seed product). Platform dropout is **12c / G3**; role-gated / ONT still post-GATE |
 | N-light dense full-width smoke (`max_loci: null`) | **Probe running** — not the recipe |
 | Cascade full-width smoke YAML | **Unlaunchable** — `cascade_loop` does `int(max_loci)`; `null` → `TypeError` |
 | CpGPT 65k N-light ablation | **Queued** after dense smoke (takeover waiter) |

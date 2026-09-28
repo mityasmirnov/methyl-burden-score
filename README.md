@@ -16,8 +16,9 @@ milestones: [`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md).
 [`docs/figures/p2g-cascade-architecture.png`](docs/figures/p2g-cascade-architecture.png).
 
 **NOW (roadmap §2):** GATE **G1** gene-holdout — **cascade first**, then
-N-light (random → nested → chromosome if random passes). Plumbing done; GPU0
-queue live (`scripts/run_gpu0_queue_g1.sh`). **§3** after G1: max samples ·
+N-light (random → nested). Chromosome arms optional only (not queued);
+DeepRVAT-like gate = random holdout. Product path after G1 uses `method:seed`.
+GPU0 queue: `scripts/run_gpu0_queue_g1.sh`. **§3** after G1: max samples ·
 CpGPT on · trait heads · seed bank. **§4 pending:** cascade 5×6, G3, 10d.
 Do **not** auto-launch cascade 5×6 or retrain frozen v0.1. Full order:
 [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).

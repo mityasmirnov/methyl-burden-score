@@ -1,9 +1,10 @@
 # DeepRVAT-aligned seed recipe (GATE G1 / product encoder)
 
-> Status (2026-09-28): **locked design**. Random/chromosome gene-holdout
-> smokes remain the leakage / locality probes. The **product** encoder path
-> after architecture lock follows DeepRVAT: train φ/ρ on a multi-trait seed
-> gene bank, score genome-wide (or the complement), nested enet post-hoc.
+> Status (2026-09-28): **locked design**. G1 leakage probe = **random**
+> holdout (DeepRVAT-like); chromosome optional / not queued. The **product**
+> encoder path after architecture lock follows DeepRVAT: train φ/ρ on a
+> multi-trait seed gene bank, score genome-wide (or the complement), nested
+> enet post-hoc.
 > Parent: [`milestone-12b-gene-holdout.md`](milestone-12b-gene-holdout.md) ·
 > ADR [`0011`](../adr/0011-seed-gene-sources.md) / [`0012`](../adr/0012-seed-gene-discovery-vs-deployment-input.md).
 
@@ -12,7 +13,7 @@
 | Field | Content |
 |-------|---------|
 | **Question** | How should deepMAT use seed genes the way DeepRVAT does — without reviving 9c head masks? |
-| **Approaches** | (A) Head masks — **rejected** (9c). (B) Random/chrom gene-holdout — G1 leakage probe. (C) **Train on fold seed-gene union, score complement / all genes** — DeepRVAT-aligned product path. |
+| **Approaches** | (A) Head masks — **rejected** (9c). (B) Random gene-holdout — G1 leakage probe. (C) **Train on fold seed-gene union, score complement / all genes** — DeepRVAT-aligned product path. |
 | **Results** | Pending (seed-supervised arm + multi-trait bank not yet run). |
 | **Verdict** | **Adopt (C) after arch lock.** Keep CpG-first discovery (best CpG p → gene). Multi-trait seed bank is the priority product step. Ensemble of scorers only after the experiment campaign closes. |
 
@@ -27,7 +28,7 @@
 | Multi-trait seed bank | **After arch lock**: discover seeds per eligible trait, **union** for encoder training; trait-specific readouts stay post-hoc nested enet | DeepRVAT shared scorer improves with many phenotypes; matches “traits in training once arch locked” |
 | Hybrid prior | Optional `hybrid_fold` = `external_clean` Atlas ∪ `internal_fold`, remap via ADR 0010 `explicit_only` only | Prior without Atlas symbol leakage |
 | Ensemble | **Deferred** until the experiment campaign finishes | Avoid multiplying compute before recipe lock |
-| G1 probes | Still run random → nested → chrom if pass (cascade then N-light) | Locality / memorisation bounds; not the product seed recipe |
+| G1 probe | Random → nested (cascade then N-light); chrom optional | DeepRVAT-like; not the product seed recipe |
 
 ## Recipe (product, after arch lock)
 
@@ -62,7 +63,8 @@ training:
 
 | Arm | Train genes | Purpose |
 |-----|-------------|---------|
-| `random` / `chromosome` | Random / chrom holdout | Leakage / locality probe |
+| `random` | Random holdout | G1 leakage probe (gate) |
+| `chromosome` | Chrom holdout | Optional locality probe only |
 | `seed` | Fold seed-gene **union** | DeepRVAT-faithful product path |
 
 Nested enet on heldout/complement columns remains the transfer readout. Do **not**

@@ -34,7 +34,7 @@ Keep Cursor session todos in sync (complete / cancel / start next).
 ```text
 1. DONE       1–11 ATS, 10e, 12 N-light, G2 N-light YES
 2. NEXT       G1 gene-holdout: cascade random → nested → N-light random →
-              nested → chrom if pass (cascade first — user lock)
+              nested (cascade first; chrom optional / not queued — DeepRVAT-like)
 3. AFTER G1   product defaults + seed bank + full-width + sampler
 4. PENDING    cascade 5×6; G3 platform; 10d ckpt; paper checklist
 5. DEFERRED   expression aux; Stage 1+; ensemble

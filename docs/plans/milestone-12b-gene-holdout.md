@@ -1,9 +1,9 @@
 # GATE G1 gene-holdout — implementation brief
 
 > Status (2026-09-28): **plumbing done** for N-light + cascade:
-> `random` / `chromosome` leakage probes + **`seed`** DeepRVAT-aligned
-> product path (CpG-first best association → gene union; score complement).
-> Smokes / nested readouts **not yet run** (GPU queue).
+> leakage probe = **`random`** (DeepRVAT-like); **`chromosome`** optional /
+> not queued; product path = **`seed`** (CpG-first best association → gene
+> union; score complement). GPU0 queue: random arms + nested.
 > Product recipe: [`milestone-12b-deeprvat-seed-recipe.md`](milestone-12b-deeprvat-seed-recipe.md).
 > Parent: [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md).
 > Index: [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
@@ -19,10 +19,12 @@ heldout MBS columns the encoder never saw.
 1. Nested enet on heldout-gene MBS is competitive with train-gene nested (same
    recipe, reported as a pair).
 2. Random split smokes land (cascade first, then N-light) + nested.
-3. If random passes, chromosome-held-out arm bounds locality leakage.
-4. **Product path:** `method: seed` multi-trait seed bank smoke after arch lock
-   (not a substitute for the leakage probes).
-5. Reports under `reports/inspection/` + TODO Verdict.
+3. **Product path:** `method: seed` multi-trait seed bank smoke after arch lock
+   (not a substitute for the random leakage probe).
+4. Reports under `reports/inspection/` + TODO Verdict.
+
+`method: chromosome` stays available as an optional locality probe only — **not**
+required for G1 (user lock 2026-09-28: DeepRVAT-style random/seed is enough).
 
 Scaffolding alone does **not** close G1. Do **not** revive 9c head masks.
 
@@ -30,13 +32,14 @@ Scaffolding alone does **not** close G1. Do **not** revive 9c head masks.
 
 | Choice | Decision | Why |
 |--------|----------|-----|
-| Leakage probes | `random` first; `chromosome` follow-up | Cheap locality bound |
+| Leakage probe | `random` only for G1 | DeepRVAT-like; chrom optional |
 | Product train set | `seed` — multi-trait seed-gene **union**; score complement / genome-wide | DeepRVAT recipe; user lock 2026-09-28 |
+| Chromosome arms | Optional / not queued | Extra locality bound only if wanted later |
 | Discovery | CpG-first: best (strongest) linked CpG association → gene; optional gene meta-p later | Fastest / simplest |
 | Head masks | **Never** | 9c failed (G0 ≫ G1–G3) |
 | Hybrid prior | Optional `extra_seed_gene_ids` / Atlas `external_clean` inside train fold | ADR 0011; only if remap stays honest |
 | Ensemble | Deferred until campaign closes | Avoid multiply-before-lock |
-| Topology order | Cascade random → N-light random → nested → chrom if pass; seed after arch lock | Product path is cascade |
+| Topology order | Cascade random → nested → N-light random → nested; seed after arch lock | Product path is cascade |
 | Samples (product) | Maximum eligible samples (no train caps) | Nine-pack / full phenotype table |
 | Static features | CpGPT sequence embeddings on (`cpgpt2m_adapter_128_v1`) | G2 YES |
 | Traits (product) | Joint trait heads once arch locked; seed bank unions those traits | DeepRVAT shared scorer |

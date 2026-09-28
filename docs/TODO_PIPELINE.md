@@ -44,14 +44,29 @@ MBS. Plumbing landed; smokes / nested in flight on GPU0
 Keep GPU 0 saturated. Do not auto-start cascade 5×6.
 
   Order = **cascade first, N-light after** (user lock — product arm is the
-  gate priority). Do not reorder to N-light-first without an explicit ask.
+  gate priority).
 
   2.1  Cascade gene-holdout (random)     stage0_12b_gene_holdout_cascade_smoke.yaml
   2.2  Nested enet on cascade            scripts/eval_gene_holdout_nested.py
   2.3  N-light gene-holdout (random)     stage0_12b_gene_holdout_nlight_smoke.yaml
   2.4  Nested enet on N-light            scripts/eval_gene_holdout_nested.py
-  2.5  Chromosome arms IF random passes  *_chrom_smoke.yaml (cascade, then N-light)
-       — not yet wired into run_gpu0_queue_g1.sh; add after nested results land.
+
+  G1 acceptance = random holdout nested on both arms (heldout ≈ train-gene
+  readout). DeepRVAT-aligned: no chromosome arm required for the gate.
+  `method: chromosome` configs stay in-repo as an optional locality probe only
+  (not queued). Product train set after arch lock = `method: seed` (§3.2).
+
+  Live (2026-09-28): N-light random nested — train tissue/age/sex
+  0.333 / 8.78 / 0.802 vs heldout 0.314 / 12.05 / 0.706 (tissue transfers;
+  age degraded). Cascade random restarted on GPU0 after an in-flight
+  N-light-first queue had skipped it (`run_gpu0_queue_g1_remainder.sh`).
+
+  Load note (2026-09-28): nine-pack `RoutedBetas` materialize is ~4–6 min for
+  65k/full-width — not the old “40 min is I/O” claim. Do not block G1 on a
+  loader rewrite; optional later: avoid reading all 482k cols when only a
+  contiguous 65k prefix is needed (`virtual_hub_store.RoutedBetas`). First
+  full-width epoch wall time is mostly train-step / on-the-fly edge feature
+  gather at ~440k edges, not zarr.
 
 ═══ 3. AFTER G1 PASSES — lock product path ═════════════════════════════════
   3.1  Product defaults: max samples · CpGPT on · trait heads in training
@@ -98,9 +113,10 @@ assuming capacity.
 | **Ensemble** | Deferred (section 5). |
 
 **G1.** Train encoder on one gene set, score a **disjoint** set, nested enet on
-heldout-gene MBS. Random split first; chromosome holdout bounds locality
-leakage. CpGPT is a near-unique per-CpG fingerprint — holdout is the companion
-test. Plan: [`plans/milestone-12b-gene-holdout.md`](plans/milestone-12b-gene-holdout.md).
+heldout-gene MBS. DeepRVAT-like: **random** holdout is the gate; chromosome
+arms optional only (not queued). Product train set after arch lock =
+`method: seed`. CpGPT is a near-unique per-CpG fingerprint — holdout is the
+companion test. Plan: [`plans/milestone-12b-gene-holdout.md`](plans/milestone-12b-gene-holdout.md).
 ATS panels (M11) are done and do not replace holdout.
 
 **GATE summary (blocks cascade 5×6):**
@@ -1207,18 +1223,22 @@ must keep spare VRAM.
     `stage0-12-cascade-cpgpt-smoke-f0-r0` trains + exports with the static
     block. e2e tissue **0.280** / age **17.1** / sex **0.888** — plumbing
     only (6 epochs vs 30-epoch recipe; config headered “not a benchmark”).
-  - **Gene-holdout (decisive G1) — plumbing DONE for N-light + cascade,
-    random + chromosome + seed** (2026-09-28). Plans:
+  - **Gene-holdout (decisive G1) — plumbing DONE for N-light + cascade;
+    random gate + optional chrom + seed product** (2026-09-28). Plans:
     [`plans/milestone-12b-gene-holdout.md`](plans/milestone-12b-gene-holdout.md),
     [`plans/milestone-12b-deeprvat-seed-recipe.md`](plans/milestone-12b-deeprvat-seed-recipe.md).
     `training.gene_holdout` partitions genes, trains φ/ρ on the train set,
     scores heldout MBS with the frozen encoder
     (`scores/mbs_heldout.npy` + `gene_holdout.json`). `method: seed` =
     DeepRVAT-aligned (CpG-first best association → gene; multi-trait union;
-    score complement; **not** 9c masks). Post-hoc nested:
-    `scripts/eval_gene_holdout_nested.py`. Smoke configs:
+    score complement; **not** 9c masks). Chromosome arms optional / not
+    queued. Post-hoc nested: `scripts/eval_gene_holdout_nested.py`.
+    Smoke configs:
     `stage0_12b_gene_holdout_{nlight,nlight_chrom,nlight_seed,cascade,cascade_chrom,cascade_seed}_smoke.yaml`
-    (6 ep). **Smokes / nested not yet run.**
+    (6 ep). **N-light random nested landed** (2026-09-28): train-gene tissue
+    0.333 / age 8.78 / sex 0.802 vs heldout 0.314 / 12.05 / 0.706 — tissue
+    transfers; age degraded. Cascade random still pending (queue restarted
+    cascade-first after N-light-first in-flight job).
   - **CpGPT 6-restart confirmation — DONE** (6/6, fold 0). Nested: tissue
     **0.355 ± 0.010**, age **8.096 ± 0.140**, sex **0.879 ± 0.015**. Key
     methodological finding: **`mbs_e2e` restart sd is ~11× nested's** (age 1.63
