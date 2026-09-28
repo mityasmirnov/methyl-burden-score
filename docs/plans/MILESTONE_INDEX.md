@@ -7,9 +7,10 @@ navigate. **Current numbering uses integers 8, 9, 10, …** with optional `a/b/c
 sub-tracks. Older plan filenames and `stage0_7g_*` / `run_7g_*` artifact IDs
 are **historical aliases** — do not rename on-disk run trees.
 
-**Execution order ≠ numeric order.** Agents follow the **NOW → GATE → THEN**
-block at the top of [`../TODO_PIPELINE.md`](../TODO_PIPELINE.md) (GPU queue +
-gene-holdout). Do not restart closed light benchmarks.
+**Execution order ≠ numeric order.** Agents follow the numbered roadmap at the
+top of [`../TODO_PIPELINE.md`](../TODO_PIPELINE.md):
+**1 DONE → 2 NEXT (G1) → 3 AFTER G1 → 4 PENDING → 5 DEFERRED**.
+Do not restart closed light benchmarks.
 
 ## Map (old → new)
 

@@ -15,11 +15,10 @@ task is pipeline work. Numbering index:
 ## At session start (and before new pipeline work)
 
 1. Open `docs/TODO_PIPELINE.md`.
-2. Read the **Execution order** roadmap (NOW GPU queue → gene-holdout G1 →
-   blocked cascade). Today: **12b / G1 gene-holdout** + GPU queue items;
-   do **not** restart N-light 5×6 or Milestone 10 topology work.
-3. Work that sequence; do not jump to optional / deferred layers early.
-   Numeric milestone IDs stay; execution order is not numeric order.
+2. Read the **Roadmap** (sections 1→5). Today = **section 2** (G1 gene-holdout
+   smokes). Do **not** restart N-light 5×6 or Milestone 10 topology work.
+3. Work that sequence; pending / deferred (sections 4–5) wait until earlier
+   sections clear. Numeric milestone IDs stay; execution order is not numeric.
 
 ## When marking complete
 
@@ -33,18 +32,11 @@ Keep Cursor session todos in sync (complete / cancel / start next).
 ## Ordering (do not reorder milestone IDs without an ADR)
 
 ```text
-1–6          done     bootstrap → flat → hierarchical v0.1
-7A–7F,7E′    done     release → matrices → architecture → CV → cascade
-8–9          done     methylation-only + gene-only ATS
-10a–10c,10e  done     P2-G lock; N-light@64; staged FAIL → native P2-G
-12 N-light   done     5×6 65k-prefix closed (0.316/9.59/0.822)
-NOW GPU      queue    G1 cascade holdout random → N-light random → nested →
-                      chrom if pass; then full-width / baseline as capacity
-NOW science  ← TODAY  G1 gene-holdout (12b); product defaults after arch lock:
-                      max samples + CpGPT + trait heads + multi-trait seed bank
-                      (method:seed; no 9c masks); ensemble deferred
-BLOCKED               12 cascade 5×6; G3/12c platform; 10d reference ckpt
-13–14        deferred expression aux; optional Stage 1+ (a–f)
+1. DONE       1–11 ATS, 10e, 12 N-light, G2 N-light YES
+2. NEXT       G1 gene-holdout: cascade random → N-light random → nested → chrom
+3. AFTER G1   product defaults + seed bank + full-width + sampler
+4. PENDING    cascade 5×6; G3 platform; 10d ckpt; paper checklist
+5. DEFERRED   expression aux; Stage 1+; ensemble
 ```
 
 Historical aliases `7G` / `7G′` / `7H` / “Milestone 7 OOF” appear in older
@@ -68,3 +60,5 @@ Before gene-holdout / 12b, read
 [`docs/plans/milestone-12b-gene-holdout.md`](docs/plans/milestone-12b-gene-holdout.md),
 and the product seed recipe
 [`docs/plans/milestone-12b-deeprvat-seed-recipe.md`](docs/plans/milestone-12b-deeprvat-seed-recipe.md).
+Before paper figures, read [`docs/TODO_PAPER.md`](docs/TODO_PAPER.md) (after
+pipeline gates).

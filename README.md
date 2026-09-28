@@ -15,13 +15,11 @@ milestones: [`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md).
 [`docs/figures/nlight-cpgpt-architecture.png`](docs/figures/nlight-cpgpt-architecture.png) ·
 [`docs/figures/p2g-cascade-architecture.png`](docs/figures/p2g-cascade-architecture.png).
 
-**NOW (2026-09-28):** Milestone **11 / GATE G1** — gene-holdout smokes.
-N-light 5×6 OOF is **done**. Cascade OOF stays blocked on G1 + G3. Cascade
-CpGPT smoke **done**. Gene-holdout **plumbing done**. GPU queue when free:
-**cascade random → N-light random → nested → chromosome if random passes**.
-After arch lock: **max samples**, **CpGPT sequence embeddings on**, **trait
-heads in training**. Do **not** auto-launch cascade 5×6. Do **not** retrain
-frozen v0.1 baselines.
+**NOW (roadmap §2):** GATE **G1** gene-holdout smokes — cascade random →
+N-light random → nested → chromosome if random passes. Plumbing done; smokes
+pending. **§3** after G1: max samples · CpGPT on · trait heads · seed bank.
+**§4 pending:** cascade 5×6, G3 platform, 10d checkpoint. Do **not** auto-launch
+cascade 5×6 or retrain frozen v0.1. Full order: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
 
 ---
 
