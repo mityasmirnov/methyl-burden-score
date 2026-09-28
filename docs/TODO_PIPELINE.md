@@ -29,8 +29,9 @@ finishing, fill Results + Verdict in the same change set that flips status
   10a-dense  partial  S1 fold 0 done; queue stopped for N-light OOF
   10e        done      GATE G4 — fair S1→S2→S3→S4 FAIL; native P2-G; no 3-fold
   10d        pending  GATE G4 — reference checkpoint after OOF finalist
-11           ← NOW    GATE G1: ATS `panel_repeats=5` CPU run in flight (days);
-                       trait-universe A→B→C pipeline in design (not built yet)
+11           ← NOW    GATE G1: ATS panels+classical **done** at r=5 (no metric
+                       change); all-genes comparator NOT run; trait-universe
+                       A→B→C pipeline still in design (not built yet)
 12           done     N-light 5×6 30/30 done (nested 0.316/9.59/0.822); cascade
                        arm still blocked on GATE G1–G3
   GATE       pending  blocks cascade OOF (G1, G3 open; G2 user-decided YES,
@@ -53,20 +54,25 @@ Live board: [`plans/milestone-10-pretrained-mbs-rbs.md`](plans/milestone-10-pret
 
 ### Next steps (NOW → GATE → THEN)
 
-**GPU-2:** free (N-light 5×6 finished 2026-09-24; no longer exclusive).
-**GPU 1:** often filled by unrelated vLLM (not ours). **GPU 0:** chained queue,
-no idle gap (auto-launch waiters): (1) G2 6-restart confirmation smoke
-[running] → (2) **CpGPT architecture sweep** (6 variants, φ/ρ 64→512,
-`scripts/run_12b_cpgpt_arch_sweep.py`; CpGPT lifts per-CpG input 24→**152**
-dims while φ/ρ stayed 64, so capacity is the suspected bottleneck) →
-(3) full gene-linked-width (374k-col) CpGPT smoke. Ranked on `mbs_e2e`
-**age MAE**; nested enet only on winners. Do **not** auto-start cascade 5×6
-until CpGPT is wired into `cascade_loop.py` (see 12b).
+**All GPU queues idle as of 2026-09-28** — G2 6-restart confirmation, the 6-arm
+CpGPT architecture sweep, and the full-width CpGPT smoke all completed. **GPU 0**
+(49 GB) is ours and free; **GPU 1/2** are usually filled by unrelated services
+(vLLM, another lab's job) — check before assuming capacity. Do **not** auto-start
+cascade 5×6.
+
+**Recommended next GPU jobs** (none launched; awaiting a call):
+1. **Matched 6-restart baseline** (CpGPT *off*, 65k) — the missing piece for a
+   real CpGPT effect size; the baseline is still n=1.
+2. **Cascade CpGPT smoke** (`stage0_12_cascade_cpgpt_smoke.yaml`) — plumbing
+   landed but is unproven at scale.
+3. **Converging full-width recipe** — the 19 554-gene run early-stopped at
+   epoch 9/16 (best epoch 4); fix that before trusting its metrics.
+4. **G1 all-genes comparator** — the only thing that can actually close G1.
 
 **NOW — Milestone 11 / GATE G1** (fold-selected gene panel / trait-universe
-gene-set choice). Two tracks in flight: (1) legacy ATS CPU panels —
-dry-run (`n_repeats=1`) done, **`panel_repeats=5` production re-run
-running now** (days); (2) new scalable three-stage trait-universe pipeline
+gene-set choice). Two tracks: (1) legacy ATS CPU panels — **complete** at
+`panel_repeats=5` (panels + classical; r=5 vs r=1 changed metrics ~0);
+(2) new scalable three-stage trait-universe pipeline
 (catalog → restrict → fold-safe reselect) — **design in progress**, its
 runner scripts do not exist yet.
 
@@ -77,7 +83,7 @@ runner scripts do not exist yet.
 
 | ID | Track | Question (short) | Status |
 |----|-------|------------------|-----------|
-| **G1** | **11** / **12b** gene utilization | Does DeepRVAT within-gene sampling + minibatch gather (or M11 fold-selected panel) train a usable gene MBS without dense 482k load? | **open** — ATS production run + trait-universe design both in flight |
+| **G1** | **11** / **12b** gene utilization | Does DeepRVAT within-gene sampling + minibatch gather (or M11 fold-selected panel) train a usable gene MBS without dense 482k load? | **open** — ATS panels done; **all-genes comparator never run**, so no verdict is possible; trait-universe pipeline still unbuilt |
 | **G2** | Positional / CpGPT | Do CpGPT (or DNA-LM) static embeddings improve N-light and/or cascade vs matched baseline? | **YES for N-light** (6/6 restarts, nested: age MAE 9.57→**8.10 ± 0.19**, sex 0.814→**0.879 ± 0.015**, tissue 0.376→**0.355 ± 0.010** = small but *real* regression). Age-primary ⇒ net win; gap is 2.7× the full run-to-run spread. **Same seed does not reproduce** (no determinism settings in the repo), so single-seed diffs under ~0.5 MAE are not credible. Baseline still n=1 (matched 6-restart baseline recommended). **Cascade untested** — plumbing landed, smoke not run |
 | **G3** | **12c** platform robustness | Does HM450 CpG/platform-mask dropout preserve MBS; path to EPIC membership? | **not started** |
 | **G4** | **10e** + **10d** | Does fair S1→S2→S3→S4 beat native P2-G? What checkpoint contract do we ship? | **10e done (FAIL)**; 10d MBS-side unblocked (N-light OOF done), full package still waits on cascade OOF |
@@ -1118,19 +1124,25 @@ must keep spare VRAM.
   shared `φ`/`ρ`, within-gene CpG sampling, and minibatch row×column gather —
   without dense-loading `[n_samples, n_universe]` — and does that beat 65k-
   prefix nested enet?
-- **Approaches tested / in flight:**
+- **Approaches tested:**
   - Dense full-width N-light smoke (`max_loci: null`) — gene-count go/no-go
     under old loader (anti-pattern; not the recipe).
   - CpGPT 65k N-light ablation (G2 probe; N-light `static_dim` only) — **1
     fold × 1 seed done** (`stage0-12b-cpgpt-nlight-smoke-f0` vs
-    `stage0-7h-nine-pack-m-only-wide-f0`); **6-restart re-run in flight on
-    GPU0** (`stage0-12b-cpgpt-nlight-smoke-f0-r0..5`, fold 0 only, report
-    dir `reports/inspection/stage0_12b_cpgpt_multirestart/`); **chained
-    full-width (374k-col) CpGPT smoke queued next on GPU0**
-    (`configs/experiment/stage0_12b_cpgpt_full_width_smoke.yaml`,
-    dropout 0.1→0.3 / weight_decay 1e-4→1e-3 to address the earlier
-    full-width overfit, auto-launches via waiter once the multi-restart
-    exits — see `scratch/logs/12b_cpgpt_full_width_smoke_gpu0.log`).
+    `stage0-7h-nine-pack-m-only-wide-f0`); **6-restart re-run DONE** (`stage0-12b-cpgpt-nlight-smoke-f0-r0..5`, fold 0 only, report
+    dir `reports/inspection/stage0_12b_cpgpt_multirestart/`).
+  - **Full-width (374k-col) CpGPT smoke — DONE** (2026-09-28). First run at the
+    **~20k-gene product scale**: 374 309 columns / 440 903 edges / **19 554
+    genes**. Did not OOM (batch calibrated 222→55). Nested: tissue **0.388**,
+    age **11.671**, sex **0.962**. **Tissue matches the long-standing classical
+    tissue leader** (`C-mvalue-enet-G` 0.388) — first neural MBS arm to do so —
+    and sex is the best on record; but **age regresses hard** (8.10→11.67).
+    Confounded: val_loss rose 13.9→36.4, early-stopped epoch 9/16 with best
+    epoch **4**, so it barely trained, *and* nested enet at 19 554 features is
+    exactly the regime §3 of the 12b plan warns overfits. **First support for
+    the full-scale hypothesis, but not yet a result to build on** (n=1,
+    unmatched budget). Report:
+    [`../../reports/inspection/stage0_12b_gene_expansion_smoke/full_width_analysis.md`](../../reports/inspection/stage0_12b_gene_expansion_smoke/full_width_analysis.md)
   - **CpGPT in cascade (`cascade_loop.py`) — DONE** (2026-09-24/25, commits
     `efb8518`, `83d5909`, `f46f0ce`). Static dims append as trailing columns
     after the M-value (mirrors flat_region), threaded explicitly through
@@ -1173,19 +1185,24 @@ must keep spare VRAM.
   this call (consistent with existing age-primary framing elsewhere in this
   doc set) — the age win is the headline result, tissue is secondary, and
   CpGPT is the stated candidate main-architecture direction going forward.
-  Still needs the multi-restart re-run (in flight) before locking that in,
+  The multi-restart re-run is now **done** (confirms the call) before locking in,
   same discipline as the P2-G warm-start precedent.
 - **Cascade OOF:** product-scale = G1 panel (**native P2-G**; 10e rejected).
 - **Full-scale hypothesis (user, 2026-09-24):** the real payoff is expected at
-  **full scale — gene-agnostic, full gene set *plus non-coding CpGs*** — not at
-  the 65k prefix. Concrete architectural consequence: **cascade is the arm that
-  can express this and N-light is not.** N-light runs `gene_linked_only: true`
-  and *discards* every non-gene-linked CpG; cascade (P2-G) already carries the
-  `orphan_rbs` + direct-locus path (ADR 0004) that covers exactly those
-  non-coding sites. So "full scale" = cascade at full column width with CpGPT,
-  which is why cascade OOF (not another N-light run) is the product campaign.
-  **Not yet tested** — the full-width smokes to date are gene-linked-only and
-  N-light; no full-width cascade-with-orphans run exists.
+  **full scale — gene-agnostic, full gene set *plus non-coding CpGs***. Concrete
+  architectural consequence: **cascade is the arm that can express this and
+  N-light is not.** N-light runs `gene_linked_only: true` and *discards* every
+  non-gene-linked CpG; cascade (P2-G) carries the `orphan_rbs` + direct-locus
+  path (ADR 0004) covering exactly those sites. So "full scale" = cascade at full
+  column width with CpGPT — which is why cascade OOF, not another N-light run, is
+  the product campaign.
+  **First partial evidence (2026-09-28):** the full-width N-light smoke (19 554
+  genes) hit nested tissue **0.388** — matching the classical tissue leader, a
+  first for a neural MBS arm — and sex **0.962**, best on record. So more genes
+  does buy representation quality. But age regressed (8.10→11.67) on a run that
+  early-stopped at epoch 9/16, so this is directional only.
+  **The non-coding half is still untested** — every full-width run so far is
+  gene-linked-only and N-light; no full-width cascade-with-orphans run exists.
 
 - **Hard stop:** do not retarget the in-flight 65k 5×6 to 12b; do not treat
   dense `max_loci: null` as G1 acceptance.
