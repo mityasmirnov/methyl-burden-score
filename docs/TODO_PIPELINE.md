@@ -39,14 +39,19 @@ G2 N-light   CpGPT YES (age 8.10±0.14 vs 9.57; sex↑; tissue −0.021)
 
 ═══ 2. NEXT — GATE G1 gene-holdout (do this now) ═══════════════════════════
 Goal: train φ/ρ on one gene set, score a disjoint set, nested enet on heldout
-MBS. Plumbing landed; smokes / nested not yet run.
-Plan: plans/milestone-12b-gene-holdout.md
+MBS. Plumbing landed; smokes / nested in flight on GPU0
+(scripts/run_gpu0_queue_g1.sh). Plan: plans/milestone-12b-gene-holdout.md
 Keep GPU 0 saturated. Do not auto-start cascade 5×6.
 
-  2.1  Cascade gene-holdout (random)     stage0_12b_gene_holdout_cascade_smoke.yaml
-  2.2  N-light gene-holdout (random)     stage0_12b_gene_holdout_nlight_smoke.yaml
-  2.3  Nested enet both arms             scripts/eval_gene_holdout_nested.py
-  2.4  Chromosome arms IF random passes  *_chrom_smoke.yaml (cascade, then N-light)
+  Order = **N-light first, cascade after** (user lock; cheaper gate before the
+  product arm). Do not reorder to cascade-first without an explicit ask.
+
+  2.1  N-light gene-holdout (random)     stage0_12b_gene_holdout_nlight_smoke.yaml
+  2.2  Nested enet on N-light            scripts/eval_gene_holdout_nested.py
+  2.3  Cascade gene-holdout (random)     stage0_12b_gene_holdout_cascade_smoke.yaml
+  2.4  Nested enet on cascade            scripts/eval_gene_holdout_nested.py
+  2.5  Chromosome arms IF random passes  *_chrom_smoke.yaml (N-light, then cascade)
+       — not yet wired into run_gpu0_queue_g1.sh; add after nested results land.
 
 ═══ 3. AFTER G1 PASSES — lock product path ═════════════════════════════════
   3.1  Product defaults: max samples · CpGPT on · trait heads in training
