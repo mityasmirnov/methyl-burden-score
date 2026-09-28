@@ -35,7 +35,7 @@ Latest architecture-decision detail:
   n>200 encoder-aux bar; n>200 disease/cancer classes supervise Milestone 12
   encoder aux heads.
 - **Milestone 12 N-light** is NOW. **Cascade 5×6 is blocked on GATE G1–G4**
-  (12b gene util, CpGPT/positional, 12c platform, fair 10e + 10d). Default
+  (12b gene util, CpGPT DNA-sequence embeddings, 12c platform, fair 10e + 10d). Default
   cascade recipe stays **native P2-G** until fair 10e flips it. Extra Hub
   packs / 173k samples = freeze-reuse traits, not a bigger joint train.
 

@@ -13,25 +13,33 @@ uv run python scripts/write_data_population_inventory.py
 Narrative + HTTP trees: [`EWAS_DATA.md`](EWAS_DATA.md). Phenotype contracts:
 [`EWAS_METADATA.md`](EWAS_METADATA.md). Catalog layout: [`DATA_CATALOG.md`](DATA_CATALOG.md).
 
-## Snapshot (2026-09-09)
+## Snapshot (2026-09-28)
 
 | Layer | Count |
 |-------|------:|
-| Catalog samples | **173 076** |
-| Catalog studies | **1 763** |
-| Phenotype rows | **673 786** |
-| Catalogued assay files | **170 641** |
+| Catalog samples | **185 851** |
+| Catalog studies | **1 860** |
+| Catalogued assay files | **187 324** |
 | GEO metadata GSM (parquet) | **170 338** |
-| Trait eligibility rows | **47** (24 core-eligible) |
+| Census ∩ catalog overlap | **169 367** |
+| Census not in catalog | **11 267** (Hub-empty / partial / ID aliases — not local download debt) |
+| Empty EWAS_db dirs | **129** (remote also empty; prior refill lists fully applied) |
+| Null `study.platform_id` | **42** studies / **~9.8k** samples (**39** mixed-platform — correctly null) |
 
-### Platforms (samples via study.platform_id)
+### Platforms (studies)
 
-| Platform | Samples |
+| Platform | Studies |
 |----------|--------:|
-| HM450 | 105 639 |
-| EPIC | 55 901 |
-| (null) | 10 415 |
-| EPICv2 | 1 121 |
+| HM450 | 1 162 |
+| EPIC | 636 |
+| EPICv2 | 20 |
+| (null, mostly mixed) | 42 |
+
+Live gap report: `make residual-gaps` →
+`reports/inspection/deepmat_data_v1/residual_gaps.md`.
+Assay probe-count platform fill: `make residual-gaps-apply-platforms`
+(updates `catalog/tables/study.parquet`; DuckDB syncs on next
+`catalog-refresh-release`).
 
 ### Phenotypes (distinct GSM in `sample_phenotype`)
 
@@ -69,16 +77,13 @@ repository metadata, and Atlas study context.
 ### Assay mirror (`EWAS_db/`)
 
 - Remote index: **1 989** studies (all dirs present on disk).
-- Usable profiles: **~1 682** dirs with `GSM*.txt`, **~159.5k** GSM files,
-  **~1 728** dirs with any `*.txt` (rising; ~261 empty mid-refill).
-- Gap: recoverable plan = **162** GSE (~15.9k GSM; ~129 still empty mid-pass) +
-  **3** remaining empty non-GSM (HCMI-CMDC, TARGET-ALL-P3, TARGET-AML) —
-  `ewas_db_empty_refill_plan.json`. Parallel refill:
-  `EWAS_REFILL_JOBS` × `EWAS_REFILL_FILE_JOBS`.
-- `mirror_complete` stays false until recoverable empties are filled.
-- Commands: `make refill-ewas-db-empty` /
-  `LIST=configs/data/ewas_db_refill_nongsm.txt make refill-ewas-db-empty` →
-  then `MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release` and
+- Usable profiles: **1 860** dirs with `*.txt`, **187 324** sample files
+  (**173 166** `GSM*.txt`).
+- Empty dirs: **129** — Hub remote also has **0** `*.txt` (probed 2026-09-28);
+  cannot refill from the mirror.
+- Prior empty-dir refill lists (`ewas_db_refill_*.txt`) are **fully applied**.
+- Commands: `make residual-gaps` / `make residual-gaps-apply-platforms` /
+  `MBS_SKIP_ATLAS_SEED=1 make catalog-refresh-release` /
   `make data-population-inventory`.
 
 ### GEO labels (complete for catalog GSE)

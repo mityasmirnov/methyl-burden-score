@@ -77,10 +77,27 @@ Queue order is by expected model gain, **not** TODO numbering:
    an n=1 baseline. Verified protocol-matched to the CpGPT multirestart (configs
    differ only in the CpGPT keys; its `auto` batch calibrated to the same 256).
 
-**Not yet queued:** G1 all-genes comparator — still the only thing that can
-close G1, but it needs a gene-set decision first (all ~19.6k represented genes
-vs the M11 fold-selected panel), which is a call to make rather than a job to
-launch.
+**G1 reframed as gene-holdout (user direction, 2026-09-28).** The decisive G1
+test is *not* "all ~19.6k genes vs the M11 panel" as competing training sets —
+it is the **DeepRVAT property**: train the encoder on one gene set, score a
+**disjoint** gene set, and check the readout still works. That is what "truly
+gene-agnostic" means, and it is **unimplemented** (12b item 7).
+
+Design (agreed): partition the 19 554 genes into disjoint train/heldout sets →
+train `φ`/`ρ` on train-genes only → score MBS for heldout genes with that frozen
+encoder → fit the **nested elastic-net on heldout-gene MBS** (the readout is
+already post-hoc, so it accepts columns the encoder never saw) → compare heldout
+vs train-gene nested. Decisions: **random gene split**, and **N-light first,
+cascade after**.
+
+- **Known caveat of the random split** (chromosome-holdout was the alternative):
+  neighbouring / co-regulated genes can straddle the split, so heldout
+  performance may be inflated by locality leakage. If the random split passes,
+  a chromosome-held-out arm is the honest follow-up to bound that.
+- **Why this matters more now:** the CpGPT static block is a near-unique
+  per-CpG sequence fingerprint (see the G2 note below), which is exactly the
+  mechanism that could support per-locus memorisation. Gene-holdout is what
+  detects it.
 
 **NOW — Milestone 11 / GATE G1** (fold-selected gene panel / trait-universe
 gene-set choice). Two tracks: (1) legacy ATS CPU panels — **complete** at
@@ -96,10 +113,28 @@ runner scripts do not exist yet.
 
 | ID | Track | Question (short) | Status |
 |----|-------|------------------|-----------|
-| **G1** | **11** / **12b** gene utilization | Does DeepRVAT within-gene sampling + minibatch gather (or M11 fold-selected panel) train a usable gene MBS without dense 482k load? | **open** — ATS panels done; **all-genes comparator never run**, so no verdict is possible; trait-universe pipeline still unbuilt |
-| **G2** | Positional / CpGPT | Do CpGPT (or DNA-LM) static embeddings improve N-light and/or cascade vs matched baseline? | **YES for N-light** (6/6 restarts, nested: age MAE 9.57→**8.10 ± 0.19**, sex 0.814→**0.879 ± 0.015**, tissue 0.376→**0.355 ± 0.010** = small but *real* regression). Age-primary ⇒ net win; gap is 2.7× the full run-to-run spread. **Same seed does not reproduce** (no determinism settings in the repo), so single-seed diffs under ~0.5 MAE are not credible. Baseline still n=1 (matched 6-restart baseline recommended). **Cascade untested** — plumbing landed, smoke not run |
+| **G1** | **11** / **12b** gene utilization + **gene-holdout** | (a) Does within-gene sampling + minibatch gather train a usable gene MBS without a dense 482k load? (b) **DeepRVAT-style: train on one gene set, test on a disjoint one — is the encoder truly gene-agnostic?** | **open** — ATS panels done; **gene-holdout never run** (unimplemented, 12b item 7) and it is now the decisive G1 test; trait-universe pipeline still unbuilt |
+| **G2** | DNA-sequence embeddings (CpGPT adapter) | Do CpGPT (or DNA-LM) static embeddings improve N-light and/or cascade vs matched baseline? | **YES for N-light** (6/6 restarts, nested: age MAE 9.57→**8.10 ± 0.19**, sex 0.814→**0.879 ± 0.015**, tissue 0.376→**0.355 ± 0.010** = small but *real* regression). Age-primary ⇒ net win; gap is 2.7× the full run-to-run spread. **Same seed does not reproduce** (no determinism settings in the repo), so single-seed diffs under ~0.5 MAE are not credible. Baseline still n=1 (matched 6-restart baseline recommended). **Cascade untested** — plumbing landed, smoke not run |
 | **G3** | **12c** platform robustness | Does HM450 CpG/platform-mask dropout preserve MBS; path to EPIC membership? | **not started** |
 | **G4** | **10e** + **10d** | Does fair S1→S2→S3→S4 beat native P2-G? What checkpoint contract do we ship? | **10e done (FAIL)**; 10d MBS-side unblocked (N-light OOF done), full package still waits on cascade OOF |
+
+**What "CpGPT" means here (clarified 2026-09-28 — the old "positional" label was
+wrong).** `cpgpt2m_adapter_128_v1` is **per-CpG DNA-*sequence* embeddings**, not
+positional encodings. Per `artifact.json`: `nucleotide-transformer-v2-500m-multi-species`
+(a DNA-LM) encodes the **2001 bp** GRCh38 reference window centred on each
+cytosine → 1024-dim → CpGPT's `SequenceAdapterMLP` compresses to **128** dims;
+1 076 246 loci. They are *looked up* by coordinate but encode local sequence
+**content** (motifs, CpG-island character), and are **identical across samples**.
+
+Two consequences:
+- **Cross-platform for free:** any platform's own coordinates → sequence →
+  embedding, with no HM450↔EPIC probe crosswalk (ADR 0011 permits
+  "scalar (+ optional static)").
+- **Near-unique per-CpG fingerprint:** a 128-dim sequence vector is close to
+  handing the model locus identity, so the encoder is no longer blind to *which*
+  CpG it sees. That is the mechanism that could enable per-locus memorisation,
+  which is why **gene-holdout (G1) is the necessary companion test**.
+
 
 Waive a GATE item only with an explicit **Verdict** written here (not by
 silently launching cascade). A 65k-matched cascade “for architecture
@@ -1020,7 +1055,7 @@ Not required for milestones 2–7. See [`CPGCORPUS_STAGE0.md`](CPGCORPUS_STAGE0.
 
 Sex-chromosome-based sex imputation for the small `sex` pack; epigenetic-
 clock-based (Horvath/CpGPT/MethylGPT) age imputation for age-unlabeled
-samples. **Positional / CpGPT encoder enrichment is GATE G2**, not deferred
+samples. **CpGPT DNA-sequence-embedding encoder enrichment is GATE G2**, not deferred
 past cascade.
 
 **Hard stop:** do not auto-launch **cascade** 5×6 before GATE G1–G3 (+ 10d).

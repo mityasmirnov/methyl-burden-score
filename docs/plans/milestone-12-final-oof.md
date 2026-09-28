@@ -29,7 +29,8 @@ readout; age/sex hold or beat the 3-fold ref, tissue is a soft miss driven
 by fold variance (fold 4 weakest, no collapse). 65k **validation** only.
 
 **Cascade arm:** **blocked on post–N-light GATE G1–G4** (gene utilization,
-positional/CpGPT, platform robustness, fair 10e + 10d). Default topology
+DNA-sequence embeddings (CpGPT adapter), platform robustness, fair 10e +
+10d). Default topology
 **native P2-G** unless fair **10e** flips it. No auto 65k-matched cascade
 queue. Does **not** wait on Milestone 11 for *N-light*; **11 is in scope for
 G1** before product cascade.
@@ -125,7 +126,7 @@ reported readout, not what picked the checkpoint. See the NOTE comments in
 both `stage0_12_nlight_oof.yaml` and `stage0_12_cascade_oof.yaml`.
 
 **12b / GATE:** product recipe (within-gene CpG sampler + minibatch gather) is
-**G1** and correctly sequenced *after* this 5×6. **G2** (CpGPT/positional),
+**G1** and correctly sequenced *after* this 5×6. **G2** (CpGPT DNA-sequence embeddings),
 **G3** ([`milestone-12c-platform-robustness.md`](milestone-12c-platform-robustness.md)),
 and **G4** (fair 10e + 10d) also block cascade. **Probes started** on GPU 0
 (dense full-width N-light; CpGPT 65k ablation) — do not treat those as recipe

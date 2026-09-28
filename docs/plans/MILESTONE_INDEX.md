@@ -37,7 +37,7 @@ are **historical aliases** — do not rename on-disk run trees.
 | **13** | deferred | Expression aux (continue/finetune **after** OOF; download first) | **7G″** |
 | **14** | deferred | Optional Stage 1+ layers (a–f only) | historical **§8 Optional** |
 
-**G2** (positional / CpGPT probe) lives under 12b probe host + TODO gate table;
+**G2** (CpGPT DNA-sequence-embedding probe) lives under 12b probe host + TODO gate table;
 no separate milestone number.
 
 ## Plan file aliases
