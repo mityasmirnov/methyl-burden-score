@@ -7,6 +7,8 @@ encoder never saw during training.
 Methods:
 - ``random`` — per-gene shuffle (locality leakage possible across the boundary).
 - ``chromosome`` — hold out whole chromosomes (bounds neighbour leakage).
+- ``seed`` — DeepRVAT-aligned: train on fold seed-gene union (CpG-first
+  best-association → gene), score the complement. Not 9c head masks.
 """
 
 from __future__ import annotations
@@ -23,7 +25,8 @@ import pandas as pd
 from mbs.training.cascade_assign import ORPHAN_GENE_INDEX, CascadeAssignment
 from mbs.training.flat_region_features import GENE_ROLES, FlatRegionGeneIndex
 
-GeneHoldoutMethod = Literal["random", "chromosome"]
+GeneHoldoutMethod = Literal["random", "chromosome", "seed"]
+TraitTask = Literal["age", "tissue", "sex"]
 
 _RANDOM_CAVEAT = (
     "random split: neighbouring/co-regulated genes may straddle the "
@@ -33,6 +36,11 @@ _CHROM_CAVEAT = (
     "chromosome holdout: entire chromosomes are held out so neighbouring "
     "genes cannot straddle the train/heldout boundary. Sex chromosomes may "
     "be included unless excluded via config."
+)
+_SEED_CAVEAT = (
+    "seed holdout (DeepRVAT-aligned): phi/rho train on phenotype-informed seed "
+    "genes (CpG-first best association -> gene; multi-trait union); score the "
+    "complement. Discovery uses outer-train labels only. Not a head mask."
 )
 
 
@@ -47,6 +55,7 @@ class GeneHoldoutPartition:
     heldout_gene_ids: list[str]
     heldout_chromosomes: list[str] = field(default_factory=list)
     train_chromosomes: list[str] = field(default_factory=list)
+    discovery: dict[str, Any] = field(default_factory=dict)
 
     @property
     def n_train(self) -> int:
@@ -62,7 +71,11 @@ class GeneHoldoutPartition:
         return float(self.n_heldout) / float(n) if n else 0.0
 
     def caveat(self) -> str:
-        return _CHROM_CAVEAT if self.method == "chromosome" else _RANDOM_CAVEAT
+        if self.method == "chromosome":
+            return _CHROM_CAVEAT
+        if self.method == "seed":
+            return _SEED_CAVEAT
+        return _RANDOM_CAVEAT
 
     def to_dict(self) -> dict[str, Any]:
         out = asdict(self)
@@ -70,6 +83,178 @@ class GeneHoldoutPartition:
         out["caveat"] = self.caveat()
         return out
 
+
+def cpg_association_strength(
+    x: np.ndarray,
+    y: np.ndarray,
+    *,
+    task: TraitTask,
+) -> np.ndarray:
+    """Per-column association strength (higher = stronger). Outer-train only.
+
+    Age: absolute Pearson-like correlation. Tissue/sex: max absolute class-mean
+    difference. Same spirit as ``fold_safe_panel._univariate_prefilter`` scores,
+    but returns the full column vector for CpG→gene aggregation.
+    """
+    x64 = np.asarray(x, dtype=np.float64)
+    if x64.ndim != 2:
+        raise ValueError(f"x must be 2-D; got shape {x64.shape}")
+    n_cols = int(x64.shape[1])
+    if x64.shape[0] < 2:
+        return np.zeros(n_cols, dtype=np.float64)
+    col_mean = np.nanmean(x64, axis=0)
+    filled = np.where(np.isfinite(x64), x64, col_mean)
+    if task == "age":
+        y64 = np.asarray(y, dtype=np.float64)
+        y_c = y64 - float(np.mean(y64))
+        x_c = filled - filled.mean(axis=0, keepdims=True)
+        denom = np.sqrt((x_c * x_c).sum(axis=0) * float((y_c * y_c).sum())) + 1e-12
+        return np.abs((x_c * y_c[:, None]).sum(axis=0) / denom)
+    y_i = np.asarray(y).astype(np.int64, copy=False)
+    classes = np.unique(y_i)
+    score = np.zeros(n_cols, dtype=np.float64)
+    for c in classes:
+        mask_c = y_i == c
+        if not mask_c.any() or bool(mask_c.all()):
+            continue
+        diff = filled[mask_c].mean(axis=0) - filled[~mask_c].mean(axis=0)
+        score = np.maximum(score, np.abs(diff))
+    return score
+
+
+def discover_seed_genes_best_cpg(
+    gene_ids: Sequence[str],
+    *,
+    edge_col_index: np.ndarray,
+    edge_gene_index: np.ndarray,
+    x_train: np.ndarray,
+    trait_labels: Mapping[str, tuple[np.ndarray, np.ndarray]],
+    n_genes_per_trait: int = 256,
+    extra_seed_gene_ids: Sequence[str] | None = None,
+) -> tuple[list[str], dict[str, Any]]:
+    """CpG-first seed discovery: best linked-CpG association → gene; union traits.
+
+    For each trait, score every CpG on labeled outer-train rows, assign each gene
+    the **max** linked CpG strength (strongest association / lowest-p analogue),
+    keep the top ``n_genes_per_trait``, then union across traits. Optional
+    ``extra_seed_gene_ids`` (e.g. Atlas ``external_clean``) are merged in.
+    """
+    ids = [str(g) for g in gene_ids]
+    if not ids:
+        raise ValueError("gene_ids is empty")
+    n_genes = len(ids)
+    cols = np.asarray(edge_col_index, dtype=np.int64)
+    genes = np.asarray(edge_gene_index, dtype=np.int64)
+    if cols.size == 0 or genes.size == 0:
+        raise ValueError("no edges for seed discovery")
+    if cols.shape != genes.shape:
+        raise ValueError("edge_col_index and edge_gene_index shape mismatch")
+    x = np.asarray(x_train)
+    if x.ndim != 2:
+        raise ValueError(f"x_train must be 2-D; got {x.shape}")
+    n_cols = int(x.shape[1])
+    if int(cols.max()) >= n_cols:
+        raise ValueError(
+            f"edge col {int(cols.max())} out of range for x_train ncols={n_cols}"
+        )
+    if int(genes.max()) >= n_genes or int(genes.min()) < 0:
+        raise ValueError("edge_gene_index out of range for gene_ids")
+
+    per_trait: dict[str, Any] = {}
+    union: set[str] = set()
+    for trait, (y_raw, mask_raw) in trait_labels.items():
+        task = str(trait).lower().strip()
+        if task not in {"age", "tissue", "sex"}:
+            raise ValueError(
+                f"unsupported seed trait {trait!r}; expected age/tissue/sex"
+            )
+        mask = np.asarray(mask_raw, dtype=bool)
+        if mask.shape[0] != x.shape[0]:
+            raise ValueError(
+                f"trait {trait!r} mask length {mask.shape[0]} != n_train {x.shape[0]}"
+            )
+        if int(mask.sum()) < 4:
+            per_trait[task] = {"n_labeled": int(mask.sum()), "skipped": True}
+            continue
+        y = np.asarray(y_raw)[mask]
+        col_scores = cpg_association_strength(x[mask], y, task=task)  # type: ignore[arg-type]
+        gene_best = np.full(n_genes, -np.inf, dtype=np.float64)
+        np.maximum.at(gene_best, genes, col_scores[cols])
+        finite = np.isfinite(gene_best)
+        if not finite.any():
+            per_trait[task] = {"n_labeled": int(mask.sum()), "n_seed_genes": 0}
+            continue
+        order = np.argsort(-gene_best, kind="stable")
+        k = max(1, int(n_genes_per_trait))
+        picked: list[str] = []
+        strengths: list[float] = []
+        for ix in order.tolist():
+            if not finite[ix]:
+                continue
+            picked.append(ids[int(ix)])
+            strengths.append(float(gene_best[int(ix)]))
+            if len(picked) >= k:
+                break
+        union.update(picked)
+        per_trait[task] = {
+            "n_labeled": int(mask.sum()),
+            "n_seed_genes": len(picked),
+            "top_gene_ids": picked[:16],
+            "top_strength": strengths[:8],
+        }
+
+    if extra_seed_gene_ids:
+        panel = set(ids)
+        extra = [str(g) for g in extra_seed_gene_ids if str(g) in panel]
+        union.update(extra)
+        n_extra = len(extra)
+    else:
+        n_extra = 0
+
+    if not union:
+        raise RuntimeError("seed discovery produced an empty gene union")
+    # Stable order: panel order for reproducibility.
+    seed_list = [g for g in ids if g in union]
+    meta: dict[str, Any] = {
+        "discovery": "best_cpg_p",
+        "n_genes_per_trait": int(n_genes_per_trait),
+        "traits": per_trait,
+        "n_seed_genes": len(seed_list),
+        "n_extra_seed_genes": n_extra,
+    }
+    return seed_list, meta
+
+
+def partition_genes_by_seed(
+    gene_ids: Sequence[str],
+    seed_gene_ids: Sequence[str],
+    *,
+    seed: int = 42,
+    discovery: Mapping[str, Any] | None = None,
+) -> GeneHoldoutPartition:
+    """Train = seed ∩ panel; heldout = panel \\ seed (DeepRVAT-aligned)."""
+    ids = [str(g) for g in gene_ids]
+    if len(ids) != len(set(ids)):
+        raise ValueError("gene_ids must be unique")
+    if len(ids) < 2:
+        raise ValueError("need at least 2 genes to partition")
+    seed_set = {str(g) for g in seed_gene_ids}
+    train = [g for g in ids if g in seed_set]
+    heldout = [g for g in ids if g not in seed_set]
+    if not train:
+        raise RuntimeError("seed partition: no seed genes overlap the panel")
+    if not heldout:
+        raise RuntimeError(
+            "seed partition: seed union covers the whole panel; nothing to score"
+        )
+    return GeneHoldoutPartition(
+        method="seed",
+        seed=int(seed),
+        heldout_fraction=float(len(heldout)) / float(len(ids)),
+        train_gene_ids=train,
+        heldout_gene_ids=heldout,
+        discovery=dict(discovery or {}),
+    )
 
 def gene_chromosome_map(genes: pd.DataFrame) -> dict[str, str]:
     """``gene_id → chromosome`` from a genes.parquet-like table."""
@@ -212,8 +397,10 @@ def resolve_gene_holdout_partition(
     gene_chromosome: Mapping[str, str] | None = None,
     heldout_chromosomes: Sequence[str] | None = None,
     exclude_chromosomes: Sequence[str] | None = None,
+    seed_gene_ids: Sequence[str] | None = None,
+    discovery: Mapping[str, Any] | None = None,
 ) -> GeneHoldoutPartition:
-    """Dispatch ``random`` / ``chromosome`` from config-like kwargs."""
+    """Dispatch ``random`` / ``chromosome`` / ``seed`` from config-like kwargs."""
     m = str(method).lower().strip()
     if m == "random":
         return partition_genes_random(
@@ -230,8 +417,21 @@ def resolve_gene_holdout_partition(
             heldout_chromosomes=heldout_chromosomes,
             exclude_chromosomes=exclude_chromosomes,
         )
+    if m == "seed":
+        if seed_gene_ids is None:
+            raise ValueError(
+                "seed gene-holdout requires seed_gene_ids "
+                "(run discover_seed_genes_best_cpg on outer-train first)"
+            )
+        return partition_genes_by_seed(
+            gene_ids,
+            seed_gene_ids,
+            seed=seed,
+            discovery=discovery,
+        )
     raise ValueError(
-        f"unsupported gene_holdout.method={method!r} (expected 'random' or 'chromosome')"
+        "unsupported gene_holdout.method="
+        f"{method!r} (expected 'random', 'chromosome', or 'seed')"
     )
 
 

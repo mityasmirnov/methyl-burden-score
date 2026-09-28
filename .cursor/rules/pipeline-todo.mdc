@@ -41,7 +41,8 @@ Keep Cursor session todos in sync (complete / cancel / start next).
 NOW GPU      queue    G1 cascade holdout random → N-light random → nested →
                       chrom if pass; then full-width / baseline as capacity
 NOW science  ← TODAY  G1 gene-holdout (12b); product defaults after arch lock:
-                      max samples + CpGPT sequence embeddings + trait heads
+                      max samples + CpGPT + trait heads + multi-trait seed bank
+                      (method:seed; no 9c masks); ensemble deferred
 BLOCKED               12 cascade 5×6; G3/12c platform; 10d reference ckpt
 13–14        deferred expression aux; optional Stage 1+ (a–f)
 ```
@@ -63,5 +64,7 @@ Before residual Milestone **10** / GPU-queue work, read the campaign log
 [`docs/plans/milestone-7h-pretrained-mbs-rbs-campaign.md`](docs/plans/milestone-7h-pretrained-mbs-rbs-campaign.md)
 and stub [`docs/plans/milestone-10-pretrained-mbs-rbs.md`](docs/plans/milestone-10-pretrained-mbs-rbs.md).
 Before gene-holdout / 12b, read
-[`docs/plans/milestone-12b-full-gene-panel.md`](docs/plans/milestone-12b-full-gene-panel.md)
-and [`docs/plans/milestone-12b-gene-holdout.md`](docs/plans/milestone-12b-gene-holdout.md).
+[`docs/plans/milestone-12b-full-gene-panel.md`](docs/plans/milestone-12b-full-gene-panel.md),
+[`docs/plans/milestone-12b-gene-holdout.md`](docs/plans/milestone-12b-gene-holdout.md),
+and the product seed recipe
+[`docs/plans/milestone-12b-deeprvat-seed-recipe.md`](docs/plans/milestone-12b-deeprvat-seed-recipe.md).

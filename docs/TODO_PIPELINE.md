@@ -90,6 +90,9 @@ is locked (after G1 gene-holdout + topology):**
 | **Samples** | Use the **maximum possible** eligible samples (full nine-pack / full Hub phenotype table for the split; no `max_train_samples` caps on product runs). Gene-holdout plumbing smokes may stay short-epoch; product / OOF campaigns do not. |
 | **Static features** | Carry **CpGPT sequence embeddings** (`cpgpt2m_adapter_128_v1`) as the default static block (G2 YES for N-light; cascade plumbing + smoke done). Not positional encodings — see clarification below. |
 | **Traits** | Once architecture is locked, train with **trait heads in the loop** (age / tissue / sex + disease/cancer aux where `n>200` / eligibility allows), not methylation-screen-only forever. |
+| **Seed bank (product)** | After arch lock: discover seeds **per eligible trait** (CpG-first best association → gene), **union** for encoder training, trait-specific nested readouts post-hoc. DeepRVAT-aligned — **not** 9c head masks. Recipe: [`plans/milestone-12b-deeprvat-seed-recipe.md`](plans/milestone-12b-deeprvat-seed-recipe.md). |
+| **Hybrid prior** | Optional Atlas `external_clean` ∪ fold seeds (`extra_seed_gene_ids`), remap via `explicit_only` only. |
+| **Ensemble** | Deferred until the experiment campaign finishes. |
 
 Queue order is by expected model gain, **not** TODO numbering:
 
@@ -102,7 +105,9 @@ Queue order is by expected model gain, **not** TODO numbering:
 4. **Chromosome arms if random passes** —
    `stage0_12b_gene_holdout_cascade_chrom_smoke.yaml` then
    `stage0_12b_gene_holdout_nlight_chrom_smoke.yaml`.
-5. **Full-width converge** / **matched CpGPT-off baseline ×6** as capacity
+5. **After arch lock — multi-trait seed bank** —
+   `stage0_12b_gene_holdout_{cascade,nlight}_seed_smoke.yaml` then product K.
+6. **Full-width converge** / **matched CpGPT-off baseline ×6** as capacity
    allows (after G1 smoke evidence is in).
 
 Cascade CpGPT plumbing smoke is **DONE**
@@ -145,7 +150,7 @@ gene-holdout as the decisive G1 test.
 
 | ID | Track | Question (short) | Status |
 |----|-------|------------------|-----------|
-| **G1** | **11** / **12b** gene utilization + **gene-holdout** | (a) Does within-gene sampling + minibatch gather train a usable gene MBS without a dense 482k load? (b) **DeepRVAT-style: train on one gene set, test on a disjoint one — is the encoder truly gene-agnostic?** | **open** — ATS panels done; **gene-holdout plumbing landed** (N-light + cascade; `random` + `chromosome`; plan [`plans/milestone-12b-gene-holdout.md`](plans/milestone-12b-gene-holdout.md)); **smokes / nested not yet run** — that remains the decisive G1 test; trait-universe pipeline still unbuilt |
+| **G1** | **11** / **12b** gene utilization + **gene-holdout** | (a) Does within-gene sampling + minibatch gather train a usable gene MBS without a dense 482k load? (b) **DeepRVAT-style: train on one gene set, test on a disjoint one — is the encoder truly gene-agnostic?** Product train set after arch lock = multi-trait seed union (`method: seed`), not 9c masks. | **open** — ATS panels done; **gene-holdout plumbing landed** (N-light + cascade; `random` + `chromosome` + `seed`; plans [`plans/milestone-12b-gene-holdout.md`](plans/milestone-12b-gene-holdout.md), [`plans/milestone-12b-deeprvat-seed-recipe.md`](plans/milestone-12b-deeprvat-seed-recipe.md)); **smokes / nested not yet run** — that remains the decisive G1 test; trait-universe pipeline still unbuilt |
 | **G2** | DNA-sequence embeddings (CpGPT adapter) | Do CpGPT (or DNA-LM) static embeddings improve N-light and/or cascade vs matched baseline? | **YES for N-light** (6/6 restarts, nested: age MAE 9.57→**8.10 ± 0.19**, sex 0.814→**0.879 ± 0.015**, tissue 0.376→**0.355 ± 0.010** = small but *real* regression). Age-primary ⇒ net win. **Product default: carry CpGPT sequence embeddings** (`cpgpt2m_adapter_128_v1`) once architecture is locked. **Cascade plumbing + 6-ep smoke DONE** (`stage0-12-cascade-cpgpt-smoke-f0-r0`); matched cascade baseline still pending as capacity allows |
 | **G3** | **12c** platform robustness | Does HM450 CpG/platform-mask dropout preserve MBS; path to EPIC membership? | **not started** |
 | **G4** | **10e** + **10d** | Does fair S1→S2→S3→S4 beat native P2-G? What checkpoint contract do we ship? | **10e done (FAIL)**; 10d MBS-side unblocked (N-light OOF done), full package still waits on cascade OOF |
@@ -1250,13 +1255,16 @@ must keep spare VRAM.
     block. e2e tissue **0.280** / age **17.1** / sex **0.888** — plumbing
     only (6 epochs vs 30-epoch recipe; config headered “not a benchmark”).
   - **Gene-holdout (decisive G1) — plumbing DONE for N-light + cascade,
-    random + chromosome** (2026-09-28). Plan:
-    [`plans/milestone-12b-gene-holdout.md`](plans/milestone-12b-gene-holdout.md).
+    random + chromosome + seed** (2026-09-28). Plans:
+    [`plans/milestone-12b-gene-holdout.md`](plans/milestone-12b-gene-holdout.md),
+    [`plans/milestone-12b-deeprvat-seed-recipe.md`](plans/milestone-12b-deeprvat-seed-recipe.md).
     `training.gene_holdout` partitions genes, trains φ/ρ on the train set,
     scores heldout MBS with the frozen encoder
-    (`scores/mbs_heldout.npy` + `gene_holdout.json`). Post-hoc nested:
+    (`scores/mbs_heldout.npy` + `gene_holdout.json`). `method: seed` =
+    DeepRVAT-aligned (CpG-first best association → gene; multi-trait union;
+    score complement; **not** 9c masks). Post-hoc nested:
     `scripts/eval_gene_holdout_nested.py`. Smoke configs:
-    `stage0_12b_gene_holdout_{nlight,nlight_chrom,cascade,cascade_chrom}_smoke.yaml`
+    `stage0_12b_gene_holdout_{nlight,nlight_chrom,nlight_seed,cascade,cascade_chrom,cascade_seed}_smoke.yaml`
     (6 ep). **Smokes / nested not yet run.**
   - **CpGPT 6-restart confirmation — DONE** (6/6, fold 0). Nested: tissue
     **0.355 ± 0.010**, age **8.096 ± 0.140**, sex **0.879 ± 0.015**. Key

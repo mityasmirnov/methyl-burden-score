@@ -84,6 +84,7 @@ from mbs.training.flat_region_features import (
 )
 from mbs.training.gene_holdout import (
     GeneHoldoutPartition,
+    discover_seed_genes_best_cpg,
     gene_chromosome_map,
     resolve_gene_holdout_partition,
     subset_flat_region_gene_index,
@@ -1278,6 +1279,7 @@ def train_flat_baseline(
         flat_region_index: FlatRegionGeneIndex | None = None
         full_flat_region_index: FlatRegionGeneIndex | None = None
         gene_holdout_partition: GeneHoldoutPartition | None = None
+        gene_holdout_seed_deferred = False
         locus_gene = build_locus_gene_index(
             locus_index=locus_index,
             locus_region_edges=lr_edges,
@@ -1369,40 +1371,48 @@ def train_flat_baseline(
                 gh_seed = int(
                     gh_cfg.get("seed", config.get("experiment", {}).get("seed", 42))
                 )
-                chrom_map = None
-                if method == "chromosome":
-                    if genes_df is None or genes_df.empty:
-                        raise ValueError(
-                            "chromosome gene-holdout requires genes.parquet on the graph"
-                        )
-                    chrom_map = gene_chromosome_map(genes_df)
-                gene_holdout_partition = resolve_gene_holdout_partition(
-                    flat_region_index.gene_ids,
-                    method=method,
-                    heldout_fraction=frac,
-                    seed=gh_seed,
-                    gene_chromosome=chrom_map,
-                    heldout_chromosomes=gh_cfg.get("heldout_chromosomes"),
-                    exclude_chromosomes=gh_cfg.get("exclude_chromosomes"),
-                )
-                flat_region_index = subset_flat_region_gene_index(
-                    flat_region_index,
-                    gene_holdout_partition.train_gene_ids,
-                )
-                chrom_note = ""
-                if gene_holdout_partition.heldout_chromosomes:
-                    chrom_note = (
-                        f" heldout_chroms={gene_holdout_partition.heldout_chromosomes}"
+                if method == "seed":
+                    gene_holdout_seed_deferred = True
+                    print(  # noqa: T201
+                        "[gene_holdout] method=seed deferred until train betas "
+                        "(best_cpg_p → gene union; score complement)",
+                        flush=True,
                     )
-                print(  # noqa: T201
-                    f"[gene_holdout] method={gene_holdout_partition.method} "
-                    f"seed={gh_seed} heldout_fraction={frac} "
-                    f"actual={gene_holdout_partition.actual_heldout_fraction:.3f} "
-                    f"train_genes={gene_holdout_partition.n_train} "
-                    f"heldout_genes={gene_holdout_partition.n_heldout} "
-                    f"train_edges={flat_region_index.n_edges}{chrom_note}",
-                    flush=True,
-                )
+                else:
+                    chrom_map = None
+                    if method == "chromosome":
+                        if genes_df is None or genes_df.empty:
+                            raise ValueError(
+                                "chromosome gene-holdout requires genes.parquet on the graph"
+                            )
+                        chrom_map = gene_chromosome_map(genes_df)
+                    gene_holdout_partition = resolve_gene_holdout_partition(
+                        flat_region_index.gene_ids,
+                        method=method,
+                        heldout_fraction=frac,
+                        seed=gh_seed,
+                        gene_chromosome=chrom_map,
+                        heldout_chromosomes=gh_cfg.get("heldout_chromosomes"),
+                        exclude_chromosomes=gh_cfg.get("exclude_chromosomes"),
+                    )
+                    flat_region_index = subset_flat_region_gene_index(
+                        flat_region_index,
+                        gene_holdout_partition.train_gene_ids,
+                    )
+                    chrom_note = ""
+                    if gene_holdout_partition.heldout_chromosomes:
+                        chrom_note = (
+                            f" heldout_chroms={gene_holdout_partition.heldout_chromosomes}"
+                        )
+                    print(  # noqa: T201
+                        f"[gene_holdout] method={gene_holdout_partition.method} "
+                        f"seed={gh_seed} heldout_fraction={frac} "
+                        f"actual={gene_holdout_partition.actual_heldout_fraction:.3f} "
+                        f"train_genes={gene_holdout_partition.n_train} "
+                        f"heldout_genes={gene_holdout_partition.n_heldout} "
+                        f"train_edges={flat_region_index.n_edges}{chrom_note}",
+                        flush=True,
+                    )
             flat_region_audit = assert_flat_region_index(flat_region_index)
             gene_ids = flat_region_index.gene_ids
             n_genes = flat_region_index.n_genes
@@ -1467,7 +1477,7 @@ def train_flat_baseline(
         flat_reg_permute_seed: int | None = model_cfg.get("reg_permute_seed", None)
         if flat_reg_permute_seed is not None:
             flat_reg_permute_seed = int(flat_reg_permute_seed)
-        if flat_region_index is not None:
+        if flat_region_index is not None and not gene_holdout_seed_deferred:
             edge_static_block = (
                 static_by_col[flat_region_index.edge_col_index] if static_dim > 0 else None
             )
@@ -1475,6 +1485,88 @@ def train_flat_baseline(
                 flat_region_index,
                 feature_mode=flat_feature_mode,  # type: ignore[arg-type]
                 static_block=edge_static_block,
+            )
+            print(  # noqa: T201
+                f"[flat] cached annotation base_features shape={flat_base.shape} "
+                f"static_dim={static_dim} feature_set={feature_set!r}",
+                flush=True,
+            )
+        # DeepRVAT-aligned seed holdout: discover on outer-train betas, then subset.
+        if (
+            gene_holdout_seed_deferred
+            and full_flat_region_index is not None
+            and train_phenotypes
+        ):
+            gh_cfg = train_cfg.get("gene_holdout") or {}
+            traits_cfg = gh_cfg.get("traits") or ["age", "tissue", "sex"]
+            trait_names = [str(t).lower() for t in traits_cfg]
+            n_per = int(gh_cfg.get("n_genes_per_trait", 256))
+            train_rows = np.asarray(
+                [sample_row_by_id[str(p.sample_id)] for p in train_phenotypes],
+                dtype=np.int64,
+            )
+            x_tr = betas_ram[train_rows]
+            ages_tr = np.asarray(
+                [float(p.age or 0.0) for p in train_phenotypes], dtype=np.float64
+            )
+            tissue_tr = np.asarray(
+                [int(p.class_index) for p in train_phenotypes], dtype=np.int64
+            )
+            sex_tr = np.asarray(
+                [int(p.sex_class_index or 0) for p in train_phenotypes], dtype=np.int64
+            )
+            age_m = np.asarray([bool(p.age_mask) for p in train_phenotypes], dtype=bool)
+            tissue_m = np.asarray(
+                [bool(p.tissue_mask) for p in train_phenotypes], dtype=bool
+            )
+            sex_m = np.asarray([bool(p.sex_mask) for p in train_phenotypes], dtype=bool)
+            trait_labels: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+            if "age" in trait_names:
+                trait_labels["age"] = (ages_tr, age_m)
+            if "tissue" in trait_names:
+                trait_labels["tissue"] = (tissue_tr, tissue_m)
+            if "sex" in trait_names:
+                trait_labels["sex"] = (sex_tr, sex_m)
+            seed_ids, disc_meta = discover_seed_genes_best_cpg(
+                full_flat_region_index.gene_ids,
+                edge_col_index=full_flat_region_index.edge_col_index,
+                edge_gene_index=full_flat_region_index.edge_gene_index,
+                x_train=x_tr,
+                trait_labels=trait_labels,
+                n_genes_per_trait=n_per,
+                extra_seed_gene_ids=gh_cfg.get("extra_seed_gene_ids"),
+            )
+            gh_seed = int(
+                gh_cfg.get("seed", config.get("experiment", {}).get("seed", 42))
+            )
+            gene_holdout_partition = resolve_gene_holdout_partition(
+                full_flat_region_index.gene_ids,
+                method="seed",
+                seed=gh_seed,
+                seed_gene_ids=seed_ids,
+                discovery=disc_meta,
+            )
+            flat_region_index = subset_flat_region_gene_index(
+                full_flat_region_index,
+                gene_holdout_partition.train_gene_ids,
+            )
+            edge_static_block = (
+                static_by_col[flat_region_index.edge_col_index] if static_dim > 0 else None
+            )
+            flat_base = build_flat_region_base_features(
+                flat_region_index,
+                feature_mode=flat_feature_mode,  # type: ignore[arg-type]
+                static_block=edge_static_block,
+            )
+            gene_ids = flat_region_index.gene_ids
+            n_genes = flat_region_index.n_genes
+            print(  # noqa: T201
+                f"[gene_holdout] method=seed seed={gh_seed} "
+                f"train_genes={gene_holdout_partition.n_train} "
+                f"heldout_genes={gene_holdout_partition.n_heldout} "
+                f"n_genes_per_trait={n_per} traits={trait_names} "
+                f"train_edges={flat_region_index.n_edges}",
+                flush=True,
             )
             print(  # noqa: T201
                 f"[flat] cached annotation base_features shape={flat_base.shape} "
@@ -2461,6 +2553,7 @@ def train_flat_baseline(
                 "n_train_genes": gene_holdout_partition.n_train,
                 "n_heldout_genes": gene_holdout_partition.n_heldout,
                 "heldout_chromosomes": list(gene_holdout_partition.heldout_chromosomes),
+                "discovery": dict(gene_holdout_partition.discovery),
                 "n_train_genes_scored": len(gene_ids),
                 "n_heldout_genes_scored": heldout_index.n_genes,
                 "artifact": str(gh_path),

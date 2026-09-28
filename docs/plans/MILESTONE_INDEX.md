@@ -55,7 +55,8 @@ no separate milestone number. **YES for N-light**; cascade smoke still in GPU qu
 | [`milestone-11-fold-selected-panel.md`](milestone-11-fold-selected-panel.md) | Stage B; G1 gene-set option |
 | [`milestone-12-final-oof.md`](milestone-12-final-oof.md) | ADR 0007 + programme § final OOF |
 | [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md) | GATE G1 gene utilization |
-| [`milestone-12b-gene-holdout.md`](milestone-12b-gene-holdout.md) | G1 gene-holdout plumbing (random + chrom; N-light + cascade) |
+| [`milestone-12b-gene-holdout.md`](milestone-12b-gene-holdout.md) | G1 gene-holdout plumbing (random + chrom + seed; N-light + cascade) |
+| [`milestone-12b-deeprvat-seed-recipe.md`](milestone-12b-deeprvat-seed-recipe.md) | DeepRVAT-aligned multi-trait seed bank (product path; no masks) |
 | [`milestone-12c-platform-robustness.md`](milestone-12c-platform-robustness.md) | GATE G3 platform dropout / EPIC path |
 | [`milestone-13-expression-auxiliary.md`](milestone-13-expression-auxiliary.md) | `milestone-7g-double-prime-expression-auxiliary.md` (+ download) |
 

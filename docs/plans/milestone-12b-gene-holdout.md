@@ -1,7 +1,10 @@
 # GATE G1 gene-holdout — implementation brief
 
-> Status (2026-09-28): **plumbing done** for N-light + cascade, random +
-> chromosome partitions. Smokes / nested readouts **not yet run** (GPU queue).
+> Status (2026-09-28): **plumbing done** for N-light + cascade:
+> `random` / `chromosome` leakage probes + **`seed`** DeepRVAT-aligned
+> product path (CpG-first best association → gene union; score complement).
+> Smokes / nested readouts **not yet run** (GPU queue).
+> Product recipe: [`milestone-12b-deeprvat-seed-recipe.md`](milestone-12b-deeprvat-seed-recipe.md).
 > Parent: [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md).
 > Index: [`MILESTONE_INDEX.md`](MILESTONE_INDEX.md).
 
@@ -17,19 +20,26 @@ heldout MBS columns the encoder never saw.
    recipe, reported as a pair).
 2. Random split smokes land (cascade first, then N-light) + nested.
 3. If random passes, chromosome-held-out arm bounds locality leakage.
-4. Reports under `reports/inspection/` + TODO Verdict.
+4. **Product path:** `method: seed` multi-trait seed bank smoke after arch lock
+   (not a substitute for the leakage probes).
+5. Reports under `reports/inspection/` + TODO Verdict.
 
-Scaffolding alone does **not** close G1.
+Scaffolding alone does **not** close G1. Do **not** revive 9c head masks.
 
 ## Locked decisions
 
 | Choice | Decision | Why |
 |--------|----------|-----|
-| Partition | `random` first; `chromosome` follow-up | Random is cheap; chrom bounds neighbour leakage |
-| Topology order | Cascade random → N-light random → nested → chromosome if pass | Product path is cascade; N-light is the cheaper comparator |
-| Samples (product) | Maximum eligible samples (no train caps) | Nine-pack / full phenotype table for the split |
-| Static features | CpGPT sequence embeddings on (`cpgpt2m_adapter_128_v1`) | G2 YES; default once arch locked |
-| Traits (product) | Joint trait heads in training once arch locked | Age/tissue/sex + eligible disease/cancer aux |
+| Leakage probes | `random` first; `chromosome` follow-up | Cheap locality bound |
+| Product train set | `seed` — multi-trait seed-gene **union**; score complement / genome-wide | DeepRVAT recipe; user lock 2026-09-28 |
+| Discovery | CpG-first: best (strongest) linked CpG association → gene; optional gene meta-p later | Fastest / simplest |
+| Head masks | **Never** | 9c failed (G0 ≫ G1–G3) |
+| Hybrid prior | Optional `extra_seed_gene_ids` / Atlas `external_clean` inside train fold | ADR 0011; only if remap stays honest |
+| Ensemble | Deferred until campaign closes | Avoid multiply-before-lock |
+| Topology order | Cascade random → N-light random → nested → chrom if pass; seed after arch lock | Product path is cascade |
+| Samples (product) | Maximum eligible samples (no train caps) | Nine-pack / full phenotype table |
+| Static features | CpGPT sequence embeddings on (`cpgpt2m_adapter_128_v1`) | G2 YES |
+| Traits (product) | Joint trait heads once arch locked; seed bank unions those traits | DeepRVAT shared scorer |
 | Readout | Existing nested enet (`mbs_enet_nested`) | Already post-hoc; no new head |
 | Orphans/direct (cascade) | Train keeps them; heldout score is gene-MBS only | Nested compares gene columns |
 
@@ -39,12 +49,17 @@ Scaffolding alone does **not** close G1.
 training:
   gene_holdout:
     enabled: true
-    method: random          # or chromosome
-    heldout_fraction: 0.2
+    method: random          # random | chromosome | seed
+    heldout_fraction: 0.2   # random/chromosome only
     seed: 42
     # chromosome only:
-    # heldout_chromosomes: [chr7, chr13]   # optional explicit list
-    # exclude_chromosomes: [chrX, chrY]    # optional
+    # heldout_chromosomes: [chr7, chr13]
+    # exclude_chromosomes: [chrX, chrY]
+    # seed (DeepRVAT-aligned) only:
+    # seed_discovery: best_cpg_p
+    # n_genes_per_trait: 256
+    # traits: [age, tissue, sex]
+    # extra_seed_gene_ids: [...]   # optional hybrid prior
 ```
 
 Artifacts (under `scores/`):
@@ -52,7 +67,7 @@ Artifacts (under `scores/`):
 | File | Content |
 |------|---------|
 | `mbs_heldout.npy` | Heldout-gene MBS `[n_samples, n_heldout]` |
-| `gene_holdout.json` | Partition + caveat + shapes |
+| `gene_holdout.json` | Partition + caveat + discovery meta + shapes |
 | `gene_ids_{train,heldout}.json` | Gene id lists |
 | `gene_holdout_pheno.npz` | Cascade only — train/test idx + phenotypes for nested |
 | `gene_holdout_eval.json` | Written by `scripts/eval_gene_holdout_nested.py` |
@@ -64,10 +79,13 @@ flowchart LR
   A[Full gene panel] --> B{gene_holdout.method}
   B -->|random| C[Shuffle genes]
   B -->|chromosome| D[Hold out whole chroms]
+  B -->|seed| S[Outer-train CpG assoc → best CpG/gene → trait union]
   C --> E[Train gene set]
   D --> E
+  S --> E
   C --> F[Heldout gene set]
   D --> F
+  S --> F
   E --> G[Train φ/ρ]
   G --> H[Score train MBS]
   G --> I[Score heldout MBS frozen]
@@ -77,29 +95,25 @@ flowchart LR
 
 Modules:
 
-- `src/mbs/training/gene_holdout.py` — partition + subset helpers
-- `src/mbs/training/loop.py` — N-light hook
-- `src/mbs/training/cascade_loop.py` — cascade hook
-- `scripts/eval_gene_holdout_nested.py` — post-hoc nested compare
+- `src/mbs/training/gene_holdout.py` — partition + discovery + subset helpers
+- `loop.py` / `cascade_loop.py` — train on train genes; score heldout after fit
+  (`seed` discovery deferred until outer-train betas/labels exist; per-fold on cascade)
+- `scripts/eval_gene_holdout_nested.py` — post-hoc nested comparison
 
 Smoke configs:
 
-| Config | Topology | Method |
-|--------|----------|--------|
-| `stage0_12b_gene_holdout_nlight_smoke.yaml` | N-light | random |
-| `stage0_12b_gene_holdout_nlight_chrom_smoke.yaml` | N-light | chromosome |
-| `stage0_12b_gene_holdout_cascade_smoke.yaml` | cascade P2-G | random |
-| `stage0_12b_gene_holdout_cascade_chrom_smoke.yaml` | cascade P2-G | chromosome |
+- `stage0_12b_gene_holdout_{cascade,nlight}_smoke.yaml` — random
+- `stage0_12b_gene_holdout_{cascade,nlight}_chrom_smoke.yaml` — chromosome
+- `stage0_12b_gene_holdout_{cascade,nlight}_seed_smoke.yaml` — DeepRVAT seed
 
-## Non-goals / deferred
+## Non-goals
 
-- Trait-universe A→B→C pipeline (still design-only).
-- Product within-gene sampler / minibatch gather (12b recipe).
-- Platform dropout (G3 / 12c).
-- Quoting G1 from 6-epoch plumbing smokes.
+- Reviving phenotype-head seed masks (9c).
+- Gene-level SKAT / meta-p as the default discovery (optional later).
+- Ensemble of scorers before the experiment campaign finishes.
+- Building the full trait-universe runners before arch lock.
 
 ## Open questions
 
-- None blocking plumbing. Run order when GPU frees: **cascade random → N-light
-  random → nested → chromosome arms if random passes**. Product campaigns after
-  arch lock: max samples + CpGPT sequence embeddings + trait heads in training.
+- Top-K vs FDR for best-CpG gene selection (start with top-K).
+- Product OOF: score all genes vs non-seed complement for nested readout.

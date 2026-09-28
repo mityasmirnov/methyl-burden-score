@@ -53,6 +53,7 @@ from mbs.training.direct_cpg import direct_cpg_design_matrix, fit_direct_elastic
 from mbs.training.features import beta_to_m_value, build_static_column_table
 from mbs.training.gene_holdout import (
     GeneHoldoutPartition,
+    discover_seed_genes_best_cpg,
     gene_chromosome_map,
     resolve_gene_holdout_partition,
     subset_cascade_assignment,
@@ -1677,6 +1678,7 @@ def train_cascade_on_arrays(
                 "n_train_genes": gene_holdout_partition.n_train,
                 "n_heldout_genes": gene_holdout_partition.n_heldout,
                 "heldout_chromosomes": list(gene_holdout_partition.heldout_chromosomes),
+                "discovery": dict(gene_holdout_partition.discovery),
                 "n_train_genes_scored": int(assignment.n_genes),
                 "n_heldout_genes_scored": int(held.n_genes),
                 "artifact": str(gh_path),
@@ -2138,45 +2140,55 @@ def run_cascade_hub(
     )
     gene_holdout_partition: GeneHoldoutPartition | None = None
     heldout_assignment: CascadeAssignment | None = None
+    full_assignment = assignment
+    gene_holdout_seed_deferred = False
     gh_cfg = training_cfg.get("gene_holdout") or {}
     if isinstance(gh_cfg, dict) and bool(gh_cfg.get("enabled", False)):
         method = str(gh_cfg.get("method", "random")).lower()
         frac = float(gh_cfg.get("heldout_fraction", 0.2))
         gh_seed = int(gh_cfg.get("seed", seed))
-        chrom_map = gene_chromosome_map(genes) if method == "chromosome" else None
-        gene_holdout_partition = resolve_gene_holdout_partition(
-            assignment.gene_ids,
-            method=method,
-            heldout_fraction=frac,
-            seed=gh_seed,
-            gene_chromosome=chrom_map,
-            heldout_chromosomes=gh_cfg.get("heldout_chromosomes"),
-            exclude_chromosomes=gh_cfg.get("exclude_chromosomes"),
-        )
-        full_assignment = assignment
-        assignment = subset_cascade_assignment(
-            full_assignment,
-            gene_holdout_partition.train_gene_ids,
-            keep_orphans=True,
-            keep_direct=True,
-        )
-        heldout_assignment = subset_cascade_assignment(
-            full_assignment,
-            gene_holdout_partition.heldout_gene_ids,
-            keep_orphans=False,
-            keep_direct=False,
-        )
-        chrom_note = ""
-        if gene_holdout_partition.heldout_chromosomes:
-            chrom_note = f" heldout_chroms={gene_holdout_partition.heldout_chromosomes}"
-        print(
-            f"[gene_holdout] method={gene_holdout_partition.method} seed={gh_seed} "
-            f"heldout_fraction={frac} "
-            f"actual={gene_holdout_partition.actual_heldout_fraction:.3f} "
-            f"train_genes={assignment.n_genes} "
-            f"heldout_genes={heldout_assignment.n_genes}{chrom_note}",
-            flush=True,
-        )
+        if method == "seed":
+            # DeepRVAT-aligned: discover seeds on outer-train labels per fold.
+            gene_holdout_seed_deferred = True
+            print(
+                "[gene_holdout] method=seed deferred to per-fold discovery "
+                "(best_cpg_p → gene union; score complement)",
+                flush=True,
+            )
+        else:
+            chrom_map = gene_chromosome_map(genes) if method == "chromosome" else None
+            gene_holdout_partition = resolve_gene_holdout_partition(
+                assignment.gene_ids,
+                method=method,
+                heldout_fraction=frac,
+                seed=gh_seed,
+                gene_chromosome=chrom_map,
+                heldout_chromosomes=gh_cfg.get("heldout_chromosomes"),
+                exclude_chromosomes=gh_cfg.get("exclude_chromosomes"),
+            )
+            assignment = subset_cascade_assignment(
+                full_assignment,
+                gene_holdout_partition.train_gene_ids,
+                keep_orphans=True,
+                keep_direct=True,
+            )
+            heldout_assignment = subset_cascade_assignment(
+                full_assignment,
+                gene_holdout_partition.heldout_gene_ids,
+                keep_orphans=False,
+                keep_direct=False,
+            )
+            chrom_note = ""
+            if gene_holdout_partition.heldout_chromosomes:
+                chrom_note = f" heldout_chroms={gene_holdout_partition.heldout_chromosomes}"
+            print(
+                f"[gene_holdout] method={gene_holdout_partition.method} seed={gh_seed} "
+                f"heldout_fraction={frac} "
+                f"actual={gene_holdout_partition.actual_heldout_fraction:.3f} "
+                f"train_genes={assignment.n_genes} "
+                f"heldout_genes={heldout_assignment.n_genes}{chrom_note}",
+                flush=True,
+            )
     betas_z = open_betas_for_matrix(matrix_paths.root)
     row_by_id = {
         str(sid): int(row)
@@ -2314,8 +2326,62 @@ def run_cascade_hub(
             f"test={len(test_ids)} loci={n_cols} epochs={max_epochs}",
             flush=True,
         )
+        fold_assignment = assignment
+        fold_heldout = heldout_assignment
+        fold_partition = gene_holdout_partition
+        if gene_holdout_seed_deferred:
+            traits_cfg = gh_cfg.get("traits") or ["age", "tissue", "sex"]
+            trait_names = [str(t).lower() for t in traits_cfg]
+            n_per = int(gh_cfg.get("n_genes_per_trait", 256))
+            trait_labels: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+            if "age" in trait_names:
+                trait_labels["age"] = (ages[train_idx], age_mask[train_idx])
+            if "tissue" in trait_names:
+                trait_labels["tissue"] = (tissue[train_idx], tissue_mask[train_idx])
+            if "sex" in trait_names:
+                trait_labels["sex"] = (sex[train_idx], sex_mask[train_idx])
+            extra_ids = gh_cfg.get("extra_seed_gene_ids") or None
+            # Gene-linked edges only (orphan regions cannot seed a gene).
+            edge_reg = full_assignment.edge_region_index
+            edge_gene_raw = full_assignment.region_to_gene[edge_reg]
+            edge_ok = edge_gene_raw >= 0
+            seed_ids, disc_meta = discover_seed_genes_best_cpg(
+                full_assignment.gene_ids,
+                edge_col_index=full_assignment.edge_col_index[edge_ok],
+                edge_gene_index=edge_gene_raw[edge_ok].astype(np.int64, copy=False),
+                x_train=betas[train_idx],
+                trait_labels=trait_labels,
+                n_genes_per_trait=n_per,
+                extra_seed_gene_ids=extra_ids,
+            )
+            fold_partition = resolve_gene_holdout_partition(
+                full_assignment.gene_ids,
+                method="seed",
+                seed=int(gh_cfg.get("seed", seed)),
+                seed_gene_ids=seed_ids,
+                discovery=disc_meta,
+            )
+            fold_assignment = subset_cascade_assignment(
+                full_assignment,
+                fold_partition.train_gene_ids,
+                keep_orphans=True,
+                keep_direct=True,
+            )
+            fold_heldout = subset_cascade_assignment(
+                full_assignment,
+                fold_partition.heldout_gene_ids,
+                keep_orphans=False,
+                keep_direct=False,
+            )
+            print(
+                f"[gene_holdout] fold={fold_i} method=seed "
+                f"train_genes={fold_partition.n_train} "
+                f"heldout_genes={fold_partition.n_heldout} "
+                f"n_genes_per_trait={n_per} traits={trait_names}",
+                flush=True,
+            )
         metrics = train_cascade_on_arrays(
-            assignment=assignment,
+            assignment=fold_assignment,
             betas=betas,
             train_idx=train_idx,
             test_idx=test_idx,
@@ -2373,8 +2439,8 @@ def run_cascade_hub(
             fine_tune_learning_rate=fine_tune_learning_rate,
             warm_start_include_gene_rho=warm_start_include_gene_rho,
             warm_start_include_heads=warm_start_include_heads,
-            heldout_assignment=heldout_assignment,
-            gene_holdout_partition=gene_holdout_partition,
+            heldout_assignment=fold_heldout,
+            gene_holdout_partition=fold_partition,
         )
         metrics["fold_id"] = fold.get("fold_id", fold_i)
         fold_summaries.append(metrics)

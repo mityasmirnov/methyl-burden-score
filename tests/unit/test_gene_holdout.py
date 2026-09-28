@@ -12,8 +12,10 @@ from mbs.training.cascade_assign import build_cascade_assignment
 from mbs.training.cascade_loop import make_synthetic_cascade_tables
 from mbs.training.flat_region_features import REGULATORY_CHANNELS, FlatRegionGeneIndex
 from mbs.training.gene_holdout import (
+    discover_seed_genes_best_cpg,
     gene_chromosome_map,
     partition_genes_by_chromosome,
+    partition_genes_by_seed,
     partition_genes_random,
     resolve_gene_holdout_partition,
     subset_cascade_assignment,
@@ -97,8 +99,80 @@ def test_resolve_dispatches() -> None:
         genes, method="chromosome", seed=1, gene_chromosome=chrom
     )
     assert c.method == "chromosome"
+    s = resolve_gene_holdout_partition(
+        genes, method="seed", seed=1, seed_gene_ids=genes[:3]
+    )
+    assert s.method == "seed"
+    assert set(s.train_gene_ids) == set(genes[:3])
     with pytest.raises(ValueError, match="unsupported"):
         resolve_gene_holdout_partition(genes, method="bogus")
+
+
+def test_discover_seed_genes_best_cpg_picks_strongest_gene() -> None:
+    # 4 genes, 1 CpG each. Age correlates only with gene G1's CpG.
+    gene_ids = ["G0", "G1", "G2", "G3"]
+    edge_col = np.arange(4, dtype=np.int64)
+    edge_gene = np.arange(4, dtype=np.int64)
+    rng = np.random.default_rng(0)
+    n = 40
+    ages = rng.normal(size=n)
+    x = rng.normal(size=(n, 4)).astype(np.float64)
+    x[:, 1] = ages + 0.05 * rng.normal(size=n)  # G1
+    seed_ids, meta = discover_seed_genes_best_cpg(
+        gene_ids,
+        edge_col_index=edge_col,
+        edge_gene_index=edge_gene,
+        x_train=x,
+        trait_labels={"age": (ages, np.ones(n, dtype=bool))},
+        n_genes_per_trait=1,
+    )
+    assert seed_ids == ["G1"]
+    assert meta["discovery"] == "best_cpg_p"
+    part = partition_genes_by_seed(gene_ids, seed_ids, seed=0, discovery=meta)
+    assert part.train_gene_ids == ["G1"]
+    assert set(part.heldout_gene_ids) == {"G0", "G2", "G3"}
+    assert part.method == "seed"
+
+
+def test_discover_seed_union_across_traits() -> None:
+    gene_ids = [f"G{i}" for i in range(6)]
+    edge_col = np.arange(6, dtype=np.int64)
+    edge_gene = np.arange(6, dtype=np.int64)
+    rng = np.random.default_rng(1)
+    n = 50
+    ages = rng.normal(size=n)
+    tissue = rng.integers(0, 3, size=n)
+    x = rng.normal(size=(n, 6)).astype(np.float64)
+    x[:, 0] = ages  # G0 for age
+    # Make col 3 separate tissue classes.
+    for c in range(3):
+        x[tissue == c, 3] = float(c) + 0.01 * rng.normal(size=int((tissue == c).sum()))
+    seed_ids, meta = discover_seed_genes_best_cpg(
+        gene_ids,
+        edge_col_index=edge_col,
+        edge_gene_index=edge_gene,
+        x_train=x,
+        trait_labels={
+            "age": (ages, np.ones(n, dtype=bool)),
+            "tissue": (tissue, np.ones(n, dtype=bool)),
+        },
+        n_genes_per_trait=1,
+    )
+    assert "G0" in seed_ids
+    assert "G3" in seed_ids
+    assert meta["n_seed_genes"] == len(seed_ids)
+    # Hybrid prior: inject an extra panel gene.
+    seed2, meta2 = discover_seed_genes_best_cpg(
+        gene_ids,
+        edge_col_index=edge_col,
+        edge_gene_index=edge_gene,
+        x_train=x,
+        trait_labels={"age": (ages, np.ones(n, dtype=bool))},
+        n_genes_per_trait=1,
+        extra_seed_gene_ids=["G5"],
+    )
+    assert "G5" in seed2
+    assert meta2["n_extra_seed_genes"] == 1
 
 
 def test_subset_flat_region_gene_index_remaps() -> None:
