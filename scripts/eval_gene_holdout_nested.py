@@ -200,6 +200,27 @@ def evaluate_gene_holdout_run(
         class_names=class_names,
         evaluation="mbs_enet_nested_heldout_genes",
     )
+    # Feature-count-matched control. The heldout set has ~4x fewer gene columns
+    # than the train set (e.g. 529 vs 2117), and a nested elastic-net with fewer
+    # predictors scores worse for that reason alone -- so train-vs-heldout as-is
+    # conflates "encoder cannot generalise to unseen genes" with "fewer
+    # features". This arm subsamples train genes to exactly the heldout column
+    # count, so the heldout gap can be read against a like-for-like reference.
+    matched_out = None
+    if mbs_train.shape[1] > mbs_held.shape[1]:
+        rng = np.random.default_rng(12345)
+        keep = np.sort(
+            rng.choice(mbs_train.shape[1], size=mbs_held.shape[1], replace=False)
+        )
+        matched_out = _nested_on_mbs(
+            mbs_train[:, keep],
+            train_idx=train_idx,
+            test_idx=test_idx,
+            arrays=arrays,
+            class_names=class_names,
+            evaluation="mbs_enet_nested_train_genes_matched_n",
+        )
+
     holdout_meta = json.loads(holdout_meta_path.read_text(encoding="utf-8"))
     report = {
         "partition": {
@@ -216,9 +237,15 @@ def evaluate_gene_holdout_run(
         },
         "train_genes": _summary(train_out),
         "heldout_genes": _summary(held_out),
+        "train_genes_matched_n": _summary(matched_out) if matched_out else None,
         "evaluations": {
             "mbs_enet_nested_train_genes": train_out,
             "mbs_enet_nested_heldout_genes": held_out,
+            **(
+                {"mbs_enet_nested_train_genes_matched_n": matched_out}
+                if matched_out
+                else {}
+            ),
         },
     }
     out_path = score_dir / "gene_holdout_eval.json"
