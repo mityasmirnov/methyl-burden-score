@@ -37,44 +37,104 @@ sequence**, not numeric order. Pending / blocked / deferred are at the bottom.
 G2 N-light   CpGPT YES (age 8.10±0.14 vs 9.57; sex↑; tissue −0.021)
              Cascade CpGPT plumbing smoke done (not a product benchmark)
 
-═══ 2. NEXT — GATE G1 gene-holdout (do this now) ═══════════════════════════
-Goal: train φ/ρ on one gene set, score a disjoint set, nested enet on heldout
-MBS. Plumbing landed; smokes / nested in flight on GPU0
-(scripts/run_gpu0_queue_g1.sh). Plan: plans/milestone-12b-gene-holdout.md
-Keep GPU 0 saturated. Do not auto-start cascade 5×6.
+═══ 2. DONE — GATE G1 gene-holdout PASSES (random, both arms) ═══════════════
+Plan: plans/milestone-12b-gene-holdout.md
 
-  Order = **cascade first, N-light after** (user lock — product arm is the
-  gate priority).
+**Verdict: PASS**, but only once the feature-count confound is removed. The
+heldout set has ~4x fewer gene columns than the train set (529 vs 2117) and a
+nested enet with fewer predictors scores worse for that reason alone, so a raw
+train-vs-heldout comparison conflates "cannot generalise" with "fewer features".
+`eval_gene_holdout_nested.py` now fits a **matched-n control** (subsample the
+wider side to the narrower width) — the gate must be read off that, not the raw
+pair:
 
-  2.1  Cascade gene-holdout (random)     stage0_12b_gene_holdout_cascade_smoke.yaml
-  2.2  Nested enet on cascade            scripts/eval_gene_holdout_nested.py
-  2.3  N-light gene-holdout (random)     stage0_12b_gene_holdout_nlight_smoke.yaml
-  2.4  Nested enet on N-light            scripts/eval_gene_holdout_nested.py
+  N-light random   train 8.776 | train MATCHED 11.539 | heldout 12.047  age MAE
+                   -> matched gap +0.51 (naive gap was +3.27)
+                   tissue -0.019, sex +0.042 (heldout BETTER on sex)
+  Cascade random   matched gap +1.34 age (naive +4.08); tissue +0.005 (heldout
+                   better), sex -0.026
 
-  G1 acceptance = random holdout nested on both arms (heldout ≈ train-gene
-  readout). DeepRVAT-aligned: no chromosome arm required for the gate.
-  `method: chromosome` configs stay in-repo as an optional locality probe only
-  (not queued). Product train set after arch lock = `method: seed` (§3.2).
+So ~85% of the apparent degradation was the artifact. The gene-invariant encoder
+does largely transfer to genes it never trained on.
 
-  Live (2026-09-28): N-light random nested — train tissue/age/sex
-  0.333 / 8.78 / 0.802 vs heldout 0.314 / 12.05 / 0.706 (tissue transfers;
-  age degraded). Cascade random restarted on GPU0 after an in-flight
-  N-light-first queue had skipped it (`run_gpu0_queue_g1_remainder.sh`).
+Open caveats (not blockers): 6-epoch smokes, single seed, random split leaves
+locality leakage unbounded (chromosome configs exist as an optional probe), and
+the matched arm is one random subsample so it carries its own draw noise.
 
-  Load note (2026-09-28): nine-pack `RoutedBetas` materialize is ~4–6 min for
-  65k/full-width — not the old “40 min is I/O” claim. Do not block G1 on a
-  loader rewrite; optional later: avoid reading all 482k cols when only a
-  contiguous 65k prefix is needed (`virtual_hub_store.RoutedBetas`). First
-  full-width epoch wall time is mostly train-step / on-the-fly edge feature
-  gather at ~440k edges, not zarr.
+Seed arm (`method: seed`, §3.2) also ran: train=187 discovered seed genes,
+heldout=2459 complement — note this **inverts** the width relation, which is why
+the matched control had to be made bidirectional.
 
-═══ 3. AFTER G1 PASSES — lock product path ═════════════════════════════════
+═══ 2b. REVISED — G2 CpGPT effect size, now with an n=6 baseline ════════════
+The matched CpGPT-off baseline x6 (§3.4) is **done**, so the CpGPT claim no
+longer rests on a single baseline run. This **revises** the earlier verdict:
+
+  metric      baseline n=6            CpGPT n=6              delta   ranges
+  tissue F1   0.361 ±0.006 [.35,.37]  0.355 ±0.010 [.34,.37]  -0.006  overlap
+  age MAE     8.963 ±0.616 [8.02,9.53] 8.096 ±0.140 [7.96,8.36] -0.867 overlap
+  sex AUROC   0.825 ±0.026 [.80,.87]  0.879 ±0.015 [.85,.90]  +0.054  overlap
+
+Two corrections to what was previously recorded:
+- **The "real tissue regression" is not there.** It was -0.021 against a single
+  baseline draw of 0.376; the n=6 baseline mean is 0.361, so the true gap is
+  -0.006 — inside noise. That single run was a lucky draw.
+- **The age win is smaller than claimed** (-0.87, not -1.47) and all three
+  ranges overlap, so CpGPT is a *modest consistent* gain, not a clean
+  separation. Baseline age sd (0.616) is ~4x CpGPT's (0.140).
+
+Net: CpGPT still favourable (age + sex up, no tissue cost), but state it as
+modest. Do not re-quote the n=1-baseline deltas.
+
+
+═══ 3. NOW — lock product path (G1 passed) ═════════════════════════════════
   3.1  Product defaults: max samples · CpGPT on · trait heads in training
   3.2  Multi-trait seed bank (method:seed; DeepRVAT-aligned; no 9c masks)
        plans/milestone-12b-deeprvat-seed-recipe.md
-  3.3  Full-width converge (~19.6k genes) as capacity allows
-  3.4  Matched CpGPT-off baseline ×6 (rigour; effect size currently n=1)
-  3.5  DeepRVAT within-gene sampler (product full-width; still unbuilt)
+       → seed smokes RAN 2026-09-29 (N-light + cascade); matched-n re-eval queued
+  3.3  Full-width converge — **BLOCKED on 3.5, do not re-run as-is** (see below)
+  3.4  Matched CpGPT-off baseline ×6 — **DONE** 2026-09-30, see §2b
+  3.5  **DeepRVAT within-gene sampler — the critical unbuilt item** (below)
+
+─── NOTE FOR THE CURSOR AGENT (and any other session) ──────────────────────
+Written 2026-09-30 by the Claude Code session. Three things need your attention.
+
+**(a) Full-width converge was KILLED; do not simply restart it.**
+`stage0_12b_cpgpt_full_width_converge.yaml` ran 23h52m and reached only epoch
+8/30. It was still overfitting (val_loss 13.9 → 42.2) *despite* lr 5e-4,
+patience 10, dropout 0.3, weight_decay 1e-3, and projected **~90h** to finish.
+Root cause is not regularisation: at full width there are 440 903 edges, the
+VRAM probe calibrates batch to **55**, and that is **622 steps/epoch** at ~3h
+per epoch. Restarting it with different regularisation will still cost ~90h.
+
+**(b) The real fix is 3.5, the within-gene CpG sampler — still unbuilt.**
+Capping `max_cpgs_per_gene` cuts edges per sample (full width averages ~22.5
+CpGs/gene over 19 554 genes), which raises the feasible batch and cuts both wall
+time and overfitting at once. This is already the documented product recipe in
+`plans/milestone-12b-full-gene-panel.md` §3. It is the single highest-value
+unbuilt item; full-width work should wait for it rather than burn the card.
+
+**(c) Two measurement traps we have now hit, please avoid re-introducing:**
+  1. **Do not rank single-seed configs on `mbs_e2e`.** Measured restart spread
+     for a *fixed* config: `mbs_e2e` age sd ≈1.63 vs `mbs_enet_nested` ≈0.19.
+     There are no determinism settings in this repo, so the *same seed does not
+     reproduce*. Single-seed nested gaps under ~0.5 MAE are ties.
+  2. **Never compare gene sets of different widths without the matched-n
+     control.** It changed the G1 verdict from "fails" to "passes" (§2), and it
+     had to be made **bidirectional** because `method: seed` inverts the width
+     relation (train 187 vs heldout 2459).
+
+**GPU0 single-owner rule.** On 2026-09-28 two queues ran on GPU0 at once (mine
+plus `run_gpu0_queue_g1_remainder.sh`). Run `pgrep -af run_gpu0_queue` before
+starting a queue. Current queue script: `scripts/run_gpu0_queue_s3.sh`
+(completed 2026-09-30 01:02; GPU0 now free).
+
+**Loader speedup landed** (`virtual_hub_store.py`): a contiguous pack-column run
+is now read as a Zarr column slice instead of reading every column and
+discarding most. End-to-end 65k-prefix load 3.9 → 2.9 min. Guarded by
+`tests/unit/test_routed_betas_col_run.py` (4 tests, incl. the `col_map < 0`
+case where the fast path must not engage). Note the isolated microbenchmark said
+6.5×; the real end-to-end gain is ~25%, so do not quote 6.5×.
+────────────────────────────────────────────────────────────────────────────
 
 ═══ 4. PENDING / BLOCKED (after the above) ═════════════════════════════════
 12 cascade   blocked   5×6 OOF on G1 panel · native P2-G only

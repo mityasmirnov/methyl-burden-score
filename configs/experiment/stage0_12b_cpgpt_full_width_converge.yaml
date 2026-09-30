@@ -73,7 +73,7 @@ pilot:
 stage0:
   use_cpgpt_static_features: true
 training:
-  batch_size: auto
+  batch_size: 55  # pinned: auto wasted two OOM retries at 440k edges (222->111->55)
   batch_token_budget: 32000000
   early_stopping_patience: 10
   gene_linked_only: true

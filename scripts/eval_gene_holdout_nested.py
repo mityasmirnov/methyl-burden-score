@@ -206,19 +206,28 @@ def evaluate_gene_holdout_run(
     # conflates "encoder cannot generalise to unseen genes" with "fewer
     # features". This arm subsamples train genes to exactly the heldout column
     # count, so the heldout gap can be read against a like-for-like reference.
+    # Matching must work in BOTH directions. method=random gives train > heldout
+    # (e.g. 2117 vs 529), but method=seed inverts it -- a small discovered seed
+    # set trains and the large complement is scored (e.g. 187 vs 2459). Whichever
+    # side has more gene columns is subsampled down to the other's width.
     matched_out = None
-    if mbs_train.shape[1] > mbs_held.shape[1]:
+    matched_side: str | None = None
+    n_tr, n_ho = int(mbs_train.shape[1]), int(mbs_held.shape[1])
+    if n_tr != n_ho:
         rng = np.random.default_rng(12345)
-        keep = np.sort(
-            rng.choice(mbs_train.shape[1], size=mbs_held.shape[1], replace=False)
-        )
+        if n_tr > n_ho:
+            keep = np.sort(rng.choice(n_tr, size=n_ho, replace=False))
+            src, matched_side = mbs_train[:, keep], "train_genes"
+        else:
+            keep = np.sort(rng.choice(n_ho, size=n_tr, replace=False))
+            src, matched_side = mbs_held[:, keep], "heldout_genes"
         matched_out = _nested_on_mbs(
-            mbs_train[:, keep],
+            src,
             train_idx=train_idx,
             test_idx=test_idx,
             arrays=arrays,
             class_names=class_names,
-            evaluation="mbs_enet_nested_train_genes_matched_n",
+            evaluation=f"mbs_enet_nested_{matched_side}_matched_n",
         )
 
     holdout_meta = json.loads(holdout_meta_path.read_text(encoding="utf-8"))
@@ -237,12 +246,20 @@ def evaluate_gene_holdout_run(
         },
         "train_genes": _summary(train_out),
         "heldout_genes": _summary(held_out),
-        "train_genes_matched_n": _summary(matched_out) if matched_out else None,
+        "matched_n": (
+            {"side_subsampled": matched_side, **_summary(matched_out)}
+            if matched_out
+            else None
+        ),
+        # back-compat alias: only set when it was the train side that shrank
+        "train_genes_matched_n": (
+            _summary(matched_out) if matched_out and matched_side == "train_genes" else None
+        ),
         "evaluations": {
             "mbs_enet_nested_train_genes": train_out,
             "mbs_enet_nested_heldout_genes": held_out,
             **(
-                {"mbs_enet_nested_train_genes_matched_n": matched_out}
+                {f"mbs_enet_nested_{matched_side}_matched_n": matched_out}
                 if matched_out
                 else {}
             ),
