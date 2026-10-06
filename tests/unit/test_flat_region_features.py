@@ -106,11 +106,12 @@ def test_cap_flat_region_cpgs_per_gene() -> None:
     """Within-gene sampler keeps ≤K edges/gene; deterministic; identity when under cap."""
     from mbs.training.flat_region_features import (  # noqa: PLC0415
         FlatRegionGeneIndex,
+        REGULATORY_CHANNELS,
         cap_flat_region_cpgs_per_gene,
     )
 
     # Three genes: 2, 5, 1 edges. Cap at 2 → gene1 loses 3 edges.
-    n_reg = 8
+    n_reg = len(REGULATORY_CHANNELS)
     gene_ids = ["g0", "g1", "g2"]
     edge_gene = np.asarray([0, 0, 1, 1, 1, 1, 1, 2], dtype=np.int64)
     n = edge_gene.size

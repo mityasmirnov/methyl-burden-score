@@ -40,8 +40,9 @@ within-gene CpG sampling).
 | OOF completeness gate (`scripts/check_12_oof_completeness.py`) | **Done** (read-only; not wired into runners) |
 | N-light `static_dim` / `static_block` (CpGPT trailing cols survive `m_only`) | **Done** — unit-tested |
 | Cascade static-feature / CpGPT path | **Done** — smoke `stage0-12-cascade-cpgpt-smoke-f0-r0` (6 ep plumbing) |
-| Within-gene CpG sampler (`max_cpgs_per_gene`) | **Plumbing** (`cap_flat_region_cpgs_per_gene`); GPU smoke queued |
-| Minibatch row×column gather (no dense preload) | **Not started** — both trainers still `betas[:, :n_cols]` |
+| Within-gene CpG sampler (`max_cpgs_per_gene`) | **Epoch-varying** (`WithinGeneEpochSampler`); fixed `cap_*` kept as helper |
+| Minibatch row×column gather (no dense preload) | **In progress** — flat_region `sparse_betas` path; cascade still dense |
+| Product train genes | **Seed-bank union** (DeepRVAT); all-gene full-width = ablation |
 | Canonical ~20k-gene present-mask training index | **Not started** |
 | Role-gated embeddings / platform dropout / ONT adapter / gene-holdout | Gene-holdout **plumbing done** (N-light + cascade; random gate, chrom optional, seed product). Platform dropout is **12c / G3**; role-gated / ONT still post-GATE |
 | N-light dense full-width smoke (`max_loci: null`) | **Probe running** — not the recipe |

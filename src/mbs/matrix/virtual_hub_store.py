@@ -138,9 +138,10 @@ class RoutedBetas:
             and int(col_ids[0]) == 0
             and np.array_equal(col_ids, np.arange(col_ids.size, dtype=np.int64))
         )
-        # Dense training prefixes ([:, :max_loci]) and near-full-width requests:
-        # read full pack rows then gather — fewer Zarr seeks than fancy 65k cols.
-        wide = contiguous_prefix or col_ids.shape[0] >= max(self._n_loci // 2, 1)
+        # Dense contiguous prefixes ([:, :max_loci]) prefer full pack-row reads.
+        # Do NOT treat "many scattered columns" as wide — that forced full-row I/O
+        # for within-gene sampler graphs (~half the universe) and defeated §3.5.
+        wide = contiguous_prefix
         by_pack: dict[str, list[tuple[int, int]]] = {}
         for i, r in enumerate(row_ids.tolist()):
             rec = self._route.iloc[int(r)]

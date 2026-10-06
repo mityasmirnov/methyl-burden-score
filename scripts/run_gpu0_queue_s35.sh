@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# GPU0 queue — TODO §3.5 within-gene sampler smoke (unblocks full-width).
+# GPU0 queue — TODO §3.5 K=8 sparse gather + within-gene sampler smoke.
 #
 # Do NOT re-queue dense full-width converge (killed 23h52m / ep8 / ~90h projected).
 # GPU0 single-owner: pgrep -af run_gpu0_queue before starting.
@@ -24,9 +24,9 @@ if pgrep -af 'run_gpu0_queue' | grep -v "$$" | grep -v grep >/dev/null; then
   exit 1
 fi
 
-log "GPU0 §3.5 sampler smoke on device ${CUDA_VISIBLE_DEVICES}"
+log "GPU0 §3.5 K=8 sparse sampler smoke on device ${CUDA_VISIBLE_DEVICES}"
 
-run_job "s35-sampler-smoke" \
+run_job "s35-sampler-smoke-k8" \
   uv run python -u scripts/run_12b_sampler_smoke.py
 
-log "GPU0 §3.5 queue complete"
+log "GPU0 §3.5 K=8 queue complete"

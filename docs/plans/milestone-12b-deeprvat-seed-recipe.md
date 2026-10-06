@@ -2,9 +2,10 @@
 
 > Status (2026-09-28): **locked design**. G1 leakage probe = **random**
 > holdout (DeepRVAT-like); chromosome optional / not queued. The **product**
-> encoder path after architecture lock follows DeepRVAT: train φ/ρ on a
-> multi-trait seed gene bank, score genome-wide (or the complement), nested
-> enet post-hoc.
+> encoder path after architecture lock + sparse gather (§3.5) follows DeepRVAT:
+> train φ/ρ on a multi-trait seed gene bank, score genome-wide (or the
+> complement), nested enet post-hoc. All-gene full-width **training** is an
+> ablation once gather works — not the automatic product default.
 > Parent: [`milestone-12b-gene-holdout.md`](milestone-12b-gene-holdout.md) ·
 > ADR [`0011`](../adr/0011-seed-gene-sources.md) / [`0012`](../adr/0012-seed-gene-discovery-vs-deployment-input.md).
 

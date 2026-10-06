@@ -79,10 +79,11 @@ from mbs.training.flat_region_features import (
     assert_flat_region_index,
     build_flat_region_base_features,
     build_flat_region_gene_index,
-    cap_flat_region_cpgs_per_gene,
     flat_region_input_dim,
     gather_flat_region_features,
 )
+from mbs.training.sparse_betas import SparseBetasView
+from mbs.training.within_gene_sampler import WithinGeneEpochSampler
 from mbs.training.gene_holdout import (
     GeneHoldoutPartition,
     discover_seed_genes_best_cpg,
@@ -154,6 +155,7 @@ class _PilotStore:
     flat_region_feature_mode: str = "full"
     flat_region_reg_permute_seed: int | None = None
     flat_region_static_dim: int = 0
+    sparse_betas: Any | None = None  # SparseBetasView | None
 
 
 def resolve_device(device_str: str, *, require_cuda: bool = False) -> torch.device:
@@ -338,17 +340,30 @@ def _materialize_record(
     level1_params: Level1NormParams | None = None,
 ) -> FlatSampleRecord:
     row = store.sample_row_by_id[phenotype.sample_id]
-    beta_row = np.asarray(store.betas[row, : store.n_cols], dtype=np.float32)
     if store.flat_region_index is not None:
-        cpg_features, cpg_to_gene = gather_flat_region_features(
-            beta_row=beta_row,
-            index=store.flat_region_index,
-            epsilon=store.epsilon,
-            base_features=store.flat_region_base_features,
-            feature_mode=store.flat_region_feature_mode,  # type: ignore[arg-type]
-            reg_permute_seed=store.flat_region_reg_permute_seed,
-            static_dim=store.flat_region_static_dim,
-        )
+        index = store.flat_region_index
+        if store.sparse_betas is not None:
+            beta_edge = store.sparse_betas.beta_edge_values(int(row), index.edge_col_index)
+            cpg_features, cpg_to_gene = gather_flat_region_features(
+                index=index,
+                epsilon=store.epsilon,
+                base_features=store.flat_region_base_features,
+                feature_mode=store.flat_region_feature_mode,  # type: ignore[arg-type]
+                reg_permute_seed=store.flat_region_reg_permute_seed,
+                static_dim=store.flat_region_static_dim,
+                beta_edge=beta_edge,
+            )
+        else:
+            beta_row = np.asarray(store.betas[row, : store.n_cols], dtype=np.float32)
+            cpg_features, cpg_to_gene = gather_flat_region_features(
+                beta_row=beta_row,
+                index=index,
+                epsilon=store.epsilon,
+                base_features=store.flat_region_base_features,
+                feature_mode=store.flat_region_feature_mode,  # type: ignore[arg-type]
+                reg_permute_seed=store.flat_region_reg_permute_seed,
+                static_dim=store.flat_region_static_dim,
+            )
         if cpg_features.shape[0] == 0:
             raise ValueError(f"sample {phenotype.sample_id!r} has zero observed flat-region edges")
         features = SampleFeatureBundle(
@@ -365,6 +380,7 @@ def _materialize_record(
             features=features,
         )
     else:
+        beta_row = np.asarray(store.betas[row, : store.n_cols], dtype=np.float32)
         rec = build_flat_sample(
             phenotype=phenotype,
             beta_row=beta_row,
@@ -384,6 +400,24 @@ def _materialize_record(
     )
     return rec
 
+
+def _set_flat_region_graph(
+    store: _PilotStore,
+    index: FlatRegionGeneIndex,
+    *,
+    static_by_col: np.ndarray,
+    static_dim: int,
+    feature_mode: str,
+) -> None:
+    """Install train/val/score graph + annotation base features on the pilot store."""
+    store.flat_region_index = index
+    edge_static = static_by_col[index.edge_col_index] if static_dim > 0 else None
+    store.flat_region_base_features = build_flat_region_base_features(
+        index,
+        feature_mode=feature_mode,  # type: ignore[arg-type]
+        static_block=edge_static,
+    )
+    store.flat_region_static_dim = int(static_dim)
 
 def _label_flags_for_record(
     *,
@@ -996,6 +1030,12 @@ def train_flat_baseline(
     val_phenotypes: list[SamplePhenotype] | None = None
     test_phenotypes: list[SamplePhenotype] | None = None
     pilot_store: _PilotStore | None = None
+    within_sampler: WithinGeneEpochSampler | None = None
+    train_full_index: FlatRegionGeneIndex | None = None
+    sparse_view_for_metrics: SparseBetasView | None = None
+    static_by_col_hub: np.ndarray | None = None
+    flat_feature_mode_hub: str = "full"
+    static_dim_hub: int = 0
     train_records: list[FlatSampleRecord] | None = None
     val_records: list[FlatSampleRecord] | None = None
     class_weights: torch.Tensor | None = None
@@ -1423,23 +1463,8 @@ def train_flat_baseline(
                 f"other_gene={flat_region_index.n_other_gene_edges}",
                 flush=True,
             )
-            # DeepRVAT within-gene CpG sampler (train graph only). full_flat_region_index
-            # stays uncapped for heldout / full-CpG score paths.
-            max_cpgs_cfg = train_cfg.get("max_cpgs_per_gene")
-            if max_cpgs_cfg is not None and not gene_holdout_seed_deferred:
-                before = int(flat_region_index.n_edges)
-                flat_region_index = cap_flat_region_cpgs_per_gene(
-                    flat_region_index,
-                    int(max_cpgs_cfg),
-                    seed=int(config.get("experiment", {}).get("seed", 42)),
-                )
-                gene_ids = flat_region_index.gene_ids
-                n_genes = flat_region_index.n_genes
-                print(  # noqa: T201
-                    f"[flat_region] max_cpgs_per_gene={int(max_cpgs_cfg)} "
-                    f"edges {before} -> {flat_region_index.n_edges}",
-                    flush=True,
-                )
+            # Epoch-varying sampler is applied after betas open / seed discovery
+            # (must run before VRAM calibrate). Do not fixed-cap here.
         else:
             gene_ids = locus_gene.gene_ids
             n_genes = locus_gene.n_genes
@@ -1483,18 +1508,37 @@ def train_flat_baseline(
             table_rows = {str(p.sample_id): sample_row_by_id[str(p.sample_id)] for p in phenotypes}
             sample_row_by_id = table_rows
         betas_handle = open_betas_for_matrix(matrix_paths.root)
-        # Match cascade: dense prefix in RAM so epochs are GPU-bound, not zarr-bound.
-        print(f"[flat] loading betas[:, :{n_cols}] into RAM…", flush=True)  # noqa: T201
-        betas_ram = np.asarray(betas_handle[:, :n_cols], dtype=np.float32)
-        print(  # noqa: T201
-            f"[flat] betas shape={betas_ram.shape} dtype={betas_ram.dtype}",
-            flush=True,
+        # §3.5: flat_region product path never preloads [n_samples × n_universe].
+        # Classic locus_gene topology still densifies a prefix (legacy).
+        use_sparse_betas = bool(
+            flat_region_index is not None
+            and train_cfg.get("sparse_betas", True)
         )
+        betas_ram: np.ndarray | None = None
+        sparse_view: SparseBetasView | None = None
+        if use_sparse_betas:
+            sparse_view = SparseBetasView(handle=betas_handle, n_cols=int(n_cols))
+            print(  # noqa: T201
+                f"[flat] sparse betas (no universe preload) n_cols={n_cols} "
+                f"handle={type(betas_handle).__name__}",
+                flush=True,
+            )
+            betas_for_store: Any = betas_handle
+        else:
+            print(f"[flat] loading betas[:, :{n_cols}] into RAM…", flush=True)  # noqa: T201
+            betas_ram = np.asarray(betas_handle[:, :n_cols], dtype=np.float32)
+            print(  # noqa: T201
+                f"[flat] betas shape={betas_ram.shape} dtype={betas_ram.dtype}",
+                flush=True,
+            )
+            betas_for_store = betas_ram
         flat_base = None
         flat_feature_mode = str(model_cfg.get("flat_region_feature_mode", "full"))
         flat_reg_permute_seed: int | None = model_cfg.get("reg_permute_seed", None)
         if flat_reg_permute_seed is not None:
             flat_reg_permute_seed = int(flat_reg_permute_seed)
+        train_full_index = flat_region_index
+        within_sampler = None
         if flat_region_index is not None and not gene_holdout_seed_deferred:
             edge_static_block = (
                 static_by_col[flat_region_index.edge_col_index] if static_dim > 0 else None
@@ -1523,7 +1567,19 @@ def train_flat_baseline(
                 [sample_row_by_id[str(p.sample_id)] for p in train_phenotypes],
                 dtype=np.int64,
             )
-            x_tr = betas_ram[train_rows]
+            # Compact gather: unique linked cols only (no universe-wide x_train).
+            full_cols = np.asarray(full_flat_region_index.edge_col_index, dtype=np.int64)
+            uniq_cols, restore = np.unique(full_cols, return_inverse=True)
+            print(  # noqa: T201
+                f"[gene_holdout] seed discovery gather rows={train_rows.size} "
+                f"unique_cols={uniq_cols.size}",
+                flush=True,
+            )
+            if sparse_view is not None:
+                x_compact = sparse_view.gather_rows_cols(train_rows, uniq_cols)
+            else:
+                assert betas_ram is not None
+                x_compact = betas_ram[train_rows][:, uniq_cols]
             ages_tr = np.asarray(
                 [float(p.age or 0.0) for p in train_phenotypes], dtype=np.float64
             )
@@ -1547,9 +1603,9 @@ def train_flat_baseline(
                 trait_labels["sex"] = (sex_tr, sex_m)
             seed_ids, disc_meta = discover_seed_genes_best_cpg(
                 full_flat_region_index.gene_ids,
-                edge_col_index=full_flat_region_index.edge_col_index,
+                edge_col_index=restore.astype(np.int64, copy=False),
                 edge_gene_index=full_flat_region_index.edge_gene_index,
-                x_train=x_tr,
+                x_train=x_compact,
                 trait_labels=trait_labels,
                 n_genes_per_trait=n_per,
                 extra_seed_gene_ids=gh_cfg.get("extra_seed_gene_ids"),
@@ -1568,19 +1624,7 @@ def train_flat_baseline(
                 full_flat_region_index,
                 gene_holdout_partition.train_gene_ids,
             )
-            max_cpgs_cfg = train_cfg.get("max_cpgs_per_gene")
-            if max_cpgs_cfg is not None:
-                before = int(flat_region_index.n_edges)
-                flat_region_index = cap_flat_region_cpgs_per_gene(
-                    flat_region_index,
-                    int(max_cpgs_cfg),
-                    seed=int(config.get("experiment", {}).get("seed", 42)),
-                )
-                print(  # noqa: T201
-                    f"[flat_region] max_cpgs_per_gene={int(max_cpgs_cfg)} "
-                    f"edges {before} -> {flat_region_index.n_edges}",
-                    flush=True,
-                )
+            train_full_index = flat_region_index
             edge_static_block = (
                 static_by_col[flat_region_index.edge_col_index] if static_dim > 0 else None
             )
@@ -1604,10 +1648,40 @@ def train_flat_baseline(
                 f"static_dim={static_dim} feature_set={feature_set!r}",
                 flush=True,
             )
+        # Epoch-varying within-gene sampler BEFORE VRAM calibrate.
+        max_cpgs_cfg = train_cfg.get("max_cpgs_per_gene")
+        if (
+            train_full_index is not None
+            and max_cpgs_cfg is not None
+            and flat_region_index is not None
+        ):
+            within_sampler = WithinGeneEpochSampler(
+                full_index=train_full_index,
+                max_cpgs_per_gene=int(max_cpgs_cfg),
+                seed=int(config.get("experiment", {}).get("seed", 42)),
+            )
+            before = int(train_full_index.n_edges)
+            flat_region_index = within_sampler.sample_epoch(epoch=0)
+            gene_ids = flat_region_index.gene_ids
+            n_genes = flat_region_index.n_genes
+            edge_static_block = (
+                static_by_col[flat_region_index.edge_col_index] if static_dim > 0 else None
+            )
+            flat_base = build_flat_region_base_features(
+                flat_region_index,
+                feature_mode=flat_feature_mode,  # type: ignore[arg-type]
+                static_block=edge_static_block,
+            )
+            print(  # noqa: T201
+                f"[flat_region] epoch-sample K={int(max_cpgs_cfg)} "
+                f"edges {before} -> {flat_region_index.n_edges} "
+                f"(calibrate uses this graph)",
+                flush=True,
+            )
         pilot_store = _PilotStore(
             phenotypes=phenotypes,
             sample_row_by_id=sample_row_by_id,
-            betas=betas_ram,
+            betas=betas_for_store,
             static_by_col=static_by_col,
             static_valid=static_valid,
             locus_gene=locus_gene,
@@ -1618,13 +1692,25 @@ def train_flat_baseline(
             flat_region_feature_mode=flat_feature_mode,
             flat_region_reg_permute_seed=flat_reg_permute_seed,
             flat_region_static_dim=static_dim if flat_region_index is not None else 0,
+            sparse_betas=sparse_view,
         )
+        sparse_view_for_metrics = sparse_view
+        static_by_col_hub = static_by_col
+        flat_feature_mode_hub = flat_feature_mode
+        static_dim_hub = int(static_dim)
         if include_robust_z:
+            if use_sparse_betas:
+                raise ValueError(
+                    "robust_deviation + sparse_betas is not supported yet "
+                    "(Level-1 still needs a dense train block)"
+                )
             if not train_phenotypes:
                 raise ValueError("robust_deviation requires train phenotypes for Hub/pilot path")
+            if betas_ram is None:
+                raise RuntimeError("robust_deviation requires densified betas_ram")
             train_rows = [sample_row_by_id[str(p.sample_id)] for p in train_phenotypes]
             level1_params = fit_level1_from_betas(
-                pilot_store.betas,
+                betas_ram,
                 train_rows,
                 epsilon=level1_epsilon,
                 sigma_min=level1_sigma_min,
@@ -2096,6 +2182,24 @@ def train_flat_baseline(
         epoch = 0
         for epoch in range(1, epochs + 1):
             print(f"[flat] epoch {epoch}/{epochs} train…", flush=True)  # noqa: T201
+            if (
+                within_sampler is not None
+                and train_full_index is not None
+                and pilot_store is not None
+                and static_by_col_hub is not None
+            ):
+                sampled = within_sampler.sample_epoch(epoch)
+                _set_flat_region_graph(
+                    pilot_store,
+                    sampled,
+                    static_by_col=static_by_col_hub,
+                    static_dim=static_dim_hub,
+                    feature_mode=flat_feature_mode_hub,
+                )
+                print(  # noqa: T201
+                    f"[flat_region] epoch {epoch} train edges={sampled.n_edges}",
+                    flush=True,
+                )
             train_metrics = _run_epoch(
                 records=train_records,
                 phenotypes=train_phenotypes,
@@ -2128,6 +2232,20 @@ def train_flat_baseline(
                 cancer_maps=cancer_maps,
                 **level1_epoch_kwargs,
             )
+            # Validation never samples — full CpGs for the train gene set.
+            if (
+                within_sampler is not None
+                and train_full_index is not None
+                and pilot_store is not None
+                and static_by_col_hub is not None
+            ):
+                _set_flat_region_graph(
+                    pilot_store,
+                    train_full_index,
+                    static_by_col=static_by_col_hub,
+                    static_dim=static_dim_hub,
+                    feature_mode=flat_feature_mode_hub,
+                )
             val_metrics = _run_epoch(
                 records=val_records,
                 phenotypes=val_phenotypes,
@@ -2477,6 +2595,25 @@ def train_flat_baseline(
             build_stage_a_flat_evaluations,
         )
 
+        # Product scoring: full CpGs for train genes (never the epoch sample).
+        if (
+            train_full_index is not None
+            and static_by_col_hub is not None
+            and pilot_store is not None
+        ):
+            _set_flat_region_graph(
+                pilot_store,
+                train_full_index,
+                static_by_col=static_by_col_hub,
+                static_dim=static_dim_hub,
+                feature_mode=flat_feature_mode_hub,
+            )
+            print(  # noqa: T201
+                f"[flat] full-CpG score graph edges={train_full_index.n_edges} "
+                f"genes={train_full_index.n_genes}",
+                flush=True,
+            )
+
         def _mat(ph: SamplePhenotype) -> FlatSampleRecord:
             return _materialize_record(
                 ph,
@@ -2599,6 +2736,32 @@ def train_flat_baseline(
     if tb_writer is not None:
         tb_writer.flush()
         tb_writer.close()
+
+    if within_sampler is not None:
+        exp = within_sampler.exposure_report()
+        exp_path = run_root / "scores" / "within_gene_exposure.json"
+        exp_path.parent.mkdir(parents=True, exist_ok=True)
+        exp_path.write_text(json.dumps(exp, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        metrics_out["within_gene_sampler"] = {
+            k: v for k, v in exp.items() if k != "per_edge"
+        }
+        metrics_out["within_gene_sampler"]["exposure_path"] = str(exp_path)
+    if sparse_view_for_metrics is not None:
+        metrics_out["sparse_betas_io"] = sparse_view_for_metrics.stats.as_dict()
+    if train_full_index is not None:
+        avail = np.bincount(
+            np.asarray(train_full_index.edge_gene_index, dtype=np.int64),
+            minlength=train_full_index.n_genes,
+        ).astype(np.int64)
+        avail_path = run_root / "scores" / "n_available_cpg.npy"
+        avail_path.parent.mkdir(parents=True, exist_ok=True)
+        np.save(avail_path, avail)
+        metrics_out["full_cpg_score"] = {
+            "n_genes": int(train_full_index.n_genes),
+            "n_edges": int(train_full_index.n_edges),
+            "n_available_cpg_path": str(avail_path),
+            "n_observed_cpg": "pending — per-sample observed counts in score_flat_mbs_matrix",
+        }
 
     resolved = dict(config)
     resolved["runtime"] = {

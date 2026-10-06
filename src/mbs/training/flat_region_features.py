@@ -281,18 +281,23 @@ def apply_flat_region_feature_mode(
 
 def gather_flat_region_features(
     *,
-    beta_row: np.ndarray,
+    beta_row: np.ndarray | None = None,
     index: FlatRegionGeneIndex,
     epsilon: float = 0.001,
     base_features: np.ndarray | None = None,
     feature_mode: FlatRegionFeatureMode = "full",
     reg_permute_seed: int | None = None,
     static_dim: int = 0,
+    beta_edge: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return ``(features [n_obs_edges, dim], cpg_to_gene [n_obs_edges])``.
 
     Unobserved graph edges are dropped before pooling. When ``base_features`` is
     provided, only M-value and observed are refreshed from ``beta_row``.
+
+    Pass either ``beta_row`` (indexed by study column) or ``beta_edge`` (values
+    already aligned to ``index.edge_col_index``) — the latter avoids building a
+    dense universe-length row for sparse gathers.
 
     ``reg_permute_seed``: when set, shuffle the regulatory multi-hot block
     (columns ``reg_start:flags_start``) across edges using this seed before
@@ -307,15 +312,25 @@ def gather_flat_region_features(
     the from-scratch branch below, so ``static_dim > 0`` without
     ``base_features`` raises.
     """
-    betas = np.asarray(beta_row, dtype=np.float32).reshape(-1)
     base_dim = flat_region_input_dim()
     dim = base_dim + int(static_dim)
     n_edges = index.n_edges
     if n_edges == 0:
         return np.zeros((0, dim), dtype=np.float32), np.zeros(0, dtype=np.int64)
     cols = index.edge_col_index
-    obs = np.isfinite(betas[cols])
-    safe = np.where(obs, betas[cols], 0.5)
+    if beta_edge is not None:
+        edge_vals = np.asarray(beta_edge, dtype=np.float32).reshape(-1)
+        if edge_vals.shape[0] != n_edges:
+            raise ValueError(
+                f"beta_edge length {edge_vals.shape[0]} != n_edges {n_edges}"
+            )
+    elif beta_row is not None:
+        betas = np.asarray(beta_row, dtype=np.float32).reshape(-1)
+        edge_vals = betas[cols]
+    else:
+        raise ValueError("gather_flat_region_features requires beta_row or beta_edge")
+    obs = np.isfinite(edge_vals)
+    safe = np.where(obs, edge_vals, 0.5)
     m_vals = beta_to_m_value(safe, epsilon=epsilon)
     m_vals = np.where(obs, m_vals, 0.0).astype(np.float32)
     genes = index.edge_gene_index.astype(np.int64, copy=False)

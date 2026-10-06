@@ -93,10 +93,14 @@ modest. Do not re-quote the n=1-baseline deltas.
        → seed smokes RAN 2026-09-29 (N-light + cascade); matched-n re-eval queued
   3.3  Full-width converge — **BLOCKED on 3.5, do not re-run as-is** (see below)
   3.4  Matched CpGPT-off baseline ×6 — **DONE** 2026-09-30, see §2b
-  3.5  **DeepRVAT within-gene sampler** — plumbing in progress (2026-09-30):
-       `cap_flat_region_cpgs_per_gene` + `training.max_cpgs_per_gene`; GPU0 smoke
-       `scripts/run_gpu0_queue_s35.sh` / `stage0_12b_sampler_smoke.yaml` (K=16).
-       Minibatch row×column gather (no dense `betas_ram`) still follow-on.
+  3.5  **DeepRVAT within-gene sampler + sparse gather** — **in progress**
+       (2026-10-06). Plan:
+       [`plans/milestone-12b-sparse-gather-sampler.md`](plans/milestone-12b-sparse-gather-sampler.md).
+       Fixed K=16 cap smoke was plumbing only. Now: no `betas_ram` preload on
+       flat_region path; epoch-varying sampler **before** VRAM calibrate; val/score
+       full-CpG; IO stats. Product default after this lands = **seed-bank train +
+       score ~20k** (all-gene full-width = ablation). Do **not** launch cascade
+       5×6 or dense full-width converge.
 
 ─── NOTE FOR THE CURSOR AGENT (and any other session) ──────────────────────
 Written 2026-09-30 by the Claude Code session. Three things need your attention.
@@ -109,12 +113,10 @@ Root cause is not regularisation: at full width there are 440 903 edges, the
 VRAM probe calibrates batch to **55**, and that is **622 steps/epoch** at ~3h
 per epoch. Restarting it with different regularisation will still cost ~90h.
 
-**(b) The real fix is 3.5, the within-gene CpG sampler — still unbuilt.**
-Capping `max_cpgs_per_gene` cuts edges per sample (full width averages ~22.5
-CpGs/gene over 19 554 genes), which raises the feasible batch and cuts both wall
-time and overfitting at once. This is already the documented product recipe in
-`plans/milestone-12b-full-gene-panel.md` §3. It is the single highest-value
-unbuilt item; full-width work should wait for it rather than burn the card.
+**(b) The real fix is 3.5 — sparse gather + epoch sampler (in progress).**
+Fixed K=16 cap alone is **not** enough (batch stayed 55). See
+`plans/milestone-12b-sparse-gather-sampler.md`. Product recipe after gather:
+**seed-bank train, score all genes**; all-gene full-width train is an ablation.
 
 **(c) Two measurement traps we have now hit, please avoid re-introducing:**
   1. **Do not rank single-seed configs on `mbs_e2e`.** Measured restart spread
