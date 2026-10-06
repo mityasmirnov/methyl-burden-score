@@ -102,6 +102,17 @@ modest. Do not re-quote the n=1-baseline deltas.
        score ~20k** (all-gene full-width = ablation). Do **not** launch cascade
        5×6 or dense full-width converge.
 
+─── GPU0 HOLD — cowrd project (2026-10-06, set by the user) ────────────────
+**Do NOT start a new `run_gpu0_queue_*` after the current §3.5 K=8 smoke ends.**
+GPU0 is being handed to the **cowrd** project. The running job
+(`gpu0_s35_k8_20261006_164931.log`, launched by Cursor 16:49) is expected to
+finish ~05:30–07:00 on 2026-10-07 (epochs ~2h05m; epoch 1 done 19:10; estimate,
+early stopping could shorten it). It is the first real test of the within-gene
+sampler, so it was **not** killed. After it completes, leave GPU0 idle until the
+cowrd agent (`cowrd-powerhorse`) reports it is done, then lift this hold by
+deleting this block. GPU1/GPU2 are other people's services, not ours.
+────────────────────────────────────────────────────────────────────────────
+
 ─── NOTE FOR THE CURSOR AGENT (and any other session) ──────────────────────
 Written 2026-09-30 by the Claude Code session. Three things need your attention.
 
