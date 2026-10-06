@@ -102,6 +102,45 @@ def test_flat_region_static_dim_without_base_features_raises() -> None:
         raise AssertionError("expected ValueError for static_dim without base_features")
 
 
+def test_cap_flat_region_cpgs_per_gene() -> None:
+    """Within-gene sampler keeps ≤K edges/gene; deterministic; identity when under cap."""
+    from mbs.training.flat_region_features import (  # noqa: PLC0415
+        FlatRegionGeneIndex,
+        cap_flat_region_cpgs_per_gene,
+    )
+
+    # Three genes: 2, 5, 1 edges. Cap at 2 → gene1 loses 3 edges.
+    n_reg = 8
+    gene_ids = ["g0", "g1", "g2"]
+    edge_gene = np.asarray([0, 0, 1, 1, 1, 1, 1, 2], dtype=np.int64)
+    n = edge_gene.size
+    index = FlatRegionGeneIndex(
+        gene_ids=gene_ids,
+        edge_col_index=np.arange(n, dtype=np.int64),
+        edge_gene_index=edge_gene,
+        edge_role_id=np.zeros(n, dtype=np.int64),
+        edge_context_id=np.zeros(n, dtype=np.int64),
+        edge_role_present=np.ones(n, dtype=bool),
+        edge_context_present=np.ones(n, dtype=bool),
+        edge_regulatory_present=np.zeros(n, dtype=bool),
+        edge_regulatory_multi_hot=np.zeros((n, n_reg), dtype=np.float32),
+        n_study_loci=n,
+        n_other_gene_edges=0,
+    )
+    capped = cap_flat_region_cpgs_per_gene(index, 2, seed=0)
+    assert capped.n_genes == 3
+    assert capped.n_edges == 2 + 2 + 1
+    counts = np.bincount(capped.edge_gene_index, minlength=3)
+    assert counts.tolist() == [2, 2, 1]
+    # Under-cap is a no-op (same object).
+    same = cap_flat_region_cpgs_per_gene(capped, 2, seed=0)
+    assert same is capped
+    # Deterministic.
+    a = cap_flat_region_cpgs_per_gene(index, 2, seed=7)
+    b = cap_flat_region_cpgs_per_gene(index, 2, seed=7)
+    assert np.array_equal(a.edge_col_index, b.edge_col_index)
+
+
 def test_assignment_col_subset_and_panel_expand() -> None:
     tables = make_synthetic_cascade_tables(seed=2)
     assignment = build_cascade_assignment(

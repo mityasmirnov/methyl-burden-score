@@ -15,8 +15,10 @@ task is pipeline work. Numbering index:
 ## At session start (and before new pipeline work)
 
 1. Open `docs/TODO_PIPELINE.md`.
-2. Read the **Roadmap** (sections 1→5). Today = **section 2** (G1 gene-holdout
-   smokes). Do **not** restart N-light 5×6 or Milestone 10 topology work.
+2. Read the **Roadmap** (sections 1→5). Today = **section 3** (product path;
+   **3.5 within-gene sampler** unblocks full-width — do **not** restart dense
+   full-width converge as-is). G1 random PASS (§2). Do **not** restart N-light
+   5×6 or Milestone 10 topology work.
 3. Work that sequence; pending / deferred (sections 4–5) wait until earlier
    sections clear. Numeric milestone IDs stay; execution order is not numeric.
 
@@ -32,12 +34,12 @@ Keep Cursor session todos in sync (complete / cancel / start next).
 ## Ordering (do not reorder milestone IDs without an ADR)
 
 ```text
-1. DONE       1–11 ATS, 10e, 12 N-light, G2 N-light YES
-2. NEXT       G1 gene-holdout: cascade random → nested → N-light random →
-              nested (cascade first; chrom optional / not queued — DeepRVAT-like)
-3. AFTER G1   product defaults + seed bank + full-width + sampler
-4. PENDING    cascade 5×6; G3 platform; 10d ckpt; paper checklist
-5. DEFERRED   expression aux; Stage 1+; ensemble
+1. DONE  1–11 ATS, 10e, 12 N-light, G2 N-light YES (modest n=6); G1 random PASS
+2. DONE  G1 gene-holdout (matched-n); seed arms ran
+3. NOW   product path: 3.5 within-gene sampler (unblocks 3.3 full-width);
+         do not restart dense full-width as-is
+4. PENDING cascade 5×6; G3 platform; 10d ckpt; paper checklist
+5. DEFERRED expression aux; Stage 1+; ensemble
 ```
 
 Historical aliases `7G` / `7G′` / `7H` / “Milestone 7 OOF” appear in older

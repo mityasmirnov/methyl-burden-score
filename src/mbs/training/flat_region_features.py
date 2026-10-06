@@ -474,3 +474,57 @@ def build_flat_region_base_features(
             f"static_block rows {static_block.shape[0]} != n_edges {n_edges}"
         )
     return np.concatenate([feats, np.asarray(static_block, dtype=np.float32)], axis=1)
+
+
+def cap_flat_region_cpgs_per_gene(
+    index: FlatRegionGeneIndex,
+    max_cpgs_per_gene: int,
+    *,
+    seed: int = 0,
+) -> FlatRegionGeneIndex:
+    """DeepRVAT-style within-gene CpG sampler: keep ≤K edges per gene.
+
+    Uniform sample without replacement when a gene has more than ``max_cpgs_per_gene``
+    edges. Genes at or below the cap are unchanged. Gene order and ids are preserved
+    for genes that retain ≥1 edge (all do when K≥1 and the gene had edges).
+
+    Train-time only in the product recipe; scoring may use the uncapped index.
+    """
+    k = int(max_cpgs_per_gene)
+    if k < 1:
+        raise ValueError(f"max_cpgs_per_gene must be >= 1, got {max_cpgs_per_gene}")
+    genes = np.asarray(index.edge_gene_index, dtype=np.int64)
+    if genes.size == 0:
+        return index
+    rng = np.random.default_rng(int(seed))
+    keep_parts: list[np.ndarray] = []
+    n_capped = 0
+    for g in range(index.n_genes):
+        idxs = np.flatnonzero(genes == g)
+        if idxs.size <= k:
+            keep_parts.append(idxs)
+            continue
+        n_capped += 1
+        keep_parts.append(rng.choice(idxs, size=k, replace=False))
+    if n_capped == 0:
+        return index
+    keep = np.sort(np.concatenate(keep_parts))
+    role_ids = np.asarray(index.edge_role_id, dtype=np.int64)[keep]
+    other_id = GENE_ROLES.index("other_gene")
+    return FlatRegionGeneIndex(
+        gene_ids=list(index.gene_ids),
+        edge_col_index=np.asarray(index.edge_col_index, dtype=np.int64)[keep],
+        edge_gene_index=genes[keep],
+        edge_role_id=role_ids,
+        edge_context_id=np.asarray(index.edge_context_id, dtype=np.int64)[keep],
+        edge_role_present=np.asarray(index.edge_role_present, dtype=bool)[keep],
+        edge_context_present=np.asarray(index.edge_context_present, dtype=bool)[keep],
+        edge_regulatory_present=np.asarray(index.edge_regulatory_present, dtype=bool)[
+            keep
+        ],
+        edge_regulatory_multi_hot=np.asarray(
+            index.edge_regulatory_multi_hot, dtype=np.float32
+        )[keep],
+        n_study_loci=int(index.n_study_loci),
+        n_other_gene_edges=int(np.sum(role_ids == other_id)),
+    )

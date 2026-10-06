@@ -1,0 +1,75 @@
+{
+  "split_id": "hub-nine-pack-3fold-v1",
+  "n_folds": 3,
+  "n_restarts": 6,
+  "run_prefix": "stage0-7h-baseline-multirestart",
+  "primary_evaluation": "mbs_enet_nested",
+  "rows": [
+    {
+      "run_id": "stage0-7h-baseline-multirestart-f0-r0",
+      "fold": 0,
+      "restart": 0,
+      "nested_tissue_f1": 0.3688872191290792,
+      "nested_age_mae": 9.52683919843778,
+      "nested_sex_auroc": 0.8046340859068615,
+      "e2e_tissue_f1": 0.35986795408891964,
+      "e2e_age_mae": 12.65672320948889,
+      "e2e_sex_auroc": 0.9211636654390567
+    },
+    {
+      "run_id": "stage0-7h-baseline-multirestart-f0-r1",
+      "fold": 0,
+      "restart": 1,
+      "nested_tissue_f1": 0.3689259515859895,
+      "nested_age_mae": 9.529380161131552,
+      "nested_sex_auroc": 0.8071253563713973,
+      "e2e_tissue_f1": 0.3503237008412036,
+      "e2e_age_mae": 15.792257272382706,
+      "e2e_sex_auroc": 0.9129761023670029
+    },
+    {
+      "run_id": "stage0-7h-baseline-multirestart-f0-r2",
+      "fold": 0,
+      "restart": 2,
+      "nested_tissue_f1": 0.3526263786817604,
+      "nested_age_mae": 9.181367123678285,
+      "nested_sex_auroc": 0.8101021017336929,
+      "e2e_tissue_f1": 0.3142533676531878,
+      "e2e_age_mae": 15.782555312957049,
+      "e2e_sex_auroc": 0.905586902697056
+    },
+    {
+      "run_id": "stage0-7h-baseline-multirestart-f0-r3",
+      "fold": 0,
+      "restart": 3,
+      "nested_tissue_f1": 0.36454914113394593,
+      "nested_age_mae": 9.31628141653603,
+      "nested_sex_auroc": 0.8065883611395168,
+      "e2e_tissue_f1": 0.31851371562728803,
+      "e2e_age_mae": 12.794885298230188,
+      "e2e_sex_auroc": 0.9035420969556192
+    },
+    {
+      "run_id": "stage0-7h-baseline-multirestart-f0-r4",
+      "fold": 0,
+      "restart": 4,
+      "nested_tissue_f1": 0.35453085795943495,
+      "nested_age_mae": 8.206444883299477,
+      "nested_sex_auroc": 0.8673059492668643,
+      "e2e_tissue_f1": 0.27327480843963137,
+      "e2e_age_mae": 13.902195652269683,
+      "e2e_sex_auroc": 0.8883995578129442
+    },
+    {
+      "run_id": "stage0-7h-baseline-multirestart-f0-r5",
+      "fold": 0,
+      "restart": 5,
+      "nested_tissue_f1": 0.35887516392980057,
+      "nested_age_mae": 8.019041013970536,
+      "nested_sex_auroc": 0.853829817171418,
+      "e2e_tissue_f1": 0.2971976796313281,
+      "e2e_age_mae": 12.107440269613722,
+      "e2e_sex_auroc": 0.9228884532304326
+    }
+  ]
+}

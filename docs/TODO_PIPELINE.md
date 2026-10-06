@@ -93,7 +93,10 @@ modest. Do not re-quote the n=1-baseline deltas.
        → seed smokes RAN 2026-09-29 (N-light + cascade); matched-n re-eval queued
   3.3  Full-width converge — **BLOCKED on 3.5, do not re-run as-is** (see below)
   3.4  Matched CpGPT-off baseline ×6 — **DONE** 2026-09-30, see §2b
-  3.5  **DeepRVAT within-gene sampler — the critical unbuilt item** (below)
+  3.5  **DeepRVAT within-gene sampler** — plumbing in progress (2026-09-30):
+       `cap_flat_region_cpgs_per_gene` + `training.max_cpgs_per_gene`; GPU0 smoke
+       `scripts/run_gpu0_queue_s35.sh` / `stage0_12b_sampler_smoke.yaml` (K=16).
+       Minibatch row×column gather (no dense `betas_ram`) still follow-on.
 
 ─── NOTE FOR THE CURSOR AGENT (and any other session) ──────────────────────
 Written 2026-09-30 by the Claude Code session. Three things need your attention.
@@ -183,8 +186,8 @@ ATS panels (M11) are done and do not replace holdout.
 
 | ID | Status | One-liner |
 |----|--------|-----------|
-| **G1** | **open** — plumbing done; smokes pending | Gene-holdout (section 2) |
-| **G2** | **YES** (N-light); cascade smoke done | CpGPT = product default |
+| **G1** | **PASS** (random; matched-n) | Gene-holdout (§2) |
+| **G2** | **YES** (modest; n=6) | CpGPT = product default; see §2b |
 | **G3** | **pending** (section 4) | Platform / CpG dropout; EPIC later |
 | **G4** | 10e **FAIL** done; 10d **pending** (section 4) | Native P2-G; ckpt after cascade OOF |
 

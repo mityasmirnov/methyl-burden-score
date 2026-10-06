@@ -79,6 +79,7 @@ from mbs.training.flat_region_features import (
     assert_flat_region_index,
     build_flat_region_base_features,
     build_flat_region_gene_index,
+    cap_flat_region_cpgs_per_gene,
     flat_region_input_dim,
     gather_flat_region_features,
 )
@@ -1422,6 +1423,23 @@ def train_flat_baseline(
                 f"other_gene={flat_region_index.n_other_gene_edges}",
                 flush=True,
             )
+            # DeepRVAT within-gene CpG sampler (train graph only). full_flat_region_index
+            # stays uncapped for heldout / full-CpG score paths.
+            max_cpgs_cfg = train_cfg.get("max_cpgs_per_gene")
+            if max_cpgs_cfg is not None and not gene_holdout_seed_deferred:
+                before = int(flat_region_index.n_edges)
+                flat_region_index = cap_flat_region_cpgs_per_gene(
+                    flat_region_index,
+                    int(max_cpgs_cfg),
+                    seed=int(config.get("experiment", {}).get("seed", 42)),
+                )
+                gene_ids = flat_region_index.gene_ids
+                n_genes = flat_region_index.n_genes
+                print(  # noqa: T201
+                    f"[flat_region] max_cpgs_per_gene={int(max_cpgs_cfg)} "
+                    f"edges {before} -> {flat_region_index.n_edges}",
+                    flush=True,
+                )
         else:
             gene_ids = locus_gene.gene_ids
             n_genes = locus_gene.n_genes
@@ -1550,6 +1568,19 @@ def train_flat_baseline(
                 full_flat_region_index,
                 gene_holdout_partition.train_gene_ids,
             )
+            max_cpgs_cfg = train_cfg.get("max_cpgs_per_gene")
+            if max_cpgs_cfg is not None:
+                before = int(flat_region_index.n_edges)
+                flat_region_index = cap_flat_region_cpgs_per_gene(
+                    flat_region_index,
+                    int(max_cpgs_cfg),
+                    seed=int(config.get("experiment", {}).get("seed", 42)),
+                )
+                print(  # noqa: T201
+                    f"[flat_region] max_cpgs_per_gene={int(max_cpgs_cfg)} "
+                    f"edges {before} -> {flat_region_index.n_edges}",
+                    flush=True,
+                )
             edge_static_block = (
                 static_by_col[flat_region_index.edge_col_index] if static_dim > 0 else None
             )
