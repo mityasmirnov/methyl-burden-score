@@ -101,6 +101,55 @@ modest. Do not re-quote the n=1-baseline deltas.
        full-CpG; IO stats. Product default after this lands = **seed-bank train +
        score ~20k** (all-gene full-width = ablation). Do **not** launch cascade
        5×6 or dense full-width converge.
+  3.6  **Resume-from-checkpoint in the flat training loop** — **scheduled; start
+       only AFTER the §3.5 K=8 smoke finishes** (user decision 2026-10-06; the
+       loop.py it edits is live under Cursor's run, and the tree is shared).
+       Why: a job cannot be paused, moved, or survive an overload / preemption —
+       we hit this when cowrd needed GPU0 and the only option was "kill and lose
+       ~5h40m". `dev_cv.py`'s "resume" only skips *finished* runs; nothing
+       continues a run mid-training.
+
+       **What already exists (verified in code, not assumed):** `last.pt` is
+       written every epoch (`loop.py` ~2335) with model + head + optimizer state,
+       plus `epoch`, `metrics`, `config_hash`. No LR scheduler and no GradScaler
+       (constant `lr`, bf16) — nothing extra to restore there. **Both samplers are
+       pure functions of (seed, epoch)**: within-gene `default_rng(seed + epoch *
+       1_000_003)` and batch order `Random(seed + epoch)` — so a run resumed at
+       epoch N+1 sees *exactly* the data the uninterrupted run would have.
+
+       **What is missing / must be built:**
+         a. **Atomic checkpoint writes.** `save_checkpoint` (`run_artifacts.py`)
+            calls `torch.save(payload, path)` straight onto `last.pt`; a kill
+            mid-write leaves a truncated file — and a crash is precisely when we
+            would need it. Write to a temp file + `os.replace`.
+         b. **Persist the bookkeeping.** `last.pt` is written (line ~2335) BEFORE
+            the best/patience logic (~2345–2381), so it never contains
+            `best_rank`, `best_val`, `best_epoch`, `stale`, `val_history`,
+            `history`. Add a `resume_state` block and write it *after* that
+            logic, so `last.pt` and `best.pt` are consistent with each other.
+         c. **Resume entry point.** e.g. `training.resume: auto | <path>`: load
+            model/head/optimizer, set `start_epoch = epoch + 1`, restore (b), and
+            skip the epoch-0 calibration side effects that would re-probe VRAM.
+         d. **Fail closed.** Refuse to resume on `config_hash` mismatch, missing
+            `resume_state` (old checkpoints), or an `epoch >= max_epochs` file,
+            with an explicit error (repo rule: raise on mismatches, never guess).
+         e. **RNG (best effort).** Also save torch CPU/CUDA RNG state for dropout.
+            Do not promise bit-identity on GPU — the repo has no determinism
+            settings, so the same seed already does not reproduce.
+
+       **Acceptance:** CPU synthetic fixture, tiny model — train N epochs
+       straight vs. train K, stop, resume to N; assert identical final weights
+       and identical history (achievable on CPU because the samplers are
+       deterministic and RNG state is restored). Plus: truncated-`last.pt`
+       test (resume must raise, not silently load), config-hash-mismatch test,
+       and a test that the atomic write leaves the previous file intact if the
+       write is interrupted.
+
+       **Scope:** flat loop first. `cascade_loop.py` has warm-start but no
+       resume — separate follow-up. **Coordination:** touches `loop.py` and
+       `run_artifacts.py`, both edited by Cursor (§3.5) — pull before starting
+       and commit narrowly. Does not need a GPU, so it can proceed while cowrd
+       holds GPU0.
 
 ─── GPU0 HOLD — cowrd project (2026-10-06, set by the user) ────────────────
 **Do NOT start a new `run_gpu0_queue_*` after the current §3.5 K=8 smoke ends,
