@@ -103,14 +103,27 @@ modest. Do not re-quote the n=1-baseline deltas.
        5×6 or dense full-width converge.
 
 ─── GPU0 HOLD — cowrd project (2026-10-06, set by the user) ────────────────
-**Do NOT start a new `run_gpu0_queue_*` after the current §3.5 K=8 smoke ends.**
-GPU0 is being handed to the **cowrd** project. The running job
-(`gpu0_s35_k8_20261006_164931.log`, launched by Cursor 16:49) is expected to
-finish ~05:30–07:00 on 2026-10-07 (epochs ~2h05m; epoch 1 done 19:10; estimate,
+**Do NOT start a new `run_gpu0_queue_*` after the current §3.5 K=8 smoke ends,
+until the user lifts this hold.**
+
+Why GPU0 specifically: the cowrd queue does not *require* GPU0 or exclusive use
+(its `gpu_wait` takes any card with enough free VRAM), but its next job (G-prot)
+needs **>=24 GiB free on one card** and none of the three qualifies now
+(free: GPU0 4.1 / GPU1 6.6 / GPU2 18.0 GiB). GPU1 and GPU2 are held by other
+people's long-lived services (vLLM up 16 d, evadb daemon up 18 d, bge-m3 up
+15 d), so they will not free 24 GiB on their own. **GPU0 is the only card that
+can, and only once our job ends.** If we immediately start another ~45 GB queue
+there, cowrd stalls indefinitely.
+
+Our job: `gpu0_s35_k8_20261006_164931.log` (launched by Cursor 16:49; epoch 1
+done 19:10; ~2h05m/epoch; est. finish ~05:30–07:00 on 2026-10-07 — an estimate,
 early stopping could shorten it). It is the first real test of the within-gene
-sampler, so it was **not** killed. After it completes, leave GPU0 idle until the
-cowrd agent (`cowrd-powerhorse`) reports it is done, then lift this hold by
-deleting this block. GPU1/GPU2 are other people's services, not ours.
+sampler, so it was **not** killed.
+
+Note the cowrd agent (`cowrd-powerhorse`) said the hold is not strictly needed
+by its design and offered to have it lifted. That is a peer's view, not the
+user's decision, and it does not account for the cards' occupants above — so the
+hold stays until the **user** says otherwise. GPU1/GPU2 are not ours.
 ────────────────────────────────────────────────────────────────────────────
 
 ─── NOTE FOR THE CURSOR AGENT (and any other session) ──────────────────────
