@@ -16,10 +16,9 @@ task is pipeline work. Numbering index:
 
 1. Open `docs/TODO_PIPELINE.md`.
 2. Read the **Roadmap** (sections 1→5). Today = **section 3** (product path;
-   **3.5 sparse gather + epoch sampler** — plan
-   `docs/plans/milestone-12b-sparse-gather-sampler.md`. Do **not** restart dense
-   full-width converge; do **not** launch cascade 5×6. Product default after
-   gather = seed-bank train + score ~20k). G1 random PASS (§2).
+   **3.5** train-path PASS / seed-bank next; **3.6 resume DONE**. Do **not**
+   restart dense full-width; do **not** launch cascade 5×6; **GPU0 held for
+   cowrd** until user lifts hold). G1 PASS (§2).
 3. Work that sequence; pending / deferred (sections 4–5) wait until earlier
    sections clear. Numeric milestone IDs stay; execution order is not numeric.
 
@@ -37,8 +36,8 @@ Keep Cursor session todos in sync (complete / cancel / start next).
 ```text
 1. DONE  1–11 ATS, 10e, 12 N-light, G2 N-light YES (modest n=6); G1 random PASS
 2. DONE  G1 gene-holdout (matched-n); seed arms ran
-3. NOW   product path: 3.5 within-gene sampler (unblocks 3.3 full-width);
-         do not restart dense full-width as-is
+3. NOW   product path: 3.5 train PASS; 3.6 resume done; seed-bank next when GPU free
+   do not restart dense full-width; GPU0 held for cowrd
 4. PENDING cascade 5×6; G3 platform; 10d ckpt; paper checklist
 5. DEFERRED expression aux; Stage 1+; ensemble
 ```

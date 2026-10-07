@@ -1,10 +1,24 @@
 # Milestone 12b §3.5 — sparse gather + epoch within-gene sampler
 
-> Status (2026-10-06): **in progress**. K=16 fixed-cap smoke validated plumbing
-> only — **not** §3.5 done. Product path = sparse/ragged memory + stochastic
-> within-gene sampling. Parent:
+> Status (2026-10-07): **train-path PASS**. Sparse gather + epoch sampler in
+> tree; K=8 smoke completed 6/6 train epochs (batch 111); post-train scoring
+> killed to free GPU0 (checkpoints retained). Remaining for full §3.5 product
+> acceptance: seed-bank train + score ~20k; optional K∈{8,12,16,32} nested
+> ranking when GPU returns. Parent:
 > [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md) ·
 > seed recipe: [`milestone-12b-deeprvat-seed-recipe.md`](milestone-12b-deeprvat-seed-recipe.md).
+
+### K=8 smoke record
+
+| Item | Value |
+|------|-------|
+| Config | `configs/experiment/stage0_12b_sampler_smoke_k8.yaml` |
+| Log | `scratch/logs/gpu0_s35_k8_20261006_164931.log` |
+| Edges | 440903 → 147438 (K=8 epoch sample; calibrate on sampled graph) |
+| Batch | probe 222 OOM → **111** (dense full-width was 55) |
+| Train | epochs 1–6 complete; `last.pt`/`best.pt` ~2026-10-07 05:16 |
+| Outcome | post-score killed ~10:09 same day (VRAM hold @ 0% util); no summary.json |
+| Ckpt | `artifacts/checkpoints/stage0-12b-sampler-smoke-k8-f0/` (pre-resume format) |
 
 ## Scope and acceptance
 

@@ -58,6 +58,8 @@ no separate milestone number. **YES for N-light**; cascade smoke still in GPU qu
 | [`milestone-12b-full-gene-panel.md`](milestone-12b-full-gene-panel.md) | GATE G1 gene utilization |
 | [`milestone-12b-gene-holdout.md`](milestone-12b-gene-holdout.md) | G1 gene-holdout (random gate; chrom optional; seed product; N-light + cascade) |
 | [`milestone-12b-deeprvat-seed-recipe.md`](milestone-12b-deeprvat-seed-recipe.md) | DeepRVAT-aligned multi-trait seed bank (product path; no masks) |
+| [`milestone-12b-sparse-gather-sampler.md`](milestone-12b-sparse-gather-sampler.md) | §3.5 sparse minibatch gather + epoch within-gene sampler |
+| [`milestone-12b-resume-checkpoint.md`](milestone-12b-resume-checkpoint.md) | §3.6 flat-loop atomic checkpoint + resume |
 | [`milestone-12c-platform-robustness.md`](milestone-12c-platform-robustness.md) | GATE G3 platform dropout / EPIC path |
 | [`milestone-13-expression-auxiliary.md`](milestone-13-expression-auxiliary.md) | `milestone-7g-double-prime-expression-auxiliary.md` (+ download) |
 

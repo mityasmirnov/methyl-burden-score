@@ -93,86 +93,44 @@ modest. Do not re-quote the n=1-baseline deltas.
        → seed smokes RAN 2026-09-29 (N-light + cascade); matched-n re-eval queued
   3.3  Full-width converge — **BLOCKED on 3.5, do not re-run as-is** (see below)
   3.4  Matched CpGPT-off baseline ×6 — **DONE** 2026-09-30, see §2b
-  3.5  **DeepRVAT within-gene sampler + sparse gather** — **in progress**
-       (2026-10-06). Plan:
+  3.5  **DeepRVAT within-gene sampler + sparse gather** — **train-path PASS**
+       (2026-10-07); product seed-bank run still pending. Plan:
        [`plans/milestone-12b-sparse-gather-sampler.md`](plans/milestone-12b-sparse-gather-sampler.md).
-       Fixed K=16 cap smoke was plumbing only. Now: no `betas_ram` preload on
-       flat_region path; epoch-varying sampler **before** VRAM calibrate; val/score
-       full-CpG; IO stats. Product default after this lands = **seed-bank train +
-       score ~20k** (all-gene full-width = ablation). Do **not** launch cascade
-       5×6 or dense full-width converge.
-  3.6  **Resume-from-checkpoint in the flat training loop** — **scheduled; start
-       only AFTER the §3.5 K=8 smoke finishes** (user decision 2026-10-06; the
-       loop.py it edits is live under Cursor's run, and the tree is shared).
-       Why: a job cannot be paused, moved, or survive an overload / preemption —
-       we hit this when cowrd needed GPU0 and the only option was "kill and lose
-       ~5h40m". `dev_cv.py`'s "resume" only skips *finished* runs; nothing
-       continues a run mid-training.
+       Code: no `betas_ram` on flat_region; epoch sampler before VRAM calibrate;
+       val/score full-CpG; IO stats. **K=8 smoke** (`stage0_12b_sampler_smoke_k8`):
+       440903→147438 edges, calibrate batch **111** (vs dense 55), 6/6 epochs
+       finished (~05:16); post-train scoring held ~43 GiB @ 0% util and was
+       **killed 2026-10-07 ~10:09** to free GPU0 for cowrd. Checkpoints kept:
+       `artifacts/checkpoints/stage0-12b-sampler-smoke-k8-f0/{best,last}.pt`
+       (pre-§3.6 payload — no `resume_state`; use `reeval_only` to re-score).
+       Log: `scratch/logs/gpu0_s35_k8_20261006_164931.log`. **Next on GPU when
+       hold lifts:** seed-bank train + score ~20k (`resume: auto`). Do **not**
+       launch cascade 5×6 or dense full-width converge.
+  3.6  **Resume-from-checkpoint in the flat training loop** — **DONE** 2026-10-07.
+       Plan: [`plans/milestone-12b-resume-checkpoint.md`](plans/milestone-12b-resume-checkpoint.md).
+       Why: a job could not be paused, moved, or survive preemption (cowrd GPU0
+       hold left only "kill and lose ~5h40m"). `dev_cv.py` still only skips
+       *finished* runs.
 
-       **What already exists (verified in code, not assumed):** `last.pt` is
-       written every epoch (`loop.py` ~2335) with model + head + optimizer state,
-       plus `epoch`, `metrics`, `config_hash`. No LR scheduler and no GradScaler
-       (constant `lr`, bf16) — nothing extra to restore there. **Both samplers are
-       pure functions of (seed, epoch)**: within-gene `default_rng(seed + epoch *
-       1_000_003)` and batch order `Random(seed + epoch)` — so a run resumed at
-       epoch N+1 sees *exactly* the data the uninterrupted run would have.
+       **Results:** `save_checkpoint` is atomic (temp + `os.replace`). `last.pt`
+       / `best.pt` are written *after* best/patience bookkeeping and carry a
+       `resume_state` block (best_*, stale, histories, batch_size, RNG).
+       `training.resume: auto | <path>` restores model/head/optimizer + state,
+       skips VRAM calibrate, and continues at `epoch+1`. Fail-closed on
+       truncated file, `config_hash` mismatch, missing `resume_state`, or
+       `epoch >= max_epochs`. CPU overfit identity: N straight ≡ K then resume
+       to N (weights + history). Tests: `tests/unit/test_resume_checkpoint.py`.
 
-       **What is missing / must be built:**
-         a. **Atomic checkpoint writes.** `save_checkpoint` (`run_artifacts.py`)
-            calls `torch.save(payload, path)` straight onto `last.pt`; a kill
-            mid-write leaves a truncated file — and a crash is precisely when we
-            would need it. Write to a temp file + `os.replace`.
-         b. **Persist the bookkeeping.** `last.pt` is written (line ~2335) BEFORE
-            the best/patience logic (~2345–2381), so it never contains
-            `best_rank`, `best_val`, `best_epoch`, `stale`, `val_history`,
-            `history`. Add a `resume_state` block and write it *after* that
-            logic, so `last.pt` and `best.pt` are consistent with each other.
-         c. **Resume entry point.** e.g. `training.resume: auto | <path>`: load
-            model/head/optimizer, set `start_epoch = epoch + 1`, restore (b), and
-            skip the epoch-0 calibration side effects that would re-probe VRAM.
-         d. **Fail closed.** Refuse to resume on `config_hash` mismatch, missing
-            `resume_state` (old checkpoints), or an `epoch >= max_epochs` file,
-            with an explicit error (repo rule: raise on mismatches, never guess).
-         e. **RNG (best effort).** Also save torch CPU/CUDA RNG state for dropout.
-            Do not promise bit-identity on GPU — the repo has no determinism
-            settings, so the same seed already does not reproduce.
+       **Verdict:** flat-loop resume is usable for long smokes. Cascade resume
+       remains a follow-up. Put `training.resume: auto` in long-job YAMLs so
+       `config_hash` stays stable across restart.
 
-       **Acceptance:** CPU synthetic fixture, tiny model — train N epochs
-       straight vs. train K, stop, resume to N; assert identical final weights
-       and identical history (achievable on CPU because the samplers are
-       deterministic and RNG state is restored). Plus: truncated-`last.pt`
-       test (resume must raise, not silently load), config-hash-mismatch test,
-       and a test that the atomic write leaves the previous file intact if the
-       write is interrupted.
+─── GPU0 HOLD — cowrd project (2026-10-06; smoke freed 2026-10-07) ─────────
+**Do NOT start a new `run_gpu0_queue_*` until the user lifts this hold.**
 
-       **Scope:** flat loop first. `cascade_loop.py` has warm-start but no
-       resume — separate follow-up. **Coordination:** touches `loop.py` and
-       `run_artifacts.py`, both edited by Cursor (§3.5) — pull before starting
-       and commit narrowly. Does not need a GPU, so it can proceed while cowrd
-       holds GPU0.
-
-─── GPU0 HOLD — cowrd project (2026-10-06, set by the user) ────────────────
-**Do NOT start a new `run_gpu0_queue_*` after the current §3.5 K=8 smoke ends,
-until the user lifts this hold.**
-
-Why GPU0 specifically: the cowrd queue does not *require* GPU0 or exclusive use
-(its `gpu_wait` takes any card with enough free VRAM), but its next job (G-prot)
-needs **>=24 GiB free on one card** and none of the three qualifies now
-(free: GPU0 4.1 / GPU1 6.6 / GPU2 18.0 GiB). GPU1 and GPU2 are held by other
-people's long-lived services (vLLM up 16 d, evadb daemon up 18 d, bge-m3 up
-15 d), so they will not free 24 GiB on their own. **GPU0 is the only card that
-can, and only once our job ends.** If we immediately start another ~45 GB queue
-there, cowrd stalls indefinitely.
-
-Our job: `gpu0_s35_k8_20261006_164931.log` (launched by Cursor 16:49; epoch 1
-done 19:10; ~2h05m/epoch; est. finish ~05:30–07:00 on 2026-10-07 — an estimate,
-early stopping could shorten it). It is the first real test of the within-gene
-sampler, so it was **not** killed.
-
-Note the cowrd agent (`cowrd-powerhorse`) said the hold is not strictly needed
-by its design and offered to have it lifted. That is a peer's view, not the
-user's decision, and it does not account for the cards' occupants above — so the
-hold stays until the **user** says otherwise. GPU1/GPU2 are not ours.
+K=8 sparse train finished; post-score process was killed ~10:09 on 2026-10-07
+so cowrd can take >=24 GiB on GPU0 (only card that can free that much; GPU1/2
+held by long-lived services). Hold remains until the **user** says otherwise.
 ────────────────────────────────────────────────────────────────────────────
 
 ─── NOTE FOR THE CURSOR AGENT (and any other session) ──────────────────────
@@ -236,8 +194,8 @@ Figures: [`figures/deepmat-poster.png`](figures/deepmat-poster.png) ·
 
 ### Active work detail (sections 2–3)
 
-**GPU 0** — keep saturated; failures log and continue. Check GPU 1/2 before
-assuming capacity.
+**GPU 0** — **held for cowrd** (2026-10-07); do not queue MBS jobs until the
+user lifts the hold. When free again: single-owner (`pgrep -af run_gpu0_queue`).
 
 **Product defaults** (apply once G1 + topology are locked):
 

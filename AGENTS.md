@@ -11,10 +11,11 @@ Milestone 7C, optional non-gene **RBS**, intergenic **TBS**, and direct CpG
 contributions) for association and prediction. Current gate and ordering:
 [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md)
 (numbers: [`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md);
-**now = GATE G1 gene-holdout / 12b** — GPU queue: cascade random → nested →
-N-light random → nested (chromosome optional / not queued; DeepRVAT-like).
-After arch lock: max samples, CpGPT on, trait heads, `method: seed`. Follow the
-execution-order roadmap in that TODO, not numeric milestone order.
+**now = product path (§3)** — G1 PASS; sparse gather train-path PASS; resume
+DONE. Next when GPU free: seed-bank train + score ~20k (`resume: auto`).
+GPU0 held for cowrd until user lifts hold. Do not cascade 5×6 or dense
+full-width converge. Follow the execution-order roadmap in that TODO, not
+numeric milestone order.
 
 ## Filesystem policy
 

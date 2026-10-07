@@ -15,58 +15,87 @@ milestones: [`docs/plans/MILESTONE_INDEX.md`](docs/plans/MILESTONE_INDEX.md).
 [`docs/figures/nlight-cpgpt-architecture.png`](docs/figures/nlight-cpgpt-architecture.png) ·
 [`docs/figures/p2g-cascade-architecture.png`](docs/figures/p2g-cascade-architecture.png).
 
-**NOW (roadmap §2):** GATE **G1** gene-holdout — **cascade first**, then
-N-light (random → nested). Chromosome arms optional only (not queued);
-DeepRVAT-like gate = random holdout. Product path after G1 uses `method:seed`.
-GPU0 queue: `scripts/run_gpu0_queue_g1.sh`. **§3** after G1: max samples ·
-CpGPT on · trait heads · seed bank. **§4 pending:** cascade 5×6, G3, 10d.
-Do **not** auto-launch cascade 5×6 or retrain frozen v0.1. Full order:
-[`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
+---
+
+## Status (2026-10-07)
+
+**G1 gene-holdout PASS** (matched-n). **G2 CpGPT YES** (modest, N-light n=6).
+Sparse gather + epoch sampler landed; flat-loop **resume** landed. K=8 sparse
+train smoke finished 6/6 epochs (batch 111); post-train scoring was killed to
+free GPU0 for another project — checkpoints kept.
+
+**Do not** restart dense full-width converge (~90 h). **Do not** launch cascade
+5×6 until product seed-bank path is exercised and G3 is addressed. GPU0 is
+held for cowrd until the user lifts the hold.
+
+Full order: [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md).
 
 ---
 
-## Leaderboard
+## Leaderboard — best architectures
 
 Triplets are **tissue macro-F1 ↑ / age MAE ↓ / sex AUROC ↑**.
 **Product claims use frozen nested elastic-net** (`mbs_enet_nested`), not joint
 `mbs_e2e` (architecture screen only). Prefer multi-seed nested gaps; single-seed
 nested Δ under ~0.5 age MAE is noise (measured spread ≈0.19).
 
-### Product path (nine-pack, nested enet)
+### Locked product / topology choices
+
+| Role | Choice | Why |
+|------|--------|-----|
+| Cascade topology | **P2-G** scalar RBS, max/max, `explicit_only` | Nine-pack lock; staged S1–S4 **FAIL** |
+| Light encoder | **N-light@64** + CpGPT (product default) | G2 age/sex win; width sweep null |
+| Train genes (product) | Multi-trait **seed-bank** (`method: seed`) | G1 PASS → encoder transfers; cheaper than 20k-gene train |
+| Score genes | ~all gene-linked (~20k) full CpGs | Deploy coverage; train may use ≤K/gene |
+| Classical tissue ceiling | `C-mvalue-enet-G` **0.388** | Still best ATS tissue; neural has not beaten it cleanly |
+
+### Nested product path (nine-pack)
 
 | Rank | Setup | Tissue | Age | Sex | Notes |
 |-----:|-------|-------:|----:|----:|-------|
-| 1 | **N-light@64 + CpGPT** (fold 0, n=6) | 0.355 | **8.10** ±0.19 | **0.879** ±0.015 | **G2 YES** — age/sex win; small tissue cost |
+| 1 | **N-light@64 + CpGPT** (fold 0, n=6) | 0.355 | **8.10** ±0.14 | **0.879** ±0.015 | **G2 YES** — modest; ranges overlap |
 | 2 | N-light@64 3-fold nested | **0.368** | 9.88 | 0.803 | Light path without CpGPT |
 | 3 | N-light 5×6 OOF nested (30/30) | 0.316 | 9.59 | 0.822 | Closed 65k-prefix validation |
 | 4 | P2-G cascade nested 3-fold | 0.335 | 9.81 | 0.759 | Cascade nested baseline |
-| — | Full-width + CpGPT (~19.6k genes, n=1) | **0.388** | 11.67 | **0.962** | Best tissue/sex on record; **undertrained** (best ep 4); age worse — converge run pending |
+| — | Full-width + CpGPT (~19.6k genes, n=1) | **0.388** | 11.67 | **0.962** | Best tissue/sex on record; **undertrained**; dense converge killed |
 
-### Topology & classical ceilings
+### Topology & classical (screen / ATS)
 
 | Claim | Cite | Verdict |
 |-------|------|---------|
-| Cascade topology | Nine-pack P2-G `mbs_e2e` **0.355 / 13.43 / 0.853** | **Locked** (scalar max/max) |
-| Cascade training recipe | Fair S1→S4 vs native P2-G | Staged **FAIL** → native P2-G |
-| ATS classical tissue | `C-mvalue-enet-G` **0.388** | Still the ATS tissue ceiling |
-| ATS cascade e2e | P2-G `mbs_e2e` **0.373** | Locked Stage A topology on ATS |
+| Cascade topology | P2-G `mbs_e2e` **0.355 / 13.43 / 0.853** | **Locked** |
+| Cascade train recipe | Fair S1→S4 vs native P2-G | Staged **FAIL** → native P2-G |
+| ATS cascade e2e | P2-G **0.373** | Locked Stage A on ATS |
 | Seed-gene masking (9c) | G0 ≫ G1–G3 | **Not adopted** |
-| CpGPT width sweep | 6 arms | **No capacity effect** — keep width 64 |
-| Freeze-reuse cancer | AUROC **~0.954** | Useful; BMI not useful yet |
+| Freeze-reuse cancer | AUROC **~0.954** | Useful; BMI not yet |
 
 Full tables + caveats:
 [`docs/ARCHITECTURE_BENCHMARKS.md`](docs/ARCHITECTURE_BENCHMARKS.md).
-Seed-mask write-up:
-[`docs/plans/milestone-7g-prime-age-seed-mask.md`](docs/plans/milestone-7g-prime-age-seed-mask.md).
 
-### GATE (blocks cascade OOF)
+### GATEs
 
 | ID | Status | One-liner |
 |----|--------|-----------|
-| **G1** | open | Gene-holdout plumbing done (N-light+cascade, random+chrom); smokes pending |
-| **G2** | **YES** (N-light) | CpGPT sequence embeddings = product default once arch locked |
+| **G1** | **PASS** (matched-n) | Gene-invariant encoder transfers; chrom optional only |
+| **G2** | **YES** (N-light, modest) | CpGPT on for product once arch locked |
 | **G3** | not started | Platform / CpG dropout robustness |
 | **G4** | 10e FAIL; 10d pending | Native P2-G; checkpoint after cascade finalist |
+
+---
+
+## Next steps (brief)
+
+1. **GPU0** — leave free for cowrd until the hold is lifted.
+2. **Product train** — when a card is free: seed-bank flat train
+   (`method: seed` + CpGPT + `sparse_betas` + `max_cpgs_per_gene` +
+   `training.resume: auto`), then score ~20k genes full-CpG. Prefer this over
+   all-gene full-width train (ablation only).
+3. **Optional** — `reeval_only` from
+   `artifacts/checkpoints/stage0-12b-sampler-smoke-k8-f0/best.pt` if a K=8
+   score report is needed (train curve already logged).
+4. **Still blocked** — cascade 5×6 OOF; dense full-width converge restart.
+5. **Later** — G3 platform; cascade OOF on G1 panel (native P2-G + CpGPT);
+   10d reference checkpoint; paper checklist (`docs/TODO_PAPER.md`).
 
 ---
 
@@ -114,6 +143,9 @@ uv run mbs train flat --overfit-fixture
 # Live run: uv run mbs monitor --run-id <run-id>
 ```
 
+Long jobs: set `training.resume: auto` so a kill/preemption can continue from
+`last.pt` (flat loop; §3.6).
+
 ---
 
 ## Docs map
@@ -123,6 +155,8 @@ uv run mbs train flat --overfit-fixture
 | Live checklist | [`docs/TODO_PIPELINE.md`](docs/TODO_PIPELINE.md) |
 | Poster / talk panel | [`docs/figures/deepmat-poster.png`](docs/figures/deepmat-poster.png) |
 | Benchmark ledger | [`docs/ARCHITECTURE_BENCHMARKS.md`](docs/ARCHITECTURE_BENCHMARKS.md) |
+| Sparse gather (§3.5) | [`docs/plans/milestone-12b-sparse-gather-sampler.md`](docs/plans/milestone-12b-sparse-gather-sampler.md) |
+| Resume (§3.6) | [`docs/plans/milestone-12b-resume-checkpoint.md`](docs/plans/milestone-12b-resume-checkpoint.md) |
 | Scoring / architecture | [`docs/SCORING_PIPELINE.md`](docs/SCORING_PIPELINE.md), [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
 | Data | [`docs/DATA_CATALOG.md`](docs/DATA_CATALOG.md), [`docs/EWAS_DATA.md`](docs/EWAS_DATA.md) |
 | Programme | [`docs/STRATEGIC_PLAN.md`](docs/STRATEGIC_PLAN.md), [`docs/plans/post-v0-scientific-programme.md`](docs/plans/post-v0-scientific-programme.md) |

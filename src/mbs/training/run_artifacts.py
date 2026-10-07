@@ -15,6 +15,10 @@ import yaml
 from mbs.annotation.manifest import write_json
 
 
+class ResumeError(ValueError):
+    """Fail-closed resume: truncated, mismatched, or incomplete checkpoint."""
+
+
 def run_dir(artifact_root: Path, run_id: str) -> Path:
     return artifact_root / "runs" / run_id
 
@@ -66,9 +70,11 @@ def save_checkpoint(
     epoch: int,
     metrics: dict[str, Any],
     config_hash: str,
+    resume_state: dict[str, Any] | None = None,
 ) -> str:
+    """Atomically write a checkpoint (temp file + ``os.replace``)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {
+    payload: dict[str, Any] = {
         "model_state": model_state,
         "head_state": head_state,
         "optimizer_state": optimizer_state,
@@ -76,8 +82,80 @@ def save_checkpoint(
         "metrics": metrics,
         "config_hash": config_hash,
     }
-    torch.save(payload, path)
+    if resume_state is not None:
+        payload["resume_state"] = resume_state
+    # Unique temp beside the target so replace stays on the same filesystem.
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        torch.save(payload, tmp)
+        os.replace(tmp, path)
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise
     return sha256_file(path)
+
+
+def resolve_resume_path(
+    resume_cfg: Any,
+    *,
+    ckpt_root: Path,
+) -> Path | None:
+    """Return checkpoint path for resume, or None when resume is disabled.
+
+    ``auto`` → ``ckpt_root/last.pt`` when that file exists (else fresh start).
+    A concrete path string must exist.
+    """
+    if resume_cfg in (None, False, "", "false", "False", "off", "OFF", "none", "None"):
+        return None
+    if isinstance(resume_cfg, str) and resume_cfg.strip().lower() == "auto":
+        candidate = ckpt_root / "last.pt"
+        return candidate if candidate.is_file() else None
+    path = Path(str(resume_cfg)).expanduser()
+    if not path.is_file():
+        raise ResumeError(f"training.resume path does not exist: {path}")
+    return path
+
+
+def load_resume_checkpoint(
+    path: Path,
+    *,
+    expected_config_hash: str,
+    max_epochs: int,
+) -> dict[str, Any]:
+    """Load ``last.pt`` for resume; raise :class:`ResumeError` on any mismatch."""
+    try:
+        payload = torch.load(path, map_location="cpu", weights_only=False)
+    except Exception as exc:  # noqa: BLE001 — fail closed on truncated/corrupt
+        raise ResumeError(f"cannot load checkpoint {path}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise ResumeError(f"checkpoint {path} is not a dict payload")
+    if "resume_state" not in payload:
+        raise ResumeError(
+            f"checkpoint {path} has no resume_state (pre-§3.6 or incomplete write); "
+            "refusing to resume"
+        )
+    if not isinstance(payload["resume_state"], dict):
+        raise ResumeError(f"checkpoint {path} resume_state must be a dict")
+    got_hash = payload.get("config_hash")
+    if got_hash != expected_config_hash:
+        raise ResumeError(
+            f"checkpoint config_hash mismatch for {path}: "
+            f"checkpoint={got_hash!r} current={expected_config_hash!r}"
+        )
+    try:
+        epoch = int(payload["epoch"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ResumeError(f"checkpoint {path} missing/invalid epoch") from exc
+    if epoch < 1:
+        raise ResumeError(f"checkpoint {path} has invalid epoch={epoch}")
+    if epoch >= int(max_epochs):
+        raise ResumeError(
+            f"checkpoint {path} epoch={epoch} >= max_epochs={max_epochs}; nothing to resume"
+        )
+    for key in ("model_state", "head_state", "optimizer_state"):
+        if key not in payload:
+            raise ResumeError(f"checkpoint {path} missing {key}")
+    return payload
 
 
 def write_run_artifacts(

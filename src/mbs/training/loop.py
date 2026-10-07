@@ -121,6 +121,8 @@ from mbs.training.run_artifacts import (
     checkpoint_dir,
     collect_environment,
     config_sha256,
+    load_resume_checkpoint,
+    resolve_resume_path,
     run_dir,
     save_checkpoint,
     write_run_artifacts,
@@ -189,6 +191,98 @@ def _set_seed(seed: int) -> None:
     np.random.seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+
+
+def _build_resume_state(
+    *,
+    best_val: float,
+    best_rank: tuple[float, float] | None,
+    best_epoch: int,
+    stale: int,
+    history: list[dict[str, Any]],
+    val_history: list[dict[str, Any]],
+    n_samples_seen: int,
+    n_optimizer_steps: int,
+    batch_size: int,
+    batch_token_budget: int | None,
+    device: torch.device,
+) -> dict[str, Any]:
+    state: dict[str, Any] = {
+        "best_val": float(best_val),
+        "best_rank": list(best_rank) if best_rank is not None else None,
+        "best_epoch": int(best_epoch),
+        "stale": int(stale),
+        "history": list(history),
+        "val_history": list(val_history),
+        "n_samples_seen": int(n_samples_seen),
+        "n_optimizer_steps": int(n_optimizer_steps),
+        "batch_size": int(batch_size),
+        "batch_token_budget": (
+            int(batch_token_budget) if batch_token_budget is not None else None
+        ),
+        "torch_rng_state": torch.get_rng_state(),
+        "numpy_rng_state": np.random.get_state(),
+    }
+    if device.type == "cuda" and torch.cuda.is_available():
+        state["cuda_rng_state_all"] = torch.cuda.get_rng_state_all()
+    else:
+        state["cuda_rng_state_all"] = None
+    return state
+
+
+def _apply_resume_state(
+    resume_state: dict[str, Any],
+    *,
+    device: torch.device,
+) -> tuple[
+    float,
+    tuple[float, float] | None,
+    int,
+    int,
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    int,
+    int,
+    int,
+    int | None,
+]:
+    best_val = float(resume_state["best_val"])
+    raw_rank = resume_state.get("best_rank")
+    best_rank: tuple[float, float] | None
+    if raw_rank is None:
+        best_rank = None
+    else:
+        best_rank = (float(raw_rank[0]), float(raw_rank[1]))
+    best_epoch = int(resume_state["best_epoch"])
+    stale = int(resume_state["stale"])
+    history = list(resume_state.get("history") or [])
+    val_history = list(resume_state.get("val_history") or [])
+    n_samples_seen = int(resume_state.get("n_samples_seen", 0))
+    n_optimizer_steps = int(resume_state.get("n_optimizer_steps", 0))
+    batch_size = int(resume_state["batch_size"])
+    raw_budget = resume_state.get("batch_token_budget")
+    batch_token_budget = int(raw_budget) if raw_budget is not None else None
+    torch.set_rng_state(resume_state["torch_rng_state"])
+    np.random.set_state(resume_state["numpy_rng_state"])
+    cuda_states = resume_state.get("cuda_rng_state_all")
+    if (
+        device.type == "cuda"
+        and cuda_states is not None
+        and torch.cuda.is_available()
+    ):
+        torch.cuda.set_rng_state_all(cuda_states)
+    return (
+        best_val,
+        best_rank,
+        best_epoch,
+        stale,
+        history,
+        val_history,
+        n_samples_seen,
+        n_optimizer_steps,
+        batch_size,
+        batch_token_budget,
+    )
 
 
 def _class_weights(labels: list[int], n_classes: int) -> torch.Tensor:
@@ -2025,6 +2119,37 @@ def train_flat_baseline(
     run_root.mkdir(parents=True, exist_ok=True)
     ckpt_root.mkdir(parents=True, exist_ok=True)
     checkpoint_hashes: dict[str, str] = {}
+    start_epoch = 1
+    resumed = False
+    resume_path = resolve_resume_path(train_cfg.get("resume"), ckpt_root=ckpt_root)
+    if resume_path is not None:
+        resume_payload = load_resume_checkpoint(
+            resume_path,
+            expected_config_hash=cfg_hash,
+            max_epochs=epochs,
+        )
+        model.load_state_dict(resume_payload["model_state"])
+        head.load_state_dict(resume_payload["head_state"])
+        optimizer.load_state_dict(resume_payload["optimizer_state"])
+        (
+            best_val,
+            best_rank,
+            best_epoch,
+            stale,
+            history,
+            val_history,
+            n_samples_seen,
+            n_optimizer_steps,
+            batch_size,
+            batch_token_budget,
+        ) = _apply_resume_state(resume_payload["resume_state"], device=device)
+        start_epoch = int(resume_payload["epoch"]) + 1
+        resumed = True
+        print(  # noqa: T201
+            f"[flat] resume from {resume_path} epoch={resume_payload['epoch']} "
+            f"→ start_epoch={start_epoch} batch_size={batch_size}",
+            flush=True,
+        )
     if level1_params is not None:
         level1_manifest = persist_level1(run_root, level1_params)
 
@@ -2071,7 +2196,7 @@ def train_flat_baseline(
     elif pilot_store is not None:
         n_edges_for_batch = max(1, int(pilot_store.locus_gene.n_edges))
     n_cols_for_batch = int(pilot_store.n_cols) if pilot_store is not None else 1
-    if str(batch_size_raw).strip().lower() == "auto":
+    if not resumed and str(batch_size_raw).strip().lower() == "auto":
         from mbs.training.cascade_loop import (  # noqa: PLC0415 — avoid import cycle with loop
             resolve_cascade_train_batch_size,
         )
@@ -2086,15 +2211,18 @@ def train_flat_baseline(
             gpu_share=1,
         )
     # Prefer packing by edge tokens on GPU; keep a generous budget for Ada-class cards.
-    if device.type == "cuda" and batch_token_budget is not None:
+    # On resume, keep the checkpoint's batch_token_budget (already restored).
+    if not resumed and device.type == "cuda" and batch_token_budget is not None:
         min_budget = max(int(batch_token_budget), int(batch_size) * int(n_edges_for_batch))
         batch_token_budget = min_budget
 
     amp_dtype = torch.bfloat16 if (device.type == "cuda" and use_amp) else torch.float32
 
     # Probe largest micro-batch that fits (exclusive GPU0); never fail the run on OOM.
+    # Skip on resume — batch_size was restored from last.pt.
     if (
-        device.type == "cuda"
+        not resumed
+        and device.type == "cuda"
         and pilot_store is not None
         and train_phenotypes
         and int(batch_size) > 1
@@ -2179,8 +2307,8 @@ def train_flat_baseline(
         best_epoch = int(payload.get("epoch", best_epoch))
         print(f"[flat] reeval_only loaded best.pt epoch={best_epoch}", flush=True)  # noqa: T201
     if not reeval_only:
-        epoch = 0
-        for epoch in range(1, epochs + 1):
+        epoch = start_epoch - 1
+        for epoch in range(start_epoch, epochs + 1):
             print(f"[flat] epoch {epoch}/{epochs} train…", flush=True)  # noqa: T201
             if (
                 within_sampler is not None
@@ -2332,15 +2460,6 @@ def train_flat_baseline(
                     tb_writer.add_scalar("sex_accuracy/train", row["train_sex_accuracy"], epoch)
                     tb_writer.add_scalar("sex_accuracy/val", row["val_sex_accuracy"], epoch)
                 tb_writer.add_scalar("lr", lr, epoch)
-            checkpoint_hashes["last.pt"] = save_checkpoint(
-                ckpt_root / "last.pt",
-                model_state=model.state_dict(),
-                head_state=head.state_dict(),
-                optimizer_state=optimizer.state_dict(),
-                epoch=epoch,
-                metrics=row,
-                config_hash=cfg_hash,
-            )
 
             if overfit_fixture:
                 improved = train_metrics["accuracy"] >= 0.999 or train_metrics["loss"] < best_val - 1e-8
@@ -2368,6 +2487,24 @@ def train_flat_baseline(
             if improved:
                 best_epoch = epoch
                 stale = 0
+            else:
+                stale += 1
+
+            # Bookkeeping first, then last.pt (and best.pt) so resume_state matches.
+            resume_state = _build_resume_state(
+                best_val=best_val,
+                best_rank=best_rank,
+                best_epoch=best_epoch,
+                stale=stale,
+                history=history,
+                val_history=val_history,
+                n_samples_seen=n_samples_seen,
+                n_optimizer_steps=n_optimizer_steps,
+                batch_size=batch_size,
+                batch_token_budget=batch_token_budget,
+                device=device,
+            )
+            if improved:
                 checkpoint_hashes["best.pt"] = save_checkpoint(
                     ckpt_root / "best.pt",
                     model_state=model.state_dict(),
@@ -2376,9 +2513,18 @@ def train_flat_baseline(
                     epoch=epoch,
                     metrics=row,
                     config_hash=cfg_hash,
+                    resume_state=resume_state,
                 )
-            else:
-                stale += 1
+            checkpoint_hashes["last.pt"] = save_checkpoint(
+                ckpt_root / "last.pt",
+                model_state=model.state_dict(),
+                head_state=head.state_dict(),
+                optimizer_state=optimizer.state_dict(),
+                epoch=epoch,
+                metrics=row,
+                config_hash=cfg_hash,
+                resume_state=resume_state,
+            )
 
             if overfit_fixture and train_metrics["accuracy"] >= 0.999:
                 break
