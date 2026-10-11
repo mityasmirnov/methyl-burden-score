@@ -17,6 +17,7 @@ from torch import nn
 
 from mbs.scoring.orientation import orient_mbs_array
 from mbs.training.cascade_scores import fusion_feature_matrix
+from mbs.training.progress import Heartbeat
 from mbs.training.dataset import FlatSampleRecord, pack_records_to_batch
 from mbs.training.late_fusion import evaluate_late_fusion
 from mbs.training.multitask import MultitaskHeads
@@ -46,7 +47,9 @@ def score_flat_mbs_matrix(
     mbs_chunks: list[np.ndarray] = []
     present_chunks: list[np.ndarray] = []
     step = max(1, int(batch_size))
+    hb = Heartbeat("Stage A scoring", len(phenotypes))
     for start in range(0, len(phenotypes), step):
+        hb.update(start)
         chunk_ph = phenotypes[start : start + step]
         chunk: list[FlatSampleRecord] = [materialize_fn(ph) for ph in chunk_ph]
         batch = pack_records_to_batch(

@@ -128,6 +128,7 @@ from mbs.training.run_artifacts import (
     write_run_artifacts,
 )
 from mbs.training.sampler import iter_epoch_batches
+from mbs.training.progress import Heartbeat
 
 
 @dataclass(frozen=True, slots=True)
@@ -594,7 +595,9 @@ def _orient_and_write_score_manifest(
         for rec in train_records:
             _consume(rec)
     elif train_phenotypes is not None and pilot_store is not None:
-        for ph in train_phenotypes:
+        hb = Heartbeat("orientation (train scoring)", len(train_phenotypes))
+        for n_done, ph in enumerate(train_phenotypes, start=1):
+            hb.update(n_done)
             _consume(
                 _materialize_record(
                     ph,
@@ -727,6 +730,8 @@ def _run_epoch(
             study_ids.append(str(ph.study_id or ph.sample_id))
             task_keys.append(task_key(ph))
 
+    hb = Heartbeat(f"{'train' if train else 'eval'} epoch {epoch}", n_items)
+    n_hb_done = 0
     with context:
         for idxs in iter_epoch_batches(
             n_items,
@@ -754,6 +759,8 @@ def _run_epoch(
                     )
                     for i in idxs
                 ]
+            n_hb_done += len(chunk)
+            hb.update(n_hb_done)
             age_values: list[float | None] = []
             age_flags: list[bool] = []
             tissue_flags: list[bool] = []
