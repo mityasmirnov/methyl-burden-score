@@ -125,13 +125,42 @@ modest. Do not re-quote the n=1-baseline deltas.
        remains a follow-up. Put `training.resume: auto` in long-job YAMLs so
        `config_hash` stays stable across restart.
 
-─── GPU0 HOLD — cowrd project (2026-10-06; smoke freed 2026-10-07) ─────────
-**Do NOT start a new `run_gpu0_queue_*` until the user lifts this hold.**
+─── GPU0 SHARING PROTOCOL (replaces the 2026-10-06 hold; user, 2026-10-11) ──
+**The user lifted the hold and told the agents to settle GPU0 ownership among
+themselves.** The hold had outlived its purpose: cowrd's queue died on 10-07
+(G-prot was skipped "VRAM starved" at 10:06 and the queue exited at 10:07) and
+nothing of cowrd's touched GPU0 for 4 days while we obeyed a hold for it.
 
-K=8 sparse train finished; post-score process was killed ~10:09 on 2026-10-07
-so cowrd can take >=24 GiB on GPU0 (only card that can free that much; GPU1/2
-held by long-lived services). Hold remains until the **user** says otherwise.
-────────────────────────────────────────────────────────────────────────────
+**cowrd-powerhorse replied (2026-10-11): it does not need GPU0.** G-prot ran on
+CPU in ~50 s on 2026-10-07 — the ">=24 GiB" gate was wrong — and everything
+since is CPU-only. `Scripts/overnight/status.sh` in /data/projects/cowrd agrees:
+queue **finished** 2026-10-07 08:44 UTC, no tmux session, nothing pending; its
+only GPU use was ~10 min on GPU0 (10:35-10:44 local) right after our job freed
+it. No objection to the rules below. Caveat it flagged: it cannot speak for the
+other two cowrd sessions or for the user, so **check
+`bash /data/projects/cowrd/Scripts/overnight/status.sh` (read-only) and
+`nvidia-smi` before starting**, and never touch other users' GPU jobs (vLLM on
+GPU1, the evadb daemon + bge-m3 on GPU2).
+
+Rules (agreed with `cowrd-powerhorse` 2026-10-11):
+ 1. **cowrd has priority.** If cowrd has a job queued or running that wants GPU0
+    (its next job, G-prot, needs >=24 GiB free on one card), it takes the card.
+    GPU1/GPU2 are other people's long-lived services; GPU0 is the only card that
+    can offer that.
+ 2. **Otherwise methyl-burden may use GPU0 — one job at a time, and only jobs
+    that can be stopped cheaply.** Use `training.resume: auto` so a stop costs at
+    most the current epoch (§3.6). Do **not** start anything non-resumable.
+ 3. **Single-owner lock = `scratch/GPU0_OWNER`.** Before starting a GPU0 job,
+    check it AND `pgrep -af run_gpu0_queue`; if it exists, do not start. Write it
+    with owner, job, pid, start time. Remove it when the job ends. Advisory only
+    (cowrd's gpu_wait does not read it), but it makes ownership visible.
+ 4. **To reclaim GPU0:** message the session that owns the lock (or ask the
+    user). It stops at the next safe point and releases the card.
+
+On 2026-10-07 two things went wrong that this prevents: a job held 43 GiB at 0%
+GPU utilisation for hours with no log output, and the K=8 scoring was killed to
+free the card for a queue that had already exited. Check the lock; don't assume.
+──────────────────────────────────────────────────────────────────────────
 
 ─── NOTE FOR THE CURSOR AGENT (and any other session) ──────────────────────
 Written 2026-09-30 by the Claude Code session. Three things need your attention.
