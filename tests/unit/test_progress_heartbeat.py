@@ -13,7 +13,7 @@ class _Clock:
         return self.t
 
 
-def _hb(total: int, interval: float = 300.0):
+def _hb(total: int, interval: float = 300.0) -> tuple[Heartbeat, _Clock, list[str]]:
     clock, lines = _Clock(), []
     return Heartbeat("scoring", total, interval_s=interval, clock=clock, emit=lines.append), clock, lines
 
