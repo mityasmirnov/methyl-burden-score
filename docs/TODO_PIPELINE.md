@@ -125,6 +125,45 @@ modest. Do not re-quote the n=1-baseline deltas.
        remains a follow-up. Put `training.resume: auto` in long-job YAMLs so
        `config_hash` stays stable across restart.
 
+  3.7  **GPU-resident annotation features — stop copying a 268 MB table per
+       sample** — **proposed, NOT started; needs a go-ahead** (it touches
+       `record_to_batch` / `pack_records_to_batch`, i.e. Cursor's sparse path).
+
+       **Evidence (measured 2026-10-12, K=8 re-score on GPU0):**
+         · `_run_epoch` eval pass 0.78–0.92 s/item (7 261 samples, ~90 min);
+           orientation pass 0.42–0.56 s/item (22 046 samples), **slowing ~3x in
+           its last hour** (the old cumulative-average ETA hid this).
+         · Micro-benchmark of `gather_flat_region_features` at full width
+           (440 903 edges x 152 dims): **0.361 s/sample serial**; with 4 / 8 / 16
+           threads **0.64 / 0.59 / 0.51 s/sample = 0.6-0.7x, i.e. SLOWER**.
+           Memory-bandwidth-bound, not CPU-bound — a thread pool would have made
+           it worse, and more cores will not help.
+         · Cause, read in code: `feats = np.array(base_features, copy=True)`
+           copies the whole sample-independent annotation table every sample, then
+           `apply_flat_region_feature_mode` rewrites the 24-wide slice, then
+           unobserved edges are compressed out (a third copy). Only **2 columns**
+           depend on the sample: col 0 (M-value) and col base_dim-1 (observed).
+
+       **Why it matters beyond scoring:** the same per-sample copy sits inside
+       training (K=8 epoch = ~1h51m for ~22k samples, ~0.25 s/sample) and inside
+       every scoring pass (~63k per-sample forwards per full-width run). It is
+       likely the largest single throughput lever for all full-width work —
+       bigger than K, batch size, or which GPU.
+
+       **Proposed fix:** keep `base_features` (annotation + CpGPT static block)
+       resident on the GPU once; per batch ship only the two beta-derived columns
+       (~3.5 MB/sample instead of 268 MB) and assemble + drop unobserved edges on
+       the GPU. **Acceptance:** features bit-identical to the CPU path on the
+       synthetic fixtures already in the test suite, plus measured s/sample on the
+       real 440 903-edge graph. **Do not** add a thread pool (measured slower).
+       Possible further gain, separate: under `m_only` the 24 annotation columns
+       are masked and the CpGPT block is constant per edge, so its first-layer
+       projection could be precomputed once per forward.
+
+       **K=8 re-score status:** orientation ~88% at 02:50 on 10-12; Stage A
+       scoring of 34 234 samples still to run (est. 4-12 h at 0.45-1.3 s/sample).
+       Lock `scratch/GPU0_OWNER`, log `scratch/logs/gpu0_k8-rescore_*.log`.
+
 ─── GPU0 SHARING PROTOCOL (replaces the 2026-10-06 hold; user, 2026-10-11) ──
 **The user lifted the hold and told the agents to settle GPU0 ownership among
 themselves.** The hold had outlived its purpose: cowrd's queue died on 10-07

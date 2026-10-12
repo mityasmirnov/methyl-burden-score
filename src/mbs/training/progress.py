@@ -25,7 +25,9 @@ def _fmt_duration(seconds: float) -> str:
 
 
 class Heartbeat:
-    """Emit ``[progress] <label> done/total (pct) rate ETA`` at most every ``interval_s``."""
+    """Emit ``[progress] <label> done/total (pct) rate (recent) ETA`` at most every ``interval_s``.
+
+    ETA is computed from the rate over the last window, not the lifetime average."""
 
     def __init__(
         self,
@@ -43,6 +45,7 @@ class Heartbeat:
         self._emit = emit if emit is not None else self._print
         self._t0 = clock()
         self._last = self._t0
+        self._last_done = 0
 
     @staticmethod
     def _print(msg: str) -> None:
@@ -53,14 +56,20 @@ class Heartbeat:
         now = self._clock()
         if now - self._last < self.interval_s or done <= 0:
             return False
-        self._last = now
         elapsed = now - self._t0
         per_item = elapsed / done
-        remaining = max(self.total - done, 0) * per_item
+        # ETA must follow the CURRENT pace, not the lifetime average: on 2026-10-12 a
+        # scoring pass slowed ~3x partway through and a cumulative-average ETA kept
+        # printing "24m" while the real remaining time was roughly double. Rate is
+        # measured over the window since the previous line.
+        window_items = done - self._last_done
+        recent = (now - self._last) / window_items if window_items > 0 else per_item
+        self._last, self._last_done = now, done
+        remaining = max(self.total - done, 0) * recent
         pct = 100.0 * done / self.total if self.total else 100.0
         self._emit(
             f"[progress] {self.label} {done}/{self.total} ({pct:.1f}%) "
-            f"{per_item:.2f}s/item elapsed {_fmt_duration(elapsed)} "
+            f"{per_item:.2f}s/item (recent {recent:.2f}) elapsed {_fmt_duration(elapsed)} "
             f"ETA {_fmt_duration(remaining)}"
         )
         return True

@@ -63,3 +63,22 @@ def test_finish_reports_only_long_loops() -> None:
     clock.t = 7200.0
     hb.finish()
     assert "done 10 in 2.0h" in lines[-1]
+
+
+def test_eta_follows_recent_pace_when_the_job_slows_down() -> None:
+    """Regression for the 2026-10-12 scoring pass: ~3x slowdown, ETA stayed optimistic."""
+    hb, clock, lines = _hb(1000, interval=300.0)
+    done = 0
+    for _ in range(300):  # first window: 1 s/item
+        clock.t += 1.0
+        done += 1
+        hb.update(done)
+    for _ in range(100):  # second window: 3 s/item
+        clock.t += 3.0
+        done += 1
+        hb.update(done)
+    assert len(lines) == 2
+    # lifetime average at t=600, done=400 is 1.5 s/item -> would claim 600*1.5 = 15m left;
+    # the recent pace is 3 s/item -> 600*3 = 30m left, which is the honest number.
+    assert "1.50s/item (recent 3.00)" in lines[1]
+    assert "ETA 30m" in lines[1]
