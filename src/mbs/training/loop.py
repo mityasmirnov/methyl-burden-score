@@ -2283,6 +2283,10 @@ def train_flat_baseline(
                 fitted = cand
                 break
             except torch.cuda.OutOfMemoryError:
+                # The failed attempt's batch/activations stay referenced by these locals until
+                # reassigned: each OOM shrank the next candidate's budget (K=32 fell to 16) and,
+                # after the last failure, ~36 GiB stayed pinned into training.
+                chunk = batch = mbs_p = present_p = loss_probe = None
                 optimizer.zero_grad(set_to_none=True)
                 torch.cuda.empty_cache()
                 print(f"[flat] batch_size={cand} OOM during calibrate; trying smaller", flush=True)

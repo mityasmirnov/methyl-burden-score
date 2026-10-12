@@ -22,8 +22,8 @@ from run_7g_gene_only_probe import train_flat_region_arm  # noqa: E402
 from mbs.paths import DataPaths  # noqa: E402
 
 DEFAULT_CONFIG = ROOT / "configs" / "experiment" / "stage0_12b_sampler_smoke_k8.yaml"
-RUN_PREFIX = "stage0-12b-sampler-smoke-k8"
-REPORT = ROOT / "reports" / "inspection" / "stage0_12b_sampler_smoke_k8"
+RUN_PREFIX = os.environ.get("MBS_SAMPLER_SMOKE_PREFIX", "stage0-12b-sampler-smoke-k8")
+REPORT = ROOT / "reports" / "inspection" / RUN_PREFIX.replace("-", "_")
 
 
 def main() -> None:
