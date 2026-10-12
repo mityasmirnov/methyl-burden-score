@@ -28,6 +28,28 @@ from mbs.training.transparent_baselines import (
 )
 
 
+def score_batch_size_for_graph(
+    batch_size: int,
+    *,
+    calibrated_edges: int | None,
+    score_edges: int | None,
+) -> int:
+    """Batch size for scoring a graph that may be wider than the one training calibrated on.
+
+    VRAM scales with edge-rows per batch (``batch_size x edges_per_sample``), and
+    ``batch_size`` was calibrated against the epoch-sampled graph. Product scoring
+    runs on the FULL graph, which with the K=8 sampler is ~3x wider (440,903 vs
+    147,438 edges): reusing batch 111 asked for 48.9M edge-rows instead of the
+    16.4M that fit, and OOM'd on a 23.3 GiB tensor at the start of Stage A --
+    after hours of preceding scoring. Keep edge-rows per batch constant instead.
+    Never scales UP: a narrower scoring graph just uses the calibrated batch.
+    """
+    base = max(1, int(batch_size))
+    if not calibrated_edges or not score_edges or int(score_edges) <= int(calibrated_edges):
+        return base
+    return max(1, (base * int(calibrated_edges)) // int(score_edges))
+
+
 def score_flat_mbs_matrix(
     *,
     phenotypes: list[SamplePhenotype],

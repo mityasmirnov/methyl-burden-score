@@ -170,8 +170,15 @@ modest. Do not re-quote the n=1-baseline deltas.
 
        **K=8 re-score:** attempt 1 discarded at orientation 92% (3.8 h in, pace
        3.4 s/sample, Stage A of 34 234 samples still ahead => ~14-16 h projected).
-       Restarted with the fix as `k8-rescore2` (est. 6-8 h; unverified until its
-       heartbeats confirm). Lock `scratch/GPU0_OWNER`.
+       Restarted with the fix as `k8-rescore2` (est. 6-8 h) --
+       **`k8-rescore2` CRASHED (2026-10-12 08:07, rc=1) at the start of Stage A**, after
+       orientation finished (3.3 h; polarity saved in `score_manifest.json`). Cause: batch
+       111 was calibrated on the K=8-sampled graph (147,438 edges) and reused for
+       full-CpG product scoring on the full graph (440,903 edges) => 23.3 GiB alloc OOM.
+       FIX (loop.py + `score_batch_size_for_graph` in flat_stage_a_eval.py, test
+       `test_stage_a_score_batch.py`): scoring batch keeps edge-rows/batch constant (111 -> 37).
+       CURSOR: any run using the sampler (K<full) with Stage A would hit this; now fixed.
+       Relaunched as `k8-rescore3` (~3.3 h prelude + ~5-6 h Stage A; no mid-scoring resume). Lock `scratch/GPU0_OWNER`.
 
 ─── GPU0 SHARING PROTOCOL (replaces the 2026-10-06 hold; user, 2026-10-11) ──
 **The user lifted the hold and told the agents to settle GPU0 ownership among

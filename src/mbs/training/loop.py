@@ -2746,6 +2746,7 @@ def train_flat_baseline(
     ):
         from mbs.training.flat_stage_a_eval import (  # noqa: PLC0415
             build_stage_a_flat_evaluations,
+            score_batch_size_for_graph,
         )
 
         # Product scoring: full CpGs for train genes (never the epoch sample).
@@ -2780,6 +2781,21 @@ def train_flat_baseline(
         defer_cpu = bool(train_cfg.get("stage_a_defer_cpu_probes", True))
         # Screen default: leave mbs_enet for post-hoc (P2/P4 workflow).
         include_enet = bool(train_cfg.get("stage_a_include_mbs_enet", False))
+        score_batch_size = score_batch_size_for_graph(
+            batch_size,
+            calibrated_edges=int(n_edges_for_batch),
+            score_edges=(
+                int(pilot_store.flat_region_index.n_edges)
+                if pilot_store is not None and pilot_store.flat_region_index is not None
+                else None
+            ),
+        )
+        if score_batch_size != int(batch_size):
+            print(  # noqa: T201
+                f"[flat] Stage A score batch_size {batch_size} -> {score_batch_size} "
+                f"(scoring graph is wider than the {n_edges_for_batch}-edge training graph)",
+                flush=True,
+            )
         stage_a = build_stage_a_flat_evaluations(
             model=model,
             head=head,
@@ -2792,7 +2808,7 @@ def train_flat_baseline(
             class_names=list(class_names),
             age_mean=age_mean,
             age_std=age_std,
-            batch_size=batch_size,
+            batch_size=score_batch_size,
             score_dir=run_root / "scores",
             defer_cpu_probes=defer_cpu,
             include_mbs_enet=include_enet,
