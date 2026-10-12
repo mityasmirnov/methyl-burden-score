@@ -106,6 +106,19 @@ modest. Do not re-quote the n=1-baseline deltas.
        Log: `scratch/logs/gpu0_s35_k8_20261006_164931.log`. **Next on GPU when
        hold lifts:** seed-bank train + score ~20k (`resume: auto`). Do **not**
        launch cascade 5×6 or dense full-width converge.
+
+       **K=8 re-score RESULT (2026-10-12, `k8-rescore3`, rc=0, ~10 h):** `mbs_enet_nested`
+       fold 0 (split `hub-nine-pack-5fold-v1`, 19,554 features, 6 epochs):
+       tissue F1 **0.327**, age MAE **12.76**, sex AUROC **0.944**. `mbs_e2e` age MAE 24.3
+       (noisy readout, ignore). Reference N-light@64 fold 0 (6 restarts, split
+       `hub-nine-pack-3fold-v1`): 0.361 / **8.96 +- 0.67** / 0.825.
+       **Verdict: INCONCLUSIVE, not a sampler verdict.** The two differ in split, feature
+       width and training length (6 ep vs converged), and the dense full-width comparator
+       (3.3) was killed unconverged, so no matched K=full run exists. What it does show: the
+       K=8 path trains, scores and evaluates end to end, and 12.76 is far outside the
+       +-0.67 restart spread, so K=8 at 6 epochs is NOT yet competitive. To answer
+       "does K cost accuracy", run K=8 vs K=full (or K=32) on the SAME split, same epochs,
+       nested-ranked (plan item 6). Scoring cost: ~0.55-0.65 s/sample, stable.
   3.6  **Resume-from-checkpoint in the flat training loop** — **DONE** 2026-10-07.
        Plan: [`plans/milestone-12b-resume-checkpoint.md`](plans/milestone-12b-resume-checkpoint.md).
        Why: a job could not be paused, moved, or survive preemption (cowrd GPU0
