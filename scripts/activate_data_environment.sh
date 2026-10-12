@@ -27,6 +27,15 @@ export TORCH_HOME="${TORCH_HOME:-$MBS_CACHE_ROOT/torch}"
 export UV_CACHE_DIR="${UV_CACHE_DIR:-$MBS_CACHE_ROOT/uv}"
 export PIP_CACHE_DIR="${PIP_CACHE_DIR:-$MBS_CACHE_ROOT/pip}"
 export NUMBA_CACHE_DIR="${NUMBA_CACHE_DIR:-$MBS_CACHE_ROOT/numba}"
+
+# NumPy marks every large allocation MADV_HUGEPAGE. On this host THP defrag is
+# "madvise" and ~130 GiB of page cache keeps free memory fragmented, so each ~270 MB
+# per-sample feature array triggers direct memory compaction that almost always
+# fails. Measured 2026-10-12: kernel time was 88-92% of CPU in full-width scoring.
+# Disabling the hint made the per-sample gather 3.0x / 3.5x faster (A/B in both
+# orders; user-mode time unchanged, only the kernel overhead went away).
+# Override by exporting a different value before sourcing this file.
+export NUMPY_MADVISE_HUGEPAGE="${NUMPY_MADVISE_HUGEPAGE:-0}"
 export MPLCONFIGDIR="${MPLCONFIGDIR:-$MBS_CACHE_ROOT/matplotlib}"
 
 export TMPDIR="${TMPDIR:-$MBS_SCRATCH_ROOT/tmp}"
