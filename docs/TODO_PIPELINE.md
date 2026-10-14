@@ -119,6 +119,22 @@ modest. Do not re-quote the n=1-baseline deltas.
        +-0.67 restart spread, so K=8 at 6 epochs is NOT yet competitive. To answer
        "does K cost accuracy", run K=8 vs K=full (or K=32) on the SAME split, same epochs,
        nested-ranked (plan item 6). Scoring cost: ~0.55-0.65 s/sample, stable.
+
+       **K=32 arm (2026-10-14, `stage0-12b-sampler-smoke-k32`, same split/fold/6 ep):**
+       355,570 edges, batch 55 (calibrator bug fixed, see below), ~3.9 h/epoch vs ~1.9 h
+       for K=8. `mbs_enet_nested`: tissue F1 **0.348**, age MAE **12.84**, sex AUROC
+       **0.956** (best epoch 4; val_loss min at epoch 2 = 27.2, then overfits to 39.1).
+       **VERDICT (K ranking): K=8 vs K=32 is a TIE on age (12.76 vs 12.84, gap 0.08 << the
+       ~0.5 single-seed width); K=32 +0.02 tissue F1 / +0.01 sex AUROC, within noise. K=8
+       costs no measurable accuracy and trains ~2x faster => keep K=8 as the sampler
+       default.** Both are ~3.8 MAE worse than N-light@64 (8.96), so that gap is NOT the
+       sampler: it is full-width + overfitting (val_loss rises after epoch 2-4) + split.
+       Caveat: batch (111 vs 55) differs between arms. Next lever is regularisation /
+       early stop at full width, not K.
+       **Calibrator bug (fixed 1b4170c):** a failed batch probe kept its tensors alive, so
+       each OOM shrank the next candidate and ~36 GiB stayed pinned into training (K=32
+       first fell to batch 16 and OOM'd in step 1). K=8's batch 111 may also have been
+       conservative.
   3.6  **Resume-from-checkpoint in the flat training loop** — **DONE** 2026-10-07.
        Plan: [`plans/milestone-12b-resume-checkpoint.md`](plans/milestone-12b-resume-checkpoint.md).
        Why: a job could not be paused, moved, or survive preemption (cowrd GPU0
